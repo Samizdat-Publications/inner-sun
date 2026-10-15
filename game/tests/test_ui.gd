@@ -228,7 +228,8 @@ func test_top_bar_text() -> void:
 func test_gallery_states_build() -> void:
 	var g: Control = (load("res://view/ui_gallery.gd") as GDScript).new() as Control
 	g.set("db", db())
-	for state_name: String in ["hud_calm", "hud_crisis", "hud_drill", "dossier_page", "dossier_known", "dossier_greyed", "store"]:
+	for state_name: String in ["hud_calm", "hud_crisis", "hud_drill", "dossier_page", "dossier_known", "dossier_greyed", "store",
+			"map_start", "map_mid", "death_dead", "death_won", "codex"]:
 		var s: Sim = g.call("make_state", state_name) as Sim
 		check(s != null, "state %s builds" % state_name)
 		if s == null:
@@ -243,6 +244,17 @@ func test_gallery_states_build() -> void:
 				check(not s.encounter.event_id.is_empty(), "an event is open in %s" % state_name)
 			"store":
 				check(s.run.phase == "store", "the store is open")
+			"map_start":
+				check(s.run.phase == "idle" and s.run.current_node == "r0c0", "the map starts at the start node")
+			"map_mid":
+				check(s.run.current_row() >= 2, "the mid map is a few rows down")
+				check(s.run.summary(s)["nodes_overtaken"] > 0, "some nodes are overtaken")
+			"death_dead":
+				check(s.run.phase == "dead", "the dead state is dead")
+			"death_won":
+				check(s.run.phase == "won", "the won state is won")
+			"codex":
+				check(s.run.knows("kola_well"), "the codex state knows some entries")
 	g.free()
 
 
@@ -255,3 +267,118 @@ func test_ui_files_have_no_em_dash() -> void:
 			var text: String = FileAccess.get_file_as_string(dir.path_join(f))
 			check(not text.contains(dash), "%s/%s contains an em dash" % [dir, f])
 	check(not FileAccess.get_file_as_string("res://view/ui_gallery.gd").contains(dash), "gallery has no em dash")
+
+
+# Node map, death screen and codex ------------------------------------------------------------------
+
+func test_map_view_opens_in_idle_and_chooses_a_node() -> void:
+	var s: Sim = _sim()
+	var m := MapView.new()
+	m.bind(s)
+	check(m.visible, "the map opens by itself in idle")
+	m.close()
+	check(not m.visible, "close hides it")
+	m.open()
+	check(m.visible, "open shows it")
+	var next: String = s.run.links_from_current()[0]
+	check(m.can_choose(next), "a linked node can be chosen")
+	check(not m.can_choose("r9c0"), "a far node cannot")
+	m.choose(next)
+	s.step()
+	check_eq(s.run.target_node, next, "the click became a choose_node command")
+	check(not m.visible, "the map closes after the choice")
+	check_eq(s.run.phase, "drill", "and the ship is drilling")
+	m.free()
+
+
+func test_map_view_auto_open_off_and_describe() -> void:
+	var s: Sim = _sim()
+	var m := MapView.new()
+	m.auto_open = false
+	m.bind(s)
+	check(not m.visible, "no auto open when it is off")
+	var far: Dictionary = s.run.nodes[s.run.nodes.size() - 1]
+	var d: PackedStringArray = m.describe(far)
+	check_eq(d[0], "UNSURVEYED", "a node beyond the scanner is unsurveyed")
+	check(d[1].contains("ROW %d" % int(far["row"])), "the tooltip names the row")
+	var first: Dictionary = s.run.node(s.run.links_from_current()[0])
+	check_eq(m.describe(first)[2], "CLICK TO DRILL HERE", "a linked node invites a click")
+	m.free()
+
+
+func test_death_screen_cause_stamp_and_signal() -> void:
+	var s: Sim = _sim()
+	var d := DeathScreen.new()
+	d.bind(s)
+	check(not d.visible, "hidden while the run lives")
+	s.run.end_run(s, "dead", "hull")
+	s.step()
+	d.bind(s)
+	check(d.visible, "shown once the run is dead")
+	check_eq(d.stamp_for(s), "RECOVERED", "a hull loss with the crew alive is recovered")
+	check(d.cause_text(s).begins_with("Hull breached"), "the cause is in plain words")
+	for c: CrewMember in s.ship.crew:
+		c.alive = false
+	check_eq(d.stamp_for(s), "KIA", "no survivors is KIA")
+	var hits: Array[int] = [0]
+	d.new_run_requested.connect(func() -> void: hits[0] += 1)
+	d._on_new()
+	check_eq(hits[0], 1, "New run emits the signal")
+	d._on_codex()
+	check(d.codex.visible, "the Codex button opens the browser")
+	d.free()
+	var w: Sim = _sim()
+	w.run.end_run(w, "won", "gate")
+	var d2 := DeathScreen.new()
+	d2.bind(w)
+	check_eq(d2.stamp_for(w), "MISSION COMPLETE", "the gate gives the completion stamp")
+	d2.free()
+
+
+func test_death_screen_lists_learned_codex() -> void:
+	var s: Sim = _sim()
+	s.run.learn(s, "kola_well")
+	s.run.end_run(s, "dead", "flooded")
+	s.step()
+	var d := DeathScreen.new()
+	d.bind(s)
+	var found: bool = false
+	var teaser: String = str(s.db.table("codex")["kola_well"]["teaser"])
+	var stack: Array[Node] = [d]
+	while not stack.is_empty():
+		var n: Node = stack.pop_back()
+		var l: Label = n as Label
+		if l != null and l.text == teaser:
+			found = true
+		stack.append_array(n.get_children())
+	check(found, "the learned entry's teaser is on the page")
+	d.free()
+
+
+func test_codex_view_known_and_unknown() -> void:
+	var s: Sim = _sim(["kola_well"])
+	var p := Profile.new()
+	p.known_codex = PackedStringArray(["byrd_1947"])
+	s.run.learn(s, "mohole")
+	var c := CodexView.new()
+	c.bind(s, p)
+	check(not c.visible, "hidden until opened")
+	c.open()
+	check(c.visible, "open shows it")
+	for id: String in ["kola_well", "byrd_1947", "mohole"]:
+		check(c.is_known(id), "%s is known (profile, run start or learned)" % id)
+	check(not c.is_known("the_follower"), "an entry nobody found is unknown")
+	check_eq(c.entry_ids().size(), s.db.table("codex").size(), "every entry is listed")
+	check(c.is_known(c.selected_id()), "a known entry is selected first")
+	c.select("the_follower")
+	check_eq(c.selected_id(), "the_follower", "an unknown file can be opened")
+	c.close()
+	check(not c.visible, "close hides it")
+	c.free()
+
+
+func test_overlay_scripts_have_no_untyped_or_em_dash() -> void:
+	var dash: String = String.chr(0x2014)
+	for f: String in ["map_view", "death_screen", "codex_view"]:
+		var text: String = FileAccess.get_file_as_string("res://view/overlay/%s.gd" % f)
+		check(not text.contains(dash), "%s has no em dash" % f)

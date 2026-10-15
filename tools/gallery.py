@@ -3,7 +3,8 @@
     python tools/gallery.py [--out DIR] [--res 1920x1080] [--gpu-index N] [--timeout 300]
 
 Saves one PNG per state (hud_calm, hud_crisis, hud_drill, dossier_page, dossier_known,
-dossier_greyed, store) to harness/out/gallery/ by default. Godot needs a real window to render, so
+dossier_greyed, store, map_start, map_mid, death_dead,
+death_won, codex) to harness/out/gallery/ by default. Godot needs a real window to render, so
 the window is parked off-screen and unfocusable (see tools/proc.py), the run quits by itself, and the
 whole process tree is killed by job object if it overruns the timeout. Run it only when the UI
 changed: it shows a window for about a second.
@@ -17,7 +18,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import paths  # noqa: E402
 import proc  # noqa: E402
 
-STATES = ["hud_calm", "hud_crisis", "hud_drill", "dossier_page", "dossier_known", "dossier_greyed", "store"]
+STATES = ["hud_calm", "hud_crisis", "hud_drill", "dossier_page", "dossier_known", "dossier_greyed", "store",
+          "map_start", "map_mid", "death_dead", "death_won", "codex"]
 
 
 def main(argv=None):
