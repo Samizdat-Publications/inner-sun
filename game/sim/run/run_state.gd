@@ -19,6 +19,8 @@ var depth_m: float = 0.0
 var known_codex: PackedStringArray = PackedStringArray()  ## What the profile knew at the start (sorted).
 var learned: PackedStringArray = PackedStringArray()  ## Codex entries learned this run, in order.
 var end_cause: String = ""
+var pursuer_row: float = -1.5  ## Map row the pursuer's front has reached (step 3 moves it).
+var reveal_bonus: int = 0  ## Extra scanner rows for the rest of the layer (events).
 
 
 func _init(p_mode: String, p_known_codex: PackedStringArray) -> void:
@@ -96,6 +98,18 @@ func learn(sim: Sim, codex_id: String) -> void:
 	sim.emit("codex", {"id": codex_id})
 
 
+## Move the pursuer's front by a number of map rows (positive brings it closer).
+func move_pursuer(sim: Sim, rows: float) -> void:
+	pursuer_row += rows
+	sim.emit("pursuer_moved", {"rows": rows})
+
+
+## The scanner sees this many more rows ahead for the rest of the layer.
+func add_reveal(sim: Sim, rows: int) -> void:
+	reveal_bonus += rows
+	sim.emit("reveal", {"rows": rows})
+
+
 func end_run(sim: Sim, p_phase: String, cause: String) -> void:
 	if is_over():
 		return
@@ -129,7 +143,7 @@ func state() -> Array:
 	var res: Array = []
 	for r: String in RESOURCES:
 		res.append(int(resources[r]))
-	return [mode, phase, res, depth_m, Array(known_codex), Array(learned), end_cause]
+	return [mode, phase, res, depth_m, Array(known_codex), Array(learned), end_cause, pursuer_row, reveal_bonus]
 
 
 ## Checks the run tables (layers, node types, map rules). Filled in with M1 step 3.

@@ -66,21 +66,34 @@ static func from_def(def: Dictionary) -> Ship:
 		s.links.append(l)
 	s._find_walls()
 	for cd: Dictionary in def.get("crew", []):
-		var c := CrewMember.new()
-		c.id = str(cd["id"])
-		c.index = s.crew.size()
-		c.name = str(cd.get("name", c.id))
-		c.room = s.room_index(str(cd["room"]))
-		c.start_room = c.room
-		var start_room: Room = s.rooms[c.room]
-		c.pos = Vector2(float(cd.get("x", start_room.center_floor().x)), start_room.floor_y())
-		var skills: Dictionary = cd.get("skills", {})
-		c.skill_fire = float(skills.get("fire", 1.0))
-		c.skill_repair = float(skills.get("repair", 1.0))
-		s._crew_ids[c.id] = c.index
-		s.crew.append(c)
+		s.add_crew(cd)
 	s.nav = NavGraph.build(s)
 	return s
+
+
+## Add a crew member from a definition ({id, name, room, x?, skills?}). Used when the ship is built
+## and when someone joins mid-run. Returns null (and adds nobody) if the id is taken or the room
+## does not exist.
+func add_crew(cd: Dictionary) -> CrewMember:
+	var cid: String = str(cd.get("id", ""))
+	var ri: int = room_index(str(cd.get("room", "")))
+	if cid.is_empty() or _crew_ids.has(cid) or ri < 0:
+		push_error("ship \"%s\": cannot add crew \"%s\" (duplicate id or unknown room)" % [id, cid])
+		return null
+	var c := CrewMember.new()
+	c.id = cid
+	c.index = crew.size()
+	c.name = str(cd.get("name", c.id))
+	c.room = ri
+	c.start_room = ri
+	var start_room: Room = rooms[ri]
+	c.pos = Vector2(float(cd.get("x", start_room.center_floor().x)), start_room.floor_y())
+	var skills: Dictionary = cd.get("skills", {})
+	c.skill_fire = float(skills.get("fire", 1.0))
+	c.skill_repair = float(skills.get("repair", 1.0))
+	_crew_ids[c.id] = c.index
+	crew.append(c)
+	return c
 
 
 func room_index(room_id: String) -> int:
