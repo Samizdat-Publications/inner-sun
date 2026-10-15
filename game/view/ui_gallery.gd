@@ -5,7 +5,8 @@ extends Control
 ## open and steps the sim live: Left and Right switch state, and every panel works with the mouse.
 ## The states are set up with test helpers (direct pokes at the sim). This is not the game.
 
-const STATES: Array[String] = ["hud_calm", "hud_crisis", "hud_drill", "dossier_page", "dossier_known", "dossier_greyed", "store"]
+const STATES: Array[String] = ["hud_calm", "hud_crisis", "hud_drill", "dossier_page", "dossier_known", "dossier_greyed", "store",
+		"map_start", "map_mid", "death_dead", "death_won", "codex"]
 const SETTLE_S: float = 0.9
 
 var db: DataDB
@@ -17,6 +18,10 @@ var alerts: AlertsStrip
 var scanner: ScannerPanel
 var dossier: Dossier
 var store: StoreView
+var map: MapView
+var death: DeathScreen
+var codex: CodexView
+var profile: Profile = Profile.new()
 var _layer: Control
 var _state_i: int = 0
 var _live: bool = false
@@ -40,6 +45,10 @@ func _ready() -> void:
 	scanner = ScannerPanel.build(_layer, sim)
 	dossier = Dossier.build(_layer, sim)
 	store = StoreView.build(_layer, sim)
+	map = MapView.build(_layer, sim)
+	map.auto_open = false
+	death = DeathScreen.build(_layer, sim, profile)
+	codex = CodexView.build(_layer, sim, profile)
 	if args.has("gallery") and DisplayServer.get_name() != "headless":
 		_capture_all(args.get_str("gallery", "harness/out/gallery"))
 	elif DisplayServer.get_name() != "headless":
@@ -71,6 +80,14 @@ func show_state(i: int) -> void:
 	scanner.bind(sim)
 	dossier.bind(sim)
 	store.bind(sim)
+	profile = make_profile(STATES[i])
+	map.bind(sim)
+	death.bind(sim, profile)
+	codex.bind(sim, profile)
+	if STATES[i].begins_with("map_"):
+		map.open()
+	elif STATES[i] == "codex":
+		codex.open()
 	top.snap()
 	power.snap()
 	crew.snap()
@@ -82,6 +99,7 @@ func _capture_all(out_dir: String) -> void:
 		show_state(i)
 		await get_tree().create_timer(SETTLE_S).timeout
 		await RenderingServer.frame_post_draw
+		death.skip_typing()
 		var img: Image = get_viewport().get_texture().get_image()
 		var path: String = out_dir.path_join(STATES[i] + ".png")
 		var err: Error = img.save_png(path)
@@ -96,6 +114,42 @@ func _new_sim(known: Array = []) -> Sim:
 	return Sim.new(db, 7, "light_drill", {"mode": "run", "known_codex": known})
 
 
+const CODEX_KNOWN: Array = ["kola_well", "byrd_1947", "green_gallery", "topside_voice"]
+
+
+## A fresh run (map and all) the way the game starts one.
+func _run_sim(known: Array = []) -> Sim:
+	return Sim.new(db, 11, "light_drill", {"mode": "run", "known_codex": known})
+
+
+## Play the real run with the run bot until `count` more nodes have been visited and the ship idles.
+func _play_nodes(s: Sim, count: int) -> void:
+	var bot: Bot = Bot.make("run")
+	var goal: int = _visited(s) + count
+	var guard: int = 0
+	while guard < 60 * 60 * 20 and not s.run.is_over():
+		guard += 1
+		bot.act(s)
+		s.step()
+		if _visited(s) >= goal and s.run.phase == "idle":
+			return
+
+
+func _visited(s: Sim) -> int:
+	var n: int = 0
+	for v: int in s.run.visited:
+		n += v
+	return n
+
+
+## The profile a state shows (the codex state has some entries on file).
+func make_profile(state_name: String) -> Profile:
+	var p := Profile.new()
+	if state_name == "codex":
+		p.known_codex = PackedStringArray(CODEX_KNOWN)
+	return p
+
+
 func _run(s: Sim, seconds: float) -> void:
 	for i: int in range(roundi(seconds * Sim.TICK_HZ)):
 		s.step()
@@ -105,6 +159,26 @@ func _run(s: Sim, seconds: float) -> void:
 func make_state(state_name: String) -> Sim:
 	var s: Sim = _new_sim()
 	match state_name:
+		"map_start":
+			s = _run_sim()
+		"map_mid":
+			s = _run_sim()
+			_play_nodes(s, 4)
+			s.run.move_pursuer(s, 2.2)
+			_run(s, 0.2)
+		"death_dead":
+			s = _run_sim()
+			_play_nodes(s, 3)
+			s.run.add(s, "hull", -s.run.get_res("hull"))
+			_run(s, 0.2)
+		"death_won":
+			s = _run_sim()
+			_play_nodes(s, 5)
+			s.run.end_run(s, "won", "gate")
+			_run(s, 0.2)
+		"codex":
+			s = _run_sim(CODEX_KNOWN)
+			_run(s, 0.1)
 		"hud_calm":
 			_run(s, 8.0)
 		"hud_crisis":
