@@ -12,3 +12,4 @@ A visual record of Inner Sun, oldest first.
 | 006 | 2026-10-15 19:42 | [006_m1-hud-crisis.jpg](006_m1-hud-crisis.jpg) | M1 run screen HUD (UI gallery, stand-in ship): power panel with damaged and heat-failed systems, seismic scanner, crew cards, alerts strip | 38309e8 |
 | 007 | 2026-10-15 19:42 | [007_m1-dossier.jpg](007_m1-dossier.jpg) | M1 dossier: Reel Seven event page with a redaction (codex unknown), TOPSIDE radio strip, options | 38309e8 |
 | 008 | 2026-10-15 19:49 | [008_drill-greybox.jpg](008_drill-greybox.jpg) | Drilling view in greybox: the tower in its shaft, layered rock with a gem geode in a cracked basalt shell, an ore vein glinting in the hull floodlights, a dark water pocket, the crown biting with sparks | 5f8387d |
+| 009 | 2026-10-15 19:58 | [009_m1-node-map.jpg](009_m1-node-map.jpg) | M1 node map overlay: the drilled path down the seismic chart, overtaken nodes cracked in the pursuer's shadow, unknown nodes past the scanner limit | 868eb43 |
