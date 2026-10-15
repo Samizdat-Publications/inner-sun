@@ -27,6 +27,10 @@ def git_hash():
 
 
 def main(argv=None):
+    args = sys.argv[1:] if argv is None else argv
+    if "-h" in args or "--help" in args:
+        print(__doc__)
+        return 0
     try:
         proc.require_game()
         os.makedirs(SNAP, exist_ok=True)

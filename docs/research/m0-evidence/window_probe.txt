@@ -1,0 +1,19 @@
+Window probe evidence (2026-10-15). Tool: python tools/winprobe.py (bot-mode run of the game with
+--position -32000,-32000, sampling the window rectangle and the foreground window).
+Virtual screen: 0,0 to 1707x1067 (logical pixels, 150% scaling).
+
+1. Before any parking (only --position and no_focus):
+   window rects seen: (-7, -30, 861, 487)  <- top-left corner of the screen, for the whole run
+   samples 127, on screen 111, in the foreground 0
+   (Before no_focus, coexist.py measured the window in the foreground for 65 of 71 samples.)
+
+2. Boot autoload re-parks the window for the first frames:
+   window rects seen: (-21341, -21363, ...) parked, and (-7, -30, 861, 487) before parking
+   on screen from 1.11 s to 2.2 s after launch, then never again; 22 of 253 samples; foreground 0
+
+3. Plus the launcher (tools/proc.py park_windows, polling every 3 ms):
+   on screen from 0.64 s to 1.69 s after launch (Godot keeps re-placing the window while it loads),
+   then never again; 163 of 1925 samples at 5 ms; foreground 0
+
+Frames from parked windows render normally: shots at 1920x1080 with the same content as before.
+Remaining: about one second on screen at startup per windowed run.

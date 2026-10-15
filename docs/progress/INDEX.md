@@ -2,7 +2,7 @@
 
 A visual record of Inner Sun, oldest first.
 
-| # | When | Image | What it shows | Commit |
+| # | When | Image | What it shows | Code (commit) |
 |---|---|---|---|---|
 | 001 | 2026-10-15 15:24 | [001_m0-loop-proof-frames.jpg](001_m0-loop-proof-frames.jpg) | M0: first review capture of the fire drill (placeholder art, lit cutaway); all review frames, build 20261015-152142, seed 1234 | 8cf2d12 |
 | 002 | 2026-10-15 15:49 | [002_m0-fire-drill-crew-arrives.jpg](002_m0-fire-drill-crew-arrives.jpg) | M0 loop proof: off-screen capture from the game camera on the RTX 5070 Ti. Drill-room fire, crew member climbs down to fight it, breach on the middle deck. Placeholder art. | 8cf2d12 |

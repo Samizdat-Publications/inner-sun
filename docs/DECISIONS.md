@@ -56,6 +56,13 @@ Measured: an off-screen Godot window still takes the foreground (65 of 71 sample
 `display/window/size/no_focus=true`; the Boot autoload restores focus for normal play only. Bot runs
 never touch Stewart's keyboard (0 of 70 samples).
 
+## D016 (AI): Park bot-run windows off-screen from inside the game and from the launcher
+Measured: Godot pulls a window started at --position -32000,-32000 back to the top-left corner of the
+screen and keeps it there. The Boot autoload re-parks it every frame for half a second and
+`tools/proc.py` moves the job's own windows off-screen as soon as they appear. Left: about one second
+on screen at startup. Next options if needed: a hidden desktop or a minimized start. Revert: remove the
+parking code in `boot.gd` and `proc.py`.
+
 ## D013 (AI): Split the cutaway into small canvas items
 Godot lets one canvas item take only about 15 lights; one big drawing lost lights and went dark in
 the first M0 captures. Per-room, per-crew and per-chunk nodes; idle lights disabled.

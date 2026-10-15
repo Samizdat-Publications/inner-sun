@@ -42,6 +42,9 @@ process.stdin.on("end", () => {
     const pattern = String(ti.pattern || "");
     if (pattern.includes("..")) block("Blocked: stay inside review/inbox/.");
     if (ti.path) {
+      // An absolute pattern would ignore the search folder, so it must also point inside the inbox.
+      if (path.isAbsolute(pattern) || /^[a-zA-Z]:/.test(pattern) || pattern.startsWith("/") || pattern.startsWith("\\"))
+        block("Blocked: use a relative pattern inside review/inbox/.");
       if (inside(ti.path)) allow();
       block("Blocked: you can only search inside review/inbox/.");
     }

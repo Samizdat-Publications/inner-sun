@@ -53,8 +53,10 @@ Reference: `docs/research/` (the loop proof and evidence, the tooling brief), `d
    or frames were actually looked at. Otherwise say UNVERIFIED.
 9. **Godot processes.** Launch Godot only through `tools/` (every run sits in a Windows job object, so
    nothing outlives the tool). Never kill processes by name. No Godot MCP server, no editor left open
-   on this project. Capture windows are off-screen and unfocusable. Black Diamond runs Godot on this
-   PC at the same time: see "Side by side" below.
+   on this project. Capture windows are unfocusable and parked off-screen (still visible for about a
+   second at startup), so run windowed jobs only when visuals changed, batch them, never in a loop;
+   everything else runs headless. Black Diamond runs Godot on this PC at the same time: see "Side by
+   side" below.
 10. **Keys.** Never read, print or commit API keys or `.env` files. Scripts load keys at run time
     (environment first, then `C:\Users\stewa\ClaudeProjects\Noclip\.env`) and never print them.
 11. **Git.** Stage explicit paths only; never `git add -A` or `git add .`. Never force-push or
@@ -83,8 +85,9 @@ Reference: `docs/research/` (the loop proof and evidence, the tooling brief), `d
 ## Side by side with Black Diamond
 
 Two Godot games are built on this PC at once. Never kill Godot by name; kill only your own process
-tree. Keep every output inside this repo. No fixed ports (no editor, no MCP). Capture windows stay
-off-screen and unfocusable. Perf numbers taken while another Godot renders are marked untrusted;
+tree. Keep every output inside this repo. No fixed ports (no editor, no MCP). Capture windows are
+unfocusable and parked off-screen by `game/view/boot.gd` and `tools/proc.py` (`--position` alone is not
+enough: Godot pulls the window back onto the screen). Perf numbers taken while another Godot renders are marked untrusted;
 re-measure later instead of tuning on them. Batch jobs run at most 6 processes at below-normal
 priority. C: is tight on space: no raw movie files kept, outputs pruned. Shared rules:
 `C:\Users\stewa\Documents\Claude\GODOT-SIDE-BY-SIDE.md`.

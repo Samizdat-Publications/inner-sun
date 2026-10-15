@@ -28,9 +28,20 @@ Updated: 2026-10-15 (planning session, end of Milestone 0).
   alone.
 
 ## In flight
-Nothing. The tree is clean after the final commit.
+Nothing. Everything is committed and pushed to `origin/main` (check with `git status` and
+`git log origin/main -1`).
 
 ## Known issues
+- **Capture windows flash on screen for about one second** at the start of each windowed run (shots,
+  capture, perf, determinism, export). Before the fix they sat in the top-left corner for the whole
+  run and took the keyboard. They never take focus now. Keep windowed runs rare and batched
+  (HANDOFF, "Windows on Stewart's screen").
+- **The M0 cutaway is very dark** (mean luminance about 6 out of 255): lift the exposure before the
+  first critic review.
+- **The audit (qa-auditor, end of M0)** passed the core claims: a fresh clone passes check, the
+  conservation tests caught 7 of 7 planted mutations, determinism and the export hash match, and
+  hygiene is clean. Its fixes are applied: critic guard hole, hook path, timeline, disk figure, and
+  `--help` safety.
 - The blind critic is not installed yet (a deny rule inherited from Cut & Fill blocked this session);
   M1 step 0 installs it and runs the live guard test.
 - HDR 2D glow bloom is not visible yet (configured, unverified); check in the art bake-off.

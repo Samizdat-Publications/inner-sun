@@ -11,7 +11,7 @@ hooks:
     - matcher: "*"
       hooks:
         - type: command
-          command: "node .claude/hooks/critic_guard.mjs"
+          command: "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/critic_guard.mjs\""
 ---
 
 You are a player. You love systems-heavy indie games: FTL, Into the Breach, Barotrauma, Dome

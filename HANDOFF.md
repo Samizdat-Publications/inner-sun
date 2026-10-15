@@ -71,13 +71,26 @@ Continue Inner Sun. Read CLAUDE.md, PROGRESS.md and HANDOFF.md, then the M1 sect
 This planning session could not write `.claude/hooks/critic_guard.mjs` or
 `.claude/agents/player-critic.md`. It started in the Cut & Fill folder and inherited Cut & Fill's
 deny rule for those exact paths. The new session, rooted here, does not have that rule.
-1. Copy `docs/setup/critic/critic_guard.mjs` to `.claude/hooks/critic_guard.mjs`.
+1. Create `.claude/hooks/` if it is missing (a fresh clone does not have it), then copy
+   `docs/setup/critic/critic_guard.mjs` to `.claude/hooks/critic_guard.mjs`.
 2. Copy `docs/setup/critic/player-critic.md` to `.claude/agents/player-critic.md`.
 3. Run `python tools/test_guard.py`. It must print `guard: ok`.
 4. Ask `player-critic` to read `CLAUDE.md`. It must be blocked. If the agent is not listed until
    the next session, record that and do the live test then.
-5. Add `Edit(...)` and `Write(...)` deny rules for both files to `.claude/settings.json`, so no
-   later session can make the critic nicer.
+   - The hook command is `node "$CLAUDE_PROJECT_DIR/.claude/hooks/critic_guard.mjs"`, so it does not
+     depend on the working folder.
+   - If the live test shows the read was NOT blocked (for example the variable was not expanded and
+     node exited 1, which counts as non-blocking), switch the command to
+     `node .claude/hooks/critic_guard.mjs` and test again. Never run a critic review until the live
+     test blocks.
+5. Add these four deny rules to `.claude/settings.json`, so no later session can make the critic
+   nicer:
+   - `"Edit(./.claude/hooks/critic_guard.mjs)"`
+   - `"Write(./.claude/hooks/critic_guard.mjs)"`
+   - `"Edit(./.claude/agents/player-critic.md)"`
+   - `"Write(./.claude/agents/player-critic.md)"`
+6. `review/inbox` still holds a stale M0 build, and its perf was contended. Refill it with
+   `python tools/capture.py` when the GPU is idle before the first review.
 
 Critic loop:
 1. Run `python tools/capture.py`.
@@ -92,8 +105,8 @@ Critic loop:
   `harness/out/godot-api/doc/classes/`; regenerate it with `--doctool` if missing.
 - Blender 5.1: `C:\Program Files\Blender Foundation\Blender 5.1\blender.exe`.
 - API keys (Gemini, OpenAI, ElevenLabs, PixelLab, Meshy, Tripo): environment first, then
-  `C:\Users\stewa\ClaudeProjects\Noclip\.env`. seked has no `.env`, despite the kickoff. Never read
-  or print them.
+  `C:\Users\stewa\ClaudeProjects\Noclip\.env`. The kickoff also names Stewart's seked project
+  (`C:\Users\stewa\ClaudeProjects\seked`), but it has no `.env`. Never read or print them.
 - The reference Godot projects on this PC:
   - Noclip (`C:\Users\stewa\ClaudeProjects\Noclip`): the Gemini critic, capture director and
     autoplay bot to borrow from.
@@ -106,9 +119,20 @@ Critic loop:
   chunk) and disable idle lights; never just set energy to 0.
 - **Light height for normal maps.** Normal-mapped sprites need light `height` well above zero (we
   use 120 to 260 px), or they come out nearly black.
-- **Focus.** Off-screen windows still steal the keyboard unless they are created unfocusable. The
-  project sets `no_focus=true` and `game/view/boot.gd` restores focus for normal play. Any new bot
-  flag must be added to `Boot.BOT_FLAGS`.
+- **Windows on Stewart's screen.** Rendering needs a window, and Stewart works on this laptop while
+  you build. Measured in M0:
+  - `--position -32000,-32000` alone does not work. Godot pulls the window back to the top-left
+    corner and keeps it there.
+  - A focusable window takes his keyboard.
+  - Now: windows are created unfocusable (`no_focus=true`; `game/view/boot.gd` restores focus for
+    normal play only). Boot re-parks bot-run windows off-screen for the first frames, and
+    `tools/proc.py` moves them off-screen the moment they appear.
+  - What is left: about one second on screen at startup. Run windowed jobs (shots, capture, perf,
+    determinism, export) only when the visuals changed, batch them, and never in a loop.
+    Everything else is headless.
+  - Any new bot flag must be added to `Boot.BOT_FLAGS`.
+  - If Stewart still minds the flash, try starting the window on a hidden desktop (CreateDesktop)
+    or minimized (both untested).
 - **Use the console exe.** `godot.exe` prints nothing to a pipe. The console wrapper starts the
   real exe as a child process, and job objects catch both.
 - **Hangs.** A script that fails to compile makes the sim stop advancing. Play runs with
@@ -129,8 +153,18 @@ Critic loop:
   - Windowed fps is capped at the 240 Hz refresh, so judge p99 and GPU ms.
   - Perf taken while Black Diamond renders is marked untrusted. Re-measure later instead of tuning
     on it.
-- **Disk.** C: has about 18 GB free. `capture.py` deletes raw movies and keeps two raw folders.
-  Watch `builds/` and `harness/out/`.
+- **Disk.** C: is 99% full, about 15 GB free at the end of M0, and shrinking from other projects.
+  `capture.py` deletes raw movies and keeps two raw folders. Watch `builds/` (about 110 MB per
+  export) and `harness/out/`.
+- **Dark frames.** The M0 cutaway is very dark: mean luminance is about 6 out of 255, with roughly
+  93% of pixels near black. Lift the exposure (CanvasModulate, lamp energy) before the first critic
+  review, or the critic will only see darkness. Real lighting comes with the art bake-off.
+- **Balance reading.** The `auto` crew survives 99.4% of M0's generated situations, so these
+  hazards do not yet threaten a competent crew. The M1-scale cost in balance reports is an assumed
+  4x tick cost, not a measurement: re-run `--bench` once M1's systems exist.
+- **Not verified in M0:** normal interactive play (`Play Inner Sun.bat`, click a room). Launching it
+  would have taken over Stewart's screen while he was working. Check it with him at the first
+  playtest.
 - **Blocked helper.** A PID-based "kill strays" helper was refused by the safety filter. Do not
   re-add it. Job objects make it unnecessary.
 - **Escape sequences.** The Write tool and Bash commands turn a backslash-u escape into the real

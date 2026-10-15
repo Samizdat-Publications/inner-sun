@@ -100,6 +100,44 @@ def _log_args(args, log_name):
     return args[:i] + ["--log-file", lp] + args[i:], lp
 
 
+
+# Window parking -------------------------------------------------------------------------------
+# Godot pulls a window that starts at --position -32000,-32000 back onto the screen (measured: it sat
+# in the top-left corner), so for windowed off-screen runs a watcher moves the run's windows off-screen
+# within milliseconds of them appearing. The game's Boot autoload keeps them parked after that. Only
+# windows owned by this job's own processes are touched.
+_u32 = ctypes.WinDLL("user32", use_last_error=True)
+_EnumWindowsProc = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+_u32.EnumWindows.argtypes = [_EnumWindowsProc, wintypes.LPARAM]
+_u32.GetWindowThreadProcessId.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.DWORD)]
+_u32.GetWindowThreadProcessId.restype = wintypes.DWORD
+_u32.IsWindowVisible.argtypes = [wintypes.HWND]
+_u32.GetWindowRect.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.RECT)]
+_u32.SetWindowPos.argtypes = [wintypes.HWND, wintypes.HWND, ctypes.c_int, ctypes.c_int, ctypes.c_int,
+                              ctypes.c_int, wintypes.UINT]
+_SWP_NOSIZE, _SWP_NOZORDER, _SWP_NOACTIVATE = 0x0001, 0x0004, 0x0010
+_PARK = -32000
+
+
+def park_windows(pids):
+    """Move every visible on-screen window owned by `pids` off-screen. Returns how many were moved."""
+    moved = [0]
+
+    def cb(h, _):
+        pid = wintypes.DWORD(0)
+        _u32.GetWindowThreadProcessId(h, ctypes.byref(pid))
+        if pid.value in pids and _u32.IsWindowVisible(h):
+            r = wintypes.RECT()
+            _u32.GetWindowRect(h, ctypes.byref(r))
+            if r.left > -20000:
+                _u32.SetWindowPos(h, None, _PARK, _PARK, 0, 0, _SWP_NOSIZE | _SWP_NOZORDER | _SWP_NOACTIVATE)
+                moved[0] += 1
+        return True
+
+    _u32.EnumWindows(_EnumWindowsProc(cb), 0)
+    return moved[0]
+
+
 class GodotJob:
     """A Godot run owned by a job object. Use as a context manager (or call close())."""
 
@@ -132,6 +170,20 @@ class GodotJob:
         self._chunks = []
         self._reader = threading.Thread(target=self._read, daemon=True)
         self._reader.start()
+        self.parked = 0
+        if "--position" in args and "--headless" not in args:
+            threading.Thread(target=self._park_loop, args=(20.0,), daemon=True).start()
+
+    def _park_loop(self, seconds):
+        end = time.time() + seconds
+        while time.time() < end and self.proc.poll() is None:
+            try:
+                pids = set(self.pids())
+                if pids:
+                    self.parked += park_windows(pids)
+            except Exception:
+                pass
+            time.sleep(0.003)
 
     def _read(self):
         try:

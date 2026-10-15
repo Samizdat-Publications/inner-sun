@@ -8,6 +8,10 @@ PASS [repo] glob the whole repo: exit 2, want 2
 PASS [repo] glob with .. in the pattern: exit 2, want 2
 PASS [repo] use Bash: exit 2, want 2
 PASS [repo] use Grep: exit 2, want 2
+PASS [repo] glob in the inbox folder with a relative pattern: exit 0, want 0
+PASS [repo] glob in the inbox folder with an absolute pattern outside: exit 2, want 2
+PASS [repo] glob in the inbox folder with a drive pattern: exit 2, want 2
+PASS [repo] glob in the inbox folder with a rooted pattern: exit 2, want 2
 PASS [guardtest] read a frame in the inbox: exit 0, want 0
 PASS [guardtest] read the inbox by absolute path: exit 0, want 0
 PASS [guardtest] glob inside the inbox: exit 0, want 0
@@ -18,5 +22,9 @@ PASS [guardtest] glob the whole repo: exit 2, want 2
 PASS [guardtest] glob with .. in the pattern: exit 2, want 2
 PASS [guardtest] use Bash: exit 2, want 2
 PASS [guardtest] use Grep: exit 2, want 2
+PASS [guardtest] glob in the inbox folder with a relative pattern: exit 0, want 0
+PASS [guardtest] glob in the inbox folder with an absolute pattern outside: exit 2, want 2
+PASS [guardtest] glob in the inbox folder with a drive pattern: exit 2, want 2
+PASS [guardtest] glob in the inbox folder with a rooted pattern: exit 2, want 2
 PASS malformed input blocks (fail closed): exit 2, want 2
 guard: ok

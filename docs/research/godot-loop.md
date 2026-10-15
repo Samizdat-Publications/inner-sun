@@ -16,13 +16,14 @@ evidence (`docs/research/m0-evidence/`).
 - `FireDrillBot` turns the crew's own judgement off and gives every order as commands: nearest free
   crew member to each fire, then each breach, everyone else back to station. Timeline from the
   `fire_drill` scenario: fire at T+2.0 s, breach at T+6.0 s, Okafor climbs down and arrives at
-  T+6.8 s, Lindqvist reaches the breach at T+10.8 s, fire out at T+11.7 s, breach patched at T+17.6 s.
+  T+6.8 s, Lindqvist reaches the breach at T+10.9 s, fire out at T+11.6 s, breach patched at T+22.4 s
+  (the scenario's 0.06 m2 breach).
 - Balance bots: `auto` (crew judgement on), `idle` (nobody responds), `random` (random orders).
 - The player's mouse click sends the same `assign` command the bots use.
 
 ## 3. Frames from the game camera, with no window on screen
-- `python tools/shots.py --names start,fire,arrive,flood,fire_out,end`: the real game in a window parked
-  at -32000,-32000; shots at story moments taken from the sim's own events. `SHOTS done renderer
+- `python tools/shots.py --names start,fire,arrive,flood,fire_out,end`: the real game in a window that
+  is kept off the screen (see "Windows on Stewart's screen" below); shots at story moments taken from the sim's own events. `SHOTS done renderer
   NVIDIA GeForce RTX 5070 Ti Laptop GPU`. Pictures: `docs/progress/002_*.jpg`, `003_*.jpg`.
 - `python tools/capture.py`: Movie Maker at 30 fps in the off-screen window: 12 stills, 3 motion
   sheets (9 frames 0.4 s apart), an H.264 clip (raw AVI deleted at once), frame counts checked with
@@ -88,8 +89,23 @@ project rendered are flagged untrusted (`m0-evidence/perf_contended_example.json
 
 ## 9. Living beside Black Diamond
 `python tools/coexist.py`: two Godot projects importing at the same time showed no port clash (with
-or without explicit ports); the focus check passed after the fix; with Black Diamond rendering, perf
+or without explicit ports); the focus check passed after the fix (window visibility: see above); with Black Diamond rendering, perf
 named its processes and marked the numbers untrusted, and shots still succeeded.
+
+## Windows on Stewart's screen (measured with harness/out/diag/winprobe.py)
+Rendering needs a real window, so captures, perf and Movie Maker runs open one. Measured on this PC:
+- `--position -32000,-32000` alone does NOT keep it off the screen: Godot pulled the window back to
+  the top-left corner, where it sat for the whole run (111 of 127 samples on screen). It also took the
+  keyboard focus until windows were made unfocusable (65 of 71 samples before, 0 of 70 after).
+- Fix: windows are created unfocusable; the game's Boot autoload parks the window at -32000,-32000
+  every frame for the first half second of a bot run, and `tools/proc.py` moves the run's own windows
+  off-screen within milliseconds of each appearance. Result: the window never takes focus and is on
+  screen for about one second at startup (while Godot is still loading and keeps re-placing it),
+  then stays off-screen for the rest of the run. Frames still render normally (1920x1080).
+- Not yet solved: that one-second flash. Options for M1 if it still bothers Stewart: start the
+  window on a separate hidden desktop (CreateDesktop) or minimized, both untested. Meanwhile the rule
+  is: run windowed jobs only when visuals changed, batch them, never in a loop; everything else
+  runs headless.
 
 ## 10. The blind critic
 The guard is unit-tested (`python tools/test_guard.py --staged`: 21 of 21, from any working folder,

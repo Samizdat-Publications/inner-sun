@@ -42,6 +42,10 @@ CASES = [
     ("glob with .. in the pattern", {"tool_name": "Glob", "tool_input": {"pattern": "review/inbox/../**"}}, 2),
     ("use Bash", {"tool_name": "Bash", "tool_input": {"command": "type CLAUDE.md"}}, 2),
     ("use Grep", {"tool_name": "Grep", "tool_input": {"pattern": "x"}}, 2),
+    ("glob in the inbox folder with a relative pattern", {"tool_name": "Glob", "tool_input": {"path": "review/inbox", "pattern": "**/*.png"}}, 0),
+    ("glob in the inbox folder with an absolute pattern outside", {"tool_name": "Glob", "tool_input": {"path": "review/inbox", "pattern": os.path.join(ROOT, "*.md")}}, 2),
+    ("glob in the inbox folder with a drive pattern", {"tool_name": "Glob", "tool_input": {"path": "review/inbox", "pattern": "C:/Users/**"}}, 2),
+    ("glob in the inbox folder with a rooted pattern", {"tool_name": "Glob", "tool_input": {"path": "review/inbox", "pattern": "/c/Users/stewa/**"}}, 2),
 ]
 
 
