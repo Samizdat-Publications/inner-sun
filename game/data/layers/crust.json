@@ -1,0 +1,22 @@
+{
+  "id": "crust",
+  "name": "Upper crust",
+  "rows": 10,
+  "row_depth_m": 36.0,
+  "min_nodes_per_row": 2,
+  "max_nodes_per_row": 3,
+  "x_min_m": -12.0,
+  "x_max_m": 12.0,
+  "x_jitter_frac": 0.25,
+  "link_jitter_m": 6.0,
+  "node_weights": {"event": 40, "fight": 20, "cavern": 15, "hazard": 10, "store": 15},
+  "store_rows": [3, 5],
+  "min_fights_per_path": 2,
+  "rock": "crust",
+  "rock_temp_base_c": 40.0,
+  "rock_temp_c_per_m": 0.05,
+  "enemies": ["rival_light"],
+  "gate_enemy": "rival_heavy",
+  "pursuer": {"start_row": -1.5, "rows_per_s": 0.0143, "rows_per_noise": 0.0045},
+  "scanner_base_rows": 1
+}

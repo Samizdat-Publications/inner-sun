@@ -19,6 +19,8 @@ static func make(bot_name: String) -> Bot:
 			return RandomBot.new()
 		"drill":
 			return DrillBot.new()
+		"run":
+			return RunBot.new()
 	return Bot.new()
 
 

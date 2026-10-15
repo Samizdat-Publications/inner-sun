@@ -40,6 +40,7 @@ var ship_pos: Vector2 = Vector2.ZERO  ## Top-left of the ship footprint, segment
 var heading_deg: float = 0.0  ## 0 = straight down, positive = toward +x.
 var target_heading_deg: float = 0.0
 var speed_m_s: float = 0.0
+var speed_scale: float = 1.0  ## Set by the run per segment (reserve power: below 1). Multiplies the speed.
 var bit_wear: float = 0.0  ## 0 (new) to 1 (broken).
 var bit_broken: bool = false
 var bit_change_left_s: float = 0.0
@@ -148,7 +149,8 @@ func apply(sim: Sim, cmd: Dictionary) -> void:
 
 
 ## Start a segment: generate the rock and switch the run to the "drill" phase. Allowed from "idle"
-## (a run between nodes) or "scenario" (tests and captures); returns to that phase on arrival.
+## (a run between nodes) or "scenario" (tests and captures). On arrival a scenario returns to
+## "scenario" and a run calls RunState.arrive (which goes back to idle when no node was chosen).
 func begin_segment(sim: Sim, p_segment_id: String, p_depth_m: float, lateral_m: float, p_rock_id: String = DEFAULT_ROCK) -> bool:
 	var phase: String = sim.run.phase
 	if active or (phase != "idle" and phase != "scenario"):
@@ -294,7 +296,7 @@ func _drive(sim: Sim, bars: int, pf: float) -> void:
 		den += float(_bl_n) * a
 	var h_cut: float = num / den if den > 0.0 else 0.0
 	var bit_factor: float = _broken_factor if bit_broken else 1.0 - _bit_slow * bit_wear
-	speed_m_s = minf(_max_speed, _base_speed * pf * bit_factor / maxf(h_cut, _air_floor))
+	speed_m_s = minf(_max_speed, _base_speed * pf * bit_factor / maxf(h_cut, _air_floor)) * speed_scale
 	var width: float = float(cols) * cell_m
 	var nx: float = clampf(_px + speed_m_s * s * Sim.DT, 0.0, width - ship_size.x)
 	var ny: float = _py + speed_m_s * co * Sim.DT
@@ -339,7 +341,12 @@ func _arrive(sim: Sim) -> void:
 	active = false
 	speed_m_s = 0.0
 	cutting = false
-	sim.run.set_phase(sim, "scenario" if _return_phase == "scenario" else "idle")
+	if _return_phase == "scenario":
+		sim.run.set_phase(sim, "scenario")
+	elif sim.run.mode == "run":
+		sim.run.arrive(sim)  # The run hands the node to its module (or back to idle).
+	else:
+		sim.run.set_phase(sim, "idle")
 
 
 # Footprint and cutting ---------------------------------------------------------------------------
@@ -491,7 +498,7 @@ func state() -> Array:
 		target_heading_deg, speed_m_s, bit_wear, bit_broken, _bit_broken_said, _bit_change_ticks, cutting,
 		start_center_x, start_y, target_x, target_y, depth_m, start_depth_m, distance_m, segment_ticks,
 		noise_segment, noise_total, mined, yielded, water_in_ml, lost_water_ml, heat_added_j, pockets_burst,
-		_return_phase, grid, _burst]
+		_return_phase, grid, _burst, speed_scale]
 
 
 static func lint(db: DataDB, errs: PackedStringArray) -> void:
