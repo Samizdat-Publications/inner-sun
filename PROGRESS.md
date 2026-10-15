@@ -1,38 +1,25 @@
 # Progress
 
-Updated: 2026-10-15 (first M1 session, stopped early for a session restart; see "M1 so far").
+Updated: 2026-10-15, M1 session (continued after the restart).
 
-## Milestone: M1a (find the fun), step 0 mostly done.
+## Milestone: M1a (find the fun). Step 0 done; skeleton done; steps 1, 2 and 5 in flight.
 
-## M1 so far (first M1 session, short)
-- **The blind critic is installed and its guard is live-tested.** `.claude/hooks/critic_guard.mjs`,
-  `.claude/agents/player-critic.md`, and four deny rules in `.claude/settings.json` so no session
-  can soften them. `python tools/test_guard.py` prints `guard: ok`. The live test ran through a
-  headless `claude -p` process (the agent is not listed in the session that installs it): reads of
-  `CLAUDE.md` and `PLAN.md` and a repo-wide glob were BLOCKED, the inbox was allowed
-  (`docs/research/m1-evidence/critic_live_test.txt`). So a critic review can always run through a
-  headless process, in any session.
-- **Architecture for M1 decided and written down** in `docs/plans/M1_dispatch.md` (ShipWorld,
-  phases in the sim, subsystem command registry, run state, the Quarters room becomes Bracing,
-  worktrees for parallel builders). Do the skeleton before fanning out.
-- **Baseline green:** `python tools/check.py` printed `check: ok` (24 of 24, selftest ok) at the
-  start of the session.
-- **Stopped, not finished** (agents were stopped for the restart; details and briefs in
-  `docs/plans/M1_dispatch.md` section 1):
-  - critic tooling: `tools/critic.py` exists as an UNTESTED 475-line draft (uncommitted on purpose);
-    `tools/critic_gemini.py` was not started. Finish or redo from the brief.
-  - art bake-off: its worktree `.claude/worktrees/agent-a00cbd0a6ca4a8ce5` holds only
-    `pipeline/common.py`. No paid generation happened ($0 spent). Re-dispatch from the brief; the old
-    worktree can be removed with `git worktree remove --force` once nothing in it is wanted.
-- **Commands the blast-radius mod held this session** (it is now removed; a fresh session will not
-  have it):
-  1. A python heredoc that added the deny rules to `.claude/settings.json` and wrote the evidence
-     file: redone with the Edit and Write tools, done.
-  2. `git add` + `git commit` of the step 0 install: redone in the end-of-session commit (if that
-     commit is missing from `git log`, commit the files listed in it).
-- Stewart asked to turn off the "reflect" mod ("Save as a rule?" banner); it was removed from the
-  mod list in `C:\Users\stewa\.claude\settings.json`, and Stewart has since removed the mod itself.
-- Disk: C: now has about 275 GB free (it was about 15 GB at the end of M0).
+## M1 so far
+- **Step 0 done.** Blind critic installed and live-tested (`docs/research/m1-evidence/critic_live_test.txt`);
+  `tools/critic.py` (headless run with a tool-call audit) and `tools/critic_gemini.py` (milestone
+  gates) work; first review `review/critiques/001_claude.md` scored 3.8/10 and is triaged in
+  `review/LEDGER.md` (7 FIX items, all mapped to M1 steps). Exposure lifted.
+- **M1 skeleton done** (`docs/ARCHITECTURE.md`): ShipWorld (player and enemy run the same hazard and
+  crew code), RunState with phases and integer resources, a module registry (systems, drill, combat,
+  encounter own their commands, state and lint), crew repair jobs, HazardSim add_heat/add_water and
+  power-driven cooling and pump scales, every data folder loads as a table. 33 tests pass.
+- **Writing voice set** (`docs/STYLE_GUIDE.md`), event file format, three example events, codex
+  entries, a TOPSIDE radio file.
+- **Specs written** for steps 3 (run, map, pursuer, profile), 4 (combat), 5 (events, store) and the
+  run screen (`docs/plans/specs/`).
+- **Art bake-off:** Blender style C done and merged (lit test scene `game/view/bakeoff/`,
+  `python tools/bakeoff.py`); HDR glow verified (emission must be divided by CanvasModulate).
+- **Making-of record** started (`docs/making-of/README.md`, tag `m0-loop-proven`), at Stewart's request.
 
 ## Done (M0)
 - **Plan approved** by Stewart (`PLAN.md`); he chose the tall tower ship.
@@ -58,9 +45,13 @@ Updated: 2026-10-15 (first M1 session, stopped early for a session restart; see 
   alone.
 
 ## In flight
-Nothing running. Uncommitted on purpose: the untested `tools/critic.py` draft and the stopped
-bake-off worktree (see "M1 so far"). Everything else is committed and pushed (check with
-`git status` and `git log origin/main -1`).
+Background agents, each in its own worktree under `.claude/worktrees/` (find them with
+`git worktree list`); if the session stops, check each branch and merge or re-dispatch from its spec:
+- drilling segment sim (step 1; builder-opus; brief summarized in `docs/plans/M1_dispatch.md` section 3),
+- power and systems (step 2; builder-opus),
+- events, store and crew (step 5; builder-opus; `docs/plans/specs/step5_events.md`),
+- painted style B for the bake-off (asset-smith; Gemini). Pixel style A waits for a PixelLab key
+  (`docs/NEEDS_STEWART.md`).
 
 ## Known issues
 - **Capture windows flash on screen for about one second** at the start of each windowed run (shots,
@@ -79,14 +70,9 @@ bake-off worktree (see "M1 so far"). Everything else is committed and pushed (ch
 - Everything you see is placeholder art.
 
 ## Exactly what is next
-Start the next M1 session (`HANDOFF.md`, "Start the next session"). In order:
-1. Confirm the end-of-session commit is in `git log` and `python tools/check.py` says `check: ok`.
-2. Re-dispatch the two stopped agents from `docs/plans/M1_dispatch.md` section 1, in the
-   background: the critic tooling (finish or redo `tools/critic.py`, then `tools/critic_gemini.py`)
-   and the art bake-off (asset-smith in a worktree).
-3. Meanwhile, finish step 0: lift the cutaway exposure (`game/view/main.gd` CanvasModulate and lamp
-   energy), refill `review/inbox` with `python tools/capture.py` on an idle GPU, run the first
-   critic review (`python tools/critic.py` once it works), triage it in `review/LEDGER.md`.
-4. Build the M1 architecture skeleton yourself (`docs/plans/M1_dispatch.md` section 2), commit it,
-   then fan out step 1 (the drilling segment) and the rest in the order of section 3 and
-   `docs/plans/M1.md`, until the M1a playtest build is ready for Stewart.
+1. Merge each finished agent branch after reading its diff; run `python tools/check.py`.
+2. Then step 3 (`docs/plans/specs/step3_run.md`), the drill view and run screen
+   (`docs/plans/specs/view_m1.md`), combat (`docs/plans/specs/step4_combat.md`), the writer, sound,
+   bots and balance, and the playtest build (`docs/plans/M1.md`).
+3. Pick the art style when the bake-off is complete, write the Look section of the style guide, and
+   show Stewart the comparison.
