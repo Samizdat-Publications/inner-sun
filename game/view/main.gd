@@ -8,12 +8,21 @@ extends Node2D
 ## Every bot-driven run ends by printing `FINAL tick=<n> hash=<h>` so tools can compare runs.
 
 const PPM: float = 80.0
+const DRILL_ZOOM: float = 1.0
+const CUTAWAY_ZOOM: float = 1.1
+const ROCK_BELOW_M: float = 4.0  ## Rock visible below the crown while drilling.
+const SHIP_SHIFT_PX: float = 150.0  ## The ship sits right of centre, clear of the readout.
+const STEER_DEG: float = 30.0
 
 var args: Args
 var db: DataDB
 var run: ScenarioRun
 var view: ShipView
 var hud: Hud
+var cam: Camera2D
+var rock_view: RockView
+var _held: Dictionary = {}
+var _steer_sent: float = 0.0
 var bot_driven: bool = false
 var run_ticks: int = -1
 var _finished: bool = false
@@ -55,9 +64,48 @@ func _start_run() -> bool:
 	if args.has("duration"):
 		run.duration_ticks = roundi(args.get_float("duration") * Sim.TICK_HZ)
 	if view != null:
+		_clear_rock()
 		view.rebind(run)
 		hud.bind(run)
 	return true
+
+
+func _clear_rock() -> void:
+	if rock_view != null:
+		rock_view.queue_free()
+		rock_view = null
+	view.set_drilling(null)
+	cam.zoom = Vector2(CUTAWAY_ZOOM, CUTAWAY_ZOOM)
+	cam.position = view.center_px()
+	_steer_sent = 0.0
+
+
+func _drill_cam_target(d: DrillSim) -> Vector2:
+	var bottom: float = (d.ship_pos.y + d.ship_size.y) * PPM
+	return Vector2((d.ship_pos.x + d.ship_size.x * 0.5) * PPM - SHIP_SHIFT_PX, bottom + ROCK_BELOW_M * PPM - 540.0 / DRILL_ZOOM)
+
+
+func _process(delta: float) -> void:
+	if run == null or view == null:
+		return
+	var d: DrillSim = run.sim.drill
+	if d.active and (rock_view == null or rock_view.serial != d.grid_serial):
+		_begin_drill_view(d)
+	if rock_view != null:
+		cam.position = cam.position.lerp(_drill_cam_target(d), 1.0 - exp(-5.0 * delta))
+
+
+## A drilling segment began: build its rock, hand the ship to the sim's position and frame it.
+func _begin_drill_view(d: DrillSim) -> void:
+	if rock_view != null:
+		rock_view.queue_free()
+	rock_view = RockView.new()
+	rock_view.setup(d, PPM)
+	add_child(rock_view)
+	view.set_drilling(d)
+	view.position = d.ship_pos * PPM
+	cam.zoom = Vector2(DRILL_ZOOM, DRILL_ZOOM)
+	cam.position = _drill_cam_target(d)
 
 
 func _physics_process(_delta: float) -> void:
@@ -86,6 +134,11 @@ func finish(code: int = 0) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if bot_driven or run == null or view == null:
 		return
+	var key: InputEventKey = event as InputEventKey
+	if key != null:
+		if not key.echo:
+			_drill_key(key)
+		return
 	var mb: InputEventMouseButton = event as InputEventMouseButton
 	if mb == null or not mb.pressed or mb.button_index != MOUSE_BUTTON_LEFT:
 		return
@@ -95,6 +148,34 @@ func _unhandled_input(event: InputEvent) -> void:
 	if room >= 0 and not run.sim.ship.crew.is_empty():
 		var c: CrewMember = run.sim.ship.crew[0]
 		run.sim.push({"type": "assign", "crew": c.id, "room": run.sim.ship.rooms[room].id})
+
+
+## A and D (or the arrows) steer the drill to -30, 0 or +30 degrees, W and S add or remove a bar of
+## drill power. Both go through the same command chain the bots use.
+func _drill_key(key: InputEventKey) -> void:
+	var d: DrillSim = run.sim.drill
+	if not d.active:
+		return
+	var code: Key = key.keycode
+	if key.pressed:
+		_held[code] = true
+	else:
+		_held.erase(code)
+	var dir: float = 0.0
+	if _held.has(KEY_D) or _held.has(KEY_RIGHT):
+		dir += 1.0
+	if _held.has(KEY_A) or _held.has(KEY_LEFT):
+		dir -= 1.0
+	if code == KEY_A or code == KEY_D or code == KEY_LEFT or code == KEY_RIGHT:
+		if dir * STEER_DEG != _steer_sent:
+			_steer_sent = dir * STEER_DEG
+			run.sim.push({"type": "steer", "angle": _steer_sent})
+	elif key.pressed and (code == KEY_W or code == KEY_S):
+		var ri: int = run.sim.ship.room_with_system("drill")
+		if ri >= 0:
+			var room: Room = run.sim.ship.rooms[ri]
+			var bars: int = clampi(room.sys_power + (1 if code == KEY_W else -1), 0, room.sys_max)
+			run.sim.push({"type": "power", "room": room.id, "bars": bars})
 
 
 func _build_world() -> void:
@@ -110,14 +191,14 @@ func _build_world() -> void:
 	env.environment = e
 	add_child(env)
 	var dark := CanvasModulate.new()
-	dark.color = Color(0.30, 0.30, 0.34)
+	dark.color = RockView.AMBIENT
 	add_child(dark)
 	view = ShipView.new()
 	view.setup(run, PPM)
 	add_child(view)
-	var cam := Camera2D.new()
+	cam = Camera2D.new()
 	cam.position = view.center_px()
-	cam.zoom = Vector2(1.1, 1.1)
+	cam.zoom = Vector2(CUTAWAY_ZOOM, CUTAWAY_ZOOM)
 	add_child(cam)
 	cam.make_current()
 	hud = Hud.new()

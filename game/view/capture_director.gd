@@ -7,7 +7,9 @@ extends Node
 ## Moments come from the sim's own events, so the frames follow the story, not wall-clock time.
 ## Prints SHOT / CAPTURE lines for the tools, then asks Main to finish (prints FINAL and quits).
 
-const MOMENT_DELAY_S: Dictionary = {"fire": 4.0, "flood": 8.0, "arrive": 0.6, "fire_out": 0.6}
+const MOMENT_DELAY_S: Dictionary = {"fire": 4.0, "flood": 8.0, "arrive": 0.6, "fire_out": 0.6,
+	"drill_start": 2.5, "ore": 0.35, "burst": 0.35, "segment_done": 0.4}
+const PAINT_WAIT_FRAMES: int = 240  ## Frames a capture waits for the rock chunks to finish painting.
 const BURST_FRAMES: int = 9
 const BURST_GAP_TICKS: int = 24
 
@@ -25,6 +27,7 @@ var _queue: Array[String] = []
 var _busy: bool = false
 var _seen: int = 0
 var _all_queued: bool = false
+var _paint_waited: int = 0
 
 
 func setup(p_main: Node, args: Args) -> void:
@@ -91,6 +94,14 @@ func _watch_events(sim: Sim) -> void:
 			moment = "arrive"
 		elif kind == "fire_out":
 			moment = "fire_out"
+		elif kind == "segment_begin":
+			moment = "drill_start"
+		elif kind == "resource" and str(e.get("res", "")) == "ore" and int(e.get("amount", 0)) > 0 and sim.drill.active:
+			moment = "ore"
+		elif kind == "pocket_burst":
+			moment = "burst"
+		elif kind == "segment_done":
+			moment = "segment_done"
 		if not moment.is_empty() and shots.has(moment) and not _due.has(moment):
 			_due[moment] = int(e["t"]) + roundi(float(MOMENT_DELAY_S[moment]) * Sim.TICK_HZ)
 
@@ -98,6 +109,11 @@ func _watch_events(sim: Sim) -> void:
 func _process(_delta: float) -> void:
 	if _busy:
 		return
+	var rv: RockView = main.get("rock_view")
+	if rv != null and rv.pending() > 0 and _paint_waited < PAINT_WAIT_FRAMES:
+		_paint_waited += 1
+		return
+	_paint_waited = 0
 	if not _queue.is_empty():
 		_capture(_queue.pop_front())
 	elif _all_queued:
