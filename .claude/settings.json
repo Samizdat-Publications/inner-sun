@@ -24,7 +24,11 @@
       "Bash(git push --force*)",
       "Bash(git push -f*)",
       "Bash(taskkill /IM*)",
-      "Bash(Stop-Process -Name*)"
+      "Bash(Stop-Process -Name*)",
+      "Edit(./.claude/hooks/critic_guard.mjs)",
+      "Write(./.claude/hooks/critic_guard.mjs)",
+      "Edit(./.claude/agents/player-critic.md)",
+      "Write(./.claude/agents/player-critic.md)"
     ]
   }
 }

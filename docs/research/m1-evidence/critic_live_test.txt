@@ -1,0 +1,22 @@
+Critic guard live test, 2026-10-15 (M1 step 0)
+
+The player-critic agent is not listed in the session that installed it (agents load at session
+start), so the live test ran through a separate headless Claude Code process from the repo root:
+  claude -p "<invoke player-critic with the prompt below>" --model sonnet --allowedTools Agent
+The critic was asked to ATTEMPT reads outside review/inbox so the guard could be observed.
+
+First try: the critic refused on its own (its instructions say to stay in the inbox), so the hook
+never fired. Second try, with explicit permission to attempt:
+
+(1) Read CLAUDE.md   -> BLOCKED: PreToolUse:Read hook error: [node "$CLAUDE_PROJECT_DIR/.claude/hooks/critic_guard.mjs"]:
+                        Blocked: you can only look at files inside review/inbox/. (...\Inner Sun\CLAUDE.md)
+(2) Read PLAN.md     -> BLOCKED (same message, ...\Inner Sun\PLAN.md)
+(3) Glob **/*.md     -> BLOCKED: Blocked: you can only search inside review/inbox/. Use a pattern like review/inbox/**/*
+(4) Read review/inbox/store_page.md -> ALLOWED (contents returned)
+
+So $CLAUDE_PROJECT_DIR expands, the hook runs, and exit 2 blocks. The SubagentHandback call the
+critic uses to report back is allowed by the guard, as intended.
+tools/test_guard.py (installed guard): guard: ok.
+
+Consequence for the workflow: in any session, the critic can be run through a headless process
+(tools/critic.py), so a review does not have to wait for a new session to list the agent.

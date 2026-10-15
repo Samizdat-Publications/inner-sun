@@ -1,6 +1,14 @@
 # Handoff
 
-From the planning session (2026-10-15, which also ran Milestone 0) to the first build session (M1).
+From the planning session (2026-10-15, which also ran Milestone 0) to the M1 build sessions.
+
+## Restart note (first M1 session, 2026-10-15)
+The first M1 session ran only briefly. It was restarted because a Claude Code mod ("blast-radius")
+was still loaded in it and held commands it thought risky (every `git commit` included) until
+someone clicked Proceed. Stewart has removed that mod and the "reflect" mod; a fresh session has
+neither. What that session did, what it held, and what it stopped: PROGRESS.md, "M1 so far". Its
+architecture decisions and the two agent briefs to re-dispatch: `docs/plans/M1_dispatch.md`. Step 0
+is done except the exposure lift, the first critic review and the Gemini critic port.
 
 ## State in one paragraph
 The plan is approved (`PLAN.md`) and Milestone 0 proved the autonomous Godot loop on this PC:
@@ -24,7 +32,7 @@ cd "C:\Users\stewa\Documents\Claude\Inner Sun"; claude --model claude-opus-5-5 -
 ```
 Then paste this as the first message:
 ```
-Continue Inner Sun. Read CLAUDE.md, PROGRESS.md and HANDOFF.md, then the M1 sections of PLAN.md and docs/plans/M1.md, then docs/STEWART_FEEDBACK.md. Start with M1 step 0 (install and live-test the blind critic). Then work autonomously through M1a in the order of docs/plans/M1.md, per CLAUDE.md, delegating as HANDOFF.md describes. Send me progress pictures as things become visible, show me the art style bake-off when it is ready, and stop when the M1a playtest build is ready for me. Stop earlier only for "checkpoint", a usage limit, or a decision that is genuinely mine.
+Continue Inner Sun. Read CLAUDE.md, PROGRESS.md and HANDOFF.md, then the M1 sections of PLAN.md, docs/plans/M1.md and docs/plans/M1_dispatch.md, then docs/STEWART_FEEDBACK.md. Follow "Exactly what is next" in PROGRESS.md: re-dispatch the two stopped agents, finish step 0, then build the M1 architecture skeleton. Then work autonomously through M1a in the order of docs/plans/M1.md, per CLAUDE.md, delegating as HANDOFF.md describes. Send me progress pictures as things become visible, show me the art style bake-off when it is ready, and stop when the M1a playtest build is ready for me. Stop earlier only for "checkpoint", a usage limit, or a decision that is genuinely mine.
 ```
 
 **Why xhigh for M1:**
@@ -68,9 +76,11 @@ Continue Inner Sun. Read CLAUDE.md, PROGRESS.md and HANDOFF.md, then the M1 sect
   starting. Use `python tools/snapshot.py` and `balance.py --pack` for long runs.
 
 ## Step 0 details (the critic install)
-This planning session could not write `.claude/hooks/critic_guard.mjs` or
-`.claude/agents/player-critic.md`. It started in the Cut & Fill folder and inherited Cut & Fill's
-deny rule for those exact paths. The new session, rooted here, does not have that rule.
+DONE in the first M1 session (items 1 to 5 below; evidence in
+`docs/research/m1-evidence/critic_live_test.txt`). Kept for reference. Item 6 and the first critic
+loop are still to do. The guard blocks for real: the hook command with `$CLAUDE_PROJECT_DIR` works.
+If `player-critic` is not listed in a session, run it through a headless `claude -p` process
+(`tools/critic.py`, see `docs/plans/M1_dispatch.md`).
 1. Create `.claude/hooks/` if it is missing (a fresh clone does not have it), then copy
    `docs/setup/critic/critic_guard.mjs` to `.claude/hooks/critic_guard.mjs`.
 2. Copy `docs/setup/critic/player-critic.md` to `.claude/agents/player-critic.md`.
@@ -94,7 +104,8 @@ deny rule for those exact paths. The new session, rooted here, does not have tha
 
 Critic loop:
 1. Run `python tools/capture.py`.
-2. Prompt `player-critic` with exactly: "A new build is in review/inbox. Play it."
+2. Prompt `player-critic` with exactly: "A new build is in review/inbox. Play it." (or run
+   `python tools/critic.py`, which does steps 2 to 4 through a headless process once it works).
 3. Save its reply in `review/critiques/NNN_claude.md`.
 4. Add its scores to `review/scores.csv`.
 5. Triage every issue in `review/LEDGER.md` as FIX, DEFER or REJECT.
@@ -153,7 +164,8 @@ Critic loop:
   - Windowed fps is capped at the 240 Hz refresh, so judge p99 and GPU ms.
   - Perf taken while Black Diamond renders is marked untrusted. Re-measure later instead of tuning
     on it.
-- **Disk.** C: is 99% full, about 15 GB free at the end of M0, and shrinking from other projects.
+- **Disk.** C: had about 15 GB free at the end of M0 and about 275 GB free on 2026-10-15 (first M1
+  session); still keep outputs pruned.
   `capture.py` deletes raw movies and keeps two raw folders. Watch `builds/` (about 110 MB per
   export) and `harness/out/`.
 - **Dark frames.** The M0 cutaway is very dark: mean luminance is about 6 out of 255, with roughly
@@ -179,7 +191,7 @@ Its Movie Maker captures were seen taking the foreground during M0. If perf keep
 contended, check `tasklist` for its processes before blaming Inner Sun.
 
 ## Not done
-- The blind critic is not installed and has never reviewed a build (step 0).
+- The blind critic is installed and live-tested, but has never reviewed a build.
 - The Gemini video critic is not ported.
 - HDR glow bloom is unverified.
 - The art style is not chosen yet (M1 step 2 bake-off).
