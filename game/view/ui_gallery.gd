@@ -129,6 +129,8 @@ func _play_nodes(s: Sim, count: int) -> void:
 	var guard: int = 0
 	while guard < 60 * 60 * 20 and not s.run.is_over():
 		guard += 1
+		if s.run.phase == "combat" and s.combat.active:
+			s.combat.enemy_hull = 0  # Gallery shortcut: fights are won at once (the states are about the UI, not combat).
 		bot.act(s)
 		s.step()
 		if _visited(s) >= goal and s.run.phase == "idle":
