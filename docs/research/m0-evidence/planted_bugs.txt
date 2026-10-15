@@ -1,0 +1,45 @@
+=== PLANT 1: break a design rule (hatches pass heat upward no better than downward) ===
+ game/data/tuning/hazards.json | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+TEST FAIL test_heat::test_heat_rises_through_the_hatch: heat moves up a hatch much more than down (up 231092 J, down 231090 J): got 231092.0, wanted more than 693270.0
+TESTS passed=23 failed=1
+SELFTEST ok
+check: FAIL (1 test(s) failed)
+--- after revert:
+TESTS passed=24 failed=0
+check: ok
+
+=== PLANT 2: a broken data reference (a hatch that leads to a room that does not exist) ===
+ game/data/ships/light_drill.json | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+ERROR: data: res://data/ships/light_drill.json: links[4] "hatch_reactor_drill": room "cellar" does not exist in this ship  at: push_error (core/variant/variant_utility.cpp:1023)
+TEST FAIL test_data::test_real_data_lints_clean: lint errors: res://data/ships/light_drill.json: links[4] "hatch_reactor_drill": room "cellar" does not exist in this ship
+TESTS passed=23 failed=1
+SELFTEST FAIL: data lint: res://data/ships/light_drill.json: links[4] "hatch_reactor_drill": room "cellar" does not exist in this ship
+check: FAIL (1 test(s) failed; selftest: SELFTEST FAIL: data lint: res://data/ships/light_drill.json: links[4] "hatch_reactor_drill": room "cellar" does not exist in this ship; 1 error line(s))
+--- after revert:
+TESTS passed=24 failed=0
+check: ok
+
+=== PLANT 3: a script type error (an untyped variable in the crew AI) ===
+(first attempt, before the fix: the check hung, because test loops waited forever for runs that
+ could no longer advance; fixed with ScenarioRun.play_to_end caps, a replay guard and a 240 s test timeout)
+ game/sim/crew/crew_ai.gd | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+SCRIPT ERROR: Parse Error: Variable "reach" has no static type. (Warning treated as error.)  at: GDScript::reload (res://sim/crew/crew_ai.gd:47)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.  at: GDScript::reload (res://sim/core/sim.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.  at: GDScript::reload (res://sim/hazards/hazard_sim.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.  at: GDScript::reload (res://sim/data/data_db.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.  at: GDScript::reload (res://tests/test_case.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.  at: GDScript::reload (res://tests/test_crew.gd:0)
+SCRIPT ERROR: Invalid call. Nonexistent function 'new' in base 'GDScript'.  at: Sim._init (res://sim/core/sim.gd:31)
+SCRIPT ERROR: Invalid call. Nonexistent function 'replan' in base 'Nil'.  at: Sim._apply (res://sim/core/sim.gd:73)
+SCRIPT ERROR: Invalid call. Nonexistent function 'think' in base 'Nil'.  at: Sim.step (res://sim/core/sim.gd:48)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.  at: GDScript::reload (res://view/main.gd:0)
+TEST FAIL test_crew::test_crew_climbs_down_the_ladder_when_ordered: the route used the ladder | reached the drill room: got -1.0, wanted more than 0.0 | engine error: Invalid call. Nonexistent function 'new' in base 'GDScript'. (r
+TEST FAIL test_crew::test_auto_crew_goes_to_the_nearer_fire: the crew member is fighting fire: got , want extinguish | the nearer fire (next door, not down the ladder) comes first: got -1, want 1 | engine error: Invalid call. None
+TEST FAIL test_crew::test_ordered_crew_stays_where_ordered: stayed in the ordered room: got 0, want 1 | engine error: Invalid call. Nonexistent function 'new' in base 'GDScript'. (res://sim/core/sim.gd:31 in Sim._init) | engine er
+TEST FAIL test_crew::test_auto_crew_handles_fire_and_breach: the fire is out: got 0.3, want 0.0 | the breach is patched: got 0.03, want 0.0 | a breach_patched event was recorded | engine error: Invalid call. Nonexistent function '
+--- after revert:
+TESTS passed=24 failed=0
+check: ok

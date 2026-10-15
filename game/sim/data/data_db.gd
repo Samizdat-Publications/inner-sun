@@ -8,7 +8,7 @@ const ROOT: String = "res://data"
 const KNOWN_SYSTEMS: Array[String] = ["none", "bridge", "reactor", "drill", "coolant", "weapons", "bracing", "quarters", "scanner"]
 const KNOWN_COMMANDS: Array[String] = ["assign", "release", "auto", "ignite", "breach", "door"]
 const KNOWN_BOTS: Array[String] = ["auto", "idle", "random", "scripted_fire_drill"]
-const EM_DASH: String = "—"
+const EM_DASH_CODE: int = 0x2014  ## Built at runtime so no source file contains the character.
 const EPS: float = 0.01
 
 var root: String = ROOT
@@ -95,7 +95,7 @@ func _read_json(file: String) -> Variant:
 
 static func _has_em_dash(v: Variant) -> bool:
 	if v is String:
-		return (v as String).contains(EM_DASH)
+		return (v as String).contains(char(EM_DASH_CODE))
 	if v is Dictionary:
 		var d: Dictionary = v
 		for k: Variant in d.keys():

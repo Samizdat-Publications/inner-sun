@@ -1,0 +1,11 @@
+{
+  "final_hash": "b7766a73598b6949",
+  "hits": 681253,
+  "removed": 76293,
+  "secs": 0.702,
+  "ticks": 20000,
+  "ticks_per_sec": 28491,
+  "us_per_tick_projectiles": 13.94,
+  "us_per_tick_sim": 15.5,
+  "us_per_tick_terrain": 5.61
+}

@@ -35,8 +35,7 @@ func _initialize() -> void:
 	var ticks: int = 0
 	for i: int in range(runs):
 		var r := ScenarioRun.generated(db, seed_base + i, bot_name, seconds)
-		while not r.done():
-			r.step()
+		r.play_to_end()
 		ticks += r.sim.tick
 		var line: String = JSON.stringify(r.summary())
 		if f != null:

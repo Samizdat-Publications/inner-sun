@@ -50,6 +50,10 @@ static func from_def(def: Dictionary) -> Ship:
 		l.span_m = float(ld.get("span_m", 0.8))
 		l.breadth_m = float(ld.get("breadth_m", 1.0))
 		l.open = bool(ld.get("open", true))
+		if l.a < 0 or l.b < 0:
+			# Never let a bad reference wrap around to another room (arrays accept index -1).
+			push_error("ship \"%s\": link \"%s\" joins a room that does not exist; skipped (run the data lint)" % [s.id, l.id])
+			continue
 		s.links.append(l)
 	s._find_walls()
 	for cd: Dictionary in def.get("crew", []):

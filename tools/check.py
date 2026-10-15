@@ -36,10 +36,12 @@ def main(argv=None):
     targs = ["--headless", "--path", paths.GAME, "--script", "res://tests/runner.gd"]
     if a.only:
         targs += ["--", f"--only={a.only}"]
-    r2 = proc.run_godot(targs, 900, log_name="check_tests")
+    # Tests normally take seconds; a short timeout turns a hang into a quick, named failure.
+    r2 = proc.run_godot(targs, 240, log_name="check_tests")
     full.append("=== tests (exit %d, %.0fs)\n%s" % (r2.returncode, r2.seconds, r2.out))
     if r2.timed_out:
-        reasons.append("test runner timed out")
+        started = [l.strip()[len("TEST START "):] for l in r2.out.splitlines() if l.startswith("TEST START ")]
+        reasons.append("test runner timed out" + (f", hung in {started[-1]}" if started else ""))
     tests_line = next((l.strip() for l in r2.out.splitlines() if l.startswith("TESTS ")), None)
     fails = [l.strip() for l in r2.out.splitlines() if l.startswith("TEST FAIL")]
     m = re.search(r"failed=(\d+)", tests_line or "")
@@ -49,7 +51,7 @@ def main(argv=None):
         reasons.append(f"{m.group(1)} test(s) failed")
     elif r2.returncode != 0:
         reasons.append(f"test runner exit {r2.returncode}")
-    r3 = proc.run_godot(["--headless", "--path", paths.GAME, "--quit-after", "600", "--", "--selftest"], 900,
+    r3 = proc.run_godot(["--headless", "--path", paths.GAME, "--quit-after", "600", "--", "--selftest"], 180,
                         log_name="check_selftest")
     full.append("=== selftest (exit %d, %.0fs)\n%s" % (r3.returncode, r3.seconds, r3.out))
     st = [l.strip() for l in r3.out.splitlines() if l.startswith("SELFTEST")]

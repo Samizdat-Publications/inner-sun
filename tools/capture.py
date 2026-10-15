@@ -196,7 +196,7 @@ def main(argv=None):
     if os.path.exists(perf_path):
         shutil.copy(perf_path, arch)
     progress.save(contact(sorted(glob.glob(os.path.join(arch, "frames", "*.png")))), f"{a.label}-frames",
-                  (a.note + " | " if a.note else "") + f"review frames, build {build_id}, seed {seed}")
+                  (a.note + "; " if a.note else "") + f"review frames, build {build_id}, seed {seed}")
     meta = {"build_id": build_id, "seed": seed, "scenario": a.scenario, "git": git_hash(), "date": stamp,
             "duration": a.duration, "stills": len(stills), "sheets": made, "clip_mb": round(os.path.getsize(clip) / 1e6, 1)}
     with open(os.path.join(arch, "meta.json"), "w", encoding="utf-8", newline="\n") as f:

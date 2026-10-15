@@ -7,8 +7,7 @@ const BANNED_RANDOM: String = "(?<![\\w.])(randi|randf|randf_range|randi_range|r
 
 func _play(run_seed: int, bot_name: String, seconds: float) -> ScenarioRun:
 	var r := ScenarioRun.generated(db(), run_seed, bot_name, seconds)
-	while not r.done():
-		r.step()
+	r.play_to_end()
 	return r
 
 
@@ -26,8 +25,7 @@ func test_different_seed_gives_different_state() -> void:
 
 func test_replay_rebuilds_the_run() -> void:
 	var r := ScenarioRun.from_scenario(db(), "fire_drill", 7)
-	while not r.done():
-		r.step()
+	r.play_to_end()
 	check_gt(float(r.sim.command_log.size()), 3.0, "the run recorded its commands")
 	var again: Sim = Sim.replay(db(), 7, r.sim.ship_id, r.sim.command_log, r.sim.tick)
 	check_eq(again.state_hash(), r.sim.state_hash(), "replaying seed plus command log gives the same final state")
@@ -36,14 +34,12 @@ func test_replay_rebuilds_the_run() -> void:
 func test_no_leaks_over_many_runs() -> void:
 	var d: DataDB = db()
 	var warm := ScenarioRun.generated(d, 1, "auto", 2.0)
-	while not warm.done():
-		warm.step()
+	warm.play_to_end()
 	warm = null
 	var before: int = int(Performance.get_monitor(Performance.OBJECT_COUNT))
 	for i: int in range(200):
 		var r := ScenarioRun.generated(d, i, "random", 3.0)
-		while not r.done():
-			r.step()
+		r.play_to_end()
 	var after: int = int(Performance.get_monitor(Performance.OBJECT_COUNT))
 	check_lt(float(after - before), 50.0, "objects return to the baseline after 200 runs (before %d, after %d)" % [before, after])
 

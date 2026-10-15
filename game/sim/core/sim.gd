@@ -121,5 +121,9 @@ static func replay(db: DataDB, p_seed: int, p_ship_id: String, commands: Array[D
 			cmd.erase("t")
 			s.push(cmd)
 			i += 1
+		var before: int = s.tick
 		s.step()
+		if s.tick == before:
+			push_error("Sim.replay: the sim stopped advancing at tick %d" % before)
+			break
 	return s

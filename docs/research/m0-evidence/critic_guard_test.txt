@@ -1,0 +1,22 @@
+PASS [repo] read a frame in the inbox: exit 0, want 0
+PASS [repo] read the inbox by absolute path: exit 0, want 0
+PASS [repo] glob inside the inbox: exit 0, want 0
+PASS [repo] read CLAUDE.md: exit 2, want 2
+PASS [repo] read the plan by absolute path: exit 2, want 2
+PASS [repo] escape the inbox with ..: exit 2, want 2
+PASS [repo] glob the whole repo: exit 2, want 2
+PASS [repo] glob with .. in the pattern: exit 2, want 2
+PASS [repo] use Bash: exit 2, want 2
+PASS [repo] use Grep: exit 2, want 2
+PASS [guardtest] read a frame in the inbox: exit 0, want 0
+PASS [guardtest] read the inbox by absolute path: exit 0, want 0
+PASS [guardtest] glob inside the inbox: exit 0, want 0
+PASS [guardtest] read CLAUDE.md: exit 2, want 2
+PASS [guardtest] read the plan by absolute path: exit 2, want 2
+PASS [guardtest] escape the inbox with ..: exit 2, want 2
+PASS [guardtest] glob the whole repo: exit 2, want 2
+PASS [guardtest] glob with .. in the pattern: exit 2, want 2
+PASS [guardtest] use Bash: exit 2, want 2
+PASS [guardtest] use Grep: exit 2, want 2
+PASS malformed input blocks (fail closed): exit 2, want 2
+guard: ok

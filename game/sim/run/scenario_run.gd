@@ -63,6 +63,21 @@ func done() -> bool:
 	return outcome != ""
 
 
+## Play to the end with a hard cap, so a broken script can never spin a loop forever: if the sim
+## stops advancing (for example a script failed to compile), the run ends as "stuck".
+func play_to_end() -> void:
+	var cap: int = duration_ticks + 120
+	var last_tick: int = -1
+	while not done():
+		step()
+		cap -= 1
+		if sim == null or sim.tick == last_tick or cap <= 0:
+			outcome = "stuck"
+			cause = "the sim stopped advancing (see engine errors)"
+			return
+		last_tick = sim.tick
+
+
 func step() -> void:
 	if outcome != "":
 		return
