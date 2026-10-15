@@ -1,0 +1,10 @@
+{
+  "id": "coolant",
+  "name": "Coolant and Pumps",
+  "description": "Chills every room and runs the bilge pumps. Two bars hold the ship at its design temperature.",
+  "fail_c": 90.0,
+  "recover_c": 80.0,
+  "priority": 5,
+  "needs_crew": false,
+  "manned_bonus": 0.0
+}

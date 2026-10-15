@@ -1,0 +1,10 @@
+{
+  "id": "reactor",
+  "name": "Reactor",
+  "description": "Makes the power. Each working bar can feed one bar of another system.",
+  "fail_c": 95.0,
+  "recover_c": 85.0,
+  "priority": 0,
+  "needs_crew": false,
+  "manned_bonus": 0.0
+}

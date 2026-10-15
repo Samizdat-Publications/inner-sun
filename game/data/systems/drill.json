@@ -1,0 +1,10 @@
+{
+  "id": "drill",
+  "name": "Drill",
+  "description": "Turns the bit. Built to run hot; an operator on station cuts faster.",
+  "fail_c": 110.0,
+  "recover_c": 95.0,
+  "priority": 2,
+  "needs_crew": false,
+  "manned_bonus": 0.15
+}

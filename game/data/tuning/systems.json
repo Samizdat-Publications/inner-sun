@@ -1,0 +1,11 @@
+{
+  "systems": {
+    "fire_damage_bars_per_s": 0.05,
+    "coolant_bars_full": 2.0,
+    "coolant_j_per_unit": 1500000,
+    "evasion_per_bar": 0.06,
+    "steer_per_helm_bar": 0.25,
+    "bracing_recharge_s": 6.0,
+    "bracing_bars_per_layer": 2
+  }
+}

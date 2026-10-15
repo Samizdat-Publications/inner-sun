@@ -27,5 +27,6 @@ func test_every_tuning_number_is_used() -> void:
 	var used: Array[String] = []
 	used.append_array(HazardSim.TUNING_KEYS)
 	used.append_array(CrewAI.TUNING_KEYS)
+	used.append_array(Systems.TUNING_KEYS)
 	for k: String in d.tuning.keys():
 		check(used.has(k), "tuning number \"%s\" is not read by any system (typo or dead number?)" % k)
