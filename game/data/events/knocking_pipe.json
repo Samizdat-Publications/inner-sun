@@ -1,0 +1,51 @@
+{
+  "id": "knocking_pipe",
+  "kind": "event",
+  "layer": "crust",
+  "rows": [1, 5],
+  "weight": 1.0,
+  "once_per_run": true,
+  "title": "Three Short, Three Long",
+  "file": "FIELD REPORT 09-R // AUGER",
+  "start": "intro",
+  "pages": {
+    "intro": {
+      "text": "The drill grinds past a crushed steel pipe running through the rock, and the pipe is knocking. Three short, three long, three short, patient as a clock. {crew} puts an ear to the wall plate. Somewhere along that pipe is a survivor from a rig that came this way before you. The rock around it is cracked and wet.",
+      "radio": "Auger, TOPSIDE. We show no other crews in your sector. Proceed.",
+      "options": [
+        {
+          "text": "Have {crew} cut a clean hatch to them.",
+          "requires": {"skill": {"repair": 1.2}},
+          "outcomes": [
+            {"weight": 1, "page": "clean", "effects": [{"type": "crew_join", "pool": "survivors"}]}
+          ]
+        },
+        {
+          "text": "Bore straight in and pull them out.",
+          "outcomes": [
+            {"weight": 2, "page": "bored", "effects": [{"type": "crew_join", "pool": "survivors"}, {"type": "hull", "amount": -3}]},
+            {"weight": 1, "page": "collapse", "effects": [{"type": "crew_join", "pool": "survivors"}, {"type": "crew_damage", "target": "picked", "amount": 30}, {"type": "hull", "amount": -2}]}
+          ]
+        },
+        {
+          "text": "Knock back, then keep drilling.",
+          "outcomes": [
+            {"weight": 1, "page": "left", "effects": [{"type": "pursuer", "rows": 0.3}]}
+          ]
+        }
+      ]
+    },
+    "clean": {
+      "text": "{crew} traces the pipe with a stethoscope, chalks a square on the wall and cuts a hatch exactly where the knocking is loudest. Behind it, in a pocket the size of a wardrobe, someone squints into the floodlight, says your rig's call sign as if they expected it, and climbs aboard."
+    },
+    "bored": {
+      "text": "You walk the crown sideways into the wall. The pocket opens in a gush of black water and a voice swearing in three languages. The survivor comes aboard soaked, thin and furious with whoever left them. Your lower plates will need welding."
+    },
+    "collapse": {
+      "text": "The pocket opens and the roof comes with it. {crew} goes in under falling slabs and drags the survivor out by the collar, both of them gray with dust. Medical patches {crew} up. The survivor keeps looking down, at the floor, at the rock beneath it, listening."
+    },
+    "left": {
+      "text": "{crew} taps the reply with a wrench: three short, three long, three short. The knocking stops. Then it starts again, faster. It follows you down the bore for an hour, ringing through the rock, until something much deeper begins to answer it."
+    }
+  }
+}

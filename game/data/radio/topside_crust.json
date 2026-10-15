@@ -13,6 +13,18 @@
     {"trigger": "crew_died", "text": "We copy the loss. Log it and keep moving, Auger."},
     {"trigger": "codex", "text": "Interesting find. Recalibrate and disregard."},
     {"trigger": "pursuer_close", "text": "Seismic says something large is moving behind you. Do not stop to look."},
-    {"trigger": "gate", "text": "That is the gate, Auger. Nobody has come back up through it. Nobody has tried."}
+    {"trigger": "gate", "text": "That is the gate, Auger. Nobody has come back up through it. Nobody has tried."},
+    {"trigger": "run_start", "text": "Auger, TOPSIDE. Weather up here is clear. You will not be needing that information."},
+    {"trigger": "first_segment", "text": "Copy, Auger. We have your heading. We had it before you did."},
+    {"trigger": "fire", "text": "Fire on your telemetry, Auger. Smother it. Do not vent smoke toward the rock."},
+    {"trigger": "flood", "text": "You are taking water, Auger. Keep it out of the reactor room and we can discuss the rest."},
+    {"trigger": "low_hull", "text": "Hull at critical. Your contract has a clause for this, Auger. You would not enjoy it."},
+    {"trigger": "fight_start", "text": "Hostile rig. You are authorized to defend the hardware. The crew is covered under a separate line item."},
+    {"trigger": "fight_won", "text": "Copy the kill. Their tower was never registered, so neither was this."},
+    {"trigger": "crew_died", "text": "Loss confirmed. Their replacement is already - Disregard. Carry on with the crew you have."},
+    {"trigger": "codex", "text": "TOPSIDE has logged your find, Auger. It was already in the log."},
+    {"trigger": "pursuer_close", "text": "Reduce drill noise now, Auger. Do not ask us what is listening."},
+    {"trigger": "gate", "text": "Gate on your scope. The last crew through reported warm air. We do not have the rest of that transmission."},
+    {"trigger": "store", "text": "That trader is not on our books, Auger. Pay in gems, not names."}
   ]
 }

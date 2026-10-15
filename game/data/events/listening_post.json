@@ -1,0 +1,47 @@
+{
+  "id": "listening_post",
+  "kind": "event",
+  "layer": "crust",
+  "rows": [4, 8],
+  "weight": 1.0,
+  "once_per_run": true,
+  "title": "The Array",
+  "file": "SIGNALS INTERCEPT 0912 // AUGER",
+  "start": "intro",
+  "pages": {
+    "intro": {
+      "text": "A Cold War instrument vault opens out of the shaft wall: green steel cabinets, a reel recorder, a cable of geophones trailing into the dark. The recorder is still running. The cabinet label reads [[topside_voice:LISTENING POST 4, HANDLER TOPSIDE]]. On the seismograph the needle twitches in a slow, steady rhythm, and the paper is captioned in grease pencil: [[the_follower:SUBJECT, BEARING STEADY]].",
+      "radio": "Auger, that equipment predates the program. Leave it as you found it.",
+      "options": [
+        {
+          "text": "Play back the last reel.",
+          "outcomes": [
+            {"weight": 1, "page": "playback", "effects": [{"type": "codex", "id": "topside_voice"}, {"type": "pursuer", "rows": 0.3}]}
+          ]
+        },
+        {
+          "text": "Lay the old trace over your seismic feed.",
+          "outcomes": [
+            {"weight": 1, "page": "trace", "effects": [{"type": "codex", "id": "the_follower"}, {"type": "reveal", "rows": 2}]}
+          ]
+        },
+        {
+          "text": "Drop a charge down the array as a decoy.",
+          "requires": {"res": {"charges": 1}},
+          "outcomes": [
+            {"weight": 1, "page": "decoy", "effects": [{"type": "res", "res": "charges", "amount": -1}, {"type": "codex", "id": "the_follower"}, {"type": "pursuer", "rows": -0.8}]}
+          ]
+        }
+      ]
+    },
+    "playback": {
+      "text": "The reel is a duty log: a handler checking in a crew far below, depths, temperatures, a reminder to keep chatter on channel two. The box is dated 1963. {crew} plays it twice. The handler's voice is the one you hear every day, down to the dry little pause before the word Auger."
+    },
+    "trace": {
+      "text": "The helm lays the old paper trace over your own seismic feed. The rhythm matches beat for beat. Whatever this post was listening to sixty years ago is the same thing behind you now, and the post logged its route for years. You copy the route. It goes where you are going."
+    },
+    "decoy": {
+      "text": "You lower a shaped charge down the geophone cable and fire it two hundred meters below the vault. The array shivers. On the seismograph, the slow rhythm stops, turns toward the blast and goes after it. You drill away in the quiet, very gently."
+    }
+  }
+}
