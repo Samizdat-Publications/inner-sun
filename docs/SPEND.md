@@ -21,3 +21,4 @@ unless Stewart says otherwise; going over needs a line in `docs/NEEDS_STEWART.md
 | 2026-10-15 | Gemini gemini-3-pro-image | bakeoff painted floor v3 | 0.14 |
 | 2026-10-15 | Gemini gemini-3-pro-image | bakeoff painted floor v4 | 0.14 |
 | 2026-10-15 | PixelLab | Style A not run: no PixelLab key available to the pipeline | 0.00 |
+| 2026-10-15 | ElevenLabs sound-generation (eleven_text_to_sound_v2) | 29 placeholder SFX via pipeline/audio/build.py (step 6), one generation each, no retries | 0.98 (est, about 82 requested seconds at ~0.012/s; plan-dependent) |
