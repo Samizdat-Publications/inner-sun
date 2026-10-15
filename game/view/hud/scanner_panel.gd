@@ -1,0 +1,303 @@
+class_name ScannerPanel
+extends Control
+## The seismic scanner: a green CRT showing the rock ahead of the drill (30 m below the crown, the
+## whole 32 m width of the segment). Materials are shades: rock by hardness, hard rock as bright
+## hatching, ore and gems as twinkling glints, water pockets dark blue, voids black. The ship's
+## heading is a line from the crown, the steered target heading dashed; the next node's depth is a
+## line across the screen. A sweep scans down the screen. Outside the drill phase it reads NO SIGNAL.
+## Click or drag on the screen to steer toward that point (pushes {"type": "steer", "angle": deg});
+## set `steer_by_mouse = false` if main.gd steers with the keys only.
+##
+## Mount (main.gd, on the HUD CanvasLayer, 1920x1080 design space):
+##   var scanner: ScannerPanel = ScannerPanel.build(layer, sim)
+##   scanner.bind(new_sim)
+
+const SIZE: Vector2 = Vector2(380, 400)
+const SCREEN: Rect2 = Rect2(30, 40, 320, 300)
+const LOOK_AHEAD_M: float = 30.0
+const UPDATE_S: float = 0.1
+const MAX_GLINTS: int = 90
+const SWEEP_HZ: float = 0.45
+const STEER_STEP_DEG: float = 1.0
+
+var sim: Sim = null
+var steer_by_mouse: bool = true
+
+var _t: float = 0.0
+var _since: float = 99.0
+var _serial: int = -1
+var _img: Image = null
+var _tex: ImageTexture = null
+var _rows_shown: int = 0
+var _frac: float = 0.0
+var _kind: PackedInt32Array = PackedInt32Array()
+var _glints: Array[Vector3] = []  ## x, y in image cells (cell units), z = twinkle phase.
+var _last_steer: float = 1000.0
+var _dragging: bool = false
+
+# Cell kinds.
+const K_VOID: int = 0
+const K_ROCK: int = 1
+const K_HARD: int = 2
+const K_ORE: int = 3
+const K_GEM: int = 4
+const K_WATER: int = 5
+
+
+static func build(parent: Control, p_sim: Sim) -> ScannerPanel:
+	var p := ScannerPanel.new()
+	p.position = Vector2(1540, 84)
+	p.size = SIZE
+	parent.add_child(p)
+	p.bind(p_sim)
+	return p
+
+
+func bind(p_sim: Sim) -> void:
+	sim = p_sim
+	_serial = -1
+	_since = 99.0
+	_img = null
+	_tex = null
+	_last_steer = 1000.0
+	queue_redraw()
+
+
+## True while the screen shows rock (the drill phase with a segment under way).
+func is_live() -> bool:
+	return sim != null and sim.drill.active and sim.run.phase == "drill"
+
+
+func _process(delta: float) -> void:
+	_t += delta
+	_since += delta
+	if is_live() and (_since >= UPDATE_S or _serial != sim.drill.grid_serial):
+		_since = 0.0
+		_refresh_image()
+	queue_redraw()
+
+
+# Image ----------------------------------------------------------------------------------------
+
+func _classify() -> void:
+	var d: DrillSim = sim.drill
+	_kind = PackedInt32Array()
+	_kind.resize(DrillSim.MAX_CODES)
+	for code: int in range(DrillSim.MAX_CODES):
+		var m: Dictionary = d.material(code)
+		if m.is_empty():
+			_kind[code] = K_ROCK
+		elif code == 0 or str(m.get("id", "")) == "air":
+			_kind[code] = K_VOID
+		elif d.water_of[code] == 1:
+			_kind[code] = K_WATER
+		elif d.yield_res_of[code] >= 0:
+			_kind[code] = K_GEM if RunState.RESOURCES[d.yield_res_of[code]] == "gems" else K_ORE
+		elif d.hardness_of[code] >= 3.0:
+			_kind[code] = K_HARD
+		else:
+			_kind[code] = K_ROCK
+
+
+func _refresh_image() -> void:
+	var d: DrillSim = sim.drill
+	if _serial != d.grid_serial or _img == null:
+		_serial = d.grid_serial
+		_classify()
+		_rows_shown = maxi(1, roundi(LOOK_AHEAD_M / d.cell_m))
+		_img = Image.create(d.cols, _rows_shown + 1, false, Image.FORMAT_RGBA8)
+		_tex = ImageTexture.create_from_image(_img)
+	var crown: float = d.ship_pos.y + d.ship_size.y
+	var top: int = int(floor(crown / d.cell_m))
+	_frac = clampf((crown - float(top) * d.cell_m) / d.cell_m, 0.0, 1.0)
+	_glints.clear()
+	for r: int in range(_rows_shown + 1):
+		var ar: int = top + r
+		for c: int in range(d.cols):
+			var col: Color = Color(0.0, 0.03, 0.02)
+			if ar >= 0 and ar < d.rows:
+				var k: int = _kind[d.grid[ar * d.cols + c]]
+				col = cell_color(k, d.hardness_of[d.grid[ar * d.cols + c]], c, ar)
+				if (k == K_ORE or k == K_GEM) and _glints.size() < MAX_GLINTS:
+					_glints.append(Vector3(float(c), float(r), float((c * 7 + ar * 13) % 17) / 17.0 * TAU))
+			_img.set_pixel(c, r, col)
+	_tex.update(_img)
+
+
+## The CRT color of one cell. Pure: the cell kind, the material's hardness and the absolute cell.
+static func cell_color(k: int, hardness: float, c: int, r: int) -> Color:
+	var n: float = float(((c * 73856093) ^ (r * 19349663)) & 255) / 255.0
+	match k:
+		K_VOID:
+			return Color(0.0, 0.035, 0.02)
+		K_WATER:
+			return Color(0.05, 0.16 + 0.05 * n, 0.50 + 0.1 * n)
+		K_ORE:
+			return Color(0.78, 1.0, 0.62)
+		K_GEM:
+			return Color(0.72, 1.0, 0.98)
+		K_HARD:
+			if (c + r) % 3 == 0:
+				return Color(0.66, 1.0, 0.72)
+			return Color(0.10, 0.46 + 0.1 * n, 0.20)
+	var lum: float = 0.20 + 0.12 * hardness + 0.05 * n
+	return Color(0.03 + 0.05 * lum, lum, 0.08 + 0.1 * lum)
+
+
+# Steering -------------------------------------------------------------------------------------
+
+func _crown_x_px() -> float:
+	var d: DrillSim = sim.drill
+	var width_m: float = float(d.cols) * d.cell_m
+	return SCREEN.position.x + (d.ship_pos.x + d.ship_size.x * 0.5) / width_m * SCREEN.size.x
+
+
+## The steer angle (degrees from straight down) toward a panel-space point.
+func angle_toward(p: Vector2) -> float:
+	var dx: float = p.x - _crown_x_px()
+	var dy: float = maxf(8.0, p.y - SCREEN.position.y)
+	return rad_to_deg(atan2(dx, dy))
+
+
+func _gui_input(event: InputEvent) -> void:
+	if not steer_by_mouse or not is_live():
+		return
+	var mb: InputEventMouseButton = event as InputEventMouseButton
+	if mb != null and mb.button_index == MOUSE_BUTTON_LEFT:
+		_dragging = mb.pressed and SCREEN.has_point(mb.position)
+		if _dragging:
+			_steer_to(mb.position)
+			accept_event()
+		return
+	var mm: InputEventMouseMotion = event as InputEventMouseMotion
+	if mm != null and _dragging and SCREEN.has_point(mm.position):
+		_steer_to(mm.position)
+		accept_event()
+
+
+func _steer_to(p: Vector2) -> void:
+	var a: float = snappedf(angle_toward(p), STEER_STEP_DEG)
+	if absf(a - _last_steer) < 0.5:
+		return
+	_last_steer = a
+	sim.push({"type": "steer", "angle": a})
+
+
+# Drawing --------------------------------------------------------------------------------------
+
+func _draw() -> void:
+	UiTheme.draw_panel(self, Rect2(Vector2.ZERO, size), "SEISMIC SCANNER")
+	var bezel: Rect2 = SCREEN.grow(6.0)
+	draw_rect(bezel, Color(0.03, 0.035, 0.04), true)
+	draw_rect(bezel, UiTheme.BRASS_DARK, false, 2.0)
+	draw_rect(SCREEN, Color(0.0, 0.04, 0.025), true)
+	if sim == null:
+		return
+	if not is_live() or _tex == null:
+		_draw_no_signal()
+	else:
+		_draw_rock()
+	_draw_glass()
+	_draw_readout()
+
+
+func _draw_no_signal() -> void:
+	var step: int = int(_t * 14.0)
+	for i: int in range(46):
+		var h: int = ((step * 2654435761 + i * 40503) & 0xffff)
+		var y: float = SCREEN.position.y + float(h % int(SCREEN.size.y))
+		var x: float = SCREEN.position.x + float((h >> 3) % 200)
+		var w: float = 20.0 + float((h >> 5) % 100)
+		draw_line(Vector2(x, y), Vector2(minf(x + w, SCREEN.end.x - 1.0), y), Color(UiTheme.CRT, 0.05 + 0.07 * float(h % 3)), 1.0)
+	var blink: float = 0.55 + 0.45 * UiTheme.pulse(_t, 0.7)
+	UiTheme.glow_text(self, Vector2(SCREEN.position.x, SCREEN.get_center().y + 8.0), "NO SIGNAL", 30, Color(UiTheme.CRT, blink), null, HORIZONTAL_ALIGNMENT_CENTER, SCREEN.size.x)
+
+
+func _draw_rock() -> void:
+	var d: DrillSim = sim.drill
+	draw_texture_rect_region(_tex, SCREEN, Rect2(0.0, _frac, float(d.cols), float(_rows_shown)), Color(1, 1, 1, 1))
+	var px_x: float = SCREEN.size.x / (float(d.cols))
+	var px_y: float = SCREEN.size.y / float(_rows_shown)
+	# Glints.
+	for g: Vector3 in _glints:
+		var gp := Vector2(SCREEN.position.x + (g.x + 0.5) * px_x, SCREEN.position.y + (g.y - _frac + 0.5) * px_y)
+		if not SCREEN.has_point(gp):
+			continue
+		var tw: float = 0.5 + 0.5 * sin(_t * 3.2 + g.z)
+		var s: float = 2.0 + 5.0 * tw
+		var gc: Color = Color(0.85, 1.0, 0.9, 0.35 + 0.55 * tw)
+		draw_line(gp - Vector2(s, 0), gp + Vector2(s, 0), gc, 1.0)
+		draw_line(gp - Vector2(0, s), gp + Vector2(0, s), gc, 1.0)
+	# Depth ticks every 5 m below the crown.
+	var m_px: float = SCREEN.size.y / LOOK_AHEAD_M
+	for m: int in range(5, int(LOOK_AHEAD_M) + 1, 5):
+		var y: float = SCREEN.position.y + float(m) * m_px
+		draw_line(Vector2(SCREEN.position.x, y), Vector2(SCREEN.position.x + 8.0, y), Color(UiTheme.CRT, 0.7), 1.0)
+		UiTheme.text(self, Vector2(SCREEN.position.x + 11.0, y + 4.0), "%d" % m, 12, Color(UiTheme.CRT, 0.75))
+	# The ship's footprint and heading.
+	var cx: float = _crown_x_px()
+	var half: float = d.ship_size.x * 0.5 / (float(d.cols) * d.cell_m) * SCREEN.size.x
+	draw_line(Vector2(cx - half, SCREEN.position.y + 2.0), Vector2(cx + half, SCREEN.position.y + 2.0), UiTheme.CRT, 3.0)
+	draw_line(Vector2(cx - half, SCREEN.position.y), Vector2(cx - half, SCREEN.position.y + 10.0), UiTheme.CRT, 2.0)
+	draw_line(Vector2(cx + half, SCREEN.position.y), Vector2(cx + half, SCREEN.position.y + 10.0), UiTheme.CRT, 2.0)
+	var reach: float = SCREEN.size.y
+	var tgt: float = deg_to_rad(d.target_heading_deg)
+	var cur: float = deg_to_rad(d.heading_deg)
+	if absf(d.target_heading_deg - d.heading_deg) > 0.5:
+		draw_dashed_line(Vector2(cx, SCREEN.position.y + 4.0), _end_of(cx, tgt, reach), Color(UiTheme.AMBER, 0.95), 2.0, 6.0)
+	draw_line(Vector2(cx, SCREEN.position.y + 4.0), _end_of(cx, cur, reach), Color(0.9, 1.0, 0.9), 2.5)
+	# The next node: a line across the screen with a diamond where it sits.
+	var crown: float = d.ship_pos.y + d.ship_size.y
+	var remain: float = d.target_y - crown
+	if remain >= 0.0 and remain <= LOOK_AHEAD_M:
+		var ny: float = SCREEN.position.y + remain * m_px
+		draw_dashed_line(Vector2(SCREEN.position.x, ny), Vector2(SCREEN.end.x, ny), UiTheme.AMBER, 2.0, 8.0)
+		var tx: float = SCREEN.position.x + d.target_x / (float(d.cols) * d.cell_m) * SCREEN.size.x
+		draw_colored_polygon(PackedVector2Array([Vector2(tx, ny - 9), Vector2(tx + 9, ny), Vector2(tx, ny + 9), Vector2(tx - 9, ny)]), UiTheme.AMBER)
+		UiTheme.text(self, Vector2(SCREEN.end.x - 86.0, ny - 6.0), "NODE", 13, UiTheme.AMBER, null, HORIZONTAL_ALIGNMENT_RIGHT, 80.0)
+	# The sweep.
+	var sy: float = SCREEN.position.y + fposmod(_t * SWEEP_HZ, 1.0) * SCREEN.size.y
+	for i: int in range(14):
+		var y2: float = sy - float(i) * 3.0
+		if y2 < SCREEN.position.y:
+			break
+		draw_rect(Rect2(SCREEN.position.x, y2, SCREEN.size.x, 3.0), Color(UiTheme.CRT, 0.16 * (1.0 - float(i) / 14.0)), true)
+	draw_line(Vector2(SCREEN.position.x, sy), Vector2(SCREEN.end.x, sy), Color(0.8, 1.0, 0.85, 0.7), 1.5)
+
+
+static func _end_of(cx: float, rad: float, reach: float) -> Vector2:
+	var y: float = reach
+	return Vector2(cx + tan(clampf(rad, -1.2, 1.2)) * y, SCREEN.position.y + 4.0 + y)
+
+
+## Scanlines, vignette and a glass reflection over the screen, clipped to it by construction.
+func _draw_glass() -> void:
+	var y: float = SCREEN.position.y
+	while y < SCREEN.end.y:
+		draw_line(Vector2(SCREEN.position.x, y), Vector2(SCREEN.end.x, y), Color(0, 0, 0, 0.20), 1.0)
+		y += 3.0
+	for i: int in range(7):
+		var a: float = 0.14 * (1.0 - float(i) / 7.0)
+		draw_rect(SCREEN.grow(-float(i) * 2.0), Color(0, 0, 0, a), false, 2.0)
+	draw_rect(SCREEN, Color(UiTheme.CRT, 0.5), false, 1.0)
+
+
+func _draw_readout() -> void:
+	var d: DrillSim = sim.drill
+	var y: float = SCREEN.end.y + 26.0
+	if not is_live():
+		UiTheme.text(self, Vector2(30, y), "STANDBY", 16, UiTheme.TEXT_DIM)
+		UiTheme.text(self, Vector2(30, y + 24.0), "DRILL IDLE", 14, UiTheme.TEXT_DIM)
+		return
+	var crown: float = d.ship_pos.y + d.ship_size.y
+	var remain: float = maxf(0.0, d.target_y - crown)
+	UiTheme.text(self, Vector2(30, y), "HDG %+d  TGT %+d" % [roundi(d.heading_deg), roundi(d.target_heading_deg)], 16, UiTheme.CRT)
+	UiTheme.text(self, Vector2(size.x - 30.0 - 160.0, y), "NODE IN %d M" % roundi(remain), 16, UiTheme.AMBER, null, HORIZONTAL_ALIGNMENT_RIGHT, 160.0)
+	var wear: int = roundi(d.bit_wear * 100.0)
+	var bit_col: Color = UiTheme.ALARM if d.bit_broken else (UiTheme.AMBER if wear >= 70 else UiTheme.CRT)
+	UiTheme.text(self, Vector2(30, y + 24.0), "SPEED %.1f M/S" % d.speed_m_s, 14, UiTheme.TEXT)
+	var bit_text: String = "BIT BROKEN" if d.bit_broken else "BIT WEAR %d%%" % wear
+	if d.bit_change_left_s > 0.0:
+		bit_text = "FITTING BIT %.0f S" % d.bit_change_left_s
+		bit_col = UiTheme.AMBER
+	UiTheme.text(self, Vector2(size.x - 30.0 - 200.0, y + 24.0), bit_text, 14, bit_col, null, HORIZONTAL_ALIGNMENT_RIGHT, 200.0)
