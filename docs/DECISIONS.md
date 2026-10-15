@@ -74,3 +74,20 @@ session inherited Cut & Fill's deny rule for those paths. The first build sessio
 
 ## D015 (AI): Working title stays Inner Sun
 Alternatives if wanted: Superdeep, Mohole. The folder and repo keep their names regardless.
+
+## D017 (AI, provisional until Stewart sees it): Art style is painted pulp illustration
+The M1 bake-off made the same reactor room and engineer as painted pulp (Gemini) and Blender
+pre-rendered sprites, lit identically in Godot (`docs/progress/005_m1-art-bakeoff.jpg`). Painted
+reads as a real, lived-in place at game scale and its engineer is a character; Blender is more
+predictable under moving light but its crew is a faceless block. Pixel art was not tried: no
+PixelLab key. Risks taken on: animation (answered with cut-out puppets on a 2D skeleton) and
+consistency across many generated assets (one shared prompt, variants, a lead pick, manifests).
+Revert: switch the pipeline to `pipeline/blender/` (already working) or add a PixelLab key and run
+`pipeline/pixel_gen.py`; the game code is style-agnostic (albedo, normal and emission sprites).
+
+## D018 (AI): Power returns after repairs; an overheated reactor limps
+Rooms remember the last allocation chosen (`Room.sys_want`). Damage and reactor shortfalls cut
+power by priority; repairs and reactor recovery bring it back, highest priority first, while bars are
+free. A heat-failed reactor gives half its bars instead of none: zero cut the coolant too and made
+every reactor overheat an instant death spiral. Revert: drop `_restore` in `systems.gd` and return 0
+from `_output` when failed.

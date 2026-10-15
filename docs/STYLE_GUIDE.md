@@ -60,7 +60,41 @@ member, unless the event says otherwise).
 - Crew: "Coolant's at a third. Somebody tell me that's a lot."
 
 ## Look
-To be written from the M1 art bake-off winner (see `docs/plans/M1.md`, step 2).
+
+**Chosen in the M1 bake-off (2026-10-15): painted pulp illustration**, generated with Gemini image
+models through `pipeline/painted_gen.py`, processed by `pipeline/style_post.py`, lit in Godot with
+scripted normal maps (`pipeline/normals.py`). Comparison: `docs/progress/005_m1-art-bakeoff.jpg`.
+Provisional until Stewart has seen it; pixel art was not tried (no PixelLab key) and the Blender
+pipeline (`pipeline/blender/`) stays as the fallback for anything that must turn or animate in many
+consistent poses.
+
+### The rules
+- **Painted, not photographed.** Gouache and oil brushwork with confident strokes and a strong
+  value structure, like a 1970s pulp magazine cover. Never photoreal, never glossy CG.
+- **Palette.** Dark and moody: cold blue-grey steel and rock, warm amber and brass accents, hazard
+  yellow and black, CRT green for readouts, alarm red only for alarms, fire orange only for fire.
+  The rock gets colder and stranger as layers go down; the inner world is where color finally
+  blooms.
+- **Hardware.** 1970s black-budget retro-futurism: riveted plate, enamel and brass gauges, chunky
+  switches, cable trays, stenciled labels (no readable real brand names), grime, scorch marks,
+  patched welds. Everything looks built by a government contractor in a hurry.
+- **Flat light in the art, real light in the game.** Assets are painted evenly lit, orthographic
+  side view, no cast shadows, no vignette, no perspective: Godot's lights do the drama. Shapes must
+  read at game scale (a room is 320 x 240 px at 1080p).
+- **Production.** Generated at 160 px per meter and shown at 0.5 with linear filtering and mipmaps.
+  Every asset is cut out on flat magenta, graded to the shared brightness target, and gets a scripted
+  normal map (silhouette bevel, cylinder roll for round props, band-passed detail) and, where it
+  glows, a separate emission sprite whose modulate is divided by the CanvasModulate color.
+- **People.** Characters are drawn as one painted figure per crew member in strict side view, then
+  cut into parts (head, torso, upper and lower arms, legs) and animated as cut-out puppets with
+  Godot's 2D skeleton (Polygon2D and Bone2D): walk, climb, work, fight fire, hurt, fall. Faces are
+  simple and readable; each crew member gets a distinct silhouette and color accent.
+- **Consistency.** One shared style prompt (`STYLE` in `pipeline/painted_gen.py`) for everything,
+  several variants per asset, the lead picks; every prompt, model and seed in
+  `pipeline/manifests/`. A new asset that does not sit next to the bake-off reactor room without
+  standing out gets regenerated.
+- **Documents.** The dossier, codex and store use paper: typewriter text, rubber stamps, paper clips,
+  redaction bars, coffee rings, on the same palette.
 
 ## Event files (the format the writer fills)
 
