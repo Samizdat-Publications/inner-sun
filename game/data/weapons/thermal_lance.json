@@ -1,0 +1,20 @@
+{
+  "id": "thermal_lance",
+  "name": "Thermal Lance",
+  "blurb": "A plasma cutter built for granite, turned sideways. It sweeps down through the target and cooks whatever it crosses.",
+  "kind": "beam",
+  "power": 2,
+  "charge_s": 16.0,
+  "shots": 1,
+  "damage": 2,
+  "sys_damage": 1.0,
+  "crew_damage": 15.0,
+  "fire_chance": 0.25,
+  "breach_chance": 0.0,
+  "breach_m2": 0.0,
+  "heat_kj": 350,
+  "speed_m_s": 0.0,
+  "beam_len_m": 6.0,
+  "ammo": "",
+  "pierces_bracing": false
+}

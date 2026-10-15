@@ -14,10 +14,9 @@ const RADIO_TRIGGERS: Array[String] = [
 ]
 const HAZARD_KINDS: Array[String] = ["fire", "breach", "heat"]
 const CREW_TARGETS: Array[String] = ["picked", "random", "all"]
-## Enemy ships the combat step (M1 step 4) adds; accepted until they exist in the ships table.
-const PENDING_SHIPS: Array[String] = ["rival_light", "rival_heavy"]
-## Weapons the combat step adds; accepted until a weapons table exists.
-const PENDING_WEAPONS: Array[String] = ["thermal_lance"]
+## Enemy ships and weapons named before their data exists (none now: combat landed in M1 step 4).
+const PENDING_SHIPS: Array[String] = []
+const PENDING_WEAPONS: Array[String] = []
 const MAX_REDACTIONS_PER_PAGE: int = 2
 
 

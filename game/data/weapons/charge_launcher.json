@@ -1,0 +1,20 @@
+{
+  "id": "charge_launcher",
+  "name": "Charge Launcher",
+  "blurb": "Fires a shaped mining charge that burrows in before it goes off. Bracing does nothing against it. Each shot costs a charge.",
+  "kind": "charge",
+  "power": 1,
+  "charge_s": 12.0,
+  "shots": 1,
+  "damage": 2,
+  "sys_damage": 1.0,
+  "crew_damage": 25.0,
+  "fire_chance": 0.2,
+  "breach_chance": 0.6,
+  "breach_m2": 0.03,
+  "heat_kj": 150,
+  "speed_m_s": 5.0,
+  "beam_len_m": 0.0,
+  "ammo": "charges",
+  "pierces_bracing": true
+}

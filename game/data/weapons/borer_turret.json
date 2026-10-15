@@ -1,0 +1,20 @@
+{
+  "id": "borer_turret",
+  "name": "Borer Turret",
+  "blurb": "Two hardened slugs that chew through the rock toward the other rig. A braced hull shrugs off the first.",
+  "kind": "projectile",
+  "power": 1,
+  "charge_s": 9.0,
+  "shots": 2,
+  "damage": 1,
+  "sys_damage": 1.0,
+  "crew_damage": 15.0,
+  "fire_chance": 0.1,
+  "breach_chance": 0.15,
+  "breach_m2": 0.015,
+  "heat_kj": 60,
+  "speed_m_s": 7.0,
+  "beam_len_m": 0.0,
+  "ammo": "",
+  "pierces_bracing": false
+}

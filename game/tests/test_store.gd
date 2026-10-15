@@ -108,12 +108,14 @@ func test_hull_repair_paid_in_ore_up_to_max() -> void:
 
 func test_lance_once_per_visit() -> void:
 	var s: Sim = _store()
+	var start: int = s.ship.weapons.size()
 	_buy(s, LANCE)
-	check_eq(Array(s.ship.weapons), ["thermal_lance"], "the lance is mounted")
+	check_eq(s.ship.weapons.size(), start + 1, "one weapon added")
+	check_eq(s.ship.weapons[s.ship.weapons.size() - 1], "thermal_lance", "the lance is mounted in the next slot")
 	check_eq(s.run.get_res("gems"), 430, "for 70 gems")
 	_buy(s, LANCE)
 	check(_refused(s), "one lance per visit")
-	check_eq(s.ship.weapons.size(), 1, "still one")
+	check_eq(s.ship.weapons.size(), start + 1, "still one more")
 	s.push({"type": "leave"})
 	s.step()
 	check_eq(s.run.phase, "idle", "leave returns to idle")
