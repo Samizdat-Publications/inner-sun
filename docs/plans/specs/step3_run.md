@@ -12,9 +12,7 @@ record (seed, options, command log, summary) so any run can be replayed exactly.
 
 ## Files
 Owns: game/sim/run/** (run_state.gd, map_gen.gd, pursuer.gd or inside run_state, full_run.gd),
-game/meta/profile.gd and game/meta/run_record.gd (file I/O lives here, never in game/sim),
-game/data/layers/crust.json, game/bots/run_bot.gd, game/tests/test_run*.gd, test_map*.gd,
-test_profile.gd. Allowed small edits: game/sim/drill/drill_sim.gd (arrival calls run.arrive instead
+game/data/layers/crust.json, game/bots/run_bot.gd, game/tests/test_run*.gd, test_map*.gd. Allowed small edits: game/sim/drill/drill_sim.gd (arrival calls run.arrive instead
 of setting idle; a speed_scale field), game/sim/events/encounter.gd and
 game/sim/combat/combat_sim.gd (only stub methods start_event, open_store, start_fight that return
 to idle, documented as stubs), game/bots/bot.gd (register "run"), game/sim/data/data_db.gd
@@ -64,14 +62,11 @@ to idle, documented as stubs), game/bots/bot.gd (register "run"), game/sim/data/
   seconds, resources gained per type (from resource events), fights won, codex learned (ids), crew
   lost, seed, ship.
 
-## Profile and records (game/meta, not game/sim)
-- Profile: `profile.json` in a profile dir (`user://` by default; `--profile-dir=<path>` for bots,
-  tests and balance runs, which must never write to user://). Holds version, known codex (sorted),
-  run count, best depth, deaths by cause, the last 50 run summaries. Load, merge a finished run
-  (codex learned is added), save. Corrupt or missing files fall back to a fresh profile.
-- Run record: `runs/<date>_<seed>.json` in the same dir: seed, ship, options (mode, known codex),
-  the command log, the final tick and hash, and the summary. A test replays a record and gets the
-  same hash.
+## Profile and records (DONE by the lead: game/meta/profile.gd, game/meta/run_record.gd)
+Use them: `Profile.load_from(dir).run_options()` gives the options for a new run;
+`profile.merge_run(summary, run.learned)` and `save()` after it ends; `RunRecord.save(dir, sim,
+summary, stamp)` writes the replayable record. Tests in game/tests/test_profile.gd. Make sure
+`run.summary()` has the keys merge_run reads: result, cause, depth_m.
 
 ## Driver and bot
 - `FullRun` (game/sim/run/full_run.gd): like ScenarioRun for whole runs: makes the Sim in run mode,
