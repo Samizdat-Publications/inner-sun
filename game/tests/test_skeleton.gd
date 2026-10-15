@@ -36,6 +36,7 @@ func test_frozen_phase_stops_the_world() -> void:
 
 func test_module_dispatch_and_known_commands() -> void:
 	var s: Sim = _run_sim()
+	s.push({"type": "power", "room": "bridge", "bars": 0})  # Free reactor bars so only capacity limits the drill.
 	s.push({"type": "power", "room": "drill", "bars": 99})
 	s.step()
 	check_eq(room(s, "drill").sys_power, room(s, "drill").sys_max, "power goes to Systems and clamps to capacity")

@@ -1,0 +1,10 @@
+{
+  "id": "bracing",
+  "name": "Bracing",
+  "description": "Hydraulic rams that brace the hull. Every two bars hold one layer that soaks a hit.",
+  "fail_c": 85.0,
+  "recover_c": 75.0,
+  "priority": 3,
+  "needs_crew": false,
+  "manned_bonus": 0.0
+}

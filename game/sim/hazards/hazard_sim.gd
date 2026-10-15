@@ -28,6 +28,7 @@ var water_in_ml: int = 0
 var water_out_ml: int = 0
 var energy_in_j: int = 0
 var energy_out_j: int = 0
+var cooled_j: int = 0  ## Joules removed by the coolant system so far (part of energy_out_j); Systems bills it.
 var link_flow_ml_s: PackedFloat64Array = PackedFloat64Array()  ## Last water flow per link, a to b positive (visuals).
 
 var _t: Dictionary = {}
@@ -105,7 +106,7 @@ func add_water(r: Room, ml: int) -> int:
 
 
 func state() -> Array:
-	return [water_in_ml, water_out_ml, energy_in_j, energy_out_j, Array(_spread_acc)]
+	return [water_in_ml, water_out_ml, energy_in_j, energy_out_j, cooled_j, Array(_spread_acc)]
 
 
 # Heat ------------------------------------------------------------------------------------------
@@ -150,6 +151,7 @@ func _heat(ship: Ship, dt: float) -> void:
 			energy_out_j -= q_rock
 		energy_in_j += q_fire
 		energy_out_j += q_cool
+		cooled_j += q_cool
 	for i: int in range(n):
 		ship.rooms[i].energy_j += delta[i]
 
