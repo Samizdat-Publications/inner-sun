@@ -2,7 +2,7 @@
 
 Updated: 2026-10-15, M1 session (continued after the restart).
 
-## Milestone: M1a (find the fun). Step 0 done; skeleton done; steps 1, 2 and 5 in flight.
+## Milestone: M1a (find the fun). Steps 0, 1, 2 and 5 (sim) merged; 3, 4, views, writing and sound in flight.
 
 ## M1 so far
 - **Step 0 done.** Blind critic installed and live-tested (`docs/research/m1-evidence/critic_live_test.txt`);
@@ -17,8 +17,17 @@ Updated: 2026-10-15, M1 session (continued after the restart).
   entries, a TOPSIDE radio file.
 - **Specs written** for steps 3 (run, map, pursuer, profile), 4 (combat), 5 (events, store) and the
   run screen (`docs/plans/specs/`).
-- **Art bake-off:** Blender style C done and merged (lit test scene `game/view/bakeoff/`,
-  `python tools/bakeoff.py`); HDR glow verified (emission must be divided by CanvasModulate).
+- **Drilling segment sim merged** (step 1): rock grid from data, steering, power, heat into the drill
+  room, bit wear, noise, water pockets, exact conservation; 2-bar segments 30 to 38 s on 20 of 20
+  seeds, 4 bars about 20 s.
+- **Power and systems merged** (step 2): reactor, allocation by priority, fire damage, heat failure,
+  coolant billed in units, manning, evasion, bracing layers. Lead changes: power returns after
+  repairs (remembered allocation), an overheated reactor limps at half (D018); the drill uses the
+  helm and manned-drill bonuses.
+- **Events, store and crew merged** (step 5 sim): the event runner with every effect, the store,
+  recruitment, permadeath, the lint. 108 tests pass.
+- **Art bake-off done: painted pulp chosen, provisional** (D017, `docs/progress/005_m1-art-bakeoff.jpg`,
+  sent to Stewart); pixel art not tried (no PixelLab key).
 - **Making-of record** started (`docs/making-of/README.md`, tag `m0-loop-proven`), at Stewart's request.
 
 ## Done (M0)
@@ -45,13 +54,14 @@ Updated: 2026-10-15, M1 session (continued after the restart).
   alone.
 
 ## In flight
-Background agents, each in its own worktree under `.claude/worktrees/` (find them with
-`git worktree list`); if the session stops, check each branch and merge or re-dispatch from its spec:
-- drilling segment sim (step 1; builder-opus; brief summarized in `docs/plans/M1_dispatch.md` section 3),
-- power and systems (step 2; builder-opus),
-- events, store and crew (step 5; builder-opus; `docs/plans/specs/step5_events.md`),
-- painted style B for the bake-off (asset-smith; Gemini). Pixel style A waits for a PixelLab key
-  (`docs/NEEDS_STEWART.md`).
+Background agents, each in its own worktree under `.claude/worktrees/` (`git worktree list`); if the
+session stops, check each branch, merge what passes, re-dispatch the rest from its spec:
+- step 3, run: map, travel, pursuer, FullRun, RunBot (builder-opus; `docs/plans/specs/step3_run.md`),
+- step 4, combat: weapons, enemy ships and AI, flee (builder-opus; `docs/plans/specs/step4_combat.md`),
+- drilling view: rock chunks, crown, camera (builder; `docs/plans/specs/drill_view.md`),
+- HUD panels, dossier and store UI with a UI gallery (builder; `docs/plans/specs/view_m1.md`),
+- nine more crust events, codex, TOPSIDE lines (writer),
+- placeholder sound assets (asset-smith; step 6 in `docs/plans/specs/step6_7_sound_balance.md`).
 
 ## Known issues
 - **Capture windows flash on screen for about one second** at the start of each windowed run (shots,
