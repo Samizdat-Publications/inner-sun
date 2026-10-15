@@ -1,0 +1,27 @@
+{
+  "asset": "painted_lamp",
+  "runs": [
+    {
+      "service": "Gemini",
+      "model": "gemini-3-pro-image",
+      "aspect": "1:1",
+      "size": "2K",
+      "prompt": "A caged industrial ceiling lamp fixture hanging from a short steel bracket, conical enamel shade, brass cap, wire cage, a BRIGHT WARM WHITE-HOT bulb at the centre. painted pulp magazine cover illustration, 1970s retro-futurist black-budget hardware, gouache and oil painterly brushwork with visible confident strokes, strong value structure, dark moody palette with warm amber and brass accents and cold blue-grey steel, riveted steel, enamel and brass gauges, hazard stripes, chunky switches, grimy and lived in, Journey to the Center of the Earth meets The X-Files. Flat orthographic side view, NO perspective, NO vignette, NO text, NO border, evenly lit (no dramatic cast shadows, the game adds lighting), readable shapes at small size. Background: perfectly flat solid magenta #ff00ff, nothing else in the background, no shadow on the background, subject fully inside the frame with a small margin.",
+      "variant": 1,
+      "usd_estimate": 0.14,
+      "output": "harness\\out\\painted_cands\\lamp_v1.png",
+      "date": "2026-10-15"
+    },
+    {
+      "service": "Gemini",
+      "model": "gemini-3-pro-image",
+      "aspect": "1:1",
+      "size": "2K",
+      "prompt": "A caged industrial ceiling lamp fixture hanging from a short steel bracket, conical enamel shade, brass cap, wire cage, a BRIGHT WARM WHITE-HOT bulb at the centre. painted pulp magazine cover illustration, 1970s retro-futurist black-budget hardware, gouache and oil painterly brushwork with visible confident strokes, strong value structure, dark moody palette with warm amber and brass accents and cold blue-grey steel, riveted steel, enamel and brass gauges, hazard stripes, chunky switches, grimy and lived in, Journey to the Center of the Earth meets The X-Files. Flat orthographic side view, NO perspective, NO vignette, NO text, NO border, evenly lit (no dramatic cast shadows, the game adds lighting), readable shapes at small size. Background: perfectly flat solid magenta #ff00ff, nothing else in the background, no shadow on the background, subject fully inside the frame with a small margin.",
+      "variant": 2,
+      "usd_estimate": 0.14,
+      "output": "harness\\out\\painted_cands\\lamp_v2.png",
+      "date": "2026-10-15"
+    }
+  ]
+}

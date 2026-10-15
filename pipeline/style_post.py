@@ -83,9 +83,16 @@ def emission_from(arr, kind):
     else:                   # "lens": near white
         m = (lum > 0.85) & (b > 0.7)
     m = m & (a > 0.5)
+    from scipy import ndimage as ndi
+    if kind == "lens":      # only the headlamp: the top fifth of the figure
+        m[int(arr.shape[0] * 0.2):] = False
     if m.sum() == 0:
         return None
-    from scipy import ndimage as ndi
+    if kind == "core":      # keep the largest blob and fill the white-hot centre
+        lab, n = ndi.label(m)
+        if n > 1:
+            m = lab == (1 + int(np.argmax(ndi.sum(m, lab, range(1, n + 1)))))
+        m = ndi.binary_fill_holes(ndi.binary_closing(m, iterations=3))
     m = ndi.binary_opening(m, iterations=1) if m.sum() > 40 else m
     col = rgb / np.maximum(rgb.max(axis=2, keepdims=True), 1e-3)
     ea = m.astype(np.float32)
@@ -95,6 +102,20 @@ def emission_from(arr, kind):
     inten = np.clip(np.maximum(ea, halo * 0.35), 0, 1)
     c = normals.bleed(np.where(m[..., None], col, 0), ea, iters=int(sig * 2.5))
     return np.dstack([np.clip(c, 0, 1), inten])
+
+
+# Painted albedo is graded to the mean brightness of the Blender (style C) set so the lit comparison is fair
+# (the game lights albedo through a dark CanvasModulate, so very dark paintings vanish). Gamma solve, colour only.
+TARGET_MEAN = {"room_wall": 0.33, "floor": 0.40, "crew": 0.34}
+
+
+def grade(arr, target):
+    m = arr[..., 3] > 0.5
+    mean = float(arr[..., :3][m].mean())
+    g = np.log(target) / np.log(max(mean, 1e-3))
+    out = arr.copy()
+    out[..., :3] = np.clip(arr[..., :3], 0, 1) ** g
+    return out
 
 
 def save(arr, path):
@@ -147,6 +168,8 @@ def main():
             arr = arr[top:top + h]
             arr[..., 3] = 1.0
             name = "floor"
+        if style == "painted" and name in TARGET_MEAN:
+            arr = grade(arr, TARGET_MEAN[name])
         alb = arr.copy()
         save(alb, os.path.join(out, name + "_albedo.png"))
         n = normals.normal_map(alb, **nparams(style, name, alb))

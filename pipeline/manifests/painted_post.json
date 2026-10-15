@@ -1,0 +1,167 @@
+{
+  "asset": "painted_post",
+  "runs": [
+    {
+      "pick": {
+        "wall": "wall_v2",
+        "reactor": "reactor_v1",
+        "lamp": "lamp_v1",
+        "floor": "floor_v4",
+        "crew": "crew_v1"
+      },
+      "ppm": 160,
+      "result": {
+        "room_wall": {
+          "candidate": "wall_v2",
+          "size": [
+            640,
+            480
+          ],
+          "emission": false
+        },
+        "reactor": {
+          "candidate": "reactor_v1",
+          "size": [
+            241,
+            272
+          ],
+          "emission": true
+        },
+        "lamp": {
+          "candidate": "lamp_v1",
+          "size": [
+            80,
+            80
+          ],
+          "emission": true
+        },
+        "floor": {
+          "candidate": "floor_v4",
+          "size": [
+            640,
+            40
+          ],
+          "emission": false
+        },
+        "crew": {
+          "candidate": "crew_v1",
+          "size": [
+            106,
+            288
+          ],
+          "emission": true
+        }
+      },
+      "script": "pipeline/style_post.py + pipeline/normals.py",
+      "date": "2026-10-15"
+    },
+    {
+      "pick": {
+        "wall": "wall_v2",
+        "reactor": "reactor_v1",
+        "lamp": "lamp_v1",
+        "floor": "floor_v4",
+        "crew": "crew_v1"
+      },
+      "ppm": 160,
+      "result": {
+        "room_wall": {
+          "candidate": "wall_v2",
+          "size": [
+            640,
+            480
+          ],
+          "emission": false
+        },
+        "reactor": {
+          "candidate": "reactor_v1",
+          "size": [
+            241,
+            272
+          ],
+          "emission": true
+        },
+        "lamp": {
+          "candidate": "lamp_v1",
+          "size": [
+            80,
+            80
+          ],
+          "emission": true
+        },
+        "floor": {
+          "candidate": "floor_v4",
+          "size": [
+            640,
+            40
+          ],
+          "emission": false
+        },
+        "crew": {
+          "candidate": "crew_v1",
+          "size": [
+            106,
+            288
+          ],
+          "emission": true
+        }
+      },
+      "script": "pipeline/style_post.py + pipeline/normals.py",
+      "date": "2026-10-15"
+    },
+    {
+      "pick": {
+        "wall": "wall_v2",
+        "reactor": "reactor_v1",
+        "lamp": "lamp_v1",
+        "floor": "floor_v4",
+        "crew": "crew_v1"
+      },
+      "ppm": 160,
+      "result": {
+        "room_wall": {
+          "candidate": "wall_v2",
+          "size": [
+            640,
+            480
+          ],
+          "emission": false
+        },
+        "reactor": {
+          "candidate": "reactor_v1",
+          "size": [
+            241,
+            272
+          ],
+          "emission": true
+        },
+        "lamp": {
+          "candidate": "lamp_v1",
+          "size": [
+            80,
+            80
+          ],
+          "emission": true
+        },
+        "floor": {
+          "candidate": "floor_v4",
+          "size": [
+            640,
+            40
+          ],
+          "emission": false
+        },
+        "crew": {
+          "candidate": "crew_v1",
+          "size": [
+            106,
+            288
+          ],
+          "emission": true
+        }
+      },
+      "script": "pipeline/style_post.py + pipeline/normals.py",
+      "date": "2026-10-15"
+    }
+  ]
+}

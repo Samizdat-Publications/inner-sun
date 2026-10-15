@@ -1,0 +1,49 @@
+{
+  "asset": "painted_floor",
+  "runs": [
+    {
+      "service": "Gemini",
+      "model": "gemini-3-pro-image",
+      "aspect": "21:9",
+      "size": "2K",
+      "prompt": "A long horizontal steel floor edge beam seen from the side: tread plate on top, an I-beam web with round lightening holes, rivets, a yellow safety nosing line. Fills the whole frame edge to edge. painted pulp magazine cover illustration, 1970s retro-futurist black-budget hardware, gouache and oil painterly brushwork with visible confident strokes, strong value structure, dark moody palette with warm amber and brass accents and cold blue-grey steel, riveted steel, enamel and brass gauges, hazard stripes, chunky switches, grimy and lived in, Journey to the Center of the Earth meets The X-Files. Flat orthographic side view, NO perspective, NO vignette, NO text, NO border, evenly lit (no dramatic cast shadows, the game adds lighting), readable shapes at small size.",
+      "variant": 1,
+      "usd_estimate": 0.14,
+      "output": "harness\\out\\painted_cands\\floor_v1.png",
+      "date": "2026-10-15"
+    },
+    {
+      "service": "Gemini",
+      "model": "gemini-3-pro-image",
+      "aspect": "21:9",
+      "size": "2K",
+      "prompt": "A long horizontal steel floor edge beam seen from the side: tread plate on top, an I-beam web with round lightening holes, rivets, a yellow safety nosing line. Fills the whole frame edge to edge. painted pulp magazine cover illustration, 1970s retro-futurist black-budget hardware, gouache and oil painterly brushwork with visible confident strokes, strong value structure, dark moody palette with warm amber and brass accents and cold blue-grey steel, riveted steel, enamel and brass gauges, hazard stripes, chunky switches, grimy and lived in, Journey to the Center of the Earth meets The X-Files. Flat orthographic side view, NO perspective, NO vignette, NO text, NO border, evenly lit (no dramatic cast shadows, the game adds lighting), readable shapes at small size.",
+      "variant": 2,
+      "usd_estimate": 0.14,
+      "output": "harness\\out\\painted_cands\\floor_v2.png",
+      "date": "2026-10-15"
+    },
+    {
+      "service": "Gemini",
+      "model": "gemini-3-pro-image",
+      "aspect": "21:9",
+      "size": "2K",
+      "prompt": "Seamless flat texture of a steel floor deck seen straight on from the side: the whole frame is worn dark diamond tread plate steel, with one thin straight horizontal yellow safety stripe exactly across the middle of the frame, a few rivets, light rust. ONLY the plate and the stripe: no gauges, no switches, no holes, no machinery, no objects. Fills the whole frame edge to edge. painted pulp magazine cover illustration, 1970s retro-futurist black-budget hardware, gouache and oil painterly brushwork with visible confident strokes, strong value structure, dark moody palette with warm amber and brass accents and cold blue-grey steel, riveted steel, enamel and brass gauges, hazard stripes, chunky switches, grimy and lived in, Journey to the Center of the Earth meets The X-Files. Flat orthographic side view, NO perspective, NO vignette, NO text, NO border, evenly lit (no dramatic cast shadows, the game adds lighting), readable shapes at small size.",
+      "variant": 3,
+      "usd_estimate": 0.14,
+      "output": "harness\\out\\painted_cands\\floor_v3.png",
+      "date": "2026-10-15"
+    },
+    {
+      "service": "Gemini",
+      "model": "gemini-3-pro-image",
+      "aspect": "21:9",
+      "size": "2K",
+      "prompt": "Seamless flat texture of a steel floor deck seen straight on from the side: the whole frame is worn dark diamond tread plate steel, with one thin straight horizontal yellow safety stripe exactly across the middle of the frame, a few rivets, light rust. ONLY the plate and the stripe: no gauges, no switches, no holes, no machinery, no objects. Fills the whole frame edge to edge. painted pulp magazine cover illustration, 1970s retro-futurist black-budget hardware, gouache and oil painterly brushwork with visible confident strokes, strong value structure, dark moody palette with warm amber and brass accents and cold blue-grey steel, riveted steel, enamel and brass gauges, hazard stripes, chunky switches, grimy and lived in, Journey to the Center of the Earth meets The X-Files. Flat orthographic side view, NO perspective, NO vignette, NO text, NO border, evenly lit (no dramatic cast shadows, the game adds lighting), readable shapes at small size.",
+      "variant": 4,
+      "usd_estimate": 0.14,
+      "output": "harness\\out\\painted_cands\\floor_v4.png",
+      "date": "2026-10-15"
+    }
+  ]
+}

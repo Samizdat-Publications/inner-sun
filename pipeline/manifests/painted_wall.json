@@ -1,0 +1,27 @@
+{
+  "asset": "painted_wall",
+  "runs": [
+    {
+      "service": "Gemini",
+      "model": "gemini-3-pro-image",
+      "aspect": "4:3",
+      "size": "2K",
+      "prompt": "The back wall of a drill-ship reactor room, interior cutaway, seen straight on: riveted dark steel plates in a grid, vertical conduits at both sides, a cable tray across the upper third, three round brass and enamel pressure gauges with cream faces, a small hazard stripe panel, a junction box with switches, a vent grille. Fills the whole frame edge to edge, no floor, no ceiling, no people. painted pulp magazine cover illustration, 1970s retro-futurist black-budget hardware, gouache and oil painterly brushwork with visible confident strokes, strong value structure, dark moody palette with warm amber and brass accents and cold blue-grey steel, riveted steel, enamel and brass gauges, hazard stripes, chunky switches, grimy and lived in, Journey to the Center of the Earth meets The X-Files. Flat orthographic side view, NO perspective, NO vignette, NO text, NO border, evenly lit (no dramatic cast shadows, the game adds lighting), readable shapes at small size.",
+      "variant": 1,
+      "usd_estimate": 0.14,
+      "output": "harness\\out\\painted_cands\\wall_v1.png",
+      "date": "2026-10-15"
+    },
+    {
+      "service": "Gemini",
+      "model": "gemini-3-pro-image",
+      "aspect": "4:3",
+      "size": "2K",
+      "prompt": "The back wall of a drill-ship reactor room, interior cutaway, seen straight on: riveted dark steel plates in a grid, vertical conduits at both sides, a cable tray across the upper third, three round brass and enamel pressure gauges with cream faces, a small hazard stripe panel, a junction box with switches, a vent grille. Fills the whole frame edge to edge, no floor, no ceiling, no people. painted pulp magazine cover illustration, 1970s retro-futurist black-budget hardware, gouache and oil painterly brushwork with visible confident strokes, strong value structure, dark moody palette with warm amber and brass accents and cold blue-grey steel, riveted steel, enamel and brass gauges, hazard stripes, chunky switches, grimy and lived in, Journey to the Center of the Earth meets The X-Files. Flat orthographic side view, NO perspective, NO vignette, NO text, NO border, evenly lit (no dramatic cast shadows, the game adds lighting), readable shapes at small size.",
+      "variant": 2,
+      "usd_estimate": 0.14,
+      "output": "harness\\out\\painted_cands\\wall_v2.png",
+      "date": "2026-10-15"
+    }
+  ]
+}
