@@ -15,6 +15,14 @@ func commands() -> PackedStringArray:
 	return PackedStringArray(COMMANDS)
 
 
+## Resolve a node on arrival: "event", "cavern", "hazard" start an event; "store" opens the store.
+## STUB until step 5: emits an event and returns to idle.
+func start_node(sim: Sim, node_type: String, row: int) -> void:
+	sim.emit("node_skipped", {"type": node_type, "row": row})
+	if sim.run.mode == "run":
+		sim.run.set_phase(sim, "idle")
+
+
 func state() -> Array:
 	return []
 
