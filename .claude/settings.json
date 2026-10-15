@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "Bash(gh *)",
+      "Bash(python *)",
+      "Bash(py *)",
+      "Bash(node *)",
+      "Bash(ffmpeg *)",
+      "Bash(ffprobe *)",
+      "Bash(nvidia-smi *)",
+      "WebSearch",
+      "WebFetch"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(~/ClaudeProjects/Noclip/.env)",
+      "Bash(cat .env*)",
+      "Bash(type .env*)",
+      "Bash(git add -A*)",
+      "Bash(git add .)",
+      "Bash(git add --all*)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(taskkill /IM*)",
+      "Bash(Stop-Process -Name*)"
+    ]
+  }
+}

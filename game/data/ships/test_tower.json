@@ -1,0 +1,19 @@
+{
+  "id": "test_tower",
+  "name": "Test Tower (tests only)",
+  "rock_temp_c": 42.0,
+  "water_head_m": 25.0,
+  "room_depth_m": 3.0,
+  "rooms": [
+    {"id": "bridge", "name": "Bridge", "x": 0.0, "y": 0.0, "w": 4.0, "h": 3.0, "system": "bridge"},
+    {"id": "reactor", "name": "Reactor", "x": 4.0, "y": 0.0, "w": 4.0, "h": 3.0, "system": "reactor"},
+    {"id": "drill", "name": "Drill Room", "x": 0.0, "y": 3.0, "w": 8.0, "h": 3.0, "system": "drill", "pump": true}
+  ],
+  "links": [
+    {"id": "door_br", "kind": "door", "a": "bridge", "b": "reactor", "x": 4.0, "height_m": 2.1, "breadth_m": 1.0},
+    {"id": "hatch_d", "kind": "hatch", "a": "bridge", "b": "drill", "x": 1.2, "span_m": 0.8, "breadth_m": 0.8}
+  ],
+  "crew": [
+    {"id": "vasquez", "name": "Vasquez", "room": "bridge", "x": 2.5, "skills": {"fire": 1.0, "repair": 1.0}}
+  ]
+}

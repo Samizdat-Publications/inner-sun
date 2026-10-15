@@ -1,0 +1,11 @@
+{
+  "id": "fire_drill",
+  "name": "Fire drill: a drill-room fire, then a breach on the middle deck",
+  "ship": "light_drill",
+  "duration_s": 40,
+  "bot": "scripted_fire_drill",
+  "timeline": [
+    {"at_s": 2.0, "cmd": {"type": "ignite", "room": "drill", "level": 0.3}},
+    {"at_s": 6.0, "cmd": {"type": "breach", "room": "weapons", "size_m2": 0.06}}
+  ]
+}

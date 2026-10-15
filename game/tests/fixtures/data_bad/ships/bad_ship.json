@@ -1,0 +1,14 @@
+{
+  "id": "bad_ship",
+  "name": "Broken on purpose — the lint test expects these errors",
+  "rooms": [
+    {"id": "top", "x": 0.0, "y": 0.0, "w": 4.0, "h": 3.0, "system": "bridge"},
+    {"id": "low", "x": 0.0, "y": 3.0, "w": 4.0, "h": 3.0, "system": "warp_core"}
+  ],
+  "links": [
+    {"id": "hatch_to_nowhere", "kind": "hatch", "a": "top", "b": "cellar", "x": 1.0}
+  ],
+  "crew": [
+    {"id": "ghost", "room": "attic"}
+  ]
+}

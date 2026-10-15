@@ -1,0 +1,29 @@
+{
+  "id": "light_drill",
+  "name": "Light Drill (M1 starter draft)",
+  "rock_temp_c": 42.0,
+  "water_head_m": 25.0,
+  "room_depth_m": 3.0,
+  "rooms": [
+    {"id": "bridge", "name": "Bridge", "x": 0.0, "y": 0.0, "w": 4.0, "h": 3.0, "system": "bridge"},
+    {"id": "quarters", "name": "Quarters", "x": 4.0, "y": 0.0, "w": 4.0, "h": 3.0, "system": "quarters"},
+    {"id": "reactor", "name": "Reactor", "x": 0.0, "y": 3.0, "w": 4.0, "h": 3.0, "system": "reactor"},
+    {"id": "weapons", "name": "Weapons", "x": 4.0, "y": 3.0, "w": 4.0, "h": 3.0, "system": "weapons"},
+    {"id": "drill", "name": "Drill Room", "x": 0.0, "y": 6.0, "w": 4.0, "h": 3.0, "system": "drill", "pump": true},
+    {"id": "coolant", "name": "Coolant and Pumps", "x": 4.0, "y": 6.0, "w": 4.0, "h": 3.0, "system": "coolant", "pump": true}
+  ],
+  "links": [
+    {"id": "door_top", "kind": "door", "a": "bridge", "b": "quarters", "x": 4.0, "height_m": 2.1, "breadth_m": 1.0},
+    {"id": "door_mid", "kind": "door", "a": "reactor", "b": "weapons", "x": 4.0, "height_m": 2.1, "breadth_m": 1.0},
+    {"id": "door_low", "kind": "door", "a": "drill", "b": "coolant", "x": 4.0, "height_m": 2.1, "breadth_m": 1.0},
+    {"id": "hatch_bridge_reactor", "kind": "hatch", "a": "bridge", "b": "reactor", "x": 1.0, "span_m": 0.8, "breadth_m": 0.8},
+    {"id": "hatch_reactor_drill", "kind": "hatch", "a": "reactor", "b": "drill", "x": 3.0, "span_m": 0.8, "breadth_m": 0.8},
+    {"id": "hatch_quarters_weapons", "kind": "hatch", "a": "quarters", "b": "weapons", "x": 7.0, "span_m": 0.8, "breadth_m": 0.8},
+    {"id": "hatch_weapons_coolant", "kind": "hatch", "a": "weapons", "b": "coolant", "x": 5.0, "span_m": 0.8, "breadth_m": 0.8}
+  ],
+  "crew": [
+    {"id": "vasquez", "name": "Vasquez", "room": "bridge", "x": 2.4, "skills": {"fire": 1.0, "repair": 0.8}},
+    {"id": "okafor", "name": "Okafor", "room": "reactor", "x": 1.8, "skills": {"fire": 1.2, "repair": 1.0}},
+    {"id": "lindqvist", "name": "Lindqvist", "room": "quarters", "x": 5.8, "skills": {"fire": 0.8, "repair": 1.3}}
+  ]
+}

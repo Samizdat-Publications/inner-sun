@@ -1,0 +1,48 @@
+{
+  "heat": {
+    "capacity_kj_per_m3_k": 0.5,
+    "wall_kw_per_m2_k": 0.005,
+    "door_kw_per_m2_k": 0.25,
+    "hatch_up_kw_per_m2_k": 0.9,
+    "hatch_down_kw_per_m2_k": 0.08,
+    "hull_kw_per_m2_k": 0.012,
+    "breach_hull_factor": 400.0,
+    "fire_kw": 55.0,
+    "coolant_kw_per_room": 6.0,
+    "coolant_target_c": 24.0,
+    "coolant_kw_per_k": 0.6
+  },
+  "fire": {
+    "start_level": 0.15,
+    "growth_per_s": 0.05,
+    "spread_per_s": 0.03,
+    "spread_up_factor": 2.0,
+    "spread_down_factor": 0.4,
+    "spread_wall_factor": 0.15,
+    "autoignite_c": 140.0,
+    "autoignite_per_s": 0.05,
+    "water_suppress_per_m_s": 0.6,
+    "crew_dps": 9.0
+  },
+  "water": {
+    "breach_cd": 0.6,
+    "gravity": 9.81,
+    "door_flow_per_m2_s": 1.5,
+    "hatch_cd": 0.6,
+    "pump_m3_s": 0.05,
+    "crew_head_m": 1.6,
+    "drown_dps": 6.0
+  },
+  "crew": {
+    "walk_m_s": 1.6,
+    "climb_m_s": 0.9,
+    "slow_full_m": 1.2,
+    "avoid_level_m": 1.4,
+    "urgency_fire": 100.0,
+    "urgency_breach": 60.0,
+    "fight_per_s": 0.11,
+    "patch_m2_per_s": 0.004,
+    "heat_safe_c": 48.0,
+    "heat_dps_per_k": 0.25
+  }
+}

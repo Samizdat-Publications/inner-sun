@@ -1,0 +1,265 @@
+class_name HazardSim
+extends RefCounted
+## Heat, fire and water, simulated room by room at 10 Hz (like Barotrauma's hulls and gaps, never
+## per pixel). Water (millilitres) and heat (joules) are integers: whatever leaves one room arrives
+## in another, or is counted in the ship's in/out totals, so conservation tests can demand equality.
+## Holds no reference to the Sim; the Sim passes itself in.
+
+const TUNING_KEYS: Array[String] = [
+	"heat.capacity_kj_per_m3_k", "heat.wall_kw_per_m2_k", "heat.door_kw_per_m2_k",
+	"heat.hatch_up_kw_per_m2_k", "heat.hatch_down_kw_per_m2_k", "heat.hull_kw_per_m2_k",
+	"heat.breach_hull_factor", "heat.fire_kw", "heat.coolant_kw_per_room", "heat.coolant_target_c",
+	"heat.coolant_kw_per_k",
+	"fire.start_level", "fire.growth_per_s", "fire.spread_per_s", "fire.spread_up_factor",
+	"fire.spread_down_factor", "fire.spread_wall_factor", "fire.autoignite_c", "fire.autoignite_per_s",
+	"fire.water_suppress_per_m_s", "fire.crew_dps",
+	"water.breach_cd", "water.gravity", "water.door_flow_per_m2_s", "water.hatch_cd", "water.pump_m3_s",
+	"water.crew_head_m", "water.drown_dps",
+	"crew.heat_safe_c", "crew.heat_dps_per_k",
+]
+
+const J_PER_KJ: float = 1000.0
+
+var coolant_on: bool = true
+var water_in_ml: int = 0
+var water_out_ml: int = 0
+var energy_in_j: int = 0
+var energy_out_j: int = 0
+var link_flow_ml_s: PackedFloat64Array = PackedFloat64Array()  ## Last water flow per link, a to b positive (visuals).
+
+var _t: Dictionary = {}
+var _adj_from: PackedInt32Array = PackedInt32Array()
+var _adj_to: PackedInt32Array = PackedInt32Array()
+var _adj_link: PackedInt32Array = PackedInt32Array()
+var _adj_factor: PackedFloat64Array = PackedFloat64Array()
+var _spread_acc: PackedFloat64Array = PackedFloat64Array()
+
+
+func _init(db: DataDB, ship: Ship) -> void:
+	for k: String in TUNING_KEYS:
+		_t[k] = db.tune(k)
+	var cap: float = _k("heat.capacity_kj_per_m3_k") * J_PER_KJ
+	for r: Room in ship.rooms:
+		r.heat_cap_j_per_k = maxf(1.0, r.capacity_m3() * cap)
+		r.set_temp_c(r.start_temp_c)
+	link_flow_ml_s.resize(ship.links.size())
+	for l: Link in ship.links:
+		if l.kind == Link.Kind.DOOR:
+			_add_adj(l.a, l.b, l.index, 1.0)
+			_add_adj(l.b, l.a, l.index, 1.0)
+		else:
+			_add_adj(l.b, l.a, l.index, _k("fire.spread_up_factor"))
+			_add_adj(l.a, l.b, l.index, _k("fire.spread_down_factor"))
+	for w: WallPair in ship.walls:
+		_add_adj(w.a, w.b, -1, _k("fire.spread_wall_factor"))
+		_add_adj(w.b, w.a, -1, _k("fire.spread_wall_factor"))
+	_spread_acc.resize(_adj_from.size())
+
+
+func _k(key: String) -> float:
+	return float(_t[key])
+
+
+func _add_adj(from: int, to: int, link: int, factor: float) -> void:
+	_adj_from.append(from)
+	_adj_to.append(to)
+	_adj_link.append(link)
+	_adj_factor.append(factor)
+
+
+func step(sim: Sim, dt: float) -> void:
+	_heat(sim.ship, dt)
+	_fire(sim, dt)
+	_water(sim.ship, dt)
+	_crew_harm(sim, dt)
+	_flood_watch(sim, dt)
+
+
+func ignite(sim: Sim, r: Room, level: float) -> void:
+	if r.fire <= 0.0:
+		r.fire = clampf(level, 0.01, 1.0)
+		sim.emit("fire_started", {"room": r.id})
+	else:
+		r.fire = maxf(r.fire, level)
+
+
+func state() -> Array:
+	return [water_in_ml, water_out_ml, energy_in_j, energy_out_j, Array(_spread_acc)]
+
+
+# Heat ------------------------------------------------------------------------------------------
+
+func _heat(ship: Ship, dt: float) -> void:
+	var n: int = ship.rooms.size()
+	var temps := PackedFloat64Array()
+	temps.resize(n)
+	for i: int in range(n):
+		temps[i] = ship.rooms[i].temp_c()
+	var delta := PackedInt64Array()
+	delta.resize(n)
+	var per_j: float = J_PER_KJ * dt
+	for w: WallPair in ship.walls:
+		var q: int = roundi(_k("heat.wall_kw_per_m2_k") * w.area_m2 * (temps[w.a] - temps[w.b]) * per_j)
+		delta[w.a] -= q
+		delta[w.b] += q
+	for l: Link in ship.links:
+		if not l.open:
+			continue
+		var k: float = _k("heat.door_kw_per_m2_k")
+		if l.kind == Link.Kind.HATCH:
+			# Hot air rises: a hatch passes heat upward far better than downward.
+			k = _k("heat.hatch_up_kw_per_m2_k") if temps[l.b] > temps[l.a] else _k("heat.hatch_down_kw_per_m2_k")
+		var q2: int = roundi(k * l.area_m2() * (temps[l.a] - temps[l.b]) * per_j)
+		delta[l.a] -= q2
+		delta[l.b] += q2
+	for i: int in range(n):
+		var r: Room = ship.rooms[i]
+		var hull_k: float = _k("heat.hull_kw_per_m2_k") * (r.hull_area_m2 + r.breach_m2 * _k("heat.breach_hull_factor"))
+		var q_rock: int = roundi(hull_k * (ship.rock_temp_c - temps[i]) * per_j)
+		var q_fire: int = roundi(_k("heat.fire_kw") * r.fire * per_j)
+		var q_cool: int = 0
+		var target: float = _k("heat.coolant_target_c")
+		if coolant_on and temps[i] > target:
+			var cool_kw: float = minf(_k("heat.coolant_kw_per_room"), _k("heat.coolant_kw_per_k") * (temps[i] - target))
+			q_cool = roundi(cool_kw * per_j)
+		delta[i] += q_rock + q_fire - q_cool
+		if q_rock >= 0:
+			energy_in_j += q_rock
+		else:
+			energy_out_j -= q_rock
+		energy_in_j += q_fire
+		energy_out_j += q_cool
+	for i: int in range(n):
+		ship.rooms[i].energy_j += delta[i]
+
+
+# Fire ------------------------------------------------------------------------------------------
+
+func _fire(sim: Sim, dt: float) -> void:
+	var ship: Ship = sim.ship
+	var rng: RandomNumberGenerator = sim.rng.get_stream("fire")
+	for r: Room in ship.rooms:
+		if r.fire > 0.0:
+			r.fire = minf(1.0, r.fire + _k("fire.growth_per_s") * dt * (1.0 - r.fire))
+			var lvl: float = r.level_m()
+			if lvl > 0.05:
+				r.fire -= _k("fire.water_suppress_per_m_s") * minf(lvl, 1.0) * dt
+			if r.fire <= 0.0:
+				r.fire = 0.0
+				sim.emit("fire_out", {"room": r.id, "by": "water"})
+		elif r.temp_c() >= _k("fire.autoignite_c") and rng.randf() < _k("fire.autoignite_per_s") * dt:
+			ignite(sim, r, _k("fire.start_level"))
+	# Spread: each neighbour accumulates exposure; at 1.0 it catches. Deterministic and testable.
+	for j: int in range(_adj_from.size()):
+		var src: Room = ship.rooms[_adj_from[j]]
+		var dst: Room = ship.rooms[_adj_to[j]]
+		if dst.fire > 0.0:
+			_spread_acc[j] = 0.0
+			continue
+		if src.fire <= 0.0:
+			_spread_acc[j] = maxf(0.0, _spread_acc[j] - 0.05 * dt)
+			continue
+		var factor: float = _adj_factor[j]
+		var li: int = _adj_link[j]
+		if li >= 0 and not ship.links[li].open:
+			factor = _k("fire.spread_wall_factor")
+		_spread_acc[j] += _k("fire.spread_per_s") * src.fire * factor * dt
+		if _spread_acc[j] >= 1.0:
+			_spread_acc[j] = 0.0
+			ignite(sim, dst, _k("fire.start_level"))
+			sim.emit("fire_spread", {"from": src.id, "to": dst.id})
+
+
+# Water -----------------------------------------------------------------------------------------
+
+func _water(ship: Ship, dt: float) -> void:
+	var head_v: float = sqrt(2.0 * _k("water.gravity") * ship.water_head_m)
+	for r: Room in ship.rooms:
+		if r.breach_m2 > 0.0:
+			var want: int = roundi(_k("water.breach_cd") * r.breach_m2 * head_v * dt * Room.ML_PER_M3)
+			var add: int = mini(want, r.capacity_ml - r.water_ml)
+			if add > 0:
+				r.water_ml += add
+				water_in_ml += add
+	for l: Link in ship.links:
+		var moved: int = 0
+		if l.open:
+			if l.kind == Link.Kind.DOOR:
+				moved = _door_flow(ship.rooms[l.a], ship.rooms[l.b], l, dt)
+			else:
+				moved = _hatch_flow(ship.rooms[l.a], ship.rooms[l.b], l, dt)
+		link_flow_ml_s[l.index] = float(moved) / dt
+	for r: Room in ship.rooms:
+		if r.has_pump and r.water_ml > 0:
+			var out: int = mini(r.water_ml, roundi(_k("water.pump_m3_s") * dt * Room.ML_PER_M3))
+			r.water_ml -= out
+			water_out_ml += out
+
+
+## Rooms on one deck: only water inside the door opening can pass, and never past equal levels.
+func _door_flow(a: Room, b: Room, l: Link, dt: float) -> int:
+	var ha: float = clampf(a.level_m(), 0.0, l.height_m)
+	var hb: float = clampf(b.level_m(), 0.0, l.height_m)
+	if absf(ha - hb) < 0.0005:
+		return 0
+	var want: int = roundi(_k("water.door_flow_per_m2_s") * l.breadth_m * (ha - hb) * dt * Room.ML_PER_M3)
+	var fa: float = a.floor_area_m2()
+	var fb: float = b.floor_area_m2()
+	var level_gap: int = roundi((a.level_m() - b.level_m()) * fa * fb / (fa + fb) * Room.ML_PER_M3)
+	if want > 0:
+		want = mini(mini(want, level_gap), mini(a.water_ml, b.capacity_ml - b.water_ml))
+		want = maxi(want, 0)
+	else:
+		want = maxi(maxi(want, level_gap), maxi(-b.water_ml, -(a.capacity_ml - a.water_ml)))
+		want = mini(want, 0)
+	a.water_ml -= want
+	b.water_ml += want
+	return want
+
+
+## A hatch drains the room above into the room below like an orifice, until the lower room is full.
+func _hatch_flow(up: Room, lo: Room, l: Link, dt: float) -> int:
+	if up.water_ml <= 0 or lo.water_ml >= lo.capacity_ml:
+		return 0
+	var v: float = sqrt(2.0 * _k("water.gravity") * up.level_m())
+	var want: int = roundi(_k("water.hatch_cd") * l.area_m2() * v * dt * Room.ML_PER_M3)
+	want = mini(want, mini(up.water_ml, lo.capacity_ml - lo.water_ml))
+	up.water_ml -= want
+	lo.water_ml += want
+	return want
+
+
+# Crew harm and flooding ------------------------------------------------------------------------
+
+func _crew_harm(sim: Sim, dt: float) -> void:
+	for c: CrewMember in sim.ship.crew:
+		if not c.alive:
+			continue
+		var r: Room = sim.ship.rooms[c.room]
+		var fire_d: float = _k("fire.crew_dps") * r.fire * dt
+		var heat_d: float = maxf(0.0, r.temp_c() - _k("crew.heat_safe_c")) * _k("crew.heat_dps_per_k") * dt
+		var drown_d: float = _k("water.drown_dps") * dt if r.level_m() >= _k("water.crew_head_m") else 0.0
+		if fire_d + heat_d + drown_d <= 0.0:
+			continue
+		c.hp -= fire_d + heat_d + drown_d
+		if c.hp <= 0.0:
+			c.hp = 0.0
+			c.alive = false
+			c.path = PackedVector2Array()
+			if fire_d >= heat_d and fire_d >= drown_d:
+				c.cause_of_death = "fire"
+			elif drown_d >= heat_d:
+				c.cause_of_death = "drowned"
+			else:
+				c.cause_of_death = "heat"
+			sim.emit("crew_died", {"crew": c.id, "cause": c.cause_of_death})
+
+
+func _flood_watch(sim: Sim, dt: float) -> void:
+	for r: Room in sim.ship.rooms:
+		if r.is_full():
+			if r.flooded_s == 0.0:
+				sim.emit("room_flooded", {"room": r.id})
+			r.flooded_s += dt
+		else:
+			r.flooded_s = 0.0
