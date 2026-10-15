@@ -8,7 +8,7 @@ extends RefCounted
 
 const ROOT: String = "res://data"
 const KNOWN_SYSTEMS: Array[String] = ["none", "helm", "bracing", "reactor", "weapons", "drill", "coolant"]
-const KNOWN_BOTS: Array[String] = ["auto", "idle", "random", "scripted_fire_drill", "drill"]
+const KNOWN_BOTS: Array[String] = ["auto", "idle", "random", "scripted_fire_drill", "drill", "run"]
 const EM_DASH_CODE: int = 0x2014  ## Built at runtime so no source file contains the character.
 const EPS: float = 0.01
 
