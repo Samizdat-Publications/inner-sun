@@ -1,0 +1,47 @@
+{
+  "id": "mohole_core",
+  "kind": "cavern",
+  "layer": "crust",
+  "rows": [2, 7],
+  "weight": 1.0,
+  "once_per_run": true,
+  "title": "Basalt From Nowhere",
+  "file": "SALVAGE LOG 03 // AUGER",
+  "start": "intro",
+  "pages": {
+    "intro": {
+      "text": "The drill opens into a dry cavern ribbed with basalt. On the floor, impossibly far from any ocean, lies a core canister: aluminum, dented, with a decal of a drill barge. The decal reads [[mohole:CUSS I, Guadalupe Site, 1961]]. The canister is still sealed. Around it, the rock glitters with something that is not quartz.",
+      "options": [
+        {
+          "text": "Send {crew} out to recover the canister.",
+          "outcomes": [
+            {"weight": 3, "page": "recovered", "effects": [{"type": "codex", "id": "mohole"}, {"type": "res_range", "res": "gems", "min": 6, "max": 10}]},
+            {"weight": 1, "page": "gas", "effects": [{"type": "codex", "id": "mohole"}, {"type": "crew_damage", "target": "picked", "amount": 25}, {"type": "res", "res": "gems", "amount": 3}]}
+          ]
+        },
+        {
+          "text": "Mine the glittering walls with the crown.",
+          "outcomes": [
+            {"weight": 1, "page": "mined", "effects": [{"type": "res_range", "res": "gems", "min": 4, "max": 8}, {"type": "pursuer", "rows": 0.3}]}
+          ]
+        },
+        {
+          "text": "Leave it. Someone sealed it for a reason.",
+          "outcomes": [{"weight": 1, "page": "leave"}]
+        }
+      ]
+    },
+    "recovered": {
+      "text": "{crew} comes back grinning, the canister under one arm and both pockets full. The core inside is basalt from the bottom of the Pacific. It should not be here. Neither should the green stones packed around it like padding."
+    },
+    "gas": {
+      "text": "Halfway across, {crew}'s lamp burns blue and the cavern air turns sweet. They make it back on the tether, coughing, with the canister and a handful of stones. Medical says they will live. Medical says that about everyone."
+    },
+    "mined": {
+      "text": "You walk the tower along the cavern wall at low power, the crown chewing a long groove through the glitter. It is loud work. The stones come up the conveyor in a green rattle, and the canister vanishes under the spoil."
+    },
+    "leave": {
+      "text": "{crew} watches the canister until the shaft wall closes over it. \"Someone sent that down,\" they say. \"Or something carried it.\""
+    }
+  }
+}

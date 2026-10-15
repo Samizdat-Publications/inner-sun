@@ -1,0 +1,18 @@
+{
+  "id": "topside_crust",
+  "layer": "crust",
+  "lines": [
+    {"trigger": "run_start", "text": "Auger, TOPSIDE. You are cleared to descend. Keep the chatter on channel two."},
+    {"trigger": "run_start", "text": "Auger, this is TOPSIDE. Your manifest is approved. Do not open the sealed crates."},
+    {"trigger": "first_segment", "text": "Copy your first bite, Auger. Mind the drill room temperature. We have lost crews to impatience."},
+    {"trigger": "fire", "text": "TOPSIDE reads a fire aboard. Put it out, Auger. The paperwork for a fire is worse than the fire."},
+    {"trigger": "flood", "text": "Water in the lower deck. Pumps first, questions later."},
+    {"trigger": "low_hull", "text": "Auger, your hull telemetry is ugly. Patch what you can. We are not sending anyone."},
+    {"trigger": "fight_start", "text": "Unregistered rig on your scope. They are not friends. They are not ours, either."},
+    {"trigger": "fight_won", "text": "Good work. Do not salvage their logs. Send them up unread."},
+    {"trigger": "crew_died", "text": "We copy the loss. Log it and keep moving, Auger."},
+    {"trigger": "codex", "text": "Interesting find. Recalibrate and disregard."},
+    {"trigger": "pursuer_close", "text": "Seismic says something large is moving behind you. Do not stop to look."},
+    {"trigger": "gate", "text": "That is the gate, Auger. Nobody has come back up through it. Nobody has tried."}
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "id": "kola_tapes",
+  "kind": "event",
+  "layer": "crust",
+  "rows": [1, 7],
+  "weight": 1.0,
+  "once_per_run": true,
+  "title": "Reel Seven",
+  "file": "FIELD REPORT 14-K // AUGER",
+  "start": "intro",
+  "pages": {
+    "intro": {
+      "text": "The crown grinds against something that is not rock. When the dust settles, a steel capsule the size of a coffin hangs half out of the shaft wall, stenciled in Cyrillic. Inside, wrapped in oilcloth: a field recorder and twelve reels of tape. Reel seven is marked in red pencil. {crew} reads the stamp aloud: [[kola_well:Kola SG-3, 12 262 m]].",
+      "radio": "Auger, TOPSIDE. If that is Soviet hardware, it is not ours to listen to. Bag it.",
+      "options": [
+        {
+          "text": "Play reel seven.",
+          "outcomes": [
+            {"weight": 3, "page": "logs", "effects": [{"type": "codex", "id": "kola_well"}, {"type": "reveal", "rows": 2}]},
+            {"weight": 1, "page": "answer", "effects": [{"type": "codex", "id": "kola_well"}, {"type": "pursuer", "rows": 0.6}]}
+          ]
+        },
+        {
+          "text": "Strip the capsule for steel.",
+          "outcomes": [
+            {"weight": 1, "page": "strip", "effects": [{"type": "res_range", "res": "ore", "min": 6, "max": 10}]}
+          ]
+        },
+        {
+          "text": "Leave it in the wall.",
+          "outcomes": [{"weight": 1, "page": "leave"}]
+        }
+      ]
+    },
+    "logs": {
+      "text": "Mostly drilling chatter, and a man counting depths in a flat voice. Between counts, someone has spliced in pages of seismic logs read aloud. {crew} copies them down by hand. They map the next stretch of rock better than your own instruments do."
+    },
+    "answer": {
+      "text": "At twelve thousand meters the counting stops. What follows is a long, low note, like a bow drawn across a steel cable. Then the same note again, much closer, from under the deck plates. Everyone hears it. Nobody says so."
+    },
+    "strip": {
+      "text": "The capsule walls are good Soviet steel, a hand thick. Two hours with the cutting torch turns them into hull plate. The recorder goes over the side with the slag. Somewhere in an archive, a box is now empty."
+    },
+    "leave": {
+      "text": "You log the position, photograph the stencils and drill on. TOPSIDE acknowledges with a single click."
+    }
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "id": "byrd_signal",
+  "kind": "event",
+  "layer": "crust",
+  "rows": [1, 7],
+  "weight": 1.0,
+  "once_per_run": true,
+  "title": "One Word, Repeating",
+  "file": "SIGNALS INTERCEPT 0447 // AUGER",
+  "start": "intro",
+  "pages": {
+    "intro": {
+      "text": "The radio wakes on a frequency nobody uses: an old Navy band, all hiss and a patient Morse key. The same group repeats every forty seconds. The bridge decodes it as a bearing and a single word: [[byrd_1947:BEYOND]]. The signal is coming from below you, and it is getting stronger.",
+      "radio": "Auger, you are not cleared for that band. We will be on channel two.",
+      "options": [
+        {
+          "text": "Answer on the same key.",
+          "outcomes": [
+            {"weight": 1, "page": "answer", "effects": [{"type": "codex", "id": "byrd_1947"}, {"type": "reveal", "rows": 3}, {"type": "pursuer", "rows": 0.5}]}
+          ]
+        },
+        {
+          "text": "Triangulate the source with the scanner.",
+          "requires": {"system": {"helm": 2}},
+          "outcomes": [
+            {"weight": 1, "page": "mast", "effects": [{"type": "codex", "id": "byrd_1947"}, {"type": "reveal", "rows": 2}]}
+          ]
+        },
+        {
+          "text": "Switch the receiver off.",
+          "outcomes": [{"weight": 1, "page": "silence"}]
+        }
+      ]
+    },
+    "answer": {
+      "text": "You tap back one group: RECEIVED. The keying stops. For a full minute there is nothing. Then the signal returns, slower, almost gentle, and spells out a route: depths, bearings, a warning about water. Your scanner fills in the next few kilometers. Something else, somewhere, was listening too."
+    },
+    "mast": {
+      "text": "The helm runs three passes while the signal repeats. The source is not a transmitter. It is a mast of riveted aluminum thirty meters into solid granite, with a Navy plate older than anyone aboard. It has keyed the same word since before the rock closed over it."
+    },
+    "silence": {
+      "text": "The bridge kills the receiver. The hiss is gone. In the quiet that follows, the hull ticks as it cools, and every tick sounds a little like Morse."
+    }
+  }
+}
