@@ -2,12 +2,9 @@
 
     python pipeline/painted_gen.py wall,reactor,lamp,floor,crew --variants 2 [--model gemini-3-pro-image]
 
-UNTESTED against the live API in the session that wrote it (no usable key was available), so the first call
-may need the model id or endpoint adjusted. Current docs (checked 2026-10-15, ai.google.dev image-generation):
-models gemini-nano-banana-2.1 (default recommendation), gemini-3-pro-image (premium), gemini-3.1-flash-image,
-gemini-3.1-flash-lite-image; the new Interactions endpoint POST /v1beta/interactions with response_format
-{type: image, aspect_ratio, image_size}; the classic POST /v1beta/models/<id>:generateContent also still exists.
-This script tries Interactions first and falls back to generateContent once.
+Uses POST /v1beta/models/<id>:generateContent with responseModalities IMAGE. Models listed for the key on
+2026-10-15: gemini-3-pro-image (best, default), gemini-3.1-flash-image, gemini-3.1-flash-lite-image,
+gemini-2.5-flash-image.
 
 Candidates go to harness/out/painted_cands/<item>_v<n>.png. Props are requested on a flat magenta key
 (#ff00ff) which pipeline/style_post.py keys out. Every call is logged to docs/SPEND.md (flat estimate per
@@ -50,8 +47,10 @@ ITEMS = {
                 "side pipes with flanges, a small control box with three buttons. " + STYLE + " " + KEY),
     "lamp": ("1:1", "A caged industrial ceiling lamp fixture hanging from a short steel bracket, conical enamel shade, "
              "brass cap, wire cage, a BRIGHT WARM WHITE-HOT bulb at the centre. " + STYLE + " " + KEY),
-    "floor": ("21:9", "A long horizontal steel floor edge beam seen from the side: tread plate on top, an I-beam web with "
-              "round lightening holes, rivets, a yellow safety nosing line. Fills the whole frame edge to edge. " + STYLE),
+    "floor": ("21:9", "Seamless flat texture of a steel floor deck seen straight on from the side: the whole frame is "
+              "worn dark diamond tread plate steel, with one thin straight horizontal yellow safety stripe exactly across "
+              "the middle of the frame, a few rivets, light rust. ONLY the plate and the stripe: no gauges, no switches, "
+              "no holes, no machinery, no objects. Fills the whole frame edge to edge. " + STYLE),
     "crew": ("3:4", "Full body expedition engineer standing, facing RIGHT in strict side view, grimy olive coverall "
              "jumpsuit, yellow hard hat with a small headlamp whose lens is bright white, leather tool belt with a "
              "hammer and pouches, heavy boots, gloves, stubble, relaxed idle stance, feet at the very bottom of the "
@@ -91,18 +90,15 @@ def find_image(obj):
 
 
 def generate(model, prompt, aspect, key, size="2K"):
-    body = {"model": model, "input": [{"type": "text", "text": prompt}],
-            "response_format": {"type": "image", "mime_type": "image/png", "aspect_ratio": aspect, "image_size": size}}
-    r, err = http_post(BASE + "/interactions", body, key)
+    """generateContent with image output (checked live 2026-10-15: gemini-3-pro-image supports it)."""
+    body = {"contents": [{"parts": [{"text": prompt}]}],
+            "generationConfig": {"responseModalities": ["IMAGE"], "imageConfig": {"aspectRatio": aspect, "imageSize": size}}}
+    r, err = http_post(f"{BASE}/models/{model}:generateContent", body, key)
     if r is None:
-        body2 = {"contents": [{"parts": [{"text": prompt}]}],
-                 "generationConfig": {"responseModalities": ["IMAGE"], "imageConfig": {"aspectRatio": aspect, "imageSize": size}}}
-        r, err2 = http_post(f"{BASE}/models/{model}:generateContent", body2, key)
-        if r is None:
-            return None, f"interactions: {err} | generateContent: {err2}"
+        return None, err
     b64 = find_image(r)
     if not b64:
-        return None, "no image in the response"
+        return None, "no image in the response: " + json.dumps(r)[:300]
     return base64.b64decode(b64), None
 
 

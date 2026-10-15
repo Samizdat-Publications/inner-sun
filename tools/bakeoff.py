@@ -33,34 +33,44 @@ def _font(size):
 
 
 def compose(out_dir):
+    """Labeled comparison sheet of every style that has assets (a style with none is left out and cropped away)."""
     from PIL import Image, ImageDraw
     p = lambda n: os.path.join(out_dir, n + ".png")  # noqa: E731
+    have_pixel = os.path.exists(os.path.join(paths.GAME, "assets", "bakeoff", "pixel", "room_wall_albedo.png"))
+    names = [("05a_close_pixel", "PIXEL")] * have_pixel + [("05b_close_painted", "PAINTED"), ("05c_close_blender", "BLENDER")]
     crops = []
-    for n in ("05a_close_pixel", "05b_close_painted", "05c_close_blender"):
+    for n, _ in names:
         if os.path.exists(p(n)):
             im = Image.open(p(n)).convert("RGB")
             w, h = im.size
             crops.append(im.crop((w // 2 - w // 6, 0, w // 2 + w // 6, h)))
-    if len(crops) == 3:
-        sheet = Image.new("RGB", (crops[0].width * 3, crops[0].height))
+    if len(crops) == len(names):
+        sheet = Image.new("RGB", (crops[0].width * len(crops), crops[0].height))
         for i, c in enumerate(crops):
             sheet.paste(c, (i * crops[0].width, 0))
         sheet.save(p("05_closeup"))
+    label = " | ".join(t for _, t in names)
     cells = [("01  lamp only", "01_lamp"), ("02  alarm + fire, lamp 0.4", "02_alarm"),
-             ("03  sweep light, position b", "03_sweep_b"), ("05  closeup 2.6x: PIXEL | PAINTED | BLENDER", "05_closeup")]
+             ("03  sweep light, position b", "03_sweep_b"), (f"05  closeup 2.6x: {label}", "05_closeup")]
     W, H = 960, 540
     grid = Image.new("RGB", (W * 2, H * 2), (10, 10, 10))
     f = _font(26)
     for i, (title, n) in enumerate(cells):
         if not os.path.exists(p(n)):
             continue
-        im = Image.open(p(n)).convert("RGB").resize((W, H), Image.LANCZOS)
+        im = Image.open(p(n)).convert("RGB")
+        if n != "05_closeup" and not have_pixel:
+            im = im.crop((680, 270, 1880, 810))   # the two populated rooms, 20:9
+            im = im.resize((W, int(W * im.height / im.width)), Image.LANCZOS)
+            im = im.crop((0, 0, W, H)) if im.height >= H else im
+        else:
+            im = im.resize((W, H), Image.LANCZOS)
         d = ImageDraw.Draw(im)
         d.rectangle((0, 0, W, 38), fill=(0, 0, 0))
         d.text((10, 4), title, fill=(255, 220, 160), font=f)
         grid.paste(im, ((i % 2) * W, (i // 2) * H))
     grid.save(os.path.join(out_dir, "compare.jpg"), quality=90)
-    print("compare.jpg written")
+    print("compare.jpg written" + ("" if have_pixel else " (PIXEL omitted: no assets)"))
 
 
 def glow_check(out_dir):
