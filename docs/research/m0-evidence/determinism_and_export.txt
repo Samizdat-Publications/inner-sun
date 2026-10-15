@@ -1,0 +1,22 @@
+Determinism and export evidence (2026-10-15, Godot 4.7.2, RTX 5070 Ti Laptop GPU)
+
+python tools/determinism.py   (fire_drill, seed 1234, 1200 ticks)
+  headless: exit 0, 20s, tick=1200 hash=85cbc093e13e52e5
+  movie: exit 0, 44s, tick=1200 hash=85cbc093e13e52e5
+  determinism: ok
+
+python tools/export.py   (release export, then the exported build run off-screen with the bot, seed 1234, 1200 ticks)
+  exe builds\InnerSun.exe size 109.3 MB (+ pck separate, 1.1 MB)
+  ran InnerSun.console.exe: exit 0, 23s
+  export: ok (hash 85cbc093e13e52e5)   <- same hash as the editor binary, headless and under Movie Maker
+
+python tools/determinism.py --seed 99 --ticks 1800 --no-import
+  headless: exit 0, 30s, tick=1800 hash=6ae984a764c3f362
+  movie: exit 0, 90s, tick=1800 hash=6ae984a764c3f362
+  determinism: ok
+
+python tools/snapshot.py; python tools/balance.py --runs 60 --procs 3 --bots auto --pack <snapshot.pck>
+  frozen-pack runs matching live runs (same seeds): 60/60
+
+Fresh clone from GitHub (git clone, then python tools/check.py in the clone):
+  TESTS passed=24 failed=0, SELFTEST ok, check: ok
