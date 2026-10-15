@@ -33,6 +33,15 @@ var _redraw: Array[FnDraw] = []
 var _drill_light: PointLight2D
 var _drill_poly: Polygon2D
 var _time: float = 0.0
+## Drilling mode: the node rides the sim's ship_pos in segment space, over a RockView.
+var _drill: DrillSim
+var _m0_rock: Array[Node] = []
+var _floods: Array[PointLight2D] = []
+var _crown: Node2D
+var _crown_glow: Array[Polygon2D] = []
+var _crown_light: PointLight2D
+var _sparks: CPUParticles2D
+var _dust: CPUParticles2D
 
 
 func setup(p_run: ScenarioRun, p_ppm: float) -> void:
@@ -46,6 +55,7 @@ func setup(p_run: ScenarioRun, p_ppm: float) -> void:
 	_build_lights()
 	_build_flames()
 	_build_drill()
+	_build_crown()
 	_build_props()
 	_build_crew()
 
@@ -141,9 +151,10 @@ func _build_rock() -> void:
 			s.position = at
 			s.z_index = -10
 			add_child(s)
+			_m0_rock.append(s)
 	var size: Vector2 = ship_size_m() * ppm
-	_light(Vector2(-ppm * 0.6, size.y * 0.3), Color(0.55, 0.68, 0.85), 1.5, ppm * 8.0, true, 260.0)
-	_light(Vector2(size.x + ppm * 0.6, size.y * 0.3), Color(0.55, 0.68, 0.85), 1.5, ppm * 8.0, true, 260.0)
+	_m0_rock.append(_light(Vector2(-ppm * 0.6, size.y * 0.3), Color(0.55, 0.68, 0.85), 1.5, ppm * 8.0, true, 260.0))
+	_m0_rock.append(_light(Vector2(size.x + ppm * 0.6, size.y * 0.3), Color(0.55, 0.68, 0.85), 1.5, ppm * 8.0, true, 260.0))
 
 
 func _build_rooms() -> void:
@@ -289,6 +300,159 @@ func _build_drill() -> void:
 	_drill_light = _light(Vector2(cx, rp.end.y + ppm * 1.5), Color(1.0, 0.55, 0.2), 1.8, ppm * 6.0, true, 160.0)
 
 
+## True while the node follows a drilling segment (set by Main when a RockView is present).
+func is_drilling() -> bool:
+	return _drill != null
+
+
+## Switch between the M0 cutaway (static rock, small drill glow) and a drilling segment: with a
+## DrillSim the static rock goes away, the crown, sparks and hull floodlights switch on, and this
+## node follows the sim's ship_pos. Pass null to go back.
+func set_drilling(d: DrillSim) -> void:
+	_drill = d
+	var on: bool = d != null
+	for n: Node in _m0_rock:
+		if n is CanvasItem:
+			(n as CanvasItem).visible = not on
+		elif n is Light2D:
+			(n as Light2D).enabled = not on
+	if _drill_poly != null:
+		_drill_poly.visible = not on
+	if _drill_light != null:
+		_drill_light.enabled = not on
+	for l: PointLight2D in _floods:
+		l.enabled = on
+	if _crown != null:
+		_crown.visible = on
+	if _crown_light != null:
+		_crown_light.enabled = on
+	if not on:
+		_sparks.emitting = false
+		_dust.emitting = false
+		position = Vector2.ZERO
+
+
+## The cutting crown under the whole tower, the hull floodlights, sparks and dust. Hidden and dark
+## until set_drilling. Rock lights use light mask 2 (RockView.LIGHT_MASK); the crown parts use 3 so
+## those lights shade them too.
+func _build_crown() -> void:
+	var size: Vector2 = ship_size_m() * ppm
+	var amb: Color = RockView.AMBIENT
+	_crown = Node2D.new()
+	_crown.position = Vector2(0.0, size.y)
+	_crown.z_index = 6
+	_crown.visible = false
+	add_child(_crown)
+	var body := Polygon2D.new()
+	body.polygon = PackedVector2Array([Vector2(-6, -8), Vector2(size.x + 6.0, -8), Vector2(size.x + 6.0, 14), Vector2(-6, 14)])
+	body.color = Color(0.3, 0.29, 0.28)
+	body.light_mask = 3
+	_crown.add_child(body)
+	var unlit := CanvasItemMaterial.new()
+	unlit.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
+	unlit.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	var teeth: int = maxi(1, roundi(size.x / 80.0))
+	var tw: float = size.x / float(teeth)
+	for i: int in range(teeth):
+		var x0: float = float(i) * tw
+		var tooth := Polygon2D.new()
+		tooth.polygon = PackedVector2Array([Vector2(x0 + 2, 12), Vector2(x0 + tw - 2, 12), Vector2(x0 + tw * 0.5, 47)])
+		tooth.color = Color(0.28, 0.27, 0.26).darkened(0.15 * float(i % 2))
+		tooth.light_mask = 3
+		_crown.add_child(tooth)
+		var glow := Polygon2D.new()
+		glow.polygon = PackedVector2Array([Vector2(x0 + tw * 0.25, 30), Vector2(x0 + tw * 0.75, 30), Vector2(x0 + tw * 0.5, 48)])
+		glow.color = Color(1.5 / amb.r, 0.62 / amb.g, 0.2 / amb.b, 1.0)
+		glow.material = unlit
+		_crown.add_child(glow)
+		_crown_glow.append(glow)
+	_crown_light = _light(Vector2(size.x * 0.5, size.y + 34.0), Color(1.0, 0.55, 0.22), 0.3, ppm * 6.0, false, 110.0)
+	_crown_light.texture = RockView.light_texture(128, 0.0, 0.3, 0.6)
+	_crown_light.texture_scale = ppm * 6.0 * 2.0 / 128.0 / 0.4
+	_crown_light.range_item_cull_mask = 2
+	_crown_light.enabled = false
+	# Hull floodlights: low corners throw down and out, mid-hull ones rake the shaft walls.
+	var flood_col := Color(0.9, 0.95, 1.0)
+	var wide: ImageTexture = RockView.light_texture(128, 0.3, 0.65, 0.38)
+	for spec: Vector4 in [Vector4(90.0, size.y - 50.0, 1.5, 11.0), Vector4(size.x - 90.0, size.y - 50.0, 1.5, 11.0),
+			Vector4(110.0, size.y * 0.5, 0.9, 9.0), Vector4(size.x - 110.0, size.y * 0.5, 0.9, 9.0)]:
+		var fl: PointLight2D = _light(Vector2(spec.x, spec.y), flood_col, spec.z, ppm * spec.w, false, 110.0)
+		fl.texture = wide
+		fl.texture_scale = ppm * spec.w * 2.0 / 128.0 / 0.4
+		fl.range_item_cull_mask = 2
+		fl.enabled = false
+		_floods.append(fl)
+	var hot := Gradient.new()
+	hot.set_color(0, Color(1.7 / amb.r, 1.45 / amb.g, 0.8 / amb.b, 1.0))
+	hot.set_color(1, Color(0.8 / amb.r, 0.18 / amb.g, 0.04 / amb.b, 0.0))
+	hot.add_point(0.35, Color(1.5 / amb.r, 0.8 / amb.g, 0.25 / amb.b, 0.9))
+	var add_mat := CanvasItemMaterial.new()
+	add_mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	add_mat.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
+	_sparks = CPUParticles2D.new()
+	_sparks.texture = ShipView.radial_texture(12)
+	_sparks.material = add_mat
+	_sparks.amount = 150
+	_sparks.lifetime = 0.6
+	_sparks.emitting = false
+	_sparks.position = Vector2(size.x * 0.5, size.y + 40.0)
+	_sparks.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	_sparks.emission_rect_extents = Vector2(size.x * 0.46, 3.0)
+	_sparks.direction = Vector2(0, -1)
+	_sparks.spread = 100.0
+	_sparks.gravity = Vector2(0, 1200)
+	_sparks.initial_velocity_min = 140.0
+	_sparks.initial_velocity_max = 520.0
+	_sparks.scale_amount_min = 0.5
+	_sparks.scale_amount_max = 1.5
+	_sparks.color_ramp = hot
+	_sparks.z_index = -6
+	add_child(_sparks)
+	var puff := Gradient.new()
+	puff.set_color(0, Color(0.7 / amb.r, 0.6 / amb.g, 0.5 / amb.b, 0.0))
+	puff.set_color(1, Color(0.5 / amb.r, 0.45 / amb.g, 0.4 / amb.b, 0.0))
+	puff.add_point(0.25, Color(0.55 / amb.r, 0.5 / amb.g, 0.44 / amb.b, 0.26))
+	var mix_mat := CanvasItemMaterial.new()
+	mix_mat.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
+	_dust = CPUParticles2D.new()
+	_dust.texture = ShipView.radial_texture(48)
+	_dust.material = mix_mat
+	_dust.amount = 36
+	_dust.lifetime = 2.2
+	_dust.emitting = false
+	_dust.position = Vector2(size.x * 0.5, size.y + 36.0)
+	_dust.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	_dust.emission_rect_extents = Vector2(size.x * 0.5, 4.0)
+	_dust.direction = Vector2(0, -1)
+	_dust.spread = 90.0
+	_dust.gravity = Vector2(0, -14)
+	_dust.initial_velocity_min = 25.0
+	_dust.initial_velocity_max = 90.0
+	_dust.scale_amount_min = 2.0
+	_dust.scale_amount_max = 4.5
+	_dust.color_ramp = puff
+	_dust.z_index = -7
+	add_child(_dust)
+
+
+func _process_drilling() -> void:
+	var d: DrillSim = _drill
+	var cut: bool = d.cutting and d.speed_m_s > 0.02
+	var pulse: float = 0.86 + 0.14 * sin(_time * 34.0) + 0.07 * sin(_time * 57.0)
+	var load_k: float = clampf(d.speed_m_s / 1.3, 0.2, 1.6)
+	var shake: Vector2 = Vector2.ZERO
+	if cut:
+		shake = Vector2(sin(_time * 71.0), cos(_time * 83.0)) * 1.4
+	position = d.ship_pos * ppm + shake
+	_crown_light.energy = (1.1 + 0.4 * load_k) * pulse if cut else 0.25
+	var wear_dim: float = 1.0 - 0.45 * d.bit_wear
+	for g: Polygon2D in _crown_glow:
+		g.color.a = clampf(pulse * wear_dim, 0.0, 1.0) if cut else 0.1
+	_sparks.emitting = cut
+	_sparks.speed_scale = 0.7 + 0.5 * load_k
+	_dust.emitting = cut
+
+
 func _build_props() -> void:
 	var tex: Texture2D = ShipView.canvas_tex("res://assets/test/reactor_albedo.png", "res://assets/test/reactor_normal.png")
 	var ri: int = run.sim.ship.room_with_system("reactor")
@@ -328,7 +492,9 @@ func _process(delta: float) -> void:
 		_crew_nodes[c.index].position = c.pos * ppm
 		_crew_lights[c.index].position = (c.pos + Vector2(0, -1.0)) * ppm
 		_crew_lights[c.index].enabled = c.alive
-	if _drill_light != null:
+	if _drill != null:
+		_process_drilling()
+	elif _drill_light != null:
 		var spin: float = 0.85 + 0.15 * sin(_time * 30.0)
 		_drill_light.energy = 1.8 * spin
 		_drill_poly.color = Color(2.4 * spin, 1.0 * spin, 0.35)
