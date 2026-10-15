@@ -9,3 +9,5 @@ A visual record of Inner Sun, oldest first.
 | 003 | 2026-10-15 15:49 | [003_m0-fire-drill-flood.jpg](003_m0-fire-drill-flood.jpg) | M0: water from the middle-deck breach pours down the ladder hatch and pools in the bottom deck while the fire is out. | 8cf2d12 |
 | 004 | 2026-10-15 18:34 | [004_m0-exposure-lift-frames.jpg](004_m0-exposure-lift-frames.jpg) | review frames, build 20261015-183051-e2dc572, seed 324137 | e2dc572 |
 | 005 | 2026-10-15 19:10 | [005_m1-art-bakeoff.jpg](005_m1-art-bakeoff.jpg) | M1 art bake-off: painted pulp (Gemini) vs Blender pre-rendered, same reactor room and engineer, lit identically in Godot (lamp, alarm and fire, sweep light, close-up). Pixel art not generated (no PixelLab key). | 76b5c98 |
+| 006 | 2026-10-15 19:42 | [006_m1-hud-crisis.jpg](006_m1-hud-crisis.jpg) | M1 run screen HUD (UI gallery, stand-in ship): power panel with damaged and heat-failed systems, seismic scanner, crew cards, alerts strip | 38309e8 |
+| 007 | 2026-10-15 19:42 | [007_m1-dossier.jpg](007_m1-dossier.jpg) | M1 dossier: Reel Seven event page with a redaction (codex unknown), TOPSIDE radio strip, options | 38309e8 |

@@ -1,6 +1,6 @@
 # Credits
 
-Every third-party asset: source, license, URL, date. CC0 or CC-BY only.
+Every third-party asset: source, license, URL, date. Art and sound: CC0 or CC-BY only. Fonts: SIL OFL or Apache 2.0, with the license text next to the font file.
 
 | Asset | Source | License | URL | Date |
 |---|---|---|---|---|
