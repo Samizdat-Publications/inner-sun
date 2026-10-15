@@ -61,7 +61,7 @@ Reference: `docs/research/` (the loop proof and evidence, the tooling brief), `d
     (environment first, then `C:\Users\stewa\ClaudeProjects\Noclip\.env`) and never print them.
 11. **Git.** Stage explicit paths only; never `git add -A` or `git add .`. Never force-push or
     rewrite pushed history.
-12. **Original work.** Assets CC0 or CC-BY only, each with a line in `docs/CREDITS.md`; paid
+12. **Original work.** Assets CC0 or CC-BY only (fonts: SIL OFL or Apache 2.0), each with a line in `docs/CREDITS.md`; paid
     generation logged in `docs/SPEND.md` (soft cap about $40 per session). No names, code, art or
     text from FTL, Barotrauma or any other game. Real history (Byrd, Kola, Project Mohole) appears
     only as discoverable lore.
