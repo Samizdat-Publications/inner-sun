@@ -150,6 +150,13 @@ Critic loop:
   - Any new bot flag must be added to `Boot.BOT_FLAGS`.
   - If Stewart still minds the flash, try starting the window on a hidden desktop (CreateDesktop)
     or minimized (both untested).
+- **Agent worktrees lack git-ignored files.** Builders in `.claude/worktrees/` do not have
+  `harness/out/` (so no Godot API dump: point them at the main repo's
+  `C:\Users\stewa\Documents\Claude\Inner Sun\harness\out\godot-api\doc\classes\`) and only see
+  committed files: commit a spec before dispatching the agent that needs it.
+- **`check.py --no-import` is only for repeat runs.** Right after a merge that adds scripts with new
+  class names or new assets, run the full `python tools/check.py` (the import registers them), or
+  you get dozens of false errors.
 - **Use the console exe.** `godot.exe` prints nothing to a pipe. The console wrapper starts the
   real exe as a child process, and job objects catch both.
 - **Hangs.** A script that fails to compile makes the sim stop advancing. Play runs with
