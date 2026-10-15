@@ -5,6 +5,17 @@ extends TestCase
 const REAL: Array[String] = ["byrd_signal", "kola_tapes", "mohole_core"]
 
 
+## The data with only the three reference events, so the picking tests do not change as the
+## writers add content.
+func _real_db() -> DataDB:
+	var d: DataDB = db()
+	var events: Dictionary = d.table("events")
+	for id: Variant in events.keys():
+		if not REAL.has(str(id)):
+			events.erase(id)
+	return d
+
+
 func _sim(p_seed: int = 7, d: DataDB = null, mode: String = "run") -> Sim:
 	return Sim.new(d if d != null else db(), p_seed, "light_drill", {"mode": mode})
 
@@ -60,7 +71,7 @@ func test_lint_catches_broken_events() -> void:
 
 func test_pick_is_deterministic_and_filtered() -> void:
 	var seen: Dictionary = {}
-	var d: DataDB = db()
+	var d: DataDB = _real_db()
 	for sd: int in range(1, 41):
 		var s1: Sim = _sim(sd, d)
 		var s2: Sim = _sim(sd, d)
@@ -69,7 +80,7 @@ func test_pick_is_deterministic_and_filtered() -> void:
 		check(p1 == "byrd_signal" or p1 == "kola_tapes", "only crust events of kind event: " + p1)
 		seen[p1] = true
 	check(seen.has("byrd_signal") and seen.has("kola_tapes"), "both candidates come up over seeds")
-	var s: Sim = _sim()
+	var s: Sim = _sim(7, d)
 	check_eq(s.encounter.pick_event(s, "cavern", 1), "", "mohole_core starts at row 2")
 	check_eq(s.encounter.pick_event(s, "cavern", 2), "mohole_core", "row 2 is in range")
 	check_eq(s.encounter.pick_event(s, "event", 9), "", "no event past row 7")
@@ -78,18 +89,19 @@ func test_pick_is_deterministic_and_filtered() -> void:
 
 
 func test_start_node_opens_dialog_and_picks_crew() -> void:
-	var s: Sim = _sim()
+	var d: DataDB = _real_db()
+	var s: Sim = _sim(7, d)
 	s.encounter.start_node(s, "cavern", 3)
 	check_eq(s.run.phase, "dialog", "an event node opens a dialog")
 	check_eq(s.encounter.event_id, "mohole_core", "the only cavern event")
 	check_eq(s.encounter.page, "intro", "on its start page")
 	check_eq(s.encounter.picked, 0, "the first live crew member is picked")
 	check_eq(s.encounter.fill_text(s, "Send {crew} out."), "Send Vasquez out.", "{crew} is filled in")
-	var s2: Sim = _sim()
+	var s2: Sim = _sim(7, d)
 	EventEffects.kill(s2, s2.ship.crew[0])
 	s2.encounter.start_node(s2, "cavern", 3)
 	check_eq(s2.encounter.picked, 1, "the dead are never picked")
-	var s3: Sim = _sim()
+	var s3: Sim = _sim(7, d)
 	s3.encounter.start_node(s3, "hazard", 3)
 	check_eq(s3.run.phase, "idle", "no fitting event: nothing opens")
 	check(has_event(s3, "no_event"), "and it says so")
@@ -173,7 +185,7 @@ func test_page_without_options_ends_to_idle() -> void:
 
 
 func test_once_per_run_over_a_run() -> void:
-	var d: DataDB = db()
+	var d: DataDB = _real_db()
 	var rep: Dictionary = (d.table("events")["kola_tapes"] as Dictionary).duplicate(true)
 	rep["id"] = "zz_repeat"
 	rep["once_per_run"] = false

@@ -1,0 +1,59 @@
+{
+  "id": "cold_spring",
+  "kind": "cavern",
+  "layer": "crust",
+  "rows": [5, 8],
+  "weight": 1.0,
+  "once_per_run": true,
+  "title": "The Cold Spring",
+  "file": "SALVAGE LOG 14 // AUGER",
+  "start": "intro",
+  "pages": {
+    "intro": {
+      "text": "The cavern floor is a pool of water so cold it smokes. Frost feathers the rock, kilometers below where any frost should be. {crew} runs a sample through the analyzer and reads it twice: the water carries the same additive package as [[coolant_k7:the K-7 mix in your tanks]]. On the shore stands a survey sled, abandoned, its battery bay still latched.",
+      "options": [
+        {
+          "text": "Pump the spring into the tanks.",
+          "outcomes": [
+            {"weight": 1, "page": "pumped", "effects": [{"type": "codex", "id": "coolant_k7"}, {"type": "res_range", "res": "coolant", "min": 3, "max": 5}]}
+          ]
+        },
+        {
+          "text": "Filter it through the second coolant loop.",
+          "requires": {"system": {"coolant": 2}},
+          "outcomes": [
+            {"weight": 1, "page": "filtered", "effects": [{"type": "codex", "id": "coolant_k7"}, {"type": "res_range", "res": "coolant", "min": 5, "max": 6}]}
+          ]
+        },
+        {
+          "text": "Pry open the sled's battery bay.",
+          "outcomes": [
+            {"weight": 2, "page": "sled", "effects": [{"type": "res", "res": "cells", "amount": 1}]},
+            {"weight": 1, "page": "sled_frost", "effects": [{"type": "res", "res": "cells", "amount": 1}, {"type": "crew_damage", "target": "picked", "amount": 15}]}
+          ]
+        },
+        {
+          "text": "Stay, pump it dry and strip the sled.",
+          "outcomes": [
+            {"weight": 1, "page": "drained", "effects": [{"type": "codex", "id": "coolant_k7"}, {"type": "res_range", "res": "coolant", "min": 6, "max": 8}, {"type": "res", "res": "cells", "amount": 1}, {"type": "pursuer", "rows": 0.7}]}
+          ]
+        }
+      ]
+    },
+    "pumped": {
+      "text": "The pumps drink for an hour. The spring does not go down. Whatever feeds it is large, cold and very patient. Your tank gauges climb, and {crew} labels the sample jar with a single question mark. Nobody aboard has ever seen coolant come out of the ground."
+    },
+    "filtered": {
+      "text": "The second loop strips the grit and leaves the rest. The water comes out faintly blue and exactly to spec, cleaner than the drums loaded at the surface. Somebody down here mixes coolant. Somebody has been mixing it for a long time."
+    },
+    "sled": {
+      "text": "{crew} pries the battery bay open with a frozen crowbar. One cell, sealed, charge light still green. The sled's logbook is in the bay too, every page blank except the last, which says in pencil, in capitals pressed hard enough to tear the paper: do not drink it."
+    },
+    "sled_frost": {
+      "text": "The latch is frozen solid. {crew} works it bare-handed when the gloves get in the way, and comes back with a sealed cell and three fingers the color of candle wax. Medical warms them slowly in a bucket of tepid water. {crew} will keep the fingers. The cell is fine."
+    },
+    "drained": {
+      "text": "You stay four hours, pumps hammering. The tanks fill, the sled gives up its cell, and the spring finally drops a hand's width, uncovering a ring of prints in the frost at the old waterline. They are not boots. They lead into the water."
+    }
+  }
+}

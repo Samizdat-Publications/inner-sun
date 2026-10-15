@@ -1,0 +1,51 @@
+{
+  "id": "blind_aquifer",
+  "kind": "hazard",
+  "layer": "crust",
+  "rows": [3, 8],
+  "weight": 1.0,
+  "once_per_run": true,
+  "title": "Blind Water",
+  "file": "INCIDENT REPORT 21 // AUGER",
+  "start": "intro",
+  "pages": {
+    "intro": {
+      "text": "The rock ahead goes dark and wet on the scanner: an aquifer, sealed for an age, under more pressure than your casing was rated for. The crown is already touching it. Water beads along the lower deck seams and hisses where it meets the hot bearings. {crew} reads the bracing gauges aloud. The numbers are going the wrong way.",
+      "options": [
+        {
+          "text": "Load the bracing and push through.",
+          "requires": {"system": {"bracing": 2}},
+          "outcomes": [
+            {"weight": 1, "page": "braced", "effects": [{"type": "hazard", "kind": "breach", "room": "system:drill", "level": 0.01}]}
+          ]
+        },
+        {
+          "text": "Back off and grout the face.",
+          "outcomes": [
+            {"weight": 1, "page": "grouted", "effects": [{"type": "hazard", "kind": "breach", "room": "system:drill", "level": 0.02}, {"type": "pursuer", "rows": 0.5}]}
+          ]
+        },
+        {
+          "text": "Blow the face and ride the water down.",
+          "requires": {"res": {"charges": 1}},
+          "outcomes": [
+            {"weight": 1, "page": "rode", "effects": [{"type": "res", "res": "charges", "amount": -1}, {"type": "reveal", "rows": 3}, {"type": "pursuer", "rows": -0.5}]},
+            {"weight": 2, "page": "burst", "effects": [{"type": "res", "res": "charges", "amount": -1}, {"type": "hazard", "kind": "breach", "room": "system:drill", "level": 0.04}, {"type": "hazard", "kind": "breach", "room": "system:coolant", "level": 0.03}, {"type": "system_damage", "system": "coolant", "bars": 1}, {"type": "hull", "amount": -5}]}
+          ]
+        }
+      ]
+    },
+    "braced": {
+      "text": "You load every brace to the stops and walk the crown forward a centimeter at a time. The tower groans, the seams weep, and one weld in the drill room lets go in a thin silver jet. Then you are through to dry rock, and the jet is small enough to patch."
+    },
+    "grouted": {
+      "text": "You back the crown out and pump grout into the face until it stops drinking. It takes hours. The leak in the drill room slows to a steady trickle. Behind you, through all those quiet hours, the seismic rhythm keeps coming, and gains."
+    },
+    "rode": {
+      "text": "The charge opens the face and the aquifer drops away beneath you like a trapdoor. The tower rides the water down a long natural chute, scraping and spinning, and fetches up in a gravel bed far below. Your scanner has never seen so far ahead. Nobody is quite sure which way is up."
+    },
+    "burst": {
+      "text": "The charge opens the face and the aquifer opens you. Water slams up through the drill room floor and into the coolant bay, tearing a pump off its mounts. The tower shudders, holds, and starts to fill from the bottom. {crew} is already shouting for the pumps."
+    }
+  }
+}

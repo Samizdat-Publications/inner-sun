@@ -1,0 +1,62 @@
+{
+  "id": "rival_claim",
+  "kind": "event",
+  "layer": "crust",
+  "rows": [2, 6],
+  "weight": 1.0,
+  "once_per_run": true,
+  "title": "Right of Way",
+  "file": "CONTACT REPORT 31 // AUGER",
+  "start": "intro",
+  "pages": {
+    "intro": {
+      "text": "A second drill tower hangs in the shaft ahead, lights burning, crown turned toward you. No flag, no call sign, hull painted the gray of a contract nobody signed. Their radio is clear and polite: this bore is claimed, the toll is six gems, and they have done this before. Behind their bridge glass, someone is already loading a launcher.",
+      "radio": "Unregistered rig. Do not discuss your manifest with them. Do not discuss ours.",
+      "options": [
+        {
+          "text": "Pay the toll.",
+          "requires": {"res": {"gems": 6}},
+          "outcomes": [
+            {"weight": 1, "page": "paid", "effects": [{"type": "res", "res": "gems", "amount": -6}]}
+          ]
+        },
+        {
+          "text": "Run out the launchers and tell them no.",
+          "requires": {"system": {"weapons": 2}},
+          "outcomes": [
+            {"weight": 2, "page": "backdown"},
+            {"weight": 1, "page": "fight", "effects": [{"type": "fight", "enemy": "rival_light"}]}
+          ]
+        },
+        {
+          "text": "Tell them where to put their toll.",
+          "outcomes": [
+            {"weight": 1, "page": "fight", "effects": [{"type": "fight", "enemy": "rival_light"}]}
+          ]
+        },
+        {
+          "text": "Ram their outrigger with the crown.",
+          "outcomes": [
+            {"weight": 2, "page": "rammed", "effects": [{"type": "res_range", "res": "ore", "min": 6, "max": 10}, {"type": "hull", "amount": -3}, {"type": "fight", "enemy": "rival_light"}]},
+            {"weight": 1, "page": "rammed_bad", "effects": [{"type": "res_range", "res": "ore", "min": 6, "max": 10}, {"type": "hull", "amount": -5}, {"type": "system_damage", "system": "drill", "bars": 1}, {"type": "fight", "enemy": "rival_light"}]}
+          ]
+        }
+      ]
+    },
+    "paid": {
+      "text": "Six green stones go across on a line. Their captain counts them twice, thanks you without warmth and backs the tower into a side bore. As you pass, {crew} reads the stencil on their hull: a serial number in the same format as yours, two digits higher."
+    },
+    "backdown": {
+      "text": "You swing the launcher housings out where they can see them. A long pause on the band. Then their crown spins down and the tower slides aside, slow and offended. Nobody says thank you. The scope keeps them in view for a long time, and they keep you in theirs."
+    },
+    "fight": {
+      "text": "Their answer is a shaped charge against your upper hull. The rig comes about, crown screaming, and their launcher flashes again. They were never going to take no for an answer. They were only asking first, the way a mugger says please. Battle stations."
+    },
+    "rammed": {
+      "text": "The crown hits their outrigger and keeps going. Plate tears, ore spills out of their hoppers and down your conveyor, and their whole tower lurches sideways. They are not done. Their weapons come up as the two rigs grind apart."
+    },
+    "rammed_bad": {
+      "text": "Their outrigger is heavier than it looked. The crown bites, binds and screams, and your drill room fills with the smell of hot bearings. Ore pours aboard from their split hopper. Through the glass, their captain is smiling, and their launcher is turning."
+    }
+  }
+}

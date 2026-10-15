@@ -1,0 +1,53 @@
+{
+  "id": "shaft_nine",
+  "kind": "cavern",
+  "layer": "crust",
+  "rows": [2, 7],
+  "weight": 1.0,
+  "once_per_run": true,
+  "title": "Level Forty",
+  "file": "SALVAGE LOG 08 // AUGER",
+  "start": "intro",
+  "pages": {
+    "intro": {
+      "text": "You break into a mine gallery: timbered, railed, ore carts standing where the shift left them. A painted sign reads [[shaft_nine:CALDER DEEP, SHAFT NINE, LEVEL 40]]. There is no mine this deep. Coolant drums are stacked by a pump station, and a lift cage waits at the head of a shaft going further down, its cable taut, its call bell still wired.",
+      "options": [
+        {
+          "text": "Tip the ore carts onto the conveyor.",
+          "outcomes": [
+            {"weight": 1, "page": "carts", "effects": [{"type": "res_range", "res": "ore", "min": 6, "max": 10}]}
+          ]
+        },
+        {
+          "text": "Siphon the coolant drums.",
+          "outcomes": [
+            {"weight": 3, "page": "coolant", "effects": [{"type": "codex", "id": "shaft_nine"}, {"type": "res_range", "res": "coolant", "min": 3, "max": 5}]},
+            {"weight": 1, "page": "sludge", "effects": [{"type": "res", "res": "coolant", "amount": 2}, {"type": "system_damage", "system": "coolant", "bars": 1}]}
+          ]
+        },
+        {
+          "text": "Send {crew} down in the cage.",
+          "outcomes": [
+            {"weight": 3, "page": "cage", "effects": [{"type": "codex", "id": "shaft_nine"}, {"type": "res", "res": "cells", "amount": 1}, {"type": "res_range", "res": "ore", "min": 8, "max": 12}]},
+            {"weight": 1, "page": "cable", "effects": [{"type": "codex", "id": "shaft_nine"}, {"type": "crew_lose", "target": "picked"}]}
+          ]
+        }
+      ]
+    },
+    "carts": {
+      "text": "The carts are full of rich, heavy ore, sorted by a hand that took pride in it. You tip them one by one onto the conveyor. The last cart has a lunch tin wedged under the ore. Inside is a sandwich, still soft."
+    },
+    "coolant": {
+      "text": "The drums carry a spec number you know from your own tanks. Whoever stocked this level used the same supplier. {crew} siphons the good stuff and copies down the delivery date from the stencil. {crew} reads it twice, then reads it aloud. It is next month."
+    },
+    "sludge": {
+      "text": "The first drums are good. The last have gone to black sludge that clogs the intake and chokes a pump on your coolant loop. {crew} flushes it with a great deal of language and saves what they can. The rest goes back in the drums, and the drums go back on the stack, chalked with a skull."
+    },
+    "cage": {
+      "text": "The cage drops for a long minute, the bell ringing at every level. At the bottom, {crew} finds a charging bay with one cell still sealed in its crate and ore stacked like firewood. They ride back up grinning. The bell keeps ringing after the cage stops."
+    },
+    "cable": {
+      "text": "The cage drops, the bell rings at every level, and then the bell stops. The cable goes slack. You winch up forty meters of it, cut clean, not frayed. {crew} does not answer on any channel. The call bell rings once more, from very far below."
+    }
+  }
+}

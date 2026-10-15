@@ -1,0 +1,51 @@
+{
+  "id": "zarya_wreck",
+  "kind": "event",
+  "layer": "crust",
+  "rows": [3, 8],
+  "weight": 1.0,
+  "once_per_run": true,
+  "title": "The Rig With No Name",
+  "file": "FIELD REPORT 22-Z // AUGER",
+  "start": "intro",
+  "pages": {
+    "intro": {
+      "text": "The crown breaks into a chamber the size of a cathedral, and a drilling derrick is standing in it: Soviet, riveted, its lamps long dead. The rock has grown around its legs like a tree around a fence. A brass plate on the drawworks has been chiselled blank except for one word, [[zarya_rig:ZARYA]]. Inside the doghouse are log books and a rack of drill bits still in grease.",
+      "radio": "Auger, that structure is not on any survey. Do not photograph it.",
+      "options": [
+        {
+          "text": "Bring the log books aboard.",
+          "outcomes": [
+            {"weight": 1, "page": "logs", "effects": [{"type": "codex", "id": "zarya_rig"}, {"type": "reveal", "rows": 2}]}
+          ]
+        },
+        {
+          "text": "Read the depth column against reel seven.",
+          "requires": {"codex": "kola_well"},
+          "outcomes": [
+            {"weight": 1, "page": "compare", "effects": [{"type": "codex", "id": "zarya_rig"}, {"type": "reveal", "rows": 2}, {"type": "pursuer", "rows": -0.5}]}
+          ]
+        },
+        {
+          "text": "Cut the bit rack loose with the torch.",
+          "outcomes": [
+            {"weight": 2, "page": "bits", "effects": [{"type": "res", "res": "bits", "amount": 1}, {"type": "res_range", "res": "ore", "min": 4, "max": 6}, {"type": "pursuer", "rows": 0.4}]},
+            {"weight": 1, "page": "derrick", "effects": [{"type": "res", "res": "bits", "amount": 1}, {"type": "hull", "amount": -4}]}
+          ]
+        }
+      ]
+    },
+    "logs": {
+      "text": "The books are written in a careful hand that gets less careful. Depths, mud weights, bit changes, then a full page that is only a sketch of the borehole with an arrow pointing back up it, circled in red. The survey notes are excellent. {crew} plots them onto your own map and goes quiet for a while."
+    },
+    "compare": {
+      "text": "Reel seven's counting stops at twelve thousand meters. Zarya's log keeps going. Its driller noted where the noise behind them faded: a band of soft shale that swallows vibration like felt. You plot the band, steer the crown into it, and the deck plates stop humming for the first time in hours."
+    },
+    "bits": {
+      "text": "Two hours with the torch and the rack comes free: Soviet tungsten, greased against a day nobody expected to come. The cutting rings through the chamber like a bell. Far off in the rock, something rings back, a little lower."
+    },
+    "derrick": {
+      "text": "The last bolt lets go and so does the derrick. Forty meters of Soviet steel leans, considers, and lies down across your upper deck. You get the bits. You also get a long dent with a Cyrillic stencil pressed into it backwards."
+    }
+  }
+}

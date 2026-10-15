@@ -1,0 +1,50 @@
+{
+  "id": "green_gallery",
+  "kind": "cavern",
+  "layer": "crust",
+  "rows": [1, 4],
+  "weight": 1.0,
+  "once_per_run": true,
+  "title": "Still Green",
+  "file": "SALVAGE LOG 05 // AUGER",
+  "start": "intro",
+  "pages": {
+    "intro": {
+      "text": "The bit opens a long gallery walled in fossil ferns, pressed flat in the shale, every frond perfect. They are green. Not stained: wet, cool to the touch, alive. Seams of amber run between them, some with gems set inside like flies. A survey tag on the wall, older than anything aboard, reads [[green_gallery:SITE GREEN, DO NOT SAMPLE]]. The air smells like rain.",
+      "options": [
+        {
+          "text": "Pry the amber from the near wall.",
+          "outcomes": [
+            {"weight": 1, "page": "amber", "effects": [{"type": "res_range", "res": "gems", "min": 4, "max": 7}]}
+          ]
+        },
+        {
+          "text": "Send {crew} to the end of the gallery.",
+          "outcomes": [
+            {"weight": 3, "page": "deep", "effects": [{"type": "codex", "id": "green_gallery"}, {"type": "res_range", "res": "gems", "min": 6, "max": 9}]},
+            {"weight": 1, "page": "spores", "effects": [{"type": "codex", "id": "green_gallery"}, {"type": "crew_damage", "target": "picked", "amount": 20}, {"type": "res", "res": "gems", "amount": 3}]}
+          ]
+        },
+        {
+          "text": "Bring the whole wall down with a charge.",
+          "requires": {"res": {"charges": 1}},
+          "outcomes": [
+            {"weight": 1, "page": "blast", "effects": [{"type": "res", "res": "charges", "amount": -1}, {"type": "res_range", "res": "gems", "min": 9, "max": 12}, {"type": "hull", "amount": -3}, {"type": "pursuer", "rows": 0.8}]}
+          ]
+        }
+      ]
+    },
+    "amber": {
+      "text": "{crew} works along the near wall with a pry bar, popping amber into a bucket. Most lumps hold a gem. One holds a beetle that turns its head toward the lamp. That one goes back in the wall, and nobody argues about it."
+    },
+    "deep": {
+      "text": "At the far end the ferns give way to a single upright trunk, still standing where it grew, its bark warm. {crew} comes back with full pockets and a sample tube they do not remember filling. The tube is fogged from the inside."
+    },
+    "spores": {
+      "text": "Halfway along, the ferns unroll at the lamp's heat and breathe out a cloud of fine gold dust. {crew} walks back coughing, eyes streaming, pockets light. Medical clears them. The dust settles on everything and will not wipe off. Their breath smells of rain for days."
+    },
+    "blast": {
+      "text": "The charge brings forty meters of wall down in one long slide. Gems come up the conveyor by the bucket, and the ferns go under the rubble. The shock rolls away through the rock for a long time. Somewhere far off, something hears it, stops, and turns your way."
+    }
+  }
+}
