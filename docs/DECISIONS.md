@@ -91,3 +91,17 @@ power by priority; repairs and reactor recovery bring it back, highest priority 
 free. A heat-failed reactor gives half its bars instead of none: zero cut the coolant too and made
 every reactor overheat an instant death spiral. Revert: drop `_restore` in `systems.gd` and return 0
 from `_output` when failed.
+
+## D019 (AI): Story canon from the crust writing: TOPSIDE is not quite human
+The crust events commit to an uncanny handler: TOPSIDE's voice is on a 1963 reel at a Cold War
+listening post, already calling the crew "Auger", and never breathes on any recording. Invented
+lore also signed off: Rig Zarya (a found Soviet rig; the real Saatly, Uralskaya and Tyumenskaya
+superdeep wells are mentioned without dates or depths), Listening Post 4, the Calder Deep mine, the
+K-7 coolant spec, "the Subject" (the thing that follows). This fits the pitch (a handler who knows
+more than they say) and gives the story spine a question to pay off in later layers. Revert: edit
+`game/data/events/listening_post.json` and `game/data/codex/topside_voice.json`.
+
+## D020 (AI): Pacing and economy, first pass
+Rows are 28 m (segments about 25 to 30 s at 2 bars instead of about 45 s), ore veins are sparser
+and sit 5.5 to 10 m off the straight line (runs mined 300 to 570 ore against store prices in the
+tens), rock heat rises 0.08 C per meter (the layer owns it). The balance step tunes further with bots.
