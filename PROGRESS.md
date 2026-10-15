@@ -2,7 +2,7 @@
 
 Updated: 2026-10-15, M1 session (continued after the restart).
 
-## Milestone: M1a (find the fun). Steps 0, 1, 2 and 5 (sim) merged; 3, 4, views, writing and sound in flight.
+## Milestone: M1a (find the fun). All sim steps merged (0 to 6); views, art and balance in flight.
 
 ## M1 so far
 - **Step 0 done.** Blind critic installed and live-tested (`docs/research/m1-evidence/critic_live_test.txt`);
@@ -26,6 +26,14 @@ Updated: 2026-10-15, M1 session (continued after the restart).
   helm and manned-drill bonuses.
 - **Events, store and crew merged** (step 5 sim): the event runner with every effect, the store,
   recruitment, permadeath, the lint. 108 tests pass.
+- **Run, map and pursuer merged** (step 3): 10-row node map, travel by drilling (28 m rows), the
+  pursuer by time and noise, overtaken nodes, strikes, FullRun, run summary, profile and run records.
+- **Combat merged** (step 4): borer turret, thermal lance, charge launcher, bracing, evasion, enemy
+  ships rival_light and rival_heavy (the gate boss) with AI, loot, flee. 166 tests pass.
+- **Writing:** 12 crust events, 9 codex entries, 24 TOPSIDE lines (D019: TOPSIDE is uncanny).
+- **Sound:** 29 ElevenLabs placeholder sounds and the audio director (not mounted yet).
+- **Run screen pieces merged:** HUD (top bar, power panel, crew cards, alerts, seismic scanner),
+  dossier, store, fonts, UI gallery (`python tools/gallery.py`). Not yet mounted in main.gd.
 - **Art bake-off done: painted pulp chosen, provisional** (D017, `docs/progress/005_m1-art-bakeoff.jpg`,
   sent to Stewart); pixel art not tried (no PixelLab key).
 - **Making-of record** started (`docs/making-of/README.md`, tag `m0-loop-proven`), at Stewart's request.
@@ -54,14 +62,14 @@ Updated: 2026-10-15, M1 session (continued after the restart).
   alone.
 
 ## In flight
-Background agents, each in its own worktree under `.claude/worktrees/` (`git worktree list`); if the
-session stops, check each branch, merge what passes, re-dispatch the rest from its spec:
-- step 3, run: map, travel, pursuer, FullRun, RunBot (builder-opus; `docs/plans/specs/step3_run.md`),
-- step 4, combat: weapons, enemy ships and AI, flee (builder-opus; `docs/plans/specs/step4_combat.md`),
+Background agents in worktrees (`git worktree list`); if the session stops, merge what passes and
+re-dispatch the rest:
 - drilling view: rock chunks, crown, camera (builder; `docs/plans/specs/drill_view.md`),
-- HUD panels, dossier and store UI with a UI gallery (builder; `docs/plans/specs/view_m1.md`),
-- nine more crust events, codex, TOPSIDE lines (writer),
-- placeholder sound assets (asset-smith; step 6 in `docs/plans/specs/step6_7_sound_balance.md`).
+- map overlay, death screen, codex browser (builder),
+- the painted art pass: five rooms and props, fittings, crew puppets, rock tiles (asset-smith),
+- step 7: cautious, greedy and balanced bots, `balance.py --full`, first tuning pass (builder-opus).
+Next for the lead: the combat view (enemy tower, shots, weapon cards, targeting), then wire the run
+screen in main.gd (HUD, overlays, audio, input), the critic loop, export.
 
 ## Known issues
 - **Capture windows flash on screen for about one second** at the start of each windowed run (shots,
