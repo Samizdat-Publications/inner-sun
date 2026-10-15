@@ -124,6 +124,7 @@ func set_power(sim: Sim, world: ShipWorld, ri: int, bars: int) -> int:
 	var want: int = clampi(bars, 0, r.intact_bars())
 	var left: int = maxi(0, reactor_output(world) - (allocated(world) - r.sys_power))
 	r.sys_power = mini(want, left)
+	r.sys_want = r.sys_power  # Only what was granted is remembered (a click with no free bars queues nothing).
 	return r.sys_power
 
 
@@ -246,7 +247,9 @@ func _output(world: ShipWorld, sd: SystemsSide) -> int:
 	if sd.reactor < 0:
 		return 0
 	var r: Room = world.ship.rooms[sd.reactor]
-	return 0 if r.sys_failed else r.intact_bars()
+	# An overheated reactor limps at half output instead of shutting everything down (coolant included),
+	# which made heat failures an instant death spiral.
+	return r.intact_bars() / 2 if r.sys_failed else r.intact_bars()
 
 
 func _bars(world: ShipWorld, ri: int) -> int:
@@ -363,6 +366,7 @@ func _reconcile(sim: Sim, world: ShipWorld, sd: SystemsSide) -> void:
 		total += r.sys_power
 	var out: int = _output(world, sd)
 	if total <= out:
+		_restore(sim, world, sd, total, out)
 		return
 	for ri: int in sd.cut_order:
 		if total <= out:
@@ -374,6 +378,23 @@ func _reconcile(sim: Sim, world: ShipWorld, sd: SystemsSide) -> void:
 		r.sys_power -= take
 		total -= take
 		world.emit(sim, "power_cut", {"room": r.id, "bars": take})
+	_restore(sim, world, sd, total, out)
+
+
+## Bring power back toward each room's remembered allocation (after repairs, or when the reactor
+## recovers), highest priority first, while the reactor has bars free.
+func _restore(sim: Sim, world: ShipWorld, sd: SystemsSide, total: int, out: int) -> void:
+	var free: int = out - total
+	var i: int = sd.cut_order.size() - 1
+	while i >= 0 and free > 0:
+		var r: Room = world.ship.rooms[sd.cut_order[i]]
+		var target: int = mini(r.sys_want, r.intact_bars())
+		if r.sys_power < target:
+			var give: int = mini(target - r.sys_power, free)
+			r.sys_power += give
+			free -= give
+			world.emit(sim, "power_restored", {"room": r.id, "bars": give})
+		i -= 1
 
 
 ## Bill the coolant the player's ship used (run mode): every coolant_j_per_unit joules cooled cost one

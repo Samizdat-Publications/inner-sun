@@ -84,8 +84,8 @@ func test_reactor_damage_cuts_power_in_priority_order() -> void:
 	check_eq(_kinds(s, "system_damaged").size(), 3, "each hit is a system_damaged event")
 	s.ship.rooms[reactor].sys_damage = 0.0
 	run_seconds(s, 1.0)
-	check_eq(room(s, "drill").sys_power, 0, "cut bars are not restored automatically")
-	check_eq(sy.free_bars(s.player), 7, "the repaired reactor has free bars for the player to hand out")
+	check_eq(room(s, "drill").sys_power, room(s, "drill").sys_want, "cut bars come back after the repair (remembered allocation)")
+	check_eq(sy.allocated(s.player), 8, "every remembered allocation is back, weapons included (8 of 8 bars)")
 
 
 func test_allocation_never_exceeds_output_under_abuse() -> void:
@@ -131,7 +131,7 @@ func test_fire_damages_the_system_and_crew_repair_it() -> void:
 	run_seconds(s, 60.0)
 	check_eq(r.sys_damage, 0.0, "the crew repaired the drill (it had %.2f bars of damage)" % dmg)
 	check(has_event(s, "system_repaired"), "system_repaired was emitted")
-	check_eq(r.sys_power, 0, "repair does not hand power back by itself")
+	check_eq(r.sys_power, mini(r.sys_want, r.intact_bars()), "repair hands the remembered power back")
 	s.push({"type": "power", "room": "drill", "bars": 2})
 	s.step()
 	check_eq(r.sys_power, 2, "power can be restored after the repair")
@@ -159,15 +159,15 @@ func test_heat_failure_has_hysteresis() -> void:
 	check(_kinds(s, "system_recovered").has("bridge"), "system_recovered was emitted")
 
 
-func test_hot_reactor_cuts_everything() -> void:
+func test_hot_reactor_limps_at_half() -> void:
 	var s: Sim = _sim()
 	crew_auto_off(s)
 	s.step()
 	_set_temp(s, "reactor", 97.0)
 	_update(s)
-	check_eq(s.systems.reactor_output(s.player), 0, "a reactor over its fail temperature makes nothing")
-	check_eq(s.systems.allocated(s.player), 0, "every bar is cut")
-	check_eq(s.hazards.cooling_scale, 0.0, "so the coolant stops too")
+	check_eq(s.systems.reactor_output(s.player), 4, "an overheated reactor limps at half output")
+	check_eq(s.systems.allocated(s.player), 4, "allocations are cut to fit")
+	check_gt(s.hazards.cooling_scale, 0.0, "and the coolant (highest priority) keeps running")
 
 
 func test_manning_drives_evasion_and_steering() -> void:

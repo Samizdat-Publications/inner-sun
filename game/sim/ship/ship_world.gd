@@ -49,7 +49,7 @@ func step(sim: Sim) -> void:
 func state() -> Array:
 	var rooms: Array = []
 	for r: Room in ship.rooms:
-		rooms.append([r.energy_j, r.water_ml, r.fire, r.breach_m2, r.flooded_s, r.sys_max, r.sys_damage, r.sys_power, r.sys_failed])
+		rooms.append([r.energy_j, r.water_ml, r.fire, r.breach_m2, r.flooded_s, r.sys_max, r.sys_damage, r.sys_power, r.sys_want, r.sys_failed])
 	var crew: Array = []
 	for c: CrewMember in ship.crew:
 		crew.append([c.pos.x, c.pos.y, c.hp, c.alive, c.room, c.order_room, c.auto, c.job_kind, c.job_room, c.path_i])

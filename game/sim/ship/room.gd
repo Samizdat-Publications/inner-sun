@@ -29,7 +29,8 @@ var flooded_s: float = 0.0
 # System state (one system per room; the Systems module owns the rules, see docs/ARCHITECTURE.md).
 var sys_max: int = 0  ## Bars of capacity.
 var sys_damage: float = 0.0  ## Bars lost to hits and fire; crew repair it.
-var sys_power: int = 0  ## Bars allocated by the player or the AI.
+var sys_power: int = 0  ## Bars allocated right now.
+var sys_want: int = 0  ## Bars last chosen by the player or the AI; power returns to it after repairs.
 var sys_failed: bool = false  ## Set by Systems while the room is too hot for its system to work.
 
 

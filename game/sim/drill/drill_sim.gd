@@ -262,9 +262,10 @@ func step(sim: Sim) -> void:
 	if not active or sim.run.phase != "drill":
 		return
 	segment_ticks += 1
-	heading_deg = move_toward(heading_deg, target_heading_deg, _turn_per_tick)
-	var bars: int = sim.ship.rooms[_drill_room].effective_bars() if _drill_room >= 0 else 0
-	var pf: float = power_factor(bars)
+	# Systems: a manned helm turns faster; a manned drill room cuts faster (drill_bonus is a multiplier).
+	heading_deg = move_toward(heading_deg, target_heading_deg, _turn_per_tick * sim.systems.steer_rate_scale(sim.player))
+	var bars: int = sim.systems.drill_bars(sim.player)
+	var pf: float = power_factor(bars) * sim.systems.drill_bonus(sim.player)
 	speed_m_s = 0.0
 	cutting = false
 	if pf > 0.0 and _bit_change_ticks == 0:

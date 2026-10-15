@@ -7,6 +7,7 @@ const SEG_DEPTH_M: float = 36.0
 
 func _sim(p_seed: int, bars: int = 2, mode: String = "run") -> Sim:
 	var s := Sim.new(db(), p_seed, "light_drill", {"mode": mode})
+	s.push({"type": "power", "room": "bracing", "bars": 0})  # Free reactor bars so the drill can take up to 4.
 	s.push({"type": "power", "room": "drill", "bars": bars})
 	s.step()
 	return s
@@ -129,6 +130,7 @@ func test_rock_ore_gems_and_water_are_conserved_exactly() -> void:
 func test_drill_heat_is_booked_in_the_hazard_books() -> void:
 	var s := Sim.new(db(), 9, "light_drill", {"mode": "run"})
 	var e0: int = s.ship.total_energy_j()
+	s.push({"type": "power", "room": "bracing", "bars": 0})
 	s.push({"type": "power", "room": "drill", "bars": 4})
 	_begin(s, "heat")
 	_drive(s)
@@ -283,6 +285,7 @@ func test_heat_at_four_bars_in_hard_rock() -> void:
 func test_replay_of_a_driven_segment() -> void:
 	var opts: Dictionary = {"mode": "run"}
 	var s := Sim.new(db(), 21, "light_drill", opts)
+	s.push({"type": "power", "room": "bracing", "bars": 0})
 	s.push({"type": "power", "room": "drill", "bars": 3})
 	s.push({"type": "begin_segment", "segment": "r1", "depth_m": 30.0, "lateral_m": -5.0})
 	s.step()

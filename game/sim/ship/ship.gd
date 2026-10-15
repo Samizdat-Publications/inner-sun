@@ -44,6 +44,7 @@ static func from_def(def: Dictionary) -> Ship:
 		r.start_temp_c = float(rd.get("temp_c", 22.0))
 		r.sys_max = int(rd.get("bars", 0))
 		r.sys_power = int(rd.get("power", r.sys_max))
+		r.sys_want = r.sys_power
 		r.capacity_ml = roundi(r.capacity_m3() * Room.ML_PER_M3)
 		s._room_ids[r.id] = r.index
 		s.rooms.append(r)
