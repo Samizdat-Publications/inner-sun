@@ -1,0 +1,27 @@
+{
+  "id": "crust",
+  "name": "Upper crust",
+  "strata_wobble_m": 0.8,
+  "materials": [
+    {"code": 0, "id": "air", "name": "Open void", "hardness": 0.0, "color": "#120e0b"},
+    {"code": 1, "id": "soft_rock", "name": "Shale", "hardness": 0.8, "color": "#8a7458"},
+    {"code": 2, "id": "rock", "name": "Granite", "hardness": 1.0, "color": "#6e6152"},
+    {"code": 3, "id": "dense_rock", "name": "Gneiss", "hardness": 1.6, "color": "#4f463d"},
+    {"code": 4, "id": "hard_rock", "name": "Basalt dike", "hardness": 4.0, "color": "#2c2a33"},
+    {"code": 5, "id": "iron_ore", "name": "Iron ore", "hardness": 1.2, "color": "#a3583a", "yield": {"res": "ore", "amount": 1}},
+    {"code": 6, "id": "gem", "name": "Quartz geode", "hardness": 2.0, "color": "#5fd3c8", "yield": {"res": "gems", "amount": 1}},
+    {"code": 7, "id": "water_pocket", "name": "Water pocket", "hardness": 0.6, "color": "#2f5d8a", "water": true}
+  ],
+  "strata": [
+    {"material": "soft_rock", "weight": 2.0, "min_m": 3.0, "max_m": 8.0},
+    {"material": "rock", "weight": 3.0, "min_m": 4.0, "max_m": 10.0},
+    {"material": "dense_rock", "weight": 1.0, "min_m": 2.0, "max_m": 4.0, "from_depth_m": 0.0}
+  ],
+  "features": [
+    {"kind": "vein", "material": "iron_ore", "count": [2, 4], "at": [0.1, 0.9], "offset_m": [3.5, 8.0], "side": "either", "length_m": [4.0, 8.0], "thickness_m": [0.7, 1.2], "angle_deg": [-50.0, 50.0]},
+    {"kind": "lens", "material": "hard_rock", "count": [1, 2], "at": [0.2, 0.85], "offset_m": [-4.0, 4.0], "width_m": [5.0, 9.0], "height_m": [1.0, 2.0]},
+    {"kind": "pocket", "material": "gem", "shell": "hard_rock", "count": [1, 2], "at": [0.2, 0.9], "offset_m": [2.5, 6.5], "side": "either", "radius_m": [0.5, 0.8], "shell_m": 0.5},
+    {"kind": "blob", "material": "water_pocket", "count": [0, 2], "at": [0.15, 0.9], "offset_m": [-5.0, 5.0], "radius_m": [0.6, 0.9]},
+    {"kind": "blob", "material": "air", "count": [0, 2], "at": [0.1, 0.9], "offset_m": [-9.0, 9.0], "radius_m": [1.2, 2.2]}
+  ]
+}
