@@ -20,7 +20,7 @@ art. Milestone 1 builds the first playable slice. See `PROGRESS.md` for details.
 Double-click `Play Inner Sun.bat` in this folder, or paste this into Windows PowerShell:
 
 ```powershell
-cd "C:\Users\stewa\Documents\Claude\Inner Sun"; .\"Play Inner Sun.bat"
+cd "C:\Users\stewa\Documents\Claude\Inner Sun"; & "C:\Users\stewa\Documents\Claude\Inner Sun\Play Inner Sun.bat"
 ```
 
 A fire breaks out in the drill room and the hull breaches on the middle deck; a scripted bot sends

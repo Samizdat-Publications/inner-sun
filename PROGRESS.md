@@ -23,6 +23,9 @@ Updated: 2026-10-15 (planning session, end of Milestone 0).
   - data and lint; the six-room tower (`light_drill`, the M1 starter draft);
   - a lit cutaway view.
 - **Agent team definitions** in `.claude/agents/`. The blind critic is staged in `docs/setup/critic/`.
+- **Private repo** `Samizdat-Publications/inner-sun` created and pushed. A fresh clone from GitHub
+  passes `python tools/check.py` (24 of 24, selftest ok), so a new session can resume from the repo
+  alone.
 
 ## In flight
 Nothing. The tree is clean after the final commit.
