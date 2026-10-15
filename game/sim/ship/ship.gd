@@ -14,6 +14,9 @@ var crew: Array[CrewMember] = []
 var nav: NavGraph
 var rock_temp_c: float = 40.0
 var water_head_m: float = 20.0
+var hull_max: int = 30  ## Hull integrity at full repair (the run keeps the current value).
+var weapons: PackedStringArray = PackedStringArray()  ## Weapon ids mounted, in slot order.
+var source_def: Dictionary = {}  ## The raw definition, for modules that read their own keys.
 var _room_ids: Dictionary = {}
 var _crew_ids: Dictionary = {}
 
@@ -24,6 +27,10 @@ static func from_def(def: Dictionary) -> Ship:
 	s.name = str(def.get("name", s.id))
 	s.rock_temp_c = float(def.get("rock_temp_c", 40.0))
 	s.water_head_m = float(def.get("water_head_m", 20.0))
+	s.hull_max = int(def.get("hull", 30))
+	s.source_def = def
+	for w: Variant in def.get("weapons", []):
+		s.weapons.append(str(w))
 	var depth: float = float(def.get("room_depth_m", 3.0))
 	for rd: Dictionary in def.get("rooms", []):
 		var r := Room.new()
@@ -35,6 +42,8 @@ static func from_def(def: Dictionary) -> Ship:
 		r.system = str(rd.get("system", "none"))
 		r.has_pump = bool(rd.get("pump", false))
 		r.start_temp_c = float(rd.get("temp_c", 22.0))
+		r.sys_max = int(rd.get("bars", 0))
+		r.sys_power = int(rd.get("power", r.sys_max))
 		r.capacity_ml = roundi(r.capacity_m3() * Room.ML_PER_M3)
 		s._room_ids[r.id] = r.index
 		s.rooms.append(r)

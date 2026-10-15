@@ -43,6 +43,9 @@
     "fight_per_s": 0.11,
     "patch_m2_per_s": 0.004,
     "heat_safe_c": 48.0,
-    "heat_dps_per_k": 0.25
+    "heat_dps_per_k": 0.25,
+    "heal_per_s": 0.5,
+    "urgency_repair": 50.0,
+    "repair_bars_per_s": 0.12
   }
 }

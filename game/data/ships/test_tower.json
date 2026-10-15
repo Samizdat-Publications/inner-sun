@@ -5,7 +5,7 @@
   "water_head_m": 25.0,
   "room_depth_m": 3.0,
   "rooms": [
-    {"id": "bridge", "name": "Bridge", "x": 0.0, "y": 0.0, "w": 4.0, "h": 3.0, "system": "bridge"},
+    {"id": "bridge", "name": "Bridge", "x": 0.0, "y": 0.0, "w": 4.0, "h": 3.0, "system": "helm"},
     {"id": "reactor", "name": "Reactor", "x": 4.0, "y": 0.0, "w": 4.0, "h": 3.0, "system": "reactor"},
     {"id": "drill", "name": "Drill Room", "x": 0.0, "y": 3.0, "w": 8.0, "h": 3.0, "system": "drill", "pump": true}
   ],

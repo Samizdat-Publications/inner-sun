@@ -1,13 +1,15 @@
 class_name CrewAI
 extends RefCounted
 ## Crew decisions and movement. A crew member with an order goes to that room and works there; one
-## on auto takes the most urgent job anywhere (fight a fire, patch a breach), scored by urgency,
-## skill and travel time. Thinking runs at 4 Hz; walking, climbing and working run every tick.
-## Holds no reference to the Sim; the Sim passes itself in.
+## on auto takes the most urgent job anywhere (fight a fire, patch a breach, repair a damaged
+## system), scored by urgency, skill and travel time. Thinking runs at 4 Hz; walking, climbing and
+## working run every tick. Holds no reference to the Sim or its ShipWorld; both are passed in, so
+## the same code runs the player's crew and an enemy crew.
 
 const TUNING_KEYS: Array[String] = [
 	"crew.walk_m_s", "crew.climb_m_s", "crew.slow_full_m", "crew.avoid_level_m",
 	"crew.urgency_fire", "crew.urgency_breach", "crew.fight_per_s", "crew.patch_m2_per_s",
+	"crew.urgency_repair", "crew.repair_bars_per_s",
 ]
 
 var _t: Dictionary = {}
@@ -22,16 +24,16 @@ func _k(key: String) -> float:
 	return float(_t[key])
 
 
-func think(sim: Sim) -> void:
-	for c: CrewMember in sim.ship.crew:
-		replan(sim, c)
+func think(_sim: Sim, world: ShipWorld) -> void:
+	for c: CrewMember in world.ship.crew:
+		replan(world, c)
 
 
 ## Pick this crew member's best job now and route to it (keeps the current route if unchanged).
-func replan(sim: Sim, c: CrewMember) -> void:
+func replan(world: ShipWorld, c: CrewMember) -> void:
 	if not c.alive or c.climbing:
 		return
-	var ship: Ship = sim.ship
+	var ship: Ship = world.ship
 	var best_kind: String = ""
 	var best_room: int = -1
 	var best: float = 0.0
@@ -56,6 +58,12 @@ func replan(sim: Sim, c: CrewMember) -> void:
 			if s_breach > best:
 				best = s_breach
 				best_kind = "patch"
+				best_room = r.index
+		if r.sys_damage > 0.0 and r.sys_max > 0:
+			var s_fix: float = _k("crew.urgency_repair") * (0.5 + minf(r.sys_damage / float(r.sys_max), 1.0)) * c.skill_repair * reach
+			if s_fix > best:
+				best = s_fix
+				best_kind = "repair"
 				best_room = r.index
 	if best_kind == "" and c.order_room >= 0:
 		best_kind = "go"
@@ -89,17 +97,17 @@ func _set_job(ship: Ship, c: CrewMember, kind: String, room: int) -> void:
 	c.path = ship.nav.route(ship, c.room, room, ship.rooms[room].center_floor().x)
 
 
-func move(sim: Sim, dt: float) -> void:
-	var ship: Ship = sim.ship
+func move(sim: Sim, world: ShipWorld, dt: float) -> void:
+	var ship: Ship = world.ship
 	for c: CrewMember in ship.crew:
 		if not c.alive:
 			continue
 		if c.path_i < c.path.size():
 			_advance(ship, c, dt)
 			if c.path_i >= c.path.size() and c.job_room >= 0:
-				sim.emit("arrive", {"crew": c.id, "room": ship.rooms[c.job_room].id, "job": c.job_kind})
+				world.emit(sim, "arrive", {"crew": c.id, "room": ship.rooms[c.job_room].id, "job": c.job_kind})
 		else:
-			_work(sim, c, dt)
+			_work(sim, world, c, dt)
 
 
 func _advance(ship: Ship, c: CrewMember, dt: float) -> void:
@@ -128,15 +136,19 @@ func _wade(ship: Ship, c: CrewMember) -> float:
 	return 1.0 - 0.5 * clampf(lvl / _k("crew.slow_full_m"), 0.0, 1.0)
 
 
-func _work(sim: Sim, c: CrewMember, dt: float) -> void:
+func _work(sim: Sim, world: ShipWorld, c: CrewMember, dt: float) -> void:
 	if c.job_room < 0 or c.room != c.job_room:
 		return
-	var r: Room = sim.ship.rooms[c.job_room]
+	var r: Room = world.ship.rooms[c.job_room]
 	if c.job_kind == "extinguish" and r.fire > 0.0:
 		r.fire = maxf(0.0, r.fire - _k("crew.fight_per_s") * c.skill_fire * dt)
 		if r.fire <= 0.0:
-			sim.emit("fire_out", {"room": r.id, "by": c.id})
+			world.emit(sim, "fire_out", {"room": r.id, "by": c.id})
 	elif c.job_kind == "patch" and r.breach_m2 > 0.0:
 		r.breach_m2 = maxf(0.0, r.breach_m2 - _k("crew.patch_m2_per_s") * c.skill_repair * dt)
 		if r.breach_m2 <= 0.0:
-			sim.emit("breach_patched", {"room": r.id, "by": c.id})
+			world.emit(sim, "breach_patched", {"room": r.id, "by": c.id})
+	elif c.job_kind == "repair" and r.sys_damage > 0.0:
+		r.sys_damage = maxf(0.0, r.sys_damage - _k("crew.repair_bars_per_s") * c.skill_repair * dt)
+		if r.sys_damage <= 0.0:
+			world.emit(sim, "system_repaired", {"room": r.id, "by": c.id})

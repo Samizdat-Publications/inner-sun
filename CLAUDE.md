@@ -114,4 +114,5 @@ two-line summary of where things stand.
 - Files under about 400 lines where practical. Godot 4.4+ writes `.uid` files next to scripts:
   commit them. Commit `.import` files; never commit `game/.godot/`.
 - Progress pictures go to `docs/progress/` whenever something visibly changes (Stewart keeps the
-  build history).
+  build history). At every milestone and big visual moment, also add a row, a clip and a git tag
+  to the making-of record (`docs/making-of/README.md`); never prune it.

@@ -201,6 +201,9 @@ def main(argv=None):
             "duration": a.duration, "stills": len(stills), "sheets": made, "clip_mb": round(os.path.getsize(clip) / 1e6, 1)}
     with open(os.path.join(arch, "meta.json"), "w", encoding="utf-8", newline="\n") as f:
         json.dump(meta, f, indent=2)
+    # Only the build id and seed go into the inbox (tools/critic.py records them with the scores).
+    with open(os.path.join(INBOX, "meta.json"), "w", encoding="utf-8", newline="\n") as f:
+        json.dump({"build_id": build_id, "seed": seed}, f, indent=2)
     for d in sorted(d for d in glob.glob(os.path.join(RAW, "*")) if os.path.isdir(d))[:-2]:
         shutil.rmtree(d, ignore_errors=True)
     log(f"inbox ready: {len(stills)} frames, {made} sheets")

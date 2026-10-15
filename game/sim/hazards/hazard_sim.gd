@@ -3,7 +3,8 @@ extends RefCounted
 ## Heat, fire and water, simulated room by room at 10 Hz (like Barotrauma's hulls and gaps, never
 ## per pixel). Water (millilitres) and heat (joules) are integers: whatever leaves one room arrives
 ## in another, or is counted in the ship's in/out totals, so conservation tests can demand equality.
-## Holds no reference to the Sim; the Sim passes itself in.
+## Anything outside this class that adds or removes heat or water goes through add_heat/add_water.
+## Holds no reference to the Sim or its ShipWorld; both are passed in.
 
 const TUNING_KEYS: Array[String] = [
 	"heat.capacity_kj_per_m3_k", "heat.wall_kw_per_m2_k", "heat.door_kw_per_m2_k",
@@ -15,12 +16,14 @@ const TUNING_KEYS: Array[String] = [
 	"fire.water_suppress_per_m_s", "fire.crew_dps",
 	"water.breach_cd", "water.gravity", "water.door_flow_per_m2_s", "water.hatch_cd", "water.pump_m3_s",
 	"water.crew_head_m", "water.drown_dps",
-	"crew.heat_safe_c", "crew.heat_dps_per_k",
+	"crew.heat_safe_c", "crew.heat_dps_per_k", "crew.heal_per_s",
 ]
 
 const J_PER_KJ: float = 1000.0
 
 var coolant_on: bool = true
+var cooling_scale: float = 1.0  ## Share of full coolant power, set by the Systems module (0 to 1).
+var pump_scale: float = 1.0  ## Share of full pump power, set by the Systems module (0 to 1).
 var water_in_ml: int = 0
 var water_out_ml: int = 0
 var energy_in_j: int = 0
@@ -67,20 +70,38 @@ func _add_adj(from: int, to: int, link: int, factor: float) -> void:
 	_adj_factor.append(factor)
 
 
-func step(sim: Sim, dt: float) -> void:
-	_heat(sim.ship, dt)
-	_fire(sim, dt)
-	_water(sim.ship, dt)
-	_crew_harm(sim, dt)
-	_flood_watch(sim, dt)
+func step(sim: Sim, world: ShipWorld, dt: float) -> void:
+	_heat(world.ship, dt)
+	_fire(sim, world, dt)
+	_water(world.ship, dt)
+	_crew_harm(sim, world, dt)
+	_flood_watch(sim, world, dt)
 
 
-func ignite(sim: Sim, r: Room, level: float) -> void:
+func ignite(sim: Sim, world: ShipWorld, r: Room, level: float) -> void:
 	if r.fire <= 0.0:
 		r.fire = clampf(level, 0.01, 1.0)
-		sim.emit("fire_started", {"room": r.id})
+		world.emit(sim, "fire_started", {"room": r.id})
 	else:
 		r.fire = maxf(r.fire, level)
+
+
+## Add (positive) or remove (negative) heat from outside the hazard model, keeping the books exact.
+func add_heat(r: Room, joules: int) -> void:
+	r.energy_j += joules
+	if joules >= 0:
+		energy_in_j += joules
+	else:
+		energy_out_j -= joules
+
+
+## Add water from outside (a burst pocket, an event), clamped to the room's capacity. Returns the
+## millilitres that actually went in.
+func add_water(r: Room, ml: int) -> int:
+	var add: int = clampi(ml, 0, r.capacity_ml - r.water_ml)
+	r.water_ml += add
+	water_in_ml += add
+	return add
 
 
 func state() -> Array:
@@ -119,8 +140,8 @@ func _heat(ship: Ship, dt: float) -> void:
 		var q_fire: int = roundi(_k("heat.fire_kw") * r.fire * per_j)
 		var q_cool: int = 0
 		var target: float = _k("heat.coolant_target_c")
-		if coolant_on and temps[i] > target:
-			var cool_kw: float = minf(_k("heat.coolant_kw_per_room"), _k("heat.coolant_kw_per_k") * (temps[i] - target))
+		if coolant_on and cooling_scale > 0.0 and temps[i] > target:
+			var cool_kw: float = minf(_k("heat.coolant_kw_per_room") * cooling_scale, _k("heat.coolant_kw_per_k") * (temps[i] - target))
 			q_cool = roundi(cool_kw * per_j)
 		delta[i] += q_rock + q_fire - q_cool
 		if q_rock >= 0:
@@ -135,9 +156,9 @@ func _heat(ship: Ship, dt: float) -> void:
 
 # Fire ------------------------------------------------------------------------------------------
 
-func _fire(sim: Sim, dt: float) -> void:
-	var ship: Ship = sim.ship
-	var rng: RandomNumberGenerator = sim.rng.get_stream("fire")
+func _fire(sim: Sim, world: ShipWorld, dt: float) -> void:
+	var ship: Ship = world.ship
+	var rng: RandomNumberGenerator = world.stream(sim, "fire")
 	for r: Room in ship.rooms:
 		if r.fire > 0.0:
 			r.fire = minf(1.0, r.fire + _k("fire.growth_per_s") * dt * (1.0 - r.fire))
@@ -146,9 +167,9 @@ func _fire(sim: Sim, dt: float) -> void:
 				r.fire -= _k("fire.water_suppress_per_m_s") * minf(lvl, 1.0) * dt
 			if r.fire <= 0.0:
 				r.fire = 0.0
-				sim.emit("fire_out", {"room": r.id, "by": "water"})
+				world.emit(sim, "fire_out", {"room": r.id, "by": "water"})
 		elif r.temp_c() >= _k("fire.autoignite_c") and rng.randf() < _k("fire.autoignite_per_s") * dt:
-			ignite(sim, r, _k("fire.start_level"))
+			ignite(sim, world, r, _k("fire.start_level"))
 	# Spread: each neighbour accumulates exposure; at 1.0 it catches. Deterministic and testable.
 	for j: int in range(_adj_from.size()):
 		var src: Room = ship.rooms[_adj_from[j]]
@@ -166,8 +187,8 @@ func _fire(sim: Sim, dt: float) -> void:
 		_spread_acc[j] += _k("fire.spread_per_s") * src.fire * factor * dt
 		if _spread_acc[j] >= 1.0:
 			_spread_acc[j] = 0.0
-			ignite(sim, dst, _k("fire.start_level"))
-			sim.emit("fire_spread", {"from": src.id, "to": dst.id})
+			ignite(sim, world, dst, _k("fire.start_level"))
+			world.emit(sim, "fire_spread", {"from": src.id, "to": dst.id})
 
 
 # Water -----------------------------------------------------------------------------------------
@@ -191,7 +212,7 @@ func _water(ship: Ship, dt: float) -> void:
 		link_flow_ml_s[l.index] = float(moved) / dt
 	for r: Room in ship.rooms:
 		if r.has_pump and r.water_ml > 0:
-			var out: int = mini(r.water_ml, roundi(_k("water.pump_m3_s") * dt * Room.ML_PER_M3))
+			var out: int = mini(r.water_ml, roundi(_k("water.pump_m3_s") * pump_scale * dt * Room.ML_PER_M3))
 			r.water_ml -= out
 			water_out_ml += out
 
@@ -231,15 +252,17 @@ func _hatch_flow(up: Room, lo: Room, l: Link, dt: float) -> int:
 
 # Crew harm and flooding ------------------------------------------------------------------------
 
-func _crew_harm(sim: Sim, dt: float) -> void:
-	for c: CrewMember in sim.ship.crew:
+func _crew_harm(sim: Sim, world: ShipWorld, dt: float) -> void:
+	for c: CrewMember in world.ship.crew:
 		if not c.alive:
 			continue
-		var r: Room = sim.ship.rooms[c.room]
+		var r: Room = world.ship.rooms[c.room]
 		var fire_d: float = _k("fire.crew_dps") * r.fire * dt
 		var heat_d: float = maxf(0.0, r.temp_c() - _k("crew.heat_safe_c")) * _k("crew.heat_dps_per_k") * dt
 		var drown_d: float = _k("water.drown_dps") * dt if r.level_m() >= _k("water.crew_head_m") else 0.0
 		if fire_d + heat_d + drown_d <= 0.0:
+			# Rest heals: a crew member not taking harm slowly recovers.
+			c.hp = minf(CrewMember.MAX_HP, c.hp + _k("crew.heal_per_s") * dt)
 			continue
 		c.hp -= fire_d + heat_d + drown_d
 		if c.hp <= 0.0:
@@ -252,14 +275,14 @@ func _crew_harm(sim: Sim, dt: float) -> void:
 				c.cause_of_death = "drowned"
 			else:
 				c.cause_of_death = "heat"
-			sim.emit("crew_died", {"crew": c.id, "cause": c.cause_of_death})
+			world.emit(sim, "crew_died", {"crew": c.id, "cause": c.cause_of_death})
 
 
-func _flood_watch(sim: Sim, dt: float) -> void:
-	for r: Room in sim.ship.rooms:
+func _flood_watch(sim: Sim, world: ShipWorld, dt: float) -> void:
+	for r: Room in world.ship.rooms:
 		if r.is_full():
 			if r.flooded_s == 0.0:
-				sim.emit("room_flooded", {"room": r.id})
+				world.emit(sim, "room_flooded", {"room": r.id})
 			r.flooded_s += dt
 		else:
 			r.flooded_s = 0.0

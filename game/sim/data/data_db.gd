@@ -1,17 +1,19 @@
 class_name DataDB
 extends RefCounted
-## All game content, loaded from JSON under res://data: ships, scenarios and tuning numbers. Adding
-## content means adding data. lint() checks every cross-reference and reports each problem with the
-## file it came from, so a broken reference is caught by the tests before anyone plays it.
+## All game content, loaded from JSON under res://data. Every folder is a table (tables["<folder>"]
+## maps id to definition; ships and scenarios are kept as aliases); tuning files merge into tune().
+## Adding content means adding data. lint() checks every cross-reference (each sim module lints its
+## own tables) and reports each problem with the file it came from, so a broken reference is caught
+## by the tests before anyone plays it.
 
 const ROOT: String = "res://data"
-const KNOWN_SYSTEMS: Array[String] = ["none", "bridge", "reactor", "drill", "coolant", "weapons", "bracing", "quarters", "scanner"]
-const KNOWN_COMMANDS: Array[String] = ["assign", "release", "auto", "ignite", "breach", "door"]
+const KNOWN_SYSTEMS: Array[String] = ["none", "helm", "bracing", "reactor", "weapons", "drill", "coolant"]
 const KNOWN_BOTS: Array[String] = ["auto", "idle", "random", "scripted_fire_drill"]
 const EM_DASH_CODE: int = 0x2014  ## Built at runtime so no source file contains the character.
 const EPS: float = 0.01
 
 var root: String = ROOT
+var tables: Dictionary = {}  ## folder name -> {id -> definition}
 var ships: Dictionary = {}
 var scenarios: Dictionary = {}
 var tuning: Dictionary = {}
@@ -22,10 +24,41 @@ var load_errors: PackedStringArray = PackedStringArray()
 static func load_all(p_root: String = ROOT) -> DataDB:
 	var db := DataDB.new()
 	db.root = p_root
-	db._load_table(p_root.path_join("ships"), "ship", db.ships)
-	db._load_table(p_root.path_join("scenarios"), "scenario", db.scenarios)
+	db.tables["ships"] = db.ships
+	db.tables["scenarios"] = db.scenarios
+	var folders: PackedStringArray = DirAccess.get_directories_at(p_root) if DirAccess.dir_exists_absolute(p_root) else PackedStringArray()
+	folders.sort()
+	for folder: String in folders:
+		if folder == "tuning":
+			continue
+		if not db.tables.has(folder):
+			db.tables[folder] = {}
+		var table: Dictionary = db.tables[folder]
+		db._load_table(p_root.path_join(folder), DataDB.kind_of(folder), table)
 	db._load_tuning(p_root.path_join("tuning"))
 	return db
+
+
+## The source key prefix for a table: "ship" for ships and "scenario" for scenarios (kept from M0),
+## the folder name for every other table.
+static func kind_of(folder: String) -> String:
+	if folder == "ships":
+		return "ship"
+	if folder == "scenarios":
+		return "scenario"
+	return folder
+
+
+## A table by folder name (empty if the folder does not exist).
+func table(folder: String) -> Dictionary:
+	if not tables.has(folder):
+		return {}
+	return tables[folder]
+
+
+## The file a definition came from, for error messages.
+func source_of(folder: String, id: String) -> String:
+	return str(sources.get("%s:%s" % [DataDB.kind_of(folder), id], "%s/%s" % [root, folder]))
 
 
 func tune(key: String) -> float:
@@ -134,6 +167,12 @@ func lint() -> PackedStringArray:
 	for key: String in needed:
 		if not tuning.has(key):
 			errs.append("%s/tuning: missing number \"%s\"" % [root, key])
+	# Each sim module checks its own tables and tuning (see docs/ARCHITECTURE.md).
+	RunState.lint(self, errs)
+	Systems.lint(self, errs)
+	DrillSim.lint(self, errs)
+	CombatSim.lint(self, errs)
+	Encounter.lint(self, errs)
 	return errs
 
 
@@ -159,6 +198,9 @@ func _lint_ship(def: Dictionary, file: String, errs: PackedStringArray) -> void:
 		var system: String = str(rd.get("system", "none"))
 		if not KNOWN_SYSTEMS.has(system):
 			errs.append("%s: unknown system \"%s\" (known: %s)" % [where, system, ", ".join(KNOWN_SYSTEMS)])
+		var bars: int = int(rd.get("bars", 0))
+		if bars < 0 or int(rd.get("power", bars)) > bars or int(rd.get("power", 0)) < 0:
+			errs.append("%s: bars must be zero or more and power between 0 and bars" % where)
 		rects[rid] = Rect2(float(rd.get("x", 0.0)), float(rd.get("y", 0.0)), w, h)
 	var links: Array = def.get("links", [])
 	for i: int in range(links.size()):
@@ -236,7 +278,7 @@ func _lint_scenario(def: Dictionary, file: String, errs: PackedStringArray) -> v
 			errs.append("%s: at_s must be zero or more" % where)
 		var cmd: Dictionary = e.get("cmd", {})
 		var kind: String = str(cmd.get("type", ""))
-		if not KNOWN_COMMANDS.has(kind):
+		if not Sim.known_commands().has(kind):
 			errs.append("%s: unknown command type \"%s\"" % [where, kind])
 		if cmd.has("room") and not room_ids.has(str(cmd["room"])):
 			errs.append("%s: room \"%s\" is not in ship \"%s\"" % [where, str(cmd["room"]), ship_id])

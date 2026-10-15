@@ -3,6 +3,12 @@
 His words outrank everything except CLAUDE.md's hard rules. Newest first. Playtest notes go at the
 top under a dated heading.
 
+## 2026-10-15: first M1 session
+- **The making of:** "As with all my projects, keep copies of relevant milestones etc and label them
+  so that we can build a 'The making of' page afterwards that shows our progression from start to
+  finish." Kept in `docs/making-of/README.md` (timeline, clips, tags, milestone builds) and
+  `docs/progress/`.
+
 ## 2026-10-15: planning session decisions
 - **Ship shape: the tall tower** (decks stacked, drill at the bottom, boring straight down), chosen
   over a horizontal mole.

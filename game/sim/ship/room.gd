@@ -26,6 +26,24 @@ var fire: float = 0.0
 var breach_m2: float = 0.0
 var flooded_s: float = 0.0
 
+# System state (one system per room; the Systems module owns the rules, see docs/ARCHITECTURE.md).
+var sys_max: int = 0  ## Bars of capacity.
+var sys_damage: float = 0.0  ## Bars lost to hits and fire; crew repair it.
+var sys_power: int = 0  ## Bars allocated by the player or the AI.
+var sys_failed: bool = false  ## Set by Systems while the room is too hot for its system to work.
+
+
+## Bars this room's system can use right now.
+func effective_bars() -> int:
+	if sys_failed or sys_max <= 0:
+		return 0
+	return clampi(mini(sys_power, sys_max - ceili(sys_damage)), 0, sys_max)
+
+
+## Bars that still work (capacity minus damage), whatever the allocation.
+func intact_bars() -> int:
+	return clampi(sys_max - ceili(sys_damage), 0, sys_max)
+
 
 func floor_y() -> float:
 	return rect.position.y + rect.size.y

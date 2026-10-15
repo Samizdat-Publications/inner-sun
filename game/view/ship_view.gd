@@ -142,8 +142,8 @@ func _build_rock() -> void:
 			s.z_index = -10
 			add_child(s)
 	var size: Vector2 = ship_size_m() * ppm
-	_light(Vector2(-ppm * 0.6, size.y * 0.3), Color(0.55, 0.68, 0.85), 1.1, ppm * 6.5, true, 260.0)
-	_light(Vector2(size.x + ppm * 0.6, size.y * 0.3), Color(0.55, 0.68, 0.85), 1.1, ppm * 6.5, true, 260.0)
+	_light(Vector2(-ppm * 0.6, size.y * 0.3), Color(0.55, 0.68, 0.85), 1.5, ppm * 8.0, true, 260.0)
+	_light(Vector2(size.x + ppm * 0.6, size.y * 0.3), Color(0.55, 0.68, 0.85), 1.5, ppm * 8.0, true, 260.0)
 
 
 func _build_rooms() -> void:

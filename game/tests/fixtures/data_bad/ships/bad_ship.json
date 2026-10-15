@@ -2,7 +2,7 @@
   "id": "bad_ship",
   "name": "Broken on purpose \u2014 the lint test expects these errors",
   "rooms": [
-    {"id": "top", "x": 0.0, "y": 0.0, "w": 4.0, "h": 3.0, "system": "bridge"},
+    {"id": "top", "x": 0.0, "y": 0.0, "w": 4.0, "h": 3.0, "system": "helm"},
     {"id": "low", "x": 0.0, "y": 3.0, "w": 4.0, "h": 3.0, "system": "warp_core"}
   ],
   "links": [

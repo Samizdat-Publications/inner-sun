@@ -14,7 +14,7 @@ const PROJECTILES: int = 24
 static func run(db: DataDB, ticks: int) -> Dictionary:
 	var sim := Sim.new(db, 99, "light_drill")
 	sim.push({"type": "ignite", "room": "drill", "level": 0.3})
-	sim.push({"type": "ignite", "room": "quarters", "level": 0.2})
+	sim.push({"type": "ignite", "room": "bracing", "level": 0.2})
 	sim.push({"type": "breach", "room": "weapons", "size_m2": 0.02})
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 12345

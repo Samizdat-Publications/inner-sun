@@ -110,7 +110,7 @@ func _build_world() -> void:
 	env.environment = e
 	add_child(env)
 	var dark := CanvasModulate.new()
-	dark.color = Color(0.16, 0.16, 0.19)
+	dark.color = Color(0.30, 0.30, 0.34)
 	add_child(dark)
 	view = ShipView.new()
 	view.setup(run, PPM)
