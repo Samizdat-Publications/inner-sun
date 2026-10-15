@@ -128,6 +128,12 @@ Critic loop:
 - **About 15 lights per canvas item.** Godot 2D lets one canvas item take only about 15 lights and
   silently drops the rest. Keep drawings split into small nodes (per room, per crew, per terrain
   chunk) and disable idle lights; never just set energy to 0.
+- **Glow needs emission above 1.0 after CanvasModulate.** HDR 2D glow works with the M0 settings
+  (`hdr_2d=true`, glow threshold 1.0), but CanvasModulate multiplies every canvas item, unshaded and
+  additive ones included. An emission sprite must use `modulate = target / CanvasModulate.color`
+  (target about 1.0 to 1.4; 1.6 and up blows out to a white disc). The M0 drill polygon and flames
+  do not bloom for this reason. Found in the M1 art bake-off. `Environment.set_glow_level` is
+  0-based (0 to 6).
 - **Light height for normal maps.** Normal-mapped sprites need light `height` well above zero (we
   use 120 to 260 px), or they come out nearly black.
 - **Windows on Stewart's screen.** Rendering needs a window, and Stewart works on this laptop while
