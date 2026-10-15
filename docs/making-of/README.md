@@ -20,4 +20,6 @@ that record. Keep it current as you go; never prune it.
 |---|---|---|---|---|
 | 2026-10-15 | Kickoff and plan approved | - | `cb500b6` | Stewart pitches a drill ship boring into a hollow Earth; the tall tower ship is chosen. |
 | 2026-10-15 | M0: the autonomous loop proven | `docs/progress/001` to `003` | `m0-loop-proven` (`24d0767`) | A node-free sim, a bot, off-screen frames, planted bugs caught, the same hash everywhere. |
-| 2026-10-15 | M1 begins: the blind critic installed | `docs/progress/004` | `e2dc572` | The critic's guard is live-tested; the first exposure lift so the critic can see anything. |
+| 2026-10-15 | M1 begins: the blind critic installed | `docs/progress/004`, `clips/001` | `e2dc572` | The critic's guard is live-tested; the first exposure lift so the critic can see anything. First review: 3.8 out of 10 ("a debug view, not a game yet"). |
+| 2026-10-15 | The M1 skeleton | - | `de5e103` | The sim grows from one fire drill to a whole run: two ships, phases, modules. |
+| 2026-10-15 | Art bake-off, style C | `stills/001` | `3f4b62f` | Blender pre-rendered sprites with real normal maps, lit in Godot; HDR glow finally blooms. |

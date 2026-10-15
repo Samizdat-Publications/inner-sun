@@ -164,7 +164,7 @@ func _build_rooms() -> void:
 			add_child(back)
 		var ri: int = r.index
 		_fn(0, func(n: Node2D) -> void: _draw_heat(n, ri))
-		_fn(2, func(n: Node2D) -> void: _draw_water(n, ri))
+		_fn(5, func(n: Node2D) -> void: _draw_water(n, ri))
 		_fn(3, func(n: Node2D) -> void: _draw_frame(n, ri))
 		_fn(10, func(n: Node2D) -> void: _draw_label(n, ri), true)
 	for l: Link in ship.links:
@@ -265,7 +265,7 @@ func _build_flames() -> void:
 		p.scale_amount_min = 0.7
 		p.scale_amount_max = 1.6
 		p.color_ramp = ramp
-		p.z_index = 5
+		p.z_index = 6
 		add_child(p)
 		_flames.append(p)
 
@@ -307,7 +307,7 @@ func _build_props() -> void:
 func _build_crew() -> void:
 	for c: CrewMember in run.sim.ship.crew:
 		var ci: int = c.index
-		_crew_nodes.append(_fn(1, func(n: Node2D) -> void: _draw_crew(n, ci)))
+		_crew_nodes.append(_fn(4, func(n: Node2D) -> void: _draw_crew(n, ci)))
 		_crew_lights.append(_light(Vector2.ZERO, Color(0.85, 0.92, 1.0), 0.45, ppm * 1.7, false, 120.0))
 
 
