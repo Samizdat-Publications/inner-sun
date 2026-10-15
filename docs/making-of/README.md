@@ -23,3 +23,5 @@ that record. Keep it current as you go; never prune it.
 | 2026-10-15 | M1 begins: the blind critic installed | `docs/progress/004`, `clips/001` | `e2dc572` | The critic's guard is live-tested; the first exposure lift so the critic can see anything. First review: 3.8 out of 10 ("a debug view, not a game yet"). |
 | 2026-10-15 | The M1 skeleton | - | `de5e103` | The sim grows from one fire drill to a whole run: two ships, phases, modules. |
 | 2026-10-15 | Art bake-off, style C | `stills/001` | `3f4b62f` | Blender pre-rendered sprites with real normal maps, lit in Godot; HDR glow finally blooms. |
+| 2026-10-15 | The drill bites | `stills/003`, `docs/progress/008` | merge of the drill view | The tower grinds down a real shaft through layered rock: ore veins glint, a gem geode in a basalt shell, sparks at the crown. The critic's "no world outside" answered. |
+| 2026-10-15 | Run screen pieces | `docs/progress/006`, `007` | UI merge | The HUD and the typewritten dossier with redaction bars and TOPSIDE's radio strip. |
