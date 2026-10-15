@@ -1,0 +1,41 @@
+{
+  "id": "rival_light",
+  "name": "Rival Rig",
+  "blurb": "A cut-down claim jumper: five rooms, one borer turret and a crew that knows these tunnels.",
+  "rock_temp_c": 42.0,
+  "water_head_m": 25.0,
+  "room_depth_m": 3.0,
+  "hull": 12,
+  "weapon_slots": 2,
+  "weapons": ["borer_turret"],
+  "rooms": [
+    {"id": "bridge", "name": "Bridge", "x": 0.0, "y": 0.0, "w": 4.0, "h": 3.0, "system": "helm", "bars": 2, "power": 1},
+    {"id": "bracing", "name": "Bracing", "x": 4.0, "y": 0.0, "w": 4.0, "h": 3.0, "system": "bracing", "bars": 2, "power": 2},
+    {"id": "reactor", "name": "Reactor", "x": 0.0, "y": 3.0, "w": 4.0, "h": 3.0, "system": "reactor", "bars": 6, "power": 6},
+    {"id": "weapons", "name": "Weapons", "x": 4.0, "y": 3.0, "w": 4.0, "h": 3.0, "system": "weapons", "bars": 2, "power": 1},
+    {"id": "coolant", "name": "Coolant", "x": 0.0, "y": 6.0, "w": 4.0, "h": 3.0, "system": "coolant", "pump": true, "bars": 2, "power": 2}
+  ],
+  "links": [
+    {"id": "door_top", "kind": "door", "a": "bridge", "b": "bracing", "x": 4.0, "height_m": 2.1, "breadth_m": 1.0},
+    {"id": "door_mid", "kind": "door", "a": "reactor", "b": "weapons", "x": 4.0, "height_m": 2.1, "breadth_m": 1.0},
+    {"id": "hatch_bridge_reactor", "kind": "hatch", "a": "bridge", "b": "reactor", "x": 1.0, "span_m": 0.8, "breadth_m": 0.8},
+    {"id": "hatch_bracing_weapons", "kind": "hatch", "a": "bracing", "b": "weapons", "x": 7.0, "span_m": 0.8, "breadth_m": 0.8},
+    {"id": "hatch_reactor_coolant", "kind": "hatch", "a": "reactor", "b": "coolant", "x": 2.0, "span_m": 0.8, "breadth_m": 0.8}
+  ],
+  "crew": [
+    {"id": "rival_pilot", "name": "Pilot", "room": "bridge", "x": 2.4, "skills": {"fire": 0.9, "repair": 0.9}},
+    {"id": "rival_gunner", "name": "Gunner", "room": "weapons", "x": 6.0, "skills": {"fire": 1.0, "repair": 0.8}},
+    {"id": "rival_engineer", "name": "Engineer", "room": "reactor", "x": 1.8, "skills": {"fire": 1.0, "repair": 1.1}}
+  ],
+  "ai": {
+    "power": [
+      {"room": "weapons", "bars": 1},
+      {"room": "bracing", "bars": 2},
+      {"room": "bridge", "bars": 1},
+      {"room": "coolant", "bars": 2},
+      {"room": "bridge", "bars": 2},
+      {"room": "weapons", "bars": 2}
+    ],
+    "target_weights": {"weapons": 4.0, "helm": 3.0, "bracing": 3.0, "reactor": 2.0, "coolant": 1.0, "drill": 1.0}
+  }
+}

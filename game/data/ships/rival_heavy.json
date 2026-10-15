@@ -1,0 +1,46 @@
+{
+  "id": "rival_heavy",
+  "name": "Gate Warden",
+  "blurb": "The rig that holds the layer gate. Double bracing, a borer and a thermal lance, and four crew who have done this before.",
+  "rock_temp_c": 42.0,
+  "water_head_m": 25.0,
+  "room_depth_m": 3.0,
+  "hull": 16,
+  "weapon_slots": 3,
+  "weapons": ["borer_turret", "thermal_lance"],
+  "rooms": [
+    {"id": "bridge", "name": "Bridge", "x": 0.0, "y": 0.0, "w": 4.0, "h": 3.0, "system": "helm", "bars": 2, "power": 2},
+    {"id": "bracing", "name": "Bracing", "x": 4.0, "y": 0.0, "w": 4.0, "h": 3.0, "system": "bracing", "bars": 4, "power": 4},
+    {"id": "reactor", "name": "Reactor", "x": 0.0, "y": 3.0, "w": 4.0, "h": 3.0, "system": "reactor", "bars": 10, "power": 10},
+    {"id": "weapons", "name": "Weapons", "x": 4.0, "y": 3.0, "w": 4.0, "h": 3.0, "system": "weapons", "bars": 3, "power": 3},
+    {"id": "coolant", "name": "Coolant", "x": 0.0, "y": 6.0, "w": 4.0, "h": 3.0, "system": "coolant", "pump": true, "bars": 2, "power": 1},
+    {"id": "drill", "name": "Drill Room", "x": 4.0, "y": 6.0, "w": 4.0, "h": 3.0, "system": "drill", "pump": true, "bars": 2, "power": 0}
+  ],
+  "links": [
+    {"id": "door_top", "kind": "door", "a": "bridge", "b": "bracing", "x": 4.0, "height_m": 2.1, "breadth_m": 1.0},
+    {"id": "door_mid", "kind": "door", "a": "reactor", "b": "weapons", "x": 4.0, "height_m": 2.1, "breadth_m": 1.0},
+    {"id": "door_low", "kind": "door", "a": "coolant", "b": "drill", "x": 4.0, "height_m": 2.1, "breadth_m": 1.0},
+    {"id": "hatch_bridge_reactor", "kind": "hatch", "a": "bridge", "b": "reactor", "x": 1.0, "span_m": 0.8, "breadth_m": 0.8},
+    {"id": "hatch_bracing_weapons", "kind": "hatch", "a": "bracing", "b": "weapons", "x": 7.0, "span_m": 0.8, "breadth_m": 0.8},
+    {"id": "hatch_reactor_coolant", "kind": "hatch", "a": "reactor", "b": "coolant", "x": 3.0, "span_m": 0.8, "breadth_m": 0.8},
+    {"id": "hatch_weapons_drill", "kind": "hatch", "a": "weapons", "b": "drill", "x": 5.0, "span_m": 0.8, "breadth_m": 0.8}
+  ],
+  "crew": [
+    {"id": "warden_pilot", "name": "Pilot", "room": "bridge", "x": 2.4, "skills": {"fire": 1.0, "repair": 1.0}},
+    {"id": "warden_gunner", "name": "Gunner", "room": "weapons", "x": 6.0, "skills": {"fire": 1.0, "repair": 0.9}},
+    {"id": "warden_engineer", "name": "Engineer", "room": "reactor", "x": 1.8, "skills": {"fire": 1.1, "repair": 1.3}},
+    {"id": "warden_driller", "name": "Driller", "room": "drill", "x": 6.0, "skills": {"fire": 1.2, "repair": 1.1}}
+  ],
+  "ai": {
+    "power": [
+      {"room": "weapons", "bars": 3},
+      {"room": "bracing", "bars": 2},
+      {"room": "bridge", "bars": 1},
+      {"room": "bracing", "bars": 4},
+      {"room": "coolant", "bars": 1},
+      {"room": "bridge", "bars": 2},
+      {"room": "coolant", "bars": 2}
+    ],
+    "target_weights": {"weapons": 4.0, "helm": 3.0, "bracing": 3.0, "reactor": 2.0, "coolant": 1.0, "drill": 1.0}
+  }
+}

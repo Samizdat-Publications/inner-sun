@@ -163,12 +163,13 @@ func test_losing_the_last_crew_ends_the_run() -> void:
 
 func test_effect_fight() -> void:
 	for mode: String in ["run", "scenario"]:
-		var s: Sim = _with([{"type": "fight", "enemy": "light_drill"}], 7, mode)
+		var s: Sim = _with([{"type": "fight", "enemy": "rival_light"}], 7, mode)
 		_go(s)
-		check(not has_event(s, "fight_skipped"), "the fight waits until the page is read (%s)" % mode)
+		check(not has_event(s, "fight_start"), "the fight waits until the page is read (%s)" % mode)
 		_go(s)
-		check(has_event(s, "fight_skipped"), "start_fight was called (%s)" % mode)
-		check_eq(s.run.phase, "idle", "the combat stub returns to idle (%s)" % mode)
+		check(has_event(s, "fight_start"), "start_fight was called (%s)" % mode)
+		check_eq(s.run.phase, "combat", "the fight takes over (%s)" % mode)
+		check(s.enemy != null, "the rival ship is built (%s)" % mode)
 		check_eq(s.encounter.pending_fight, "", "nothing left queued")
 
 
