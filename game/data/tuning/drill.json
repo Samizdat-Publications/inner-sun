@@ -25,6 +25,6 @@
     "noise_per_m": 1.0,
     "pocket_breach_m2": 0.01,
     "rock_temp_base_c": 40.0,
-    "rock_temp_c_per_m": 0.05
+    "rock_temp_c_per_m": 0.08
   }
 }

@@ -273,7 +273,12 @@ func step(sim: Sim) -> void:
 	if pf > 0.0 and _bit_change_ticks == 0:
 		_drive(sim, bars, pf)
 	sim.run.depth_m = start_depth_m + (_py - start_y)
-	sim.ship.rock_temp_c = _rock_base_c + _rock_c_per_m * sim.run.depth_m
+	var base_c: float = _rock_base_c
+	var per_m: float = _rock_c_per_m
+	if not sim.run.layer.is_empty():  # In a run the layer owns rock heat; drill tuning is the scenario fallback.
+		base_c = float(sim.run.layer.get("rock_temp_base_c", base_c))
+		per_m = float(sim.run.layer.get("rock_temp_c_per_m", per_m))
+	sim.ship.rock_temp_c = base_c + per_m * sim.run.depth_m
 	if _py + ship_size.y >= target_y - EPS:
 		_arrive(sim)
 

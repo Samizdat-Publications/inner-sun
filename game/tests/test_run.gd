@@ -54,7 +54,7 @@ func test_choose_only_linked_nodes_and_spend_a_cell() -> void:
 	check_eq(s.run.get_res("cells"), 7, "one power cell spent")
 	check_eq(s.drill.speed_scale, 1.0, "full speed with cells")
 	check_eq(s.drill.segment_id, "r0c0-" + to, "the segment is named from-to")
-	check_eq(s.drill.depth_m, 36.0, "one row is 36 m of rock")
+	check_eq(s.drill.depth_m, float(s.run.layer["row_depth_m"]), "one row is the layer row depth of rock")
 	s.push({"type": "choose_node", "node": to})
 	s.step()
 	check_eq(s.run.get_res("cells"), 7, "no second cell while drilling")
@@ -86,13 +86,18 @@ func test_arrival_makes_the_node_current_and_hands_it_on() -> void:
 	s.push({"type": "choose_node", "node": to})
 	s.step()
 	_drive(s)
-	check_eq(s.run.phase, "idle", "the stubs return to idle")
+	var want_phase: Dictionary = {"store": "store", "event": "dialog", "cavern": "dialog", "hazard": "dialog", "fight": "idle"}
+	check_eq(s.run.phase, str(want_phase.get(kind, "idle")), "the node's module took over (%s)" % kind)
 	check_eq(s.run.current_node, to, "the node is current")
 	check(s.run.is_visited(s.run.node(to)), "and visited")
-	check_eq(s.run.depth_m, 36.0, "depth is the row's depth exactly")
+	check_eq(s.run.depth_m, float(s.run.layer["row_depth_m"]), "depth is the row's depth exactly")
 	check_eq(str(_last(s, "arrived").get("node", "")), to, "an arrived event")
-	var handed: String = "fight_skipped" if kind == "fight" else "node_skipped"
-	check_eq(_count(s, handed), 1, "the node went to its module (%s)" % kind)
+	if kind == "fight":
+		check_eq(_count(s, "fight_skipped"), 1, "the fight went to combat (stub until step 4)")
+	elif kind == "store":
+		check(not s.encounter.current_store().is_empty(), "the store is open")
+	else:
+		check(not s.encounter.current_event().is_empty(), "an event page is open")
 
 
 func test_pursuer_advances_with_time_and_noise() -> void:
@@ -184,7 +189,7 @@ func test_full_run_ends_replays_and_saves() -> void:
 	check_eq(int(sum["seed"]), 31, "summary seed")
 	if fr.outcome == "won":
 		check_eq(int(sum["rows_reached"]), 9, "a win reached the gate row")
-		check_eq(float(sum["depth_m"]), 324.0, "nine rows of 36 m")
+		check_eq(float(sum["depth_m"]), 9.0 * float(fr.sim.run.layer["row_depth_m"]), "nine rows of the layer row depth")
 	check_gt(float((sum["gained"] as Dictionary)["ore"]), 0.0, "ore mined on the way")
 	var again: Sim = Sim.replay(db(), 31, "light_drill", fr.sim.command_log, fr.sim.tick, fr.sim.options)
 	check_eq(again.state_hash(), fr.sim.state_hash(), "seed, options and command log rebuild the whole run")
