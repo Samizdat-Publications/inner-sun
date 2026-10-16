@@ -272,3 +272,22 @@ rock at range for a charge. Then buried structures to break into and a requisiti
 miner (his "up to you") comes last and only if the budget allows: charges and sideways cutting cover
 most of "reach the vein", and the meta answers his "reason to come back", which he stated as a need.
 Plan: `docs/plans/M1c.md`. Revert: the M1c merges.
+
+## D040 (AI): Research and requisitions, the numbers
+Every run pays research (`game/meta/research.gd`), a pure function of the run summary: 2 per map row
+reached, 5 per codex entry learned that run, 3 per fight won, 15 for beating the gate, 1 per 40 ore
+gained (rounded down). It is banked in the profile and buys requisitions (`game/data/requisitions`),
+permanent starting equipment loaded onto every later dive: spare bit crate (+1 bit, 20), charge crate
+(+3 charges, 20), second coolant tank (+6 coolant, 25), field plating (+5 max hull, 40), tungsten head
+fitted at the start (60), a fourth hand (a fourth crew member from the survivors pool, 80). The whole
+shop costs 245. The owned ids are a run option (`"requisitions"`), so they are in the replay header.
+Evidence (3 bots x 8 seeds on the 14-row Crust, from the played summaries): cautious earned 50 to 76
+(median 63), greedy 50 to 107 (83), balanced 69 to 95 (73); ore is the biggest line for bots
+(25 to 60 of the total, they gather 800 to 2500). Stewart's build 3 death (row 7 or 8, one fight, a
+few hundred ore, a couple of codex entries) works out at about 35 to 50, so his first death buys one
+or two of the cheap items and the shop empties in about six to ten runs. Start-resource requisitions
+are added directly (no resource events) so the "gained" counters and the ore line stay honest. Tune
+by editing the constants in `research.gd` and `cost` in the requisition files. Not done: a loadout
+choice (every owned item always applies), a toast in the first seconds of a dive.
+Revert: delete `research.gd`, `requisitions*.gd`, the data folder and the one `Requisitions.apply`
+line in `Sim._init`; old profiles keep two harmless fields.

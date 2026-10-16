@@ -18,6 +18,9 @@ var best_depth_m: float = 0.0
 var deaths: Dictionary = {}  ## cause -> count
 var unlocks: PackedStringArray = PackedStringArray()
 var history: Array[Dictionary] = []
+var research: int = 0  ## The balance: earned by runs (Research), spent on requisitions.
+var requisitions: PackedStringArray = PackedStringArray()  ## Owned requisition ids (sorted), loaded on every run.
+var last_research: int = 0  ## What the latest merged run earned (not saved; the death screen shows it).
 
 
 ## The profile folder from the command line (--profile-dir=<path>), else user://.
@@ -55,12 +58,17 @@ static func load_from(p_dir: String) -> Profile:
 	for h: Variant in d.get("history", []):
 		if h is Dictionary:
 			p.history.append(h)
+	p.research = maxi(0, int(d.get("research", 0)))
+	for r: Variant in d.get("requisitions", []):
+		if not p.requisitions.has(str(r)):
+			p.requisitions.append(str(r))
+	p.requisitions.sort()
 	return p
 
 
 ## The options a new run starts with (what the profile already knows is part of the replay header).
 func run_options() -> Dictionary:
-	return {"mode": "run", "known_codex": Array(known_codex)}
+	return {"mode": "run", "known_codex": Array(known_codex), "requisitions": Array(requisitions)}
 
 
 ## Fold a finished run into the profile: what it learned, how it ended, how deep it got.
@@ -77,9 +85,39 @@ func merge_run(summary: Dictionary, learned: PackedStringArray) -> void:
 		var cause: String = str(summary.get("cause", "unknown"))
 		deaths[cause] = int(deaths.get(cause, 0)) + 1
 	best_depth_m = maxf(best_depth_m, float(summary.get("depth_m", 0.0)))
+	last_research = Research.earned(summary)
+	research += last_research
 	history.append(summary.duplicate(true))
 	while history.size() > HISTORY_MAX:
 		history.pop_front()
+
+
+func owns(id: String) -> bool:
+	return requisitions.has(id)
+
+
+## Why a requisition cannot be bought now ("" = it can).
+func buy_refusal(id: String, db: DataDB) -> String:
+	var def: Dictionary = db.table("requisitions").get(id, {})
+	if def.is_empty():
+		return "no such requisition"
+	if owns(id):
+		return "already owned"
+	var cost: int = int(def.get("cost", 0))
+	if research < cost:
+		return "needs %d more research" % (cost - research)
+	return ""
+
+
+## Buy a requisition with research. Returns "" on success, else the reason (nothing changes).
+func buy(id: String, db: DataDB) -> String:
+	var why: String = buy_refusal(id, db)
+	if not why.is_empty():
+		return why
+	research -= int((db.table("requisitions")[id] as Dictionary).get("cost", 0))
+	requisitions.append(id)
+	requisitions.sort()
+	return ""
 
 
 ## Write atomically (temp file, then rename). Returns false on failure.
@@ -94,6 +132,7 @@ func save() -> bool:
 	var data: Dictionary = {
 		"version": VERSION, "known_codex": Array(known_codex), "runs": runs, "wins": wins,
 		"best_depth_m": best_depth_m, "deaths": deaths, "unlocks": Array(unlocks), "history": history,
+			"research": research, "requisitions": Array(requisitions),
 	}
 	f.store_string(JSON.stringify(data, "  ", true, true))
 	f.close()

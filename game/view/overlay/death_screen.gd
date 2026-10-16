@@ -15,7 +15,10 @@ extends Control
 ##   death.bind(new_sim, profile)      # again for a new run; it hides itself while the run lives
 ## Main should fold the finished run into the profile (Profile.merge_run(run.summary(sim),
 ## run.learned), then save) when the phase turns dead or won; this screen only reads. Enter or the
-## New run button starts a new run. It owns a CodexView (`codex`) for its Codex button.
+## New run button starts a new run. It owns a CodexView (`codex`) for its Codex button and a
+## RequisitionsView (`requisitions`) for its Requisitions button [R]. The RESEARCH block lists what the
+## run earned (Research.compute) and the balance the profile now holds; main merges the run into the
+## profile (which adds the research) before this page is built.
 
 signal new_run_requested
 
@@ -40,6 +43,7 @@ const RES_LABEL: Dictionary = {
 var sim: Sim = null
 var profile: Profile = null
 var codex: CodexView = null
+var requisitions: RequisitionsView = null
 
 var _sig: String = ""
 var _sheet: Dossier.DossierSheet = null
@@ -49,6 +53,7 @@ var _typed: float = 0.0
 var _age: float = 0.0
 var _new_button: Button = null
 var _codex_button: Button = null
+var _req_button: Button = null
 
 
 static func build(parent: Control, p_sim: Sim, p_profile: Profile = null) -> DeathScreen:
@@ -72,6 +77,11 @@ func _init() -> void:
 	codex.position = Vector2.ZERO
 	codex.size = DESIGN_SIZE
 	add_child(codex)
+	requisitions = RequisitionsView.new()
+	requisitions.position = Vector2.ZERO
+	requisitions.size = DESIGN_SIZE
+	add_child(requisitions)
+	requisitions.closed.connect(_rebuild_if_open)
 
 
 func bind(p_sim: Sim, p_profile: Profile = null) -> void:
@@ -80,6 +90,8 @@ func bind(p_sim: Sim, p_profile: Profile = null) -> void:
 	_sig = ""
 	codex.bind(p_sim, p_profile)
 	codex.close()
+	requisitions.bind(p_sim.db if p_sim != null else null, p_profile)
+	requisitions.close()
 	_refresh()
 
 
@@ -105,7 +117,8 @@ func _refresh() -> void:
 	if not open:
 		_sig = ""
 		return
-	var sig: String = "%s|%s|%s" % [sim.run.phase, sim.run.end_cause, ",".join(sim.run.learned)]
+	var banked: int = profile.research if profile != null else 0
+	var sig: String = "%s|%s|%s|%d" % [sim.run.phase, sim.run.end_cause, ",".join(sim.run.learned), banked]
 	if sig != _sig:
 		_sig = sig
 		_rebuild()
@@ -165,15 +178,27 @@ func _on_codex() -> void:
 	codex.open()
 
 
+func _on_requisitions() -> void:
+	requisitions.open()
+
+
+func _rebuild_if_open() -> void:
+	_sig = ""  # The balance may have changed in the requisitions screen.
+	_refresh()
+
+
 func _unhandled_key_input(event: InputEvent) -> void:
 	var k: InputEventKey = event as InputEventKey
-	if k == null or not k.pressed or k.echo or not visible or codex.visible:
+	if k == null or not k.pressed or k.echo or not visible or codex.visible or requisitions.visible:
 		return
 	if k.physical_keycode == KEY_ENTER or k.physical_keycode == KEY_KP_ENTER:
 		_on_new()
 		get_viewport().set_input_as_handled()
 	elif k.physical_keycode == KEY_C:
 		_on_codex()
+		get_viewport().set_input_as_handled()
+	elif k.physical_keycode == KEY_R:
+		_on_requisitions()
 		get_viewport().set_input_as_handled()
 
 
@@ -267,6 +292,7 @@ func _rebuild() -> void:
 	supplies.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	supplies.custom_minimum_size = Vector2(COL_W, 0)
 	left.add_child(supplies)
+	_research_block(left, sum)
 	# Right column: the codex.
 	var right := VBoxContainer.new()
 	right.add_theme_constant_override("separation", 10)
@@ -309,6 +335,10 @@ func _rebuild() -> void:
 	buttons.add_theme_constant_override("separation", 20)
 	buttons.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.add_child(buttons)
+	_req_button = _button("Requisitions  [R]")
+	_req_button.custom_minimum_size = Vector2(330, 0)
+	_req_button.pressed.connect(_on_requisitions)
+	buttons.add_child(_req_button)
 	_codex_button = _button("Codex  [C]")
 	_codex_button.pressed.connect(_on_codex)
 	buttons.add_child(_codex_button)
@@ -316,6 +346,29 @@ func _rebuild() -> void:
 	_new_button.pressed.connect(_on_new)
 	buttons.add_child(_new_button)
 	_center.add_child(_sheet)
+
+
+## The RESEARCH block: what the run earned, line by line, and the balance banked.
+func _research_block(left: VBoxContainer, sum: Dictionary) -> void:
+	var res: Dictionary = Research.compute(sum)
+	left.add_child(_rule())
+	left.add_child(_label("RESEARCH", 16, UiTheme.INK_RED))
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 24)
+	grid.add_theme_constant_override("v_separation", 2)
+	grid.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	left.add_child(grid)
+	for l: Dictionary in res["lines"]:
+		var how: String = "%d (1 per %d)" % [int(l["count"]), int(l["each"])] if bool(l["per"]) else (
+				"%d x %d" % [int(l["count"]), int(l["each"])] if int(l["count"]) > 1 else "")
+		grid.add_child(_label("%s  %s" % [str(l["label"]), how], 19, UiTheme.INK))
+		var pts: Label = _label("+%d" % int(l["points"]), 19, UiTheme.INK)
+		pts.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		pts.custom_minimum_size = Vector2(70, 0)
+		grid.add_child(pts)
+	var banked: int = profile.research if profile != null else 0
+	left.add_child(_label("+%d research, %d banked" % [int(res["total"]), banked], 23, UiTheme.INK_RED))
 
 
 func _known_total() -> int:

@@ -1,0 +1,8 @@
+{
+  "id": "fourth_hand",
+  "name": "A fourth hand",
+  "blurb": "TOPSIDE finds one more survivor willing to go down. They board before launch.",
+  "cost": 80,
+  "order": 6,
+  "effects": {"crew": 1}
+}

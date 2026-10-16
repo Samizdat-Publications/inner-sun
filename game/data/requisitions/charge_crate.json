@@ -1,0 +1,8 @@
+{
+  "id": "charge_crate",
+  "name": "Charge crate",
+  "blurb": "Spare charges for the hull weapons, stacked by the hatch.",
+  "cost": 20,
+  "order": 2,
+  "effects": {"start_resources": {"charges": 3}}
+}

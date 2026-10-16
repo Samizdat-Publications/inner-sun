@@ -1,0 +1,8 @@
+{
+  "id": "coolant_tank",
+  "name": "Second coolant tank",
+  "blurb": "A second tank on the coolant loop. Hot rock matters less.",
+  "cost": 25,
+  "order": 3,
+  "effects": {"start_resources": {"coolant": 6}}
+}
