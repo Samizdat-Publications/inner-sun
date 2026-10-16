@@ -8,8 +8,12 @@ extends Bot
 ## Per phase (decisions every DECIDE_TICKS, drilling every 12 ticks through DrillBot):
 ## - idle: waits (up to wait_s) while fires, breaches or broken systems are being handled, then picks
 ##   the next node by policy (PolicyChoices.choose_node).
-## - drill: DrillBot with this policy's detour greed and noise budget; drill bars by policy, one bar
-##   less while coolant runs low.
+## - drill: DrillBot with this policy's detour greed, noise budget and steering range; drill bars by
+##   policy, one bar less while coolant runs low. Bracing up (2 bars, one layer) when fault rock is
+##   within fault_look_m (cautious: always). The charge launcher (weapons to 1 bar for the shot)
+##   blasts an unburst gas pocket on the lane before the drill reaches it, and (greedy, balanced) a
+##   vein or pocket in range whose blast circle is worth blast_min_value, keeping blast_keep charges.
+## - any world phase: douse the worst fire above douse_at while coolant is above low_coolant.
 ## - dialog: the event option the policy scores best (PolicyChoices.choose_option).
 ## - store: one purchase per decision (PolicyChoices.next_purchase), then leave.
 ## - combat: drill off, weapons, helm, bracing and coolant up (re-powered after cuts), targets like
@@ -24,7 +28,14 @@ const SYSTEMS: Array[String] = ["helm", "bracing", "weapons", "drill", "coolant"
 var policy: String = "balanced"
 # Drilling.
 var drill_bars: int = 3
-var low_coolant: int = 5  ## Below this many coolant units, drill one bar lower.
+var low_coolant: int = 5  ## Below this many coolant units, drill one bar lower (and never douse).
+var fault_look_m: float = 6.0  ## Brace when fault rock is this close ahead.
+var brace_always: bool = false  ## Keep a bracing layer up all the way down.
+var blast_loot: bool = true  ## Blast veins and pockets in range for their ore and gems.
+var blast_gas: bool = true  ## Blast gas pockets on the lane before the drill bursts them.
+var blast_min_value: float = 50.0  ## Ore-equivalent value a loot blast must reach.
+var blast_keep: int = 3  ## Charges never spent on blasts (kept for fights and the gate).
+var douse_at: float = 0.4  ## Douse a fire above this level.
 # Idle.
 var wait_s: float = 8.0  ## Longest wait in idle for the crew to clear fires, breaches and damage.
 # Combat.
@@ -60,6 +71,8 @@ var _idle_since: int = -1
 var _helm_order: String = ""  ## Crew id ordered to the helm in this fight ("" none).
 var _helm_empty_thinks: int = 0
 var _was_combat: bool = false
+var _fault_ahead: bool = false
+var _blast: Dictionary = {}  ## The aim point the bot wants to blast ({} none).
 
 
 static func make_policy(p_policy: String) -> PolicyBot:
@@ -76,7 +89,11 @@ static func make_policy(p_policy: String) -> PolicyBot:
 	b.wait_s = 10.0
 	b.ore_reserve = 15
 	b._drill_bot.noise_budget = 80.0
-	b._drill_bot.max_detour_m = 6.0
+	b._drill_bot.max_detour_m = 8.0
+	b._drill_bot.level_steer = true
+	b._drill_bot.max_steer_deg = 60.0
+	b._drill_bot.side_look_m = 1.5
+	b._drill_bot.cost_fault = 0.3
 	match p_policy:
 		"cautious":
 			b.drill_bars = 3
@@ -101,8 +118,13 @@ static func make_policy(p_policy: String) -> PolicyBot:
 			b.water_fear = 1.5
 			b._drill_bot.noise_budget = 50.0
 			b._drill_bot.max_detour_m = 4.0
+			b._drill_bot.max_steer_deg = 50.0
 			b._drill_bot.cost_gas = 12.0
 			b._drill_bot.cost_water = 8.0
+			b._drill_bot.cost_fault = 1.5
+			b.brace_always = true
+			b.blast_loot = false
+			b.blast_keep = 3
 		"greedy":
 			b.drill_bars = 4
 			b.low_coolant = 4
@@ -122,7 +144,7 @@ static func make_policy(p_policy: String) -> PolicyBot:
 			b.fight_value = 3.0
 			b.repair_to_frac = 0.6
 			b.gate_repair_frac = 0.8
-			b.keep = {"coolant": 8, "cells": 0, "bits": 2, "charges": 4}
+			b.keep = {"coolant": 8, "cells": 0, "bits": 2, "charges": 6}
 			b.upgrades = ["gear:tungsten_head", "gear:diamond_head", "weapon", "system:weapons", "system:drill",
 					"system:reactor", "gear:hull_plating"]
 			b.gem_reserve = 0
@@ -132,9 +154,13 @@ static func make_policy(p_policy: String) -> PolicyBot:
 			b.gas_fear = 0.0
 			b.water_fear = 0.0
 			b._drill_bot.noise_budget = 200.0
-			b._drill_bot.max_detour_m = 9.0
+			b._drill_bot.max_detour_m = 10.0
+			b._drill_bot.max_steer_deg = 80.0
 			b._drill_bot.cost_gas = 1.0
 			b._drill_bot.cost_water = 1.5
+			b._drill_bot.cost_fault = 0.0
+			b.blast_keep = 3
+			b.blast_min_value = 40.0
 	return b
 
 
@@ -151,8 +177,14 @@ func act(sim: Sim) -> void:
 	if _was_combat and not in_combat:
 		_release_helm(sim)
 	_was_combat = in_combat
+	if run.phase == "drill":
+		_dig_verbs(sim)
+	else:
+		_fault_ahead = false
+		_blast = {}
 	if run.world_running():
 		_apply_power(sim, wanted_power(sim))
+		_douse(sim)
 	match run.phase:
 		"idle":
 			_idle(sim)
@@ -181,6 +213,36 @@ func _idle(sim: Sim) -> void:
 		sim.push({"type": "choose_node", "node": id})
 
 
+## While drilling: is fault rock ahead (bracing), and is there something worth a charge? Fires at
+## once when the launcher is ready; otherwise wanted_power raises the weapons for the next decision.
+func _dig_verbs(sim: Sim) -> void:
+	var d: DrillSim = sim.drill
+	_fault_ahead = _drill_bot.fault_ahead(d, fault_look_m)
+	_blast = {}
+	var why: String = d.blast_ready(sim)
+	if (why != "" and why != "power weapons") or sim.run.get_res("charges") <= blast_keep:
+		return
+	if blast_gas:
+		_blast = BlastPlanner.gas_target(sim, d, _drill_bot.lookahead_m)
+	if _blast.is_empty() and blast_loot:
+		_blast = BlastPlanner.loot_target(sim, d, _drill_bot.value_ore, _drill_bot.value_gem, blast_min_value)
+	if not _blast.is_empty() and why.is_empty():
+		sim.push({"type": "blast", "x_m": float(_blast["x_m"]), "y_m": float(_blast["y_m"])})
+		_blast = {}
+
+
+## Douse the worst fire above douse_at while coolant is above the low mark.
+func _douse(sim: Sim) -> void:
+	if sim.run.get_res("coolant") <= low_coolant:
+		return
+	var worst: Room = null
+	for r: Room in sim.ship.rooms:
+		if r.fire > douse_at and (worst == null or r.fire > worst.fire):
+			worst = r
+	if worst != null and sim.systems.douse_ready(sim, worst.id).is_empty():
+		sim.push({"type": "douse", "room": worst.id})
+
+
 ## Fires, breaches or system damage still being handled on board.
 static func _crew_busy(sim: Sim) -> bool:
 	for r: Room in sim.ship.rooms:
@@ -205,7 +267,21 @@ func wanted_power(sim: Sim) -> Array:
 		var d: int = drill_bars
 		if run.get_res("coolant") < low_coolant:
 			d -= 1
-		return [["coolant", 2], ["drill", d], ["helm", 9], ["bracing", 9], ["weapons", 0]]
+		var w: int = 0 if _blast.is_empty() else 1
+		var out: Array = [["coolant", 2]]
+		if brace_always:
+			out.append(["bracing", 2])
+		out.append(["drill", d])
+		if w > 0:
+			out.append(["weapons", w])
+		if _fault_ahead and not brace_always:
+			out.append(["bracing", 2])
+		out.append(["helm", 9])
+		if not brace_always and not _fault_ahead:
+			out.append(["bracing", 9])
+		if w == 0:
+			out.append(["weapons", 0])
+		return out
 	# Idle: drill off, cooling up so hot rooms recover while the crew repairs.
 	return [["coolant", 3], ["helm", 9], ["bracing", 9], ["drill", 0], ["weapons", 0]]
 

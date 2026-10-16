@@ -446,7 +446,9 @@ func _strike(sim: Sim, why: String) -> void:
 # Summary and state -------------------------------------------------------------------------------
 
 ## The run's results for the death screen, balance reports and Profile.merge_run (result, cause,
-## depth_m). gained and spent sum the positive and negative resource events per resource.
+## depth_m). gained and spent sum the positive and negative resource events per resource. Dig verb
+## counters (M1c): rockfalls_hit, rockfalls_absorbed, rockfall_hull (hull lost to them), blasts,
+## blast_ore and blast_gems (paid by blasts), douses, steep_s (drilling seconds past 60 degrees).
 func summary(sim: Sim) -> Dictionary:
 	var gained: Dictionary = {}
 	var spent: Dictionary = {}
@@ -454,6 +456,8 @@ func summary(sim: Sim) -> Dictionary:
 		gained[r] = 0
 		spent[r] = 0
 	var fights_won: int = 0
+	var verbs: Dictionary = {"rockfalls_hit": 0, "rockfalls_absorbed": 0, "rockfall_hull": 0, "blasts": 0,
+		"blast_ore": 0, "blast_gems": 0, "douses": 0}
 	for e: Dictionary in sim.events:
 		var kind: String = str(e["kind"])
 		if kind == "resource":
@@ -465,6 +469,18 @@ func summary(sim: Sim) -> Dictionary:
 				spent[res] = int(spent[res]) - amt
 		elif kind == "fight_won":
 			fights_won += 1
+		elif kind == "rockfall":
+			if bool(e["absorbed"]):
+				verbs["rockfalls_absorbed"] += 1
+			else:
+				verbs["rockfalls_hit"] += 1
+				verbs["rockfall_hull"] += int(e["hull"])
+		elif kind == "blast":
+			verbs["blasts"] += 1
+			verbs["blast_ore"] += int(e["ore"])
+			verbs["blast_gems"] += int(e["gems"])
+		elif kind == "doused":
+			verbs["douses"] += 1
 	var crew_lost: int = 0
 	for c: CrewMember in sim.ship.crew:
 		if not c.alive:
@@ -474,7 +490,7 @@ func summary(sim: Sim) -> Dictionary:
 	for i: int in range(nodes.size()):
 		n_visited += visited[i]
 		n_overtaken += overtaken[i]
-	return {
+	var out: Dictionary = {
 		"result": phase if is_over() else "unfinished",
 		"cause": end_cause,
 		"depth_m": snappedf(depth_m, 0.1),
@@ -493,7 +509,10 @@ func summary(sim: Sim) -> Dictionary:
 		"seed": sim.run_seed,
 		"ship": sim.ship_id,
 		"layer": layer_id,
+		"steep_s": snappedf(float(sim.drill.steep_ticks) / Sim.TICK_HZ, 0.1),
 	}
+	out.merge(verbs)
+	return out
 
 
 func state() -> Array:

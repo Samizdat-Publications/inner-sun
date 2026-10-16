@@ -31,7 +31,8 @@
     "gems_chance": 0.7,
     "gas_chance": 0.3,
     "water_chance": 0.4,
-    "per_row": {"gas_chance": 0.015, "water_chance": 0.01},
-    "deposit": {"min_tier": 2, "gems_chance": 0.9, "gas_chance": 0.6, "water_chance": 0.6}
+    "faults_chance": 0.35,
+    "per_row": {"gas_chance": 0.015, "water_chance": 0.01, "faults_chance": 0.02},
+    "deposit": {"min_tier": 2, "gems_chance": 0.9, "gas_chance": 0.6, "water_chance": 0.6, "faults_chance": 0.45}
   }
 }

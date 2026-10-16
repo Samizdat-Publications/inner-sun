@@ -273,6 +273,48 @@ miner (his "up to you") comes last and only if the budget allows: charges and si
 most of "reach the vein", and the meta answers his "reason to come back", which he stated as a need.
 Plan: `docs/plans/M1c.md`. Revert: the M1c merges.
 
+## D035 (AI): Hold depth and helm-powered side cutting
+`drill.max_heading_deg` 45 to 90 (90 = hold depth, straight sideways). Turn rate 18 deg/s times
+(1 + 0.6 per manned helm bar); the sideways motion times `systems.side_cut_base` 0.35 plus
+`systems.side_cut_per_helm_bar` 0.3 per manned bar (0.95 at the light drill's 2 bars). Leading-band
+side cells are weighted |sin h| times that scale, so straight down is unchanged. `drill.at_wall`
+past 80 degrees against the wall (the bots steer for the node within 0.75 m of a wall). Why:
+Stewart wants the helm to matter and to pivot to veins by taking power from other systems. Policy
+bots steer by how deep a lane's value lies (a level vein means cutting sideways), capped at 50
+(cautious), 60 (balanced), 80 (greedy) degrees; with steeper caps the blasting policies spent up
+to 90 s a run past 60 degrees and fed the pursuer. Revert: the tuning keys and `DrillBot.level_steer`.
+
+## D036 (AI): Fault rock, strain and rockfalls
+New material `fault_rock` (Fractured shale, hardness 0.7, `unstable`) in slanted lenses (1 to 3,
+6 to 14 m by 2 to 4 m, -30 to 30 degrees) in a `faults` feature group the survey switches on
+(`faults_chance` 0.35 plus 0.02 per row, deposits 0.45). Every cut unstable cell adds 1 strain; at
+`drill.rockfall_strain_cells` 50 (the spec's 60 was "about 2.5 m"; 80 made rockfalls too rare to
+cost anything) a rockfall lands 1.2 s after a warning: a bracing layer soaks it, else 1 hull and
+0.5 bars on a top-deck room (stream "drill/rockfall"). Death cause "rockfall". A rockfall still
+pending at arrival is dropped. Result: 0.3 (cautious, always braced) to 4.4 (greedy) hull a run.
+Revert: the material, the feature and the tuning keys; the `DrillVerbs` rockfall code.
+
+## D037 (AI): Blast: the charge launcher works the rock
+`blast` command while drilling (charge launcher mounted and powered, one charge, 5 s cooldown,
+point within 14 m of the ship's centre, outside the ship). 0.6 s fuse, then every cell within
+1.75 m is cut and paid exactly; a water pocket cell drains its whole pocket (no ship water, counted
+in `mined` and `verbs.drained_cells`), a gas cell burns its whole pocket (lights the drill room only
+within 3 m). `drill.blast_noise` 4 (spec 15; at 15 and 6 the two blasting policies were run down by
+the pursuer). Bots: gas pockets on the lane (all policies), loot circles worth 50 (balanced) or 40
+(greedy) ore-equivalent, never below `blast_keep` 3 charges; cautious never blasts for loot. A
+blast still in flight at arrival goes off then. Revert: the `DrillVerbs` blast code, the `blast_*`
+tuning keys and `BlastPlanner`.
+
+## D038 (AI): Douse and the M1c verb balance
+`douse` (Systems, `SystemsDouse`): one coolant unit, coolant powered, a burning room: fire down
+0.3, up to 150 kJ removed through `hazards.add_heat` (never below the room's start temperature),
+6 s cooldown. Softer than the spec's 0.6 / 300 kJ / 3 s (it barely moved the win rates either way,
+since the bots douse young fires over 0.4). Final balance (300 runs per bot): cautious 26%, greedy
+12%, balanced 40% wins, medians 18 to 22 min (`docs/research/m1-evidence/balance_m1c_verbs.md`).
+Balanced sits above the 10 to 30% band because blasts add about 230 ore and 30 gems a run that
+become upgrades and a 51% gate win; left for the lead (gate, prices or blast yields are the
+levers). Store `keep` charges: greedy 6 (was 4). Revert: the `douse_*` keys and the bot fields.
+
 ## D040 (AI): Research and requisitions, the numbers
 Every run pays research (`game/meta/research.gd`), a pure function of the run summary: 2 per map row
 reached, 5 per codex entry learned that run, 3 per fight won, 15 for beating the gate, 1 per 40 ore

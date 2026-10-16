@@ -3,7 +3,7 @@ extends RefCounted
 ## Checks the rock tables (game/data/rock/*.json) and the drill tuning: unique material codes and
 ## ids, code 0 is air, numeric hardness, yields naming real run resources, strata and features
 ## naming real materials, feature groups and depth windows, a yield and a hazard flag (water, gas)
-## never on one material, every tuning key present.
+## never on one material, flags (water, gas, unstable) are booleans, every tuning key present.
 
 const FEATURE_KINDS: Array[String] = ["vein", "lens", "pocket", "blob"]
 
@@ -48,7 +48,7 @@ static func _lint_table(table: Dictionary, file: String, errs: PackedStringArray
 		var color: String = str(md.get("color", ""))
 		if not Color.html_is_valid(color):
 			errs.append("%s: color \"%s\" is not a hex color" % [where, color])
-		for flag: String in ["water", "gas"]:
+		for flag: String in ["water", "gas", "unstable"]:
 			if md.has(flag) and not (md[flag] is bool):
 				errs.append("%s: \"%s\" must be true or false" % [where, flag])
 		if bool(md.get("water", false)) and bool(md.get("gas", false)):
@@ -99,7 +99,7 @@ static func _lint_table(table: Dictionary, file: String, errs: PackedStringArray
 			errs.append("%s: count must be [min, max] with 0 <= min <= max" % where)
 		var group: String = str(fd.get("group", ""))
 		if not RockGen.GROUPS.has(group):
-			errs.append("%s: unknown group \"%s\" (known: ore, gems, gas, water)" % [where, group])
+			errs.append("%s: unknown group \"%s\" (known: %s)" % [where, group, ", ".join(RockGen.GROUPS.slice(1))])
 		for key: String in ["from_depth_m", "to_depth_m"]:
 			if fd.has(key) and not (fd[key] is float or fd[key] is int):
 				errs.append("%s: \"%s\" must be a number" % [where, key])

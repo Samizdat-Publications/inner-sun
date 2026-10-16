@@ -72,6 +72,25 @@ Step order per tick: commands, then modules in order (run, systems, drill, comba
 the player world (crew think at 4 Hz, crew move, hazards at 10 Hz), then the enemy world the same
 way when it exists.
 
+### Dig verbs (M1c)
+Every powered system has a job while drilling. Commands, events and read-only fields:
+- Steering (DrillSim): `{"type": "steer", "angle": deg}` up to +-`drill.max_heading_deg` (90 = hold
+  depth). Turn rate `drill.turn_deg_s * Systems.steer_rate_scale`; the sideways motion times
+  `Systems.side_cut_scale` (both from manned helm bars). Read `drill.side_scale`, `drill.at_wall`
+  (pressed against the segment wall past `drill.at_wall_heading_deg`), `drill.steep_ticks`.
+- Fault rock (DrillVerbs, `drill.verbs`): unstable cells cut add to `verbs.strain`; at
+  `drill.rockfall_strain_cells` a rockfall is scheduled (`"rockfall_warn" {"in_s"}`,
+  `verbs.rockfall_ticks`), then `"rockfall" {"absorbed", "room", "hull"}`: a bracing layer soaks it,
+  else hull and a top-deck room take damage. Death cause `"rockfall"`.
+- Blast (DrillVerbs): `{"type": "blast", "x_m", "y_m"}` (segment meters) while drilling, with the
+  charge launcher powered and a charge. `drill.blast_ready(sim)` says why not; `verbs.aim_ok(d, p)`
+  checks the point. Events `"blast_fired" {"x_m", "y_m", "from_x_m", "from_y_m", "fuse_s"}` then
+  `"blast" {"x_m", "y_m", "cells", "yield", "ore", "gems", "drained", "burned"}`. Read
+  `verbs.blast_pending`, `verbs.blast_point`, `verbs.blast_from`, `verbs.blast_cooldown_left_s`.
+- Douse (Systems, SystemsDouse): `{"type": "douse", "room": id}`; `systems.douse_ready(sim, room)`
+  says why not; `"doused" {"room", "fire_before", "fire_after", "heat_j"}`; heat leaves through
+  `hazards.add_heat` so the books stay exact. Read `systems.douse_cooldown_ticks`.
+
 ### Conservation APIs
 Anything that adds or removes heat or water goes through HazardSim so the books balance:
 `hazards.add_heat(room, joules)` (positive in, negative out; counted in `energy_in_j` or
