@@ -169,6 +169,7 @@ func lint() -> PackedStringArray:
 			errs.append("%s/tuning: missing number \"%s\"" % [root, key])
 	# Each sim module checks its own tables and tuning (see docs/ARCHITECTURE.md).
 	RunState.lint(self, errs)
+	RequisitionsLint.lint(self, errs)
 	Systems.lint(self, errs)
 	DrillSim.lint(self, errs)
 	CombatSim.lint(self, errs)

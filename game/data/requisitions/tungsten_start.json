@@ -1,0 +1,8 @@
+{
+  "id": "tungsten_start",
+  "name": "Tungsten head",
+  "blurb": "The tungsten drill head, fitted before the dive instead of bought on the way.",
+  "cost": 60,
+  "order": 5,
+  "effects": {"gear": ["tungsten_head"]}
+}

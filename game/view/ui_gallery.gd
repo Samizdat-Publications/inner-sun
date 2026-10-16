@@ -6,7 +6,7 @@ extends Control
 ## The states are set up with test helpers (direct pokes at the sim). This is not the game.
 
 const STATES: Array[String] = ["hud_calm", "hud_crisis", "hud_combat", "hud_drill", "dossier_page", "dossier_known", "dossier_greyed", "store",
-		"map_start", "map_mid", "death_dead", "death_won", "codex"]
+		"map_start", "map_mid", "death_dead", "death_won", "codex", "requisitions"]
 const SETTLE_S: float = 0.9
 
 var db: DataDB
@@ -87,13 +87,22 @@ func show_state(i: int) -> void:
 	dossier.bind(sim)
 	store.bind(sim)
 	profile = make_profile(STATES[i])
+	if STATES[i].begins_with("death_") or STATES[i] == "requisitions":
+		profile.research = 30  # Banked before this run; the run's own research is added like main does.
+		profile.merge_run(sim.run.summary(sim), sim.run.learned)
+		if STATES[i] == "requisitions":
+			profile.requisitions = PackedStringArray(["spare_bits"])
 	map.bind(sim)
 	death.bind(sim, profile)
 	codex.bind(sim, profile)
+	codex.close()  # The codex state leaves it open; the next state must not sit under it.
 	if STATES[i].begins_with("map_"):
 		map.open()
 	elif STATES[i] == "codex":
 		codex.open()
+	elif STATES[i] == "requisitions":
+		death.requisitions.save_on_buy = false
+		death.requisitions.open()
 	if STATES[i] == "hud_combat":
 		weapons.arm(1)
 	top.snap()
@@ -176,7 +185,7 @@ func make_state(state_name: String) -> Sim:
 			_play_nodes(s, 4)
 			s.run.move_pursuer(s, 2.2)
 			_run(s, 0.2)
-		"death_dead":
+		"death_dead", "requisitions":  # The requisitions screen sits above the death screen.
 			s = _run_sim()
 			_play_nodes(s, 3)
 			s.run.add(s, "hull", -s.run.get_res("hull"))
@@ -189,6 +198,7 @@ func make_state(state_name: String) -> Sim:
 		"codex":
 			s = _run_sim(CODEX_KNOWN)
 			_run(s, 0.1)
+
 		"hud_calm":
 			_run(s, 8.0)
 		"hud_crisis":

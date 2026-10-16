@@ -1,0 +1,8 @@
+{
+  "id": "spare_bits",
+  "name": "Spare bit crate",
+  "blurb": "A crate of cutting bits, bolted to the wall of the drill room.",
+  "cost": 20,
+  "order": 1,
+  "effects": {"start_resources": {"bits": 1}}
+}

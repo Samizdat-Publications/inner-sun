@@ -1,0 +1,8 @@
+{
+  "id": "field_plating",
+  "name": "Field plating",
+  "blurb": "Extra armor plates welded on before launch.",
+  "cost": 40,
+  "order": 4,
+  "effects": {"max_hull": 5}
+}

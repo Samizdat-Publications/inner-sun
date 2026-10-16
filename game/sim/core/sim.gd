@@ -36,7 +36,8 @@ var _pending: Array[Dictionary] = []
 var _dispatch: Dictionary = {}  ## command type -> module
 
 
-## p_options: {"mode": "scenario" (default) or "run", "known_codex": [ids the profile knows]}.
+## p_options: {"mode": "scenario" (default) or "run", "known_codex": [ids the profile knows],
+## "requisitions": [owned requisition ids, sorted; run mode only, see requisitions.gd]}.
 func _init(p_db: DataDB, p_seed: int, p_ship_id: String, p_options: Dictionary = {}) -> void:
 	db = p_db
 	run_seed = p_seed
@@ -63,6 +64,7 @@ func _init(p_db: DataDB, p_seed: int, p_ship_id: String, p_options: Dictionary =
 				continue
 			_dispatch[kind] = m
 	run.begin(self)
+	Requisitions.apply(self)
 
 
 ## Every command type any part of the sim understands (the data lint checks timelines against it).

@@ -23,6 +23,7 @@ var store: StoreView
 var map: MapView
 var codex: CodexView
 var death: DeathScreen
+var requisitions: RequisitionsView  ## The death screen's own (above it); here for the tests and main.
 var help: HelpView
 var tally: DigTally  ## The dig tally and the arrival toast; owns the DigLog.
 var _banner: Label
@@ -57,6 +58,7 @@ func build(p_sim: Sim, p_profile: Profile) -> void:
 	codex = CodexView.build(_layer, sim, profile)
 	help = HelpView.build(_layer)
 	death = DeathScreen.build(_layer, sim, profile)
+	requisitions = death.requisitions
 	death.new_run_requested.connect(func() -> void: new_run_requested.emit())
 	tally = DigTally.build(_layer, sim)
 	tally.hide_tally = func() -> bool: return overlay_open() or (sim.combat.active and sim.enemy != null)
@@ -82,6 +84,7 @@ func bind(p_sim: Sim, p_profile: Profile) -> void:
 	store.bind(sim)
 	codex.bind(sim, profile)
 	death.bind(sim, profile)
+	requisitions = death.requisitions
 	tally.bind(sim)
 	_bind_rows()
 

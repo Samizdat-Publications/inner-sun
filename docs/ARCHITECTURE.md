@@ -98,3 +98,16 @@ dossier (events), the store, the HUD, the death and codex screens.
 the Godot user folder, so tests must never write bare `user://`). It holds the codex the player
 knows, run history and unlocks. The known codex is passed into `Sim` at the start of a run (it
 lifts redactions and can unlock event options), so it is part of the replay header.
+
+Research and requisitions (M1c round D). Every run pays out research, a pure function of the run
+summary (`game/meta/research.gd`: 2 per map row, 5 per new codex entry, 3 per fight won, 15 for the
+gate, 1 per 40 ore). `Profile.merge_run` banks it in `research` (saved; an old file loads as 0).
+Research buys requisitions (`game/data/requisitions/*.json`: id, name, blurb, cost, order, effects of
+`start_resources`, `max_hull`, `gear`, `crew`), owned ids in `Profile.requisitions` (saved, sorted),
+bought with `Profile.buy(id, db)` ("" on success, else the reason). `Profile.run_options()` carries
+the owned ids as `"requisitions": [ids]`, so they are in the replay header and the RunRecord options.
+`Requisitions.apply` (`game/sim/run/requisitions.gd`) runs once at the end of `Sim._init`, in run
+mode only (a scenario ignores them): resources change directly (no resource events, so the summary
+counts only what the dive gained), gear goes through `Gear.fit`, extra crew join from the survivors
+pool using the `meta/crew` stream. The death screen lists the research block and opens the
+requisitions screen (`view/overlay/requisitions_view.gd`) with R.
