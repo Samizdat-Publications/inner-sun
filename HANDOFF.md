@@ -1,29 +1,29 @@
 # Handoff
 
-From the planning session (2026-10-15, which also ran Milestone 0) to the M1 build sessions.
-
-## Restart note (first M1 session, 2026-10-15)
-The first M1 session ran only briefly. It was restarted because a Claude Code mod ("blast-radius")
-was still loaded in it and held commands it thought risky (every `git commit` included) until
-someone clicked Proceed. Stewart has removed that mod and the "reflect" mod; a fresh session has
-neither. What that session did, what it held, and what it stopped: PROGRESS.md, "M1 so far". Its
-architecture decisions and the two agent briefs to re-dispatch: `docs/plans/M1_dispatch.md`. Step 0
-is done except the exposure lift, the first critic review and the Gemini critic port.
+From the M1a build session (2026-10-15) to M1b, which starts after Stewart's playtest.
 
 ## State in one paragraph
-The plan is approved (`PLAN.md`) and Milestone 0 proved the autonomous Godot loop on this PC:
-headless tests, bot-driven runs, off-screen frames from the game camera, planted bugs caught and
-named, thousands of balance runs, identical results headless, under Movie Maker and in the exported
-build, and safe coexistence with Black Diamond (`docs/research/godot-loop.md`). The code is a small
-but real slice of the final architecture: a node-free sim with exact water and heat, crew AI, a
-six-room tower ship in data, and a lit cutaway. M1 builds the playable slice and stops for
-Stewart's playtest.
+M1a is built: a whole run plays from the first node to death or the layer gate. A painted drill
+tower bores down a node map through layered rock (steering, power, heat, bit wear, noise, ore, gems,
+water pockets). FTL-style systems and power, fire, water and heat spread room to room, and the crew
+handle emergencies. A pursuer advances with time and noise. The run has real-time fights with pause
+against rival rigs and a gate boss, 12 dossier events with redactions that lift with the codex, a
+store, recruitment and permadeath, a death report, a codex and a saved profile. Every run is saved
+as a replayable record. Three policy bots play 1,000 full runs in about 12 minutes; the first tuning
+passes are D021 and D022. The blind critic scored the M0 build 3.8 and the M1 run screen 5.8 before
+its fixes (`review/scores.csv`). Details: `PROGRESS.md`. Architecture: `docs/ARCHITECTURE.md`.
 
-## Start the next session
+## What Stewart does now
+Play the build (`Play Inner Sun.bat`, or the README's PowerShell line), as many runs as he likes, and
+write notes at the top of `docs/STEWART_FEEDBACK.md` under a dated heading: what was fun, what was
+boring or confusing, what he wanted to do and could not. His runs are saved in
+`%APPDATA%\InnerSun\runs\`, so any problem can be replayed exactly (`python tools/replay.py --latest`).
+
+## Start the next session (M1b)
 In the Claude app, open the Code tab and start a new session with these settings:
 - **Folder:** `C:\Users\stewa\Documents\Claude\Inner Sun`
 - **Model:** Opus 5.5
-- **Effort:** xhigh
+- **Effort:** xhigh (M1b is judgment about fun: what to change and what to leave alone)
 - **Permission mode:** Auto
 
 Or paste this into Windows PowerShell:
@@ -32,197 +32,101 @@ cd "C:\Users\stewa\Documents\Claude\Inner Sun"; claude --model claude-opus-5-5 -
 ```
 Then paste this as the first message:
 ```
-Continue Inner Sun. Read CLAUDE.md, PROGRESS.md and HANDOFF.md, then the M1 sections of PLAN.md, docs/plans/M1.md and docs/plans/M1_dispatch.md, then docs/STEWART_FEEDBACK.md. Follow "Exactly what is next" in PROGRESS.md: re-dispatch the two stopped agents, finish step 0, then build the M1 architecture skeleton. Then work autonomously through M1a in the order of docs/plans/M1.md, per CLAUDE.md, delegating as HANDOFF.md describes. Send me progress pictures as things become visible, show me the art style bake-off when it is ready, and stop when the M1a playtest build is ready for me. Stop earlier only for "checkpoint", a usage limit, or a decision that is genuinely mine.
+Continue Inner Sun: M1b. Read CLAUDE.md, PROGRESS.md and HANDOFF.md, then docs/STEWART_FEEDBACK.md (my playtest notes are at the top), docs/plans/M1.md (M1b) and docs/BACKLOG.md. Replay any runs I mention from %APPDATA%\InnerSun\runs\. Triage my notes into docs/plans/M1b.md (with the balance report's known weak spots), then iterate on the core loop autonomously per CLAUDE.md, delegating as HANDOFF.md describes. Send me progress pictures, and stop with a new playtest build when the changes are ready for me to try. Stop earlier only for "checkpoint", a usage limit, or a decision that is genuinely mine.
 ```
 
-**Why xhigh for M1:**
-- M1 lays the foundation every later layer builds on: the drilling terrain, power and systems, the
-  run structure, combat, events and the meta save.
-- "Find the fun" is judgment-heavy, so mistakes there are expensive.
-- The lead mostly writes specs, reviews diffs, integrates and reads screenshots. Medium-effort
-  subagents write most of the code, so the extra thinking goes where it pays.
-
-**After M1:** use high for content-heavy milestones (M2 on), xhigh again for a system-heavy one
-(for example the sea crossing in M4), and max only for a stubborn bug. This matches Noclip.
-
-## Delegation
+## Delegation (what worked in M1a)
 
 | Who | Model, effort | Does |
 |---|---|---|
-| Lead (the session) | Opus 5.5, xhigh in M1 | Architecture, integration, game feel, taste, reviews every diff, reads screenshots |
+| Lead (the session) | Opus 5.5, xhigh | Architecture, specs, integration (main.gd, merges), game feel, taste, every diff and screenshot |
 | `builder` | Sonnet, medium | UI, view scenes, content data, tooling and tests, from written specs |
-| `builder-opus` | Opus, medium | Sim algorithms: terrain grid, power, combat, crew AI, map generation, determinism |
-| `writer` | Opus, medium | Event, codex and radio text into data, after the lead sets the voice with examples |
-| `asset-smith` | Sonnet, medium | PixelLab, Gemini or OpenAI, ElevenLabs, Blender, normal maps, texture processing |
-| `scout` | Sonnet, medium | Godot 4.7 API and library checks (local API dump first) |
-| `runner` | Haiku, low | Long commands and log summaries, keeps logs out of the lead's context |
-| `qa-auditor` | Sonnet, high | Adversarial check of PROGRESS and HANDOFF claims before every handoff and gate |
-| `player-critic` | Sonnet, high (Opus at gates) | Blind player review of `review/inbox` (installed in step 0) |
-| Background scripts | no agent | `balance.py`, `capture.py`, `perf.py`, asset processing: run in the background, never poll |
+| `builder-opus` | Opus, medium | Sim modules: drilling, systems, run and map, combat, events, policy bots |
+| `writer` | Opus, medium | Events, codex, radio, in the style guide's voice |
+| `asset-smith` | Sonnet, medium | Gemini art, ElevenLabs sound, Blender, normal maps |
+| `qa-auditor` | Sonnet, high | Adversarial check of PROGRESS and HANDOFF before every handoff |
+| `player-critic` | Sonnet, high (Opus at gates) | Blind review of `review/inbox` (run by `python tools/critic.py`) |
 
-**Every spec states:**
-- the goal
-- the files the agent owns
-- the interfaces to keep
-- the constraints (the hard rules in CLAUDE.md)
-- the exact commands that must pass (`python tools/check.py`)
-- what done looks like
-- the report format
+- **Every code agent gets its own worktree** (`isolation: worktree`) and a list of files it owns,
+  disjoint from every other running agent. Agents commit on their branch; the lead reads the diff,
+  merges with `git merge --no-ff`, runs the full `python tools/check.py`, pushes, and removes the
+  worktree (`git worktree remove --force`, then `git branch -d`).
+- **Expect three small merge conflicts** and resolve them by keeping both sides: the
+  tuning-keys list in `game/tests/test_data.gd`, `docs/SPEND.md`, and `docs/progress/INDEX.md`.
+  Progress picture numbers collide when two agents add one: renumber the later one with `git mv`.
+- **Agents cannot see git-ignored files** in their worktree: point them at the main repo's Godot API
+  dump, and commit a spec before dispatching the agent that reads it.
+- **Agents overspend windowed runs** (each flashes a window on Stewart's screen for a second): give a
+  limit and check it in the report. Two or three agents at once is plenty when RAM is tight.
+- **Specs live in `docs/plans/specs/`.** Each states the goal, owned files, interfaces to keep, hard
+  rules, the commands that must pass, what done looks like, and the report format.
 
-**Running agents in parallel:**
-- Run agents in parallel only when their files do not overlap.
-- Read every diff before integrating.
-- Never edit `game/` or `tools/` while a capture or balance run that loads the live tree is
-  starting. Use `python tools/snapshot.py` and `balance.py --pack` for long runs.
-
-## Step 0 details (the critic install)
-DONE in the first M1 session (items 1 to 5 below; evidence in
-`docs/research/m1-evidence/critic_live_test.txt`). Kept for reference. Item 6 and the first critic
-loop are still to do. The guard blocks for real: the hook command with `$CLAUDE_PROJECT_DIR` works.
-If `player-critic` is not listed in a session, run it through a headless `claude -p` process
-(`tools/critic.py`, see `docs/plans/M1_dispatch.md`).
-1. Create `.claude/hooks/` if it is missing (a fresh clone does not have it), then copy
-   `docs/setup/critic/critic_guard.mjs` to `.claude/hooks/critic_guard.mjs`.
-2. Copy `docs/setup/critic/player-critic.md` to `.claude/agents/player-critic.md`.
-3. Run `python tools/test_guard.py`. It must print `guard: ok`.
-4. Ask `player-critic` to read `CLAUDE.md`. It must be blocked. If the agent is not listed until
-   the next session, record that and do the live test then.
-   - The hook command is `node "$CLAUDE_PROJECT_DIR/.claude/hooks/critic_guard.mjs"`, so it does not
-     depend on the working folder.
-   - If the live test shows the read was NOT blocked (for example the variable was not expanded and
-     node exited 1, which counts as non-blocking), switch the command to
-     `node .claude/hooks/critic_guard.mjs` and test again. Never run a critic review until the live
-     test blocks.
-5. Add these four deny rules to `.claude/settings.json`, so no later session can make the critic
-   nicer:
-   - `"Edit(./.claude/hooks/critic_guard.mjs)"`
-   - `"Write(./.claude/hooks/critic_guard.mjs)"`
-   - `"Edit(./.claude/agents/player-critic.md)"`
-   - `"Write(./.claude/agents/player-critic.md)"`
-6. `review/inbox` still holds a stale M0 build, and its perf was contended. Refill it with
-   `python tools/capture.py` when the GPU is idle before the first review.
-
-Critic loop:
-1. Run `python tools/capture.py`.
-2. Prompt `player-critic` with exactly: "A new build is in review/inbox. Play it." (or run
-   `python tools/critic.py`, which does steps 2 to 4 through a headless process once it works).
-3. Save its reply in `review/critiques/NNN_claude.md`.
-4. Add its scores to `review/scores.csv`.
-5. Triage every issue in `review/LEDGER.md` as FIX, DEFER or REJECT.
+## The review loop
+1. `python tools/capture.py --mode run --bot balanced --seed <n> --duration 240 --stills 16 --label <label>`
+   (a whole run; event, store, map and death screens are held long enough to see them).
+2. `python tools/critic.py` (headless player-critic with a tool-call audit; `--model opus` at gates).
+   `python tools/critic_gemini.py` watches the video (blocked while the Gemini spend cap is reached).
+3. Triage every issue in `review/LEDGER.md` as FIX, DEFER or REJECT; fix the FIX items.
+4. Balance: `python tools/balance.py --full --runs 1000 --procs 6 --pack` (about 12 minutes), report in
+   `harness/out/balance/full_report.md`; copy the headline report to `docs/research/` when it matters.
 
 ## Tools and paths
-- Godot 4.7.2: `C:\Users\stewa\AppData\Local\Microsoft\WinGet\Links\godot_console.exe`. The tools
-  find it and warn if WinGet ever upgrades it. The API reference of this exact build is in
-  `harness/out/godot-api/doc/classes/`; regenerate it with `--doctool` if missing.
+- Godot 4.7.2: `C:\Users\stewa\AppData\Local\Microsoft\WinGet\Links\godot_console.exe` (the tools find
+  it). API reference of this exact build: `harness/out/godot-api/doc/classes/`.
 - Blender 5.1: `C:\Program Files\Blender Foundation\Blender 5.1\blender.exe`.
-- API keys (Gemini, OpenAI, ElevenLabs, PixelLab, Meshy, Tripo): environment first, then
-  `C:\Users\stewa\ClaudeProjects\Noclip\.env`. The kickoff also names Stewart's seked project
-  (`C:\Users\stewa\ClaudeProjects\seked`), but it has no `.env`. Never read or print them.
-- The reference Godot projects on this PC:
-  - Noclip (`C:\Users\stewa\ClaudeProjects\Noclip`): the Gemini critic, capture director and
-    autoplay bot to borrow from.
-  - Cut & Fill (`C:\Users\stewa\Documents\Claude\Excavator Sim`): the gdext Rust bridge, if a hot
-    spot ever needs it.
+- API keys: environment first, then `C:\Users\stewa\ClaudeProjects\Noclip\.env`, loaded inside scripts.
+  Gemini works (but its monthly spend cap is reached, see `docs/NEEDS_STEWART.md`); ElevenLabs works;
+  no PixelLab key. Never read or print keys.
+- Everyday tools (all launch Godot through job objects): `check.py`, `shots.py` (`--mode run --bot`),
+  `capture.py`, `perf.py` (`--mode run`), `determinism.py`, `export.py` (`--playtest --label`),
+  `balance.py` (`--full`, `--bench`), `gallery.py` (every UI state), `bakeoff.py`, `replay.py`,
+  `critic.py`, `critic_gemini.py`, `makingof.py` (labeled clips), `progress.py`.
+- Game flags: no flags is normal play; `--mode=run --bot=balanced`, `--scenario=<id>`,
+  `--replay=<record>`, `--profile-dir=<dir>`, `--debug-hud`; capture and test flags in `main.gd`.
 
-## Gotchas learned in M0
+## Gotchas
 - **About 15 lights per canvas item.** Godot 2D lets one canvas item take only about 15 lights and
-  silently drops the rest. Keep drawings split into small nodes (per room, per crew, per terrain
-  chunk) and disable idle lights; never just set energy to 0.
-- **Glow needs emission above 1.0 after CanvasModulate.** HDR 2D glow works with the M0 settings
-  (`hdr_2d=true`, glow threshold 1.0), but CanvasModulate multiplies every canvas item, unshaded and
-  additive ones included. An emission sprite must use `modulate = target / CanvasModulate.color`
-  (target about 1.0 to 1.4; 1.6 and up blows out to a white disc). The M0 drill polygon and flames
-  do not bloom for this reason. Found in the M1 art bake-off. `Environment.set_glow_level` is
-  0-based (0 to 6).
-- **Correction to the glow rule, measured in the art pass:** for items drawn UNSHADED, dividing by the
-  CanvasModulate color blows them out to white; they come out about 2x too dim at plain colors.
-  Empirical values that work: glow sprite modulate 0.9 to 1.1 flat, unshaded drawings boosted x1.8
-  to x2.0 (`boost` argument of `ShipView._fn`). Filled shapes with HDR colors (components above 1)
-  ignore alpha and draw opaque: draw translucent fills on an additive layer with plain colors.
-- **Light height for normal maps.** Normal-mapped sprites need light `height` well above zero (we
-  use 120 to 260 px), or they come out nearly black.
-- **Windows on Stewart's screen.** Rendering needs a window, and Stewart works on this laptop while
-  you build. Measured in M0:
-  - `--position -32000,-32000` alone does not work. Godot pulls the window back to the top-left
-    corner and keeps it there.
-  - A focusable window takes his keyboard.
-  - Now: windows are created unfocusable (`no_focus=true`; `game/view/boot.gd` restores focus for
-    normal play only). Boot re-parks bot-run windows off-screen for the first frames, and
-    `tools/proc.py` moves them off-screen the moment they appear.
-  - What is left: about one second on screen at startup. Run windowed jobs (shots, capture, perf,
-    determinism, export) only when the visuals changed, batch them, and never in a loop.
-    Everything else is headless.
-  - Any new bot flag must be added to `Boot.BOT_FLAGS`.
-  - If Stewart still minds the flash, try starting the window on a hidden desktop (CreateDesktop)
-    or minimized (both untested).
-- **Agent worktrees lack git-ignored files.** Builders in `.claude/worktrees/` do not have
-  `harness/out/` (so no Godot API dump: point them at the main repo's
-  `C:\Users\stewa\Documents\Claude\Inner Sun\harness\out\godot-api\doc\classes\`) and only see
-  committed files: commit a spec before dispatching the agent that needs it.
-- **`check.py --no-import` is only for repeat runs.** Right after a merge that adds scripts with new
-  class names or new assets, run the full `python tools/check.py` (the import registers them), or
-  you get dozens of false errors.
-- **Use the console exe.** `godot.exe` prints nothing to a pipe. The console wrapper starts the
-  real exe as a child process, and job objects catch both.
-- **Hangs.** A script that fails to compile makes the sim stop advancing. Play runs with
-  `ScenarioRun.play_to_end()`, never a bare `while not done()` loop. The test runner times out after
-  240 s and names the hung test.
-- **Strict typing:**
-  - Untyped declarations are compile errors.
-  - `var x := dict["k"]` is an error too (inference on Variant); write `var x: float = dict["k"]`.
-  - JSON numbers are all floats: cast with `int()`.
-  - GDScript arrays accept index -1, so validate references.
-- **Commit the generated files.** Godot 4.4+ writes `.uid` files next to scripts, and `.import`
-  files sit next to assets: commit both.
-- **Export:**
-  - `export_presets.cfg` includes `*.json` and excludes `tests/`.
-  - The release build writes logs to `user://logs`, and the console wrapper
-    `InnerSun.console.exe` gives stdout.
-- **Perf readings:**
-  - Windowed fps is capped at the 240 Hz refresh, so judge p99 and GPU ms.
-  - Perf taken while Black Diamond renders is marked untrusted. Re-measure later instead of tuning
-    on it.
-- **Disk.** C: had about 15 GB free at the end of M0 and about 275 GB free on 2026-10-15 (first M1
-  session); still keep outputs pruned.
-  `capture.py` deletes raw movies and keeps two raw folders. Watch `builds/` (about 110 MB per
-  export) and `harness/out/`.
-- **Dark frames.** The M0 cutaway is very dark: mean luminance is about 6 out of 255, with roughly
-  93% of pixels near black. Lift the exposure (CanvasModulate, lamp energy) before the first critic
-  review, or the critic will only see darkness. Real lighting comes with the art bake-off.
-- **Balance reading.** The `auto` crew survives 99.4% of M0's generated situations, so these
-  hazards do not yet threaten a competent crew. The M1-scale cost in balance reports is an assumed
-  4x tick cost, not a measurement: re-run `--bench` once M1's systems exist.
-- **Not verified in M0:** normal interactive play (`Play Inner Sun.bat`, click a room). Launching it
-  would have taken over Stewart's screen while he was working. Check it with him at the first
-  playtest.
-- **Blocked helper.** A PID-based "kill strays" helper was refused by the safety filter. Do not
-  re-add it. Job objects make it unnecessary.
-- **Escape sequences.** The Write tool and Bash commands turn a backslash-u escape into the real
-  character. That is how an em dash slipped into two files in M0. To put an escape in a file,
-  build it from parts in Python (`"\\" + "u2014"`). In GDScript, use `char(0x2014)` at runtime.
-  The em dash scan in `qa-auditor` catches slips.
+  silently drops the rest. Keep drawings in small nodes and disable idle lights. Lights reach only the
+  items whose rectangle contains them: the rock is one mosaic item for that reason.
+- **Glow and unshaded drawings (measured in the art pass).** HDR glow works (`hdr_2d=true`, threshold
+  1.0). Glow sprites want modulate 0.9 to 1.1 flat; unshaded drawings need a x1.8 to x2.0 boost
+  (`ShipView._fn` boost); dividing by the CanvasModulate color blows them out to white. Filled
+  shapes with HDR colors ignore alpha: draw translucent fills on an additive layer with plain colors.
+  `Environment.set_glow_level` is 0-based (0 to 6).
+- **Light height for normal maps:** 120 to 260 px, or sprites come out nearly black.
+- **Windows on Stewart's screen.** Capture windows are unfocusable and parked off-screen
+  (`game/view/boot.gd`, `tools/proc.py`) but flash for about a second at startup. Batch windowed
+  runs, never loop them. Any new bot or capture flag must go into `Boot.BOT_FLAGS`.
+- **`check.py --no-import` lies right after a merge** that adds classes or assets: run the full check.
+- **`JSON.parse_string` logs an engine error on bad input** (and fails a test): use `JSON.new().parse()`.
+- **Shell quoting.** Bash heredocs and the Write tool can mangle backslashes (`\U`, `\u`): write Windows
+  paths into files with the Edit tool, and build an em dash only at runtime (`char(0x2014)`).
+- **Strict typing:** untyped declarations are errors; `var x := dict["k"]` is too; JSON numbers are
+  floats (cast with `int()`); arrays accept index -1, so validate references; a subclass cannot
+  redeclare a member of its base (see `Driver`).
+- **Commit the generated files:** `.uid` next to scripts, `.import` next to assets.
+- **Determinism:** all randomness from `sim.rng.get_stream(...)`, per side for the enemy
+  (`world.stream(sim, name)`); the view may use its own hash-based randomness (it never feeds the sim).
+- **Perf:** windowed fps is capped at 240 Hz; judge p99 and GPU ms. Perf taken while Black Diamond
+  renders is marked untrusted.
+- **RAM on this PC** fills up with leftover `node` processes from Claude sessions (about 15 GB was
+  seen); git then fails with "getaddrinfo() thread failed to start". Retry later; Stewart restarts the
+  Claude app when his sessions are done. Never kill processes by name.
+- **Blocked helper:** a PID-based "kill strays" helper was refused by the safety filter. Do not re-add it.
 
 ## Side by side with Black Diamond
-Black Diamond (first-person 3D steam-train survival, `C:\Users\stewa\Documents\Claude\Black Diamond`)
-builds in Godot on this PC at the same time. Shared rules: `C:\Users\stewa\Documents\Claude\GODOT-SIDE-BY-SIDE.md`.
-Its Movie Maker captures were seen taking the foreground during M0. If perf keeps coming back
-contended, check `tasklist` for its processes before blaming Inner Sun.
+Black Diamond (`C:\Users\stewa\Documents\Claude\Black Diamond`) builds in Godot on this PC at the same
+time. Shared rules: `C:\Users\stewa\Documents\Claude\GODOT-SIDE-BY-SIDE.md`.
 
-## Not done
-- The blind critic is installed and live-tested, but has never reviewed a build.
-- The Gemini video critic is not ported.
-- HDR glow bloom is unverified.
-- The art style is not chosen yet (M1 step 2 bake-off).
+## Known gaps going into M1b
+See `docs/BACKLOG.md` (non-blocking polish) and `PROGRESS.md` (known issues). The balance report's
+weak spots are the first M1b candidates: the middle rows rarely threaten the hull, rivals feel
+scripted, gems pile up unspent, ore makes repairs nearly free, the lance is never bought, bits never
+break.
 
 ## Session protocols
-- **Checkpoint** (Stewart types it):
-  1. Finish or safely stop the current step.
-  2. Update PROGRESS and HANDOFF.
-  3. Commit with explicit paths and push.
-  4. Stop with a two-line summary.
-- **End of session:**
-  1. Run `qa-auditor` on the PROGRESS and HANDOFF claims and fix what it finds.
-  2. Confirm `python tools/check.py` passes from a clean tree.
-  3. Update PROGRESS, HANDOFF and DECISIONS.
-  4. Commit with explicit paths and push.
-  5. Give Stewart a plain-English summary with the next session's launch settings and prompt.
+- **Checkpoint** (Stewart types it): finish or safely stop the current step, update PROGRESS and
+  HANDOFF, commit with explicit paths and push, stop with a two-line summary.
+- **End of session:** run `qa-auditor` on PROGRESS and HANDOFF and fix what it finds; confirm
+  `python tools/check.py` passes from a clean tree; update PROGRESS, HANDOFF and DECISIONS; commit and
+  push; give Stewart a plain-English summary with the next session's launch settings and prompt.
