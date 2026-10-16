@@ -1,15 +1,16 @@
 class_name ShipView
 extends Node2D
-## Builds and updates the cutaway from the sim's state: rock around the hull, back walls, water,
-## fire, crew, ladders and the lights that make it read. Placeholder art in M0.
-## Godot lets one canvas item take only about 15 lights, so everything is split into small per-room,
-## per-crew and per-chunk nodes (each only meets nearby lights) and idle lights are disabled, not
-## dimmed. Ship space is meters with y down; this node's origin is the ship's top-left corner.
+## Builds and updates the cutaway from the sim's state: painted rooms (RoomArt), hull plating, the
+## drill crown, ladders, painted crew (CrewSprite), water, fire, heat and the lights that make it
+## read. Godot lets one canvas item take only about 15 lights, so everything is split into small
+## per-room, per-crew and per-strip nodes (each only meets nearby lights) and idle lights are
+## disabled, not dimmed. Ship space is meters with y down; this node's origin is the ship's top-left.
+## Draw order (z): rock -10, wall -5, floor -4, props -3, lamp -2, heat 0, ladders 1, doors and hatch
+## rims 2, room frame 3, hull 3, flames 5, crew 6 (limbs 4 to 8), water 10, labels 12, tags 14.
 
-const WALL_PX: float = 8.0
 const ROCK_CHUNK: int = 512
-const CREW_COLORS: Array[Color] = [Color(0.95, 0.52, 0.16), Color(0.2, 0.7, 0.72), Color(0.9, 0.78, 0.25)]
-
+const LAMP_ENERGY: float = 1.7
+const HULL_ART_PX: float = 48.0
 
 ## A node that draws through a callback, so each room or crew member is its own small canvas item.
 class FnDraw extends Node2D:
@@ -24,23 +25,24 @@ var world: ShipWorld  ## The ship this view draws (the player's, or the enemy's 
 var ppm: float = 80.0
 var _font: Font
 var _radial: GradientTexture2D
+var _room_art: Array[RoomArt] = []
 var _lamps: Array[PointLight2D] = []
 var _alarms: Array[PointLight2D] = []
 var _fire_lights: Array[PointLight2D] = []
 var _flames: Array[CPUParticles2D] = []
-var _crew_nodes: Array[FnDraw] = []
+var _crew: Array[CrewSprite] = []
 var _crew_lights: Array[PointLight2D] = []
 var _redraw: Array[FnDraw] = []
-var _drill_light: PointLight2D
-var _drill_poly: Polygon2D
+var _foot_lift: float = 14.0
 var _time: float = 0.0
 ## Drilling mode: the node rides the sim's ship_pos in segment space, over a RockView.
 var _drill: DrillSim
 var _m0_rock: Array[Node] = []
 var _floods: Array[PointLight2D] = []
 var _crown: Node2D
-var _crown_glow: Array[Polygon2D] = []
+var _crown_glow: Array[Sprite2D] = []
 var _crown_light: PointLight2D
+var _crown_fill: PointLight2D
 var _sparks: CPUParticles2D
 var _dust: CPUParticles2D
 
@@ -51,21 +53,24 @@ func setup(p_sim: Sim, p_world: ShipWorld, p_ppm: float) -> void:
 	ppm = p_ppm
 	_font = ThemeDB.fallback_font
 	_radial = ShipView.radial_texture(256)
+	_foot_lift = RoomArt.GRATING_ART_H * 0.7 * ppm / ArtLib.ART_PPM
 	_build_rock()
 	_build_rooms()
+	_build_ladders()
+	_build_hull()
 	_build_occluders()
 	_build_lights()
 	_build_flames()
-	_build_drill()
 	_build_crown()
-	_build_props()
 	_build_crew()
+	_build_tags()
 
 
 ## Follow a new sim with the same ship layout (a new run of the same ship): the nodes stay.
 func rebind(p_sim: Sim, p_world: ShipWorld) -> void:
 	sim = p_sim
 	world = p_world
+	_rebuild_crew()
 
 
 func ship_size_m() -> Vector2:
@@ -110,14 +115,15 @@ static func radial_texture(size: int) -> GradientTexture2D:
 	return t
 
 
-func _fn(z: int, fn: Callable, unshaded: bool = false) -> FnDraw:
+## mode 0: lit, 1: unshaded, 2: additive and unshaded. `boost` brightens an unshaded drawing (the
+## CanvasModulate still darkens it a little; measured, a plain color comes out about twice too dim).
+func _fn(z: int, fn: Callable, mode: int = 0, boost: float = 1.0) -> FnDraw:
 	var n := FnDraw.new()
 	n.fn = fn
 	n.z_index = z
-	if unshaded:
-		var m := CanvasItemMaterial.new()
-		m.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
-		n.material = m
+	if mode != 0:
+		n.material = ArtLib.unshaded() if mode == 1 else ArtLib.additive_unshaded()
+		n.modulate = Color(boost, boost, boost, 1.0)
 	add_child(n)
 	_redraw.append(n)
 	return n
@@ -139,9 +145,8 @@ func _light(at: Vector2, color: Color, energy: float, radius_px: float, shadows:
 
 
 func _build_rock() -> void:
-	var tex: Texture2D = ShipView.canvas_tex("res://assets/test/rock_albedo.png", "res://assets/test/rock_normal.png")
-	if tex == null:
-		return
+	var tex: Texture2D = RockTiles.canvas_tile("dense")
+	var k: float = RockTiles.TILE_M * ppm / float(RockTiles.TILE_PX)
 	var origin: Vector2 = (center_px() - Vector2(2048, 1536)).snapped(Vector2(ROCK_CHUNK, ROCK_CHUNK))
 	for gy: int in range(6):
 		for gx: int in range(8):
@@ -151,8 +156,10 @@ func _build_rock() -> void:
 			s.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 			s.region_enabled = true
 			var at := origin + Vector2(gx * ROCK_CHUNK, gy * ROCK_CHUNK)
-			s.region_rect = Rect2(at, Vector2(ROCK_CHUNK, ROCK_CHUNK))
+			s.region_rect = Rect2(at / k, Vector2(ROCK_CHUNK, ROCK_CHUNK) / k)
+			s.scale = Vector2(k, k)
 			s.position = at
+			s.self_modulate = Color(1.15, 1.08, 1.0)
 			s.z_index = -10
 			add_child(s)
 			_m0_rock.append(s)
@@ -162,32 +169,88 @@ func _build_rock() -> void:
 
 
 func _build_rooms() -> void:
-	var wall: Texture2D = ShipView.canvas_tex("res://assets/test/wall_albedo.png", "res://assets/test/wall_normal.png")
 	var ship: Ship = world.ship
 	for r: Room in ship.rooms:
-		var rp: Rect2 = room_rect_px(r)
-		if wall != null:
-			var back := Sprite2D.new()
-			back.texture = wall
-			back.centered = false
-			back.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
-			back.region_enabled = true
-			back.region_rect = Rect2(Vector2.ZERO, rp.size)
-			back.position = rp.position
-			back.self_modulate = Color(0.8, 0.8, 0.84)
-			back.z_index = -5
-			add_child(back)
+		var art := RoomArt.new()
+		art.build(ship, r, ppm)
+		add_child(art)
+		_room_art.append(art)
 		var ri: int = r.index
-		_fn(0, func(n: Node2D) -> void: _draw_heat(n, ri))
-		_fn(5, func(n: Node2D) -> void: _draw_water(n, ri))
-		_fn(3, func(n: Node2D) -> void: _draw_frame(n, ri))
-		_fn(10, func(n: Node2D) -> void: _draw_label(n, ri), true)
+		_fn(0, func(n: Node2D) -> void: RoomFx.draw_heat(n, world.ship.rooms[ri], room_rect_px(world.ship.rooms[ri]), _time), 2, 2.0)
+		_fn(3, func(n: Node2D) -> void: RoomFx.draw_frame(n, room_rect_px(world.ship.rooms[ri])))
+		_fn(10, func(n: Node2D) -> void: RoomFx.draw_water(n, world.ship.rooms[ri], room_rect_px(world.ship.rooms[ri]), ppm, _time), 1, 1.8)
+		_fn(11, func(n: Node2D) -> void: RoomFx.draw_alarm_rim(n, world.ship.rooms[ri], room_rect_px(world.ship.rooms[ri]), _time), 2, 2.0)
+		_fn(12, func(n: Node2D) -> void: RoomFx.draw_label(n, world.ship, world.ship.rooms[ri], room_rect_px(world.ship.rooms[ri]), ppm, _font, _time), 1)
+
+
+func _build_ladders() -> void:
+	var ship: Ship = world.ship
+	var tex: Texture2D = ArtLib.lit("ship", "ladder")
+	var k: float = ppm / ArtLib.ART_PPM
 	for l: Link in ship.links:
-		if l.kind == Link.Kind.HATCH:
-			var li: int = l.index
-			_fn(1, func(n: Node2D) -> void: _draw_ladder(n, li))
+		if l.kind != Link.Kind.HATCH:
+			continue
+		var li: int = l.index
+		var y0: float = ship.rooms[l.a].floor_y() * ppm - ppm * 0.9
+		var y1: float = ship.rooms[l.b].floor_y() * ppm - _foot_lift * 0.4
+		if tex != null:
+			var s := Sprite2D.new()
+			s.texture = tex
+			s.centered = false
+			s.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+			s.region_enabled = true
+			s.region_rect = Rect2(0.0, 0.0, tex.get_size().x, (y1 - y0) / k)
+			s.scale = Vector2(k, k)
+			s.position = Vector2(l.x * ppm - tex.get_size().x * 0.5 * k, y0)
+			s.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+			s.z_index = 1
+			add_child(s)
+		_fn(9, func(n: Node2D) -> void: RoomFx.draw_ladder_flow(n, world.ship, world, li, ppm, _time), 1, 1.8)
+
+
+## The outer plating strips around the tower: top, left and right, in pieces so each is lit by
+## only nearby lamps.
+func _build_hull() -> void:
 	var size: Vector2 = ship_size_m() * ppm
-	_fn(4, func(n: Node2D) -> void: n.draw_rect(Rect2(Vector2(-WALL_PX, -WALL_PX), size + Vector2(WALL_PX * 2.0, WALL_PX * 2.0)), Color(0.09, 0.09, 0.1), false, WALL_PX * 1.5))
+	var k: float = ppm / ArtLib.ART_PPM
+	var th: float = HULL_ART_PX * k
+	var overlap: float = 3.0
+	var top: Texture2D = ArtLib.lit("ship", "hull_top")
+	var left: Texture2D = ArtLib.lit("ship", "hull_left")
+	var right: Texture2D = ArtLib.lit("ship", "hull_right")
+	var seg: float = 3.0 * ppm
+	if top != null:
+		var x: float = -th + overlap
+		var end: float = size.x + th - overlap
+		while x < end:
+			var w: float = minf(seg, end - x)
+			_strip(top, Vector2(x, -th + overlap), Rect2((x + th) / k, 0.0, w / k, HULL_ART_PX), k)
+			x += w
+	for side: int in range(2):
+		var tex: Texture2D = left if side == 0 else right
+		if tex == null:
+			continue
+		var y: float = 0.0
+		while y < size.y:
+			var h: float = minf(seg, size.y - y)
+			var px: float = -th + overlap if side == 0 else size.x - overlap
+			_strip(tex, Vector2(px, y), Rect2(0.0, y / k, HULL_ART_PX, h / k), k)
+			y += h
+
+
+func _strip(tex: Texture2D, at: Vector2, region: Rect2, k: float) -> void:
+	var s := Sprite2D.new()
+	s.texture = tex
+	s.centered = false
+	s.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+	s.region_enabled = true
+	s.region_rect = region
+	s.scale = Vector2(k, k)
+	s.position = at
+	s.self_modulate = Color(1.6, 1.6, 1.6, 1.0)
+	s.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	s.z_index = 3
+	add_child(s)
 
 
 func _build_occluders() -> void:
@@ -230,7 +293,7 @@ func _wall_segments(a: Vector2, b: Vector2, gaps: Array[Vector2], horizontal: bo
 
 
 func _occluder_span(origin: Vector2, horizontal: bool, from: float, to: float) -> void:
-	var h: float = WALL_PX * 0.5
+	var h: float = 4.0
 	var pts := PackedVector2Array()
 	if horizontal:
 		pts = PackedVector2Array([Vector2(from, origin.y - h), Vector2(to, origin.y - h), Vector2(to, origin.y + h), Vector2(from, origin.y + h)])
@@ -247,7 +310,8 @@ func _occluder_span(origin: Vector2, horizontal: bool, from: float, to: float) -
 func _build_lights() -> void:
 	for r: Room in world.ship.rooms:
 		var rp: Rect2 = room_rect_px(r)
-		_lamps.append(_light(Vector2(rp.get_center().x, rp.position.y + ppm * 0.35), Color(1.0, 0.86, 0.66), 1.25, rp.size.x * 0.9, true, 220.0))
+		var bulb: Vector2 = rp.position + RoomArt.lamp_point(rp, ppm)
+		_lamps.append(_light(bulb + Vector2(0, ppm * 0.1), Color(1.0, 0.84, 0.62), LAMP_ENERGY, rp.size.x * 0.85, true, 200.0))
 		_alarms.append(_light(Vector2(rp.position.x + ppm * 0.4, rp.position.y + ppm * 0.3), Color(1.0, 0.1, 0.06), 0.0, rp.size.x * 0.9, true, 160.0))
 		_fire_lights.append(_light(Vector2(rp.get_center().x, rp.end.y - ppm * 0.6), Color(1.0, 0.48, 0.16), 0.0, rp.size.x * 0.95, true, 140.0))
 
@@ -258,9 +322,7 @@ func _build_flames() -> void:
 	ramp.set_color(0, Color(3.0, 2.2, 0.9, 1.0))
 	ramp.set_color(1, Color(0.4, 0.05, 0.02, 0.0))
 	ramp.add_point(0.4, Color(2.2, 0.75, 0.15, 0.85))
-	var mat := CanvasItemMaterial.new()
-	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
-	mat.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
+	var mat := ArtLib.additive_unshaded()
 	for r: Room in world.ship.rooms:
 		var rp: Rect2 = room_rect_px(r)
 		var p := CPUParticles2D.new()
@@ -269,7 +331,7 @@ func _build_flames() -> void:
 		p.amount = 90
 		p.lifetime = 0.8
 		p.emitting = false
-		p.position = Vector2(rp.get_center().x, rp.end.y - 4.0)
+		p.position = Vector2(rp.get_center().x, rp.end.y - _foot_lift)
 		p.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
 		p.emission_rect_extents = Vector2(rp.size.x * 0.38, 3.0)
 		p.direction = Vector2(0, -1)
@@ -280,28 +342,9 @@ func _build_flames() -> void:
 		p.scale_amount_min = 0.7
 		p.scale_amount_max = 1.6
 		p.color_ramp = ramp
-		p.z_index = 6
+		p.z_index = 5
 		add_child(p)
 		_flames.append(p)
-
-
-func _build_drill() -> void:
-	var di: int = world.ship.room_with_system("drill")
-	if di < 0:
-		return
-	var rp: Rect2 = room_rect_px(world.ship.rooms[di])
-	var cx: float = rp.get_center().x
-	_drill_poly = Polygon2D.new()
-	_drill_poly.polygon = PackedVector2Array([
-		Vector2(cx - ppm * 1.1, rp.end.y + WALL_PX * 0.5), Vector2(cx + ppm * 1.1, rp.end.y + WALL_PX * 0.5),
-		Vector2(cx + ppm * 0.7, rp.end.y + ppm * 0.6), Vector2(cx, rp.end.y + ppm * 1.7),
-		Vector2(cx - ppm * 0.7, rp.end.y + ppm * 0.6)])
-	_drill_poly.color = Color(2.4, 1.0, 0.35)
-	var unlit := CanvasItemMaterial.new()
-	unlit.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
-	_drill_poly.material = unlit
-	add_child(_drill_poly)
-	_drill_light = _light(Vector2(cx, rp.end.y + ppm * 1.5), Color(1.0, 0.55, 0.2), 1.8, ppm * 6.0, true, 160.0)
 
 
 ## True while the node follows a drilling segment (set by Main when a RockView is present).
@@ -309,9 +352,9 @@ func is_drilling() -> bool:
 	return _drill != null
 
 
-## Switch between the M0 cutaway (static rock, small drill glow) and a drilling segment: with a
-## DrillSim the static rock goes away, the crown, sparks and hull floodlights switch on, and this
-## node follows the sim's ship_pos. Pass null to go back.
+## Switch between the plain cutaway (static rock behind the tower) and a drilling segment: with a
+## DrillSim the static rock goes away, the crown bites, the sparks and hull floodlights switch on,
+## and this node follows the sim's ship_pos. Pass null to go back.
 func set_drilling(d: DrillSim) -> void:
 	_drill = d
 	var on: bool = d != null
@@ -320,61 +363,81 @@ func set_drilling(d: DrillSim) -> void:
 			(n as CanvasItem).visible = not on
 		elif n is Light2D:
 			(n as Light2D).enabled = not on
-	if _drill_poly != null:
-		_drill_poly.visible = not on
-	if _drill_light != null:
-		_drill_light.enabled = not on
 	for l: PointLight2D in _floods:
 		l.enabled = on
-	if _crown != null:
-		_crown.visible = on
 	if _crown_light != null:
 		_crown_light.enabled = on
 	if not on:
 		_sparks.emitting = false
 		_dust.emitting = false
 		position = Vector2.ZERO
+		_set_crown_glow(0.5)
 
 
-## The cutting crown under the whole tower, the hull floodlights, sparks and dust. Hidden and dark
-## until set_drilling. Rock lights use light mask 2 (RockView.LIGHT_MASK); the crown parts use 3 so
-## those lights shade them too.
+## Show or hide the stand-in rock behind the tower (and its two side lights). The combat view uses
+## this for an enemy ship; set_drilling also drives it.
+func set_backdrop_visible(on: bool) -> void:
+	for n: Node in _m0_rock:
+		if n is CanvasItem:
+			(n as CanvasItem).visible = on
+		elif n is Light2D:
+			(n as Light2D).enabled = on
+
+
+func _set_crown_glow(target: float) -> void:
+	for g: Sprite2D in _crown_glow:
+		ArtLib.set_glow(g, target)
+
+
+## The painted drill crown under the whole tower (the teeth glow brighter while cutting), the hull
+## floodlights, sparks and dust. Rock lights use light mask 2 (RockView.LIGHT_MASK); the crown parts
+## use 3 so those lights shade them too.
 func _build_crown() -> void:
 	var size: Vector2 = ship_size_m() * ppm
-	var amb: Color = RockView.AMBIENT
 	_crown = Node2D.new()
-	_crown.position = Vector2(0.0, size.y)
+	_crown.position = Vector2(0.0, size.y - 6.0)
 	_crown.z_index = 6
-	_crown.visible = false
 	add_child(_crown)
-	var body := Polygon2D.new()
-	body.polygon = PackedVector2Array([Vector2(-6, -8), Vector2(size.x + 6.0, -8), Vector2(size.x + 6.0, 14), Vector2(-6, 14)])
-	body.color = Color(0.3, 0.29, 0.28)
-	body.light_mask = 3
-	_crown.add_child(body)
-	var unlit := CanvasItemMaterial.new()
-	unlit.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
-	unlit.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
-	var teeth: int = maxi(1, roundi(size.x / 80.0))
-	var tw: float = size.x / float(teeth)
-	for i: int in range(teeth):
-		var x0: float = float(i) * tw
-		var tooth := Polygon2D.new()
-		tooth.polygon = PackedVector2Array([Vector2(x0 + 2, 12), Vector2(x0 + tw - 2, 12), Vector2(x0 + tw * 0.5, 47)])
-		tooth.color = Color(0.28, 0.27, 0.26).darkened(0.15 * float(i % 2))
-		tooth.light_mask = 3
-		_crown.add_child(tooth)
-		var glow := Polygon2D.new()
-		glow.polygon = PackedVector2Array([Vector2(x0 + tw * 0.25, 30), Vector2(x0 + tw * 0.75, 30), Vector2(x0 + tw * 0.5, 48)])
-		glow.color = Color(1.5 / amb.r, 0.62 / amb.g, 0.2 / amb.b, 1.0)
-		glow.material = unlit
-		_crown.add_child(glow)
-		_crown_glow.append(glow)
-	_crown_light = _light(Vector2(size.x * 0.5, size.y + 34.0), Color(1.0, 0.55, 0.22), 0.3, ppm * 6.0, false, 110.0)
+	var tex: Texture2D = ArtLib.lit("ship", "drill_crown")
+	var glow_tex: Texture2D = ArtLib.plain("ship", "drill_crown", "emission")
+	var crown_h: float = 0.0
+	if tex != null:
+		var art: Vector2 = tex.get_size()
+		var sc: float = size.x / art.x
+		crown_h = art.y * sc
+		var pieces: int = 4
+		var pw: float = art.x / float(pieces)
+		for i: int in range(pieces):
+			var s := Sprite2D.new()
+			s.texture = tex
+			s.centered = false
+			s.region_enabled = true
+			s.region_rect = Rect2(pw * float(i), 0.0, pw, art.y)
+			s.scale = Vector2(sc, sc)
+			s.position = Vector2(pw * float(i) * sc, 0.0)
+			s.light_mask = 3
+			s.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+			_crown.add_child(s)
+			if glow_tex != null:
+				var g := Sprite2D.new()
+				g.texture = glow_tex
+				g.centered = false
+				g.region_enabled = true
+				g.region_rect = s.region_rect
+				g.scale = s.scale
+				g.position = s.position
+				g.material = ArtLib.additive_unshaded()
+				g.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+				_crown.add_child(g)
+				_crown_glow.append(g)
+		_set_crown_glow(0.5)
+	var tip_y: float = size.y - 6.0 + maxf(crown_h, 60.0) - 14.0
+	_crown_light = _light(Vector2(size.x * 0.5, tip_y - 4.0), Color(1.0, 0.55, 0.22), 0.3, ppm * 6.0, false, 110.0)
 	_crown_light.texture = RockView.light_texture(128, 0.0, 0.3, 0.6)
 	_crown_light.texture_scale = ppm * 6.0 * 2.0 / 128.0 / 0.4
 	_crown_light.range_item_cull_mask = 2
 	_crown_light.enabled = false
+	_crown_fill = _light(Vector2(size.x * 0.5, size.y + ppm * 0.9), Color(1.0, 0.72, 0.5), 1.1, ppm * 5.5, false, 140.0)
 	# Hull floodlights: low corners throw down and out, mid-hull ones rake the shaft walls.
 	var flood_col := Color(0.9, 0.95, 1.0)
 	var wide: ImageTexture = RockView.light_texture(128, 0.3, 0.65, 0.38)
@@ -387,19 +450,16 @@ func _build_crown() -> void:
 		fl.enabled = false
 		_floods.append(fl)
 	var hot := Gradient.new()
-	hot.set_color(0, Color(1.7 / amb.r, 1.45 / amb.g, 0.8 / amb.b, 1.0))
-	hot.set_color(1, Color(0.8 / amb.r, 0.18 / amb.g, 0.04 / amb.b, 0.0))
-	hot.add_point(0.35, Color(1.5 / amb.r, 0.8 / amb.g, 0.25 / amb.b, 0.9))
-	var add_mat := CanvasItemMaterial.new()
-	add_mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
-	add_mat.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
+	hot.set_color(0, Color(1.7, 1.45, 0.8, 1.0))
+	hot.set_color(1, Color(0.8, 0.18, 0.04, 0.0))
+	hot.add_point(0.35, Color(1.5, 0.8, 0.25, 0.9))
 	_sparks = CPUParticles2D.new()
 	_sparks.texture = ShipView.radial_texture(12)
-	_sparks.material = add_mat
+	_sparks.material = ArtLib.additive_unshaded()
 	_sparks.amount = 150
 	_sparks.lifetime = 0.6
 	_sparks.emitting = false
-	_sparks.position = Vector2(size.x * 0.5, size.y + 40.0)
+	_sparks.position = Vector2(size.x * 0.5, tip_y)
 	_sparks.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
 	_sparks.emission_rect_extents = Vector2(size.x * 0.46, 3.0)
 	_sparks.direction = Vector2(0, -1)
@@ -413,18 +473,16 @@ func _build_crown() -> void:
 	_sparks.z_index = -6
 	add_child(_sparks)
 	var puff := Gradient.new()
-	puff.set_color(0, Color(0.7 / amb.r, 0.6 / amb.g, 0.5 / amb.b, 0.0))
-	puff.set_color(1, Color(0.5 / amb.r, 0.45 / amb.g, 0.4 / amb.b, 0.0))
-	puff.add_point(0.25, Color(0.55 / amb.r, 0.5 / amb.g, 0.44 / amb.b, 0.26))
-	var mix_mat := CanvasItemMaterial.new()
-	mix_mat.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
+	puff.set_color(0, Color(0.4, 0.36, 0.32, 0.0))
+	puff.set_color(1, Color(0.3, 0.27, 0.24, 0.0))
+	puff.add_point(0.25, Color(0.36, 0.32, 0.28, 0.3))
 	_dust = CPUParticles2D.new()
 	_dust.texture = ShipView.radial_texture(48)
-	_dust.material = mix_mat
+	_dust.material = ArtLib.unshaded()
 	_dust.amount = 36
 	_dust.lifetime = 2.2
 	_dust.emitting = false
-	_dust.position = Vector2(size.x * 0.5, size.y + 36.0)
+	_dust.position = Vector2(size.x * 0.5, tip_y - 6.0)
 	_dust.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
 	_dust.emission_rect_extents = Vector2(size.x * 0.5, 4.0)
 	_dust.direction = Vector2(0, -1)
@@ -450,38 +508,48 @@ func _process_drilling() -> void:
 	position = d.ship_pos * ppm + shake
 	_crown_light.energy = (1.1 + 0.4 * load_k) * pulse if cut else 0.25
 	var wear_dim: float = 1.0 - 0.45 * d.bit_wear
-	for g: Polygon2D in _crown_glow:
-		g.color.a = clampf(pulse * wear_dim, 0.0, 1.0) if cut else 0.1
+	_set_crown_glow(1.7 * pulse * wear_dim if cut else 0.45)
 	_sparks.emitting = cut
 	_sparks.speed_scale = 0.7 + 0.5 * load_k
 	_dust.emitting = cut
 
 
-func _build_props() -> void:
-	var tex: Texture2D = ShipView.canvas_tex("res://assets/test/reactor_albedo.png", "res://assets/test/reactor_normal.png")
-	var ri: int = world.ship.room_with_system("reactor")
-	if tex == null or ri < 0:
-		return
-	var rp: Rect2 = room_rect_px(world.ship.rooms[ri])
-	var s := Sprite2D.new()
-	s.texture = tex
-	var k: float = (ppm * 1.7) / 320.0
-	s.scale = Vector2(k, k)
-	s.position = Vector2(rp.position.x + rp.size.x * 0.68, rp.end.y - ppm * 0.85)
-	s.z_index = -1
-	add_child(s)
-
-
 func _build_crew() -> void:
+	var enemy: bool = sim != null and world != sim.player
 	for c: CrewMember in world.ship.crew:
-		var ci: int = c.index
-		_crew_nodes.append(_fn(4, func(n: Node2D) -> void: _draw_crew(n, ci)))
-		_crew_lights.append(_light(Vector2.ZERO, Color(0.85, 0.92, 1.0), 0.45, ppm * 1.7, false, 120.0))
+		_add_crew(c, enemy)
+
+
+func _add_crew(c: CrewMember, enemy: bool) -> void:
+	var spr := CrewSprite.new()
+	spr.setup(c, ppm, enemy)
+	add_child(spr)
+	_crew.append(spr)
+	_crew_lights.append(_light(Vector2.ZERO, Color(0.9, 0.93, 1.0), 0.5, ppm * 1.7, false, 120.0))
+
+
+func _rebuild_crew() -> void:
+	for s: CrewSprite in _crew:
+		s.queue_free()
+	for l: PointLight2D in _crew_lights:
+		l.queue_free()
+	_crew.clear()
+	_crew_lights.clear()
+	_build_crew()
+
+
+func _build_tags() -> void:
+	_fn(14, func(n: Node2D) -> void: RoomFx.draw_tags(n, world.ship, _crew, ppm, _font), 1)
 
 
 func _process(delta: float) -> void:
 	_time += delta
 	var ship: Ship = world.ship
+	if ship.crew.size() < _crew.size():
+		_rebuild_crew()
+	var enemy: bool = sim != null and world != sim.player
+	while _crew.size() < ship.crew.size():
+		_add_crew(ship.crew[_crew.size()], enemy)
 	for r: Room in ship.rooms:
 		var i: int = r.index
 		var hazard: bool = r.fire > 0.0 or r.breach_m2 > 0.0 or r.level_m() > 0.3
@@ -491,105 +559,17 @@ func _process(delta: float) -> void:
 		_fire_lights[i].energy = 2.6 * r.fire * (0.8 + 0.2 * sin(_time * 23.0 + float(i) * 1.7) + 0.1 * sin(_time * 41.0))
 		_flames[i].emitting = r.fire > 0.02
 		_flames[i].speed_scale = 0.6 + r.fire
-		_lamps[i].energy = 1.25 * (1.0 - clampf(r.level_m() / r.rect.size.y, 0.0, 0.7))
+		var lamp_k: float = 1.0 - clampf(r.level_m() / r.rect.size.y, 0.0, 0.7)
+		_lamps[i].energy = LAMP_ENERGY * lamp_k
+		_room_art[i].update(ship, r, _time, lamp_k)
 	for c: CrewMember in ship.crew:
-		_crew_nodes[c.index].position = c.pos * ppm
+		var spr: CrewSprite = _crew[c.index]
+		spr.crew = c
+		spr.position = c.pos * ppm + Vector2(0.0, -_foot_lift)
+		spr.update(delta, _time)
 		_crew_lights[c.index].position = (c.pos + Vector2(0, -1.0)) * ppm
 		_crew_lights[c.index].enabled = c.alive
 	if _drill != null:
 		_process_drilling()
-	elif _drill_light != null:
-		var spin: float = 0.85 + 0.15 * sin(_time * 30.0)
-		_drill_light.energy = 1.8 * spin
-		_drill_poly.color = Color(2.4 * spin, 1.0 * spin, 0.35)
 	for n: FnDraw in _redraw:
 		n.queue_redraw()
-
-
-func _draw_heat(n: Node2D, ri: int) -> void:
-	var r: Room = world.ship.rooms[ri]
-	var heat: float = clampf((r.temp_c() - 34.0) / 90.0, 0.0, 0.35)
-	if heat > 0.0:
-		n.draw_rect(room_rect_px(r), Color(1.0, 0.3, 0.05, heat))
-
-
-func _draw_water(n: Node2D, ri: int) -> void:
-	var ship: Ship = world.ship
-	var r: Room = ship.rooms[ri]
-	var rp: Rect2 = room_rect_px(r)
-	if r.water_ml > 0:
-		var lvl: float = minf(r.level_m() * ppm, rp.size.y)
-		n.draw_rect(Rect2(rp.position.x, rp.end.y - lvl, rp.size.x, lvl), Color(0.08, 0.3, 0.4, 0.6))
-		var pts := PackedVector2Array()
-		for k: int in range(25):
-			var x: float = rp.position.x + rp.size.x * float(k) / 24.0
-			pts.append(Vector2(x, rp.end.y - lvl + 2.0 * sin(_time * 2.2 + x * 0.045)))
-		n.draw_polyline(pts, Color(0.6, 0.95, 1.1, 0.9), 2.0)
-
-
-func _draw_ladder(n: Node2D, li: int) -> void:
-	var ship: Ship = world.ship
-	var l: Link = ship.links[li]
-	var x0: float = (l.x - 0.22) * ppm
-	var x1: float = (l.x + 0.22) * ppm
-	var y0: float = ship.rooms[l.a].floor_y() * ppm - ppm * 0.9
-	var y1: float = ship.rooms[l.b].floor_y() * ppm
-	var col := Color(0.6, 0.57, 0.5)
-	n.draw_line(Vector2(x0, y0), Vector2(x0, y1), col, 3.0)
-	n.draw_line(Vector2(x1, y0), Vector2(x1, y1), col, 3.0)
-	var y: float = y0 + 10.0
-	while y < y1:
-		n.draw_line(Vector2(x0, y), Vector2(x1, y), col, 2.0)
-		y += ppm * 0.3
-	var flow: float = world.hazards.link_flow_ml_s[li] / Room.ML_PER_M3
-	if flow > 0.0:
-		var lower: Room = ship.rooms[l.b]
-		var top_y: float = ship.rooms[l.a].floor_y() * ppm
-		var bottom_y: float = lower.floor_y() * ppm - minf(lower.level_m() * ppm, lower.rect.size.y * ppm)
-		var w: float = clampf(flow * 40.0, 3.0, 20.0)
-		n.draw_rect(Rect2(l.x * ppm - w * 0.5, top_y, w, bottom_y - top_y), Color(0.25, 0.6, 0.75, 0.55))
-		n.draw_line(Vector2(l.x * ppm, top_y), Vector2(l.x * ppm, bottom_y), Color(0.7, 1.0, 1.2, 0.8), 1.5)
-
-
-func _draw_frame(n: Node2D, ri: int) -> void:
-	var ship: Ship = world.ship
-	var r: Room = ship.rooms[ri]
-	n.draw_rect(room_rect_px(r), Color(0.14, 0.145, 0.16), false, WALL_PX)
-	for l: Link in ship.links:
-		if l.a != ri:
-			continue
-		if l.kind == Link.Kind.DOOR:
-			var fy: float = r.floor_y() * ppm
-			n.draw_rect(Rect2(l.x * ppm - WALL_PX * 0.5, fy - l.height_m * ppm, WALL_PX, l.height_m * ppm), Color(0.34, 0.31, 0.27) if l.open else Color(0.55, 0.48, 0.2))
-		else:
-			var y: float = r.floor_y() * ppm
-			var half: float = l.span_m * 0.5 * ppm
-			n.draw_line(Vector2(l.x * ppm - half, y), Vector2(l.x * ppm + half, y), Color(0.9, 0.72, 0.15), 3.0)
-
-
-func _draw_label(n: Node2D, ri: int) -> void:
-	var r: Room = world.ship.rooms[ri]
-	var at: Vector2 = room_rect_px(r).position + Vector2(WALL_PX + 6.0, WALL_PX + 18.0)
-	n.draw_string(_font, at, r.name.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(0.85, 0.83, 0.76))
-	var line: String = "%d C" % roundi(r.temp_c())
-	if r.water_ml > 0:
-		line += "   water %.2f m" % r.level_m()
-	if r.fire > 0.0:
-		line += "   FIRE %d%%" % roundi(r.fire * 100.0)
-	if r.breach_m2 > 0.0:
-		line += "   BREACH"
-	n.draw_string(_font, at + Vector2(0, 18), line, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1.0, 0.68, 0.25) if r.fire <= 0.0 else Color(1.5, 0.55, 0.2))
-
-
-func _draw_crew(n: Node2D, ci: int) -> void:
-	var c: CrewMember = world.ship.crew[ci]
-	var col: Color = CREW_COLORS[ci % CREW_COLORS.size()]
-	if not c.alive:
-		n.draw_rect(Rect2(Vector2(-0.6 * ppm, -0.25 * ppm), Vector2(1.2 * ppm, 0.25 * ppm)), Color(0.35, 0.33, 0.32))
-		return
-	var w: float = 0.42 * ppm
-	var h: float = 1.15 * ppm
-	n.draw_rect(Rect2(Vector2(-w * 0.5, -h), Vector2(w, h)), col)
-	n.draw_rect(Rect2(Vector2(-w * 0.5, -h * 0.45), Vector2(w, h * 0.12)), col.darkened(0.45))
-	n.draw_circle(Vector2(0, -h - 0.17 * ppm), 0.17 * ppm, Color(0.86, 0.72, 0.6))
-	n.draw_string(_font, Vector2(-w, -h - 0.42 * ppm), c.name, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(0.9, 0.9, 0.85))
