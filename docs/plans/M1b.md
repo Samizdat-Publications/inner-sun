@@ -24,3 +24,10 @@ fights around it. Done when Stewart says the loop is fun.
 
 ## Then
 New playtest build, Gemini video critic and the blind critic, Stewart plays.
+
+## Later (Stewart, 2026-10-16; plan into M2)
+- Break-through openings: now and then the drill breaks into an Agartha-style hollow (a cavern
+  world), where something happens (an event, maybe a trading post), then you drill on.
+- Each layer below is a dramatically different hollow-earth world (look, rock, light, life, music),
+  so breaking into the next layer is a big moment. Fits PLAN's fixed layer order (Crust, Deep Crust,
+  Abyssal Sea, Mantle Wilds, Inner World, Foundry).

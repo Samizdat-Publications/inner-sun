@@ -23,6 +23,11 @@ Verbatim:
   resource gathering but then occasionally run into hostile forces rather than it just being
   encounter after encounter like FTL if that makes sense."
 
+- **For later (a hallmark of the world), verbatim:** "a hallmark of the world we are building is that
+  you occasionally drill into an agartha style opening where some event happens (shop maybe?) and then
+  you continue down and keep breaking into differently styled hollow earth worlds that change
+  dramatically between layers." Logged in `docs/plans/M1b.md` ("Later") for M2 planning.
+
 What his run record shows (`%APPDATA%\InnerSun\runs\20261016-101616_160021.json`): 154 s, 4 nodes,
 45 steer commands, 6 event choices, 5 crew orders, zero power changes, zero pauses; gained 36 ore and
 17 gems, spent nothing. He found steering and the dossiers; nothing told him the power panel, the
