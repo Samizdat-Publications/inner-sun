@@ -4,14 +4,15 @@ Updated: 2026-10-16, end of the M1a build session.
 
 ## Milestone: M1a built and handed to Stewart for the playtest. Next: M1b (iterate on his notes).
 
-Exit criteria met except two: trusted whole-run perf is UNVERIFIED (another Godot project was
-rendering during every run-mode measurement) and the Gemini video critic could not run at the gate
-(Gemini spend cap). Both are first items for M1b.
+Exit criteria met, with one exception: the Gemini video critic could not run at the gate (Gemini
+spend cap). Perf meets the 60 fps floor after D023 (whole run: p99 12.7 ms, 1% low 78.5 fps), measured
+with light background GPU use, so the tool's strict "trusted" flag is off.
 
 ## The playtest build
-- `builds\InnerSun.exe` (exported 2026-10-16 00:36 from commit e51d43a; the `builds\PLAYTEST`
-  marker was written 00:45), launched by `Play Inner Sun.bat`. A labeled copy for the making-of record:
-  `builds\milestones\m1a-playtest\` (git tag `m1a-playtest`).
+- `builds\InnerSun.exe`: playtest build 2 (exported 2026-10-16 from commit 04b5a77, the first
+  build plus the drilling perf fix D023), launched by `Play Inner Sun.bat` (`builds\PLAYTEST`
+  marker written 01:53). Labeled copies for the making-of record: `builds\milestones\m1a-playtest\`
+  (tag `m1a-playtest`) and `builds\milestones\m1a-playtest-2\` (tag `m1a-playtest-2`).
 - How to play: README.md ("How to play"). Every run Stewart plays is saved for replay in
   `%APPDATA%\InnerSun\runs\` (`python tools/replay.py --latest`, or `--watch` to see it).
 
@@ -31,7 +32,7 @@ rendering during every run-mode measurement) and the Gemini video critic could n
   death and codex screens, the combat view with weapon cards, placeholder sound (ElevenLabs) and an
   audio director.
 - **Proof:**
-  - `python tools/check.py`: 186 tests pass, selftest ok.
+  - `python tools/check.py`: 188 tests pass, selftest ok.
   - Determinism: the scenario, and a whole run under Movie Maker matching a headless run
     (`docs/research/m1-evidence/determinism_m1a.txt`). Run records replay exactly.
   - Balance: three policy bots; 1,002 full runs in about 12 minutes after D021 (balanced 25%,
@@ -49,11 +50,11 @@ rendering during every run-mode measurement) and the Gemini video critic could n
 Nothing. Everything is committed and pushed (check `git status`, `git log origin/main -1`).
 
 ## Known issues
-- **Perf is UNVERIFIED as trusted for whole runs.** Black Diamond had several Godot processes
-  running during every run-mode measurement. The fire drill was trusted at p99 12.8 ms (78 fps
-  floor). A contended whole run read 90 fps average with 1% lows of 22 fps; the rock repaint at a
-  segment start is a known hitch source. Re-measure on an idle machine first thing in M1b:
-  `python tools/perf.py --mode run --seconds 30 --runs 3`.
+- **Perf:** after D023 the whole-run frame time is p99 12.7 ms, 1% low 78.5 fps, average 196 fps
+  (`docs/research/m1-evidence/perf_run_mode_after_fix.json`). Draw-step spikes of 11 to 13 ms remain
+  occasionally (cause not found); a new segment's rock fills in over about a second. The perf tool
+  marks every reading on this busy PC as contended (headless Chrome, Claude); a reading on an idle
+  machine would make it formally trusted.
 - **Interactive play was not tested with real mouse and keys** (it would take over Stewart's screen).
   Every control is covered by code paths and tests, and bots drive the same commands, but Stewart's
   playtest is the first real hands-on test. Keyboard focus: tool windows are created unfocusable;
@@ -69,6 +70,6 @@ Nothing. Everything is committed and pushed (check `git status`, `git log origin
 
 ## Exactly what is next
 1. Stewart plays and writes notes at the top of `docs/STEWART_FEEDBACK.md`.
-2. Start M1b with the prompt in `HANDOFF.md`: re-measure perf on an idle machine, replay any runs he
+2. Start M1b with the prompt in `HANDOFF.md`: replay any runs he
    mentions, triage his notes plus the balance weak spots into `docs/plans/M1b.md`, iterate, new
    playtest builds, until he says the core loop is fun. Then plan M2.
