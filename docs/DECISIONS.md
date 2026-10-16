@@ -340,3 +340,9 @@ a run at full yield for a charge that costs 4 gems, so blasting beat cutting eve
 pays `drill.blast_yield_pct` (50) of each material's yield, rounded down per material per blast; the
 rest shatters. That makes it a real choice: a blast is quick and reaches 14 m without a detour, but
 cutting a vein with the drill pays all of it. Revert: set `blast_yield_pct` to 100.
+Result (100 runs per bot, `docs/research/m1-evidence/balance_m1c_d039.md`): blast ore per run halved
+(greedy 122, balanced 115) but wins barely moved: cautious 16%, greedy 9%, balanced 39% (gate won
+49%). So blasts were not what made the balanced bot strong; douse and bracing against rockfalls give
+a careful player more tools, which is the point of D034. Kept as is for build 4: the spread between
+policies is healthy and Stewart's runs are the real test. If build 4 proves too easy for a human, the
+levers are the gate (hull 13), charge prices (2 for 8 gems) and `douse_fire_level`.
