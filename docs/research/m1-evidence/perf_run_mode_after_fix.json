@@ -1,0 +1,86 @@
+{
+  "adapter": "NVIDIA GeForce RTX 5070 Ti Laptop GPU",
+  "avg_fps": 195.8,
+  "frames": 5877,
+  "gpu_ms": 0.9,
+  "low_1pct_fps": 78.5,
+  "p50_ms": 4.63,
+  "p95_ms": 9.52,
+  "p99_ms": 12.74,
+  "resolution": "1920x1080",
+  "slow_frames": 18,
+  "spans": {
+    "combat": {
+      "max": 0.15,
+      "mean": 0.01,
+      "mean_slow": 0.01,
+      "p99": 0.01
+    },
+    "draws": {
+      "max": 9.44,
+      "mean": 1.89,
+      "mean_slow": 7.88,
+      "p99": 6.87
+    },
+    "engine_physics_max_per_s": {
+      "max": 2.09,
+      "mean": 0.77,
+      "mean_slow": 1.0,
+      "p99": 2.09
+    },
+    "engine_process_max_per_s": {
+      "max": 27.57,
+      "mean": 13.63,
+      "mean_slow": 21.34,
+      "p99": 27.57
+    },
+    "other": {
+      "max": 7.3,
+      "mean": 2.43,
+      "mean_slow": 4.73,
+      "p99": 4.84
+    },
+    "rock": {
+      "max": 5.89,
+      "mean": 0.16,
+      "mean_slow": 3.88,
+      "p99": 3.34
+    },
+    "rock_upload": {
+      "max": 0.97,
+      "mean": 0.01,
+      "mean_slow": 0.28,
+      "p99": 0.41
+    },
+    "scripts": {
+      "max": 17.77,
+      "mean": 0.79,
+      "mean_slow": 6.38,
+      "p99": 4.08
+    },
+    "ship": {
+      "max": 2.54,
+      "mean": 0.28,
+      "mean_slow": 0.47,
+      "p99": 0.53
+    },
+    "sim": {
+      "max": 2.03,
+      "mean": 0.06,
+      "mean_slow": 0.46,
+      "p99": 0.5
+    }
+  },
+  "vendor": "NVIDIA",
+  "vsync": false,
+  "contended": true,
+  "contention_samples": 100,
+  "contention_by": [
+    "chrome-headless(94128)",
+    "claude.exe(33304)"
+  ],
+  "other_processes": [],
+  "trusted": false,
+  "not_nvidia": false,
+  "runs_done": 3
+}

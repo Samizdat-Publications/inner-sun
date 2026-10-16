@@ -137,3 +137,15 @@ run), crew lost in 61 percent, win rates balanced 19, cautious 16, greedy 12 per
 still inside the target band. Hull damage still lands mostly at the gate: the middle of a run threatens
 crew and systems, not the hull. Evidence: `docs/research/m1-evidence/balance_after_d022_300_runs.md`.
 Revert: the six numbers in game/data/weapons, tuning/run.json, tuning/hazards.json, tuning/drill.json.
+
+## D023 (AI): Frame-time budget for the rock and the HUD
+Drilling stuttered: p99 32 to 44 ms (1% lows near 25 fps) while the GPU used under 1 ms. The rock
+view repainted a whole 16 x 16-cell chunk (about 30 ms of GDScript) whenever any cell in it was cut,
+and every HUD panel redrew every frame. Now the rock view diffs its own copy of the grid and repaints
+only the changed cells plus one cell of padding (exact: a pixel reads only cells within one cell),
+in small strips under a 3.5 ms per-frame budget, nearest the ship first; the mosaic uploads at most
+every 3 frames; the scanner patches its image instead of rebuilding it; HUD panels redraw at most
+60 times a second on staggered frames. A test proves the budgeted mosaic is byte-identical to a fresh
+paint. Result: whole-run p99 12.7 ms, 1% low 78.5 fps, average 196 fps
+(`docs/research/m1-evidence/perf_run_mode_after_fix.json`, measured with headless Chrome and Claude
+on the GPU, so the tool's strict "trusted" flag stays off). Revert: the merge of the perf fix.
