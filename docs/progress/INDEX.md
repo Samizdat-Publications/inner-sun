@@ -16,3 +16,5 @@ A visual record of Inner Sun, oldest first.
 | 010 | 2026-10-15 20:46 | [010_m1-combat.jpg](010_m1-combat.jpg) | Combat view: both towers framed with rock between, tracers in flight, BLOCKED pop and shell flash, weapon cards with charge bars and targets, FLEE button, enemy threat panel | 61c1c42 |
 | 011 | 2026-10-15 20:53 | [011_m1-painted-fire-drill.jpg](011_m1-painted-fire-drill.jpg) | Painted cutaway: six rooms with props, hull plating, crown, painted crew; drill-room fire with alarm rim and a damage-flashed Okafor | 61c1c42 |
 | 012 | 2026-10-15 20:53 | [012_m1-painted-drilling.jpg](012_m1-painted-drilling.jpg) | Painted rock tiles with floodlights, the crown biting, flooded drill room with a filled water body, stacked crew tags | 61c1c42 |
+| 013 | 2026-10-15 21:10 | [013_m1-run-screen-frames.jpg](013_m1-run-screen-frames.jpg) | review frames, build 20261015-205833-3ba21ea, seed 21 | 3ba21ea |
+| 014 | 2026-10-15 21:29 | [014_m1-balanced-run-frames.jpg](014_m1-balanced-run-frames.jpg) | review frames, build 20261015-211550-4e6f253, seed 21 | 718f7fd |
