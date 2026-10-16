@@ -9,6 +9,8 @@ extends RefCounted
 ##    "type": "start" | "event" | "cavern" | "hazard" | "store" | "fight" | "deposit" | "gate",
 ##    "links": PackedStringArray of next-row node ids (empty for the gate),
 ##    "enemy": ship id for "fight" and "gate" nodes, else ""}
+## Fight enemies come from the layer's "enemies", or from "enemy_tiers" ([{"from_row", "ships"}, ...]
+## in ascending from_row) so rivals get tougher deeper down (enemies_for_row).
 ## RunState adds "survey" (Survey.add_to_map) before the map is used. Node dictionaries are fixed
 ## from then on; visited and overtaken live in RunState.
 ##
@@ -93,8 +95,9 @@ static func generate(layer: Dictionary, rng: RandomNumberGenerator) -> Array:
 			for j: int in (links[r][i] as Array):
 				ids.append(node_id(r + 1, j))
 			var enemy: String = ""
-			if types[r][i] == "fight" and not enemies.is_empty():
-				enemy = str(enemies[rng.randi_range(0, enemies.size() - 1)])
+			var pool: Array = enemies_for_row(layer, r) if types[r][i] == "fight" else enemies
+			if types[r][i] == "fight" and not pool.is_empty():
+				enemy = str(pool[rng.randi_range(0, pool.size() - 1)])
 			elif types[r][i] == "gate":
 				enemy = str(layer.get("gate_enemy", ""))
 			row.append({"id": node_id(r, i), "index": index, "row": r, "col": i, "x_m": xs[r][i],
@@ -102,6 +105,17 @@ static func generate(layer: Dictionary, rng: RandomNumberGenerator) -> Array:
 			index += 1
 		map.append(row)
 	return map
+
+
+## The rival ships a fight in this row may meet: the ships of the last "enemy_tiers" entry whose
+## from_row is at or above the row (tiers in ascending from_row), else the layer's "enemies".
+static func enemies_for_row(layer: Dictionary, row: int) -> Array:
+	var out: Array = layer.get("enemies", [])
+	for t: Variant in layer.get("enemy_tiers", []):
+		var td: Dictionary = t
+		if int(td.get("from_row", 0)) <= row:
+			out = td.get("ships", [])
+	return out
 
 
 static func node_id(row: int, col: int) -> String:

@@ -209,3 +209,55 @@ cavern 15, store 12, hazard 8, fight 15), `min_fights_per_path` 2 -> 1 (plus the
 guarantees a store on every path in rows 2 to 4 and again in rows 6 to 8 (`store_windows`); the
 guarantees convert deposits only when no other plain node will do. Revert: `data/layers/crust.json`,
 `sim/run/map_gen.gd`, `sim/run/survey.gd`.
+
+## D029 (AI): A 14-row Crust: longer runs, slower cut, more cells
+Stewart wants runs "way longer" and mining first. `rows` 10 -> 14 (gate at 780 m), `store_windows`
+[[2,4],[6,8],[10,12]], `min_fights_per_path` 1 -> 2. Node weights deposit 28, event 27, cavern 16,
+store 6, hazard 9, fight 7 (the guarantees already make about 8 stores and 6 fights per map of
+about 30 middle nodes; with the old 12 and 15 stores ate the events and fights reached 22% of
+nodes; now 19% of nodes and about 2 rival fights on a bot's path of 12). `drill.base_speed_m_s`
+0.85 -> 0.64 and `power_factor_bar_4` 1.65 -> 1.55: a 60 m segment takes about 80 s at 3 bars
+(was 60), so median runs are 17 to 21 min (they were 13.3 to 17 min with the old speed on 14
+rows); the 4-bar edge shrank so greedy is not 4 min shorter than the rest. The time bands in
+test_drill and test_dig_economy scale with the tuned base speed. `light_drill` start cells 8 -> 12
+(13 segments now; with 8 the bots spent their gems on cells and broke bits). Rock heat
+`rock_temp_c_per_m` 0.04 -> 0.033 (66 C at the 780 m gate; 0.04 would make it 71 C, the old gate was 62 C). NOT DONE, outside this
+round's files: `data/scenarios/drill_segment.json` still lasts 60 s, which a 36 m segment no longer
+fits at 2 bars; test_drill gives it the scaled time in memory; set its `duration_s` to 90 for
+`play.py --scenario=drill_segment`. Revert: `data/layers/crust.json`, `data/tuning/drill.json`,
+`data/ships/light_drill.json`, the test edits.
+
+## D030 (AI): The descent bites: pursuer per row, deeper gas and water, tougher rivals
+General, data-driven levers instead of one wall at the gate:
+- Pursuer `rows_per_s_per_row` (new, RunState): the front's time rate grows by this much per map
+  row of the ship's current node. Crust: `rows_per_s` 0.0100 -> 0.0041, `rows_per_s_per_row`
+  0.00028 (0.0075 at the gate row), `rows_per_noise` 0.0028 -> 0.0038 (loud play is chased harder,
+  quiet slow play less: at the 10-row rates the pursuer killed 93% of cautious runs on 14 rows).
+- Survey `per_row` (new, Survey): chances added per row below the first segment. Crust: gas +0.015,
+  water +0.01 per row (gas 0.3 at the top, 0.47 in the last segment).
+- Layer `enemy_tiers` (new, MapGen.enemies_for_row): `[{"from_row", "ships"}]` picks the fight's
+  rival by row. Crust: rival_light to row 6, mixed from row 7, only the new `rival_raider` ("Seam
+  Raider": hull 15, two borers, four crew) from row 10.
+- The gate is never overtaken (RunState._sweep_overtaken): before, a ship caught on the last segment
+  arrived at an overtaken gate, could not fight or move and was struck to death while idle. Now it
+  fights the gate with the pursuer striking.
+Revert: the four fields in `data/layers/crust.json`, `data/ships/rival_raider.json`, the code in
+`sim/run/run_state.gd`, `survey.gd`, `map_gen.gd`, `run_lint.gd`.
+
+## D031 (AI): Event rows keep their place in a longer layer
+Event `rows` windows in `data/events` were written for the 10-row map; on 14 rows rows 9 to 12 had
+no events. New optional layer field `event_rows_of` (Crust: 10): RunState.event_row spreads the
+middle rows 1..rows-2 evenly over 1..event_rows_of-2 before Encounter picks, so each event keeps its
+place in the descent without editing event data. Remove the field when the events are re-windowed
+for 14 rows. Revert: the field and `RunState.event_row`.
+
+## D032 (AI): The cautious bot buys a better drill head first
+With 14 rows the cautious bot's worn bits and plating-first shopping left it too slow for the
+pursuer (4% wins, bits at 0 from row 5). Its upgrade list now starts with the tungsten head (a
+faster cut and a longer-lasting bit), then plating. Revert: `game/bots/policy_bot.gd`.
+
+## D033 (AI): Balance after the longer Crust (300 runs, 4 passes)
+Final: cautious 10% wins, 21.0 min median; greedy 12%, 17.2 min; balanced 23%, 21.4 min. Gate hull
+stays 13 (probes at 14 to 16 moved deaths back to the gate). Gate share of deaths: balanced 58%
+(was 73%), greedy 38%, cautious 34%; the rest are rivals, drill heat and fire, and the pursuer.
+Evidence and the pass history: `docs/research/m1-evidence/balance_m1b_tuned.md`.

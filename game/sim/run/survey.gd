@@ -14,7 +14,8 @@ extends RefCounted
 ##    "gas": gas pockets on the way, "water": water pockets on the way}
 ## Layer data, "survey": {"tiers": [{"name", "richness", "weight"}, ...] (poorest first),
 ##   "gems_chance", "gas_chance", "water_chance", and "deposit": the same chances plus "min_tier"
-##   for "deposit" nodes (a known rich seam: a richer tier and more gas and water)}.
+##   for "deposit" nodes (a known rich seam: a richer tier and more gas and water), and optional
+##   "per_row": chances added for each row below the first segment (both kinds of node)}.
 
 
 static func add_to_map(map: Array, layer: Dictionary, rock: Dictionary, rng: RandomNumberGenerator) -> void:
@@ -27,13 +28,16 @@ static func add_to_map(map: Array, layer: Dictionary, rock: Dictionary, rng: Ran
 			if r == 0:
 				n["survey"] = {}
 				continue
-			n["survey"] = roll(sd, rock, str(n["type"]) == "deposit", float(r - 1) * step_m, step_m, rng)
+			n["survey"] = roll(sd, rock, str(n["type"]) == "deposit", float(r - 1) * step_m, step_m, rng, r - 1)
 
 
-## One reading for a segment from run depth d0 down by depth_m.
+## One reading for a segment from run depth d0 down by depth_m. `deeper` is the number of rows below
+## the first segment: each adds the layer's survey.per_row chances (gas and water get likelier deeper
+## down; a chance never goes above 1).
 static func roll(sd: Dictionary, rock: Dictionary, deposit: bool, d0: float, depth_m: float,
-		rng: RandomNumberGenerator) -> Dictionary:
+		rng: RandomNumberGenerator, deeper: int = 0) -> Dictionary:
 	var p: Dictionary = sd.get("deposit", {}) if deposit else sd
+	var per_row: Dictionary = sd.get("per_row", {})
 	var tiers: Array = sd.get("tiers", [])
 	var min_tier: int = clampi(int(p.get("min_tier", 0)), 0, maxi(0, tiers.size() - 1))
 	var total: float = 0.0
@@ -46,9 +50,10 @@ static func roll(sd: Dictionary, rock: Dictionary, deposit: bool, d0: float, dep
 		u -= maxf(0.0, float((tiers[t] as Dictionary).get("weight", 0.0)))
 		if u < 0.0:
 			break
-	var gems: bool = rng.randf() < float(p.get("gems_chance", 1.0))
-	var gas: bool = rng.randf() < float(p.get("gas_chance", 0.0))
-	var water: bool = rng.randf() < float(p.get("water_chance", 0.0))
+	var d: float = float(maxi(0, deeper))
+	var gems: bool = rng.randf() < float(p.get("gems_chance", 1.0)) + d * float(per_row.get("gems_chance", 0.0))
+	var gas: bool = rng.randf() < float(p.get("gas_chance", 0.0)) + d * float(per_row.get("gas_chance", 0.0))
+	var water: bool = rng.randf() < float(p.get("water_chance", 0.0)) + d * float(per_row.get("water_chance", 0.0))
 	var td: Dictionary = tiers[tier] if not tiers.is_empty() else {}
 	return {"tier": tier, "tier_name": str(td.get("name", "fair")), "richness": float(td.get("richness", 1.0)),
 		"ores": possible(rock, "ore", d0, depth_m), "gems": possible(rock, "gems", d0, depth_m) if gems else [],
@@ -98,6 +103,14 @@ static func lint(sd: Variant, file: String, errs: PackedStringArray) -> void:
 			var v: float = float(block.get(key, 0.0))
 			if v < 0.0 or v > 1.0:
 				errs.append("%s: survey %s must be from 0 to 1" % [file, key])
+	if not (d.get("per_row", {}) is Dictionary):
+		errs.append("%s: survey.per_row must be an object" % file)
+	else:
+		for key: Variant in (d.get("per_row", {}) as Dictionary).keys():
+			var v: Variant = (d["per_row"] as Dictionary)[key]
+			if not ["gems_chance", "gas_chance", "water_chance"].has(str(key)) or not (v is float or v is int) \
+					or float(v) < 0.0 or float(v) > 1.0:
+				errs.append("%s: survey.per_row.%s must be gems_chance, gas_chance or water_chance, 0 to 1" % [file, str(key)])
 	if not (d.get("deposit", {}) is Dictionary):
 		errs.append("%s: survey.deposit must be an object" % file)
 	elif tiers is Array and int((d["deposit"] as Dictionary).get("min_tier", 0)) >= (tiers as Array).size():
