@@ -1,103 +1,63 @@
 # Progress
 
-Updated: 2026-10-15, M1 session (continued after the restart).
+Updated: 2026-10-16, end of the M1a build session.
 
-## Milestone: M1a (find the fun). Everything built and merged; now the critic loop, perf, audit and the playtest build.
+## Milestone: M1a done. STOPPED for Stewart's playtest. Next: M1b (iterate on his notes).
 
-## M1 so far
-- **Step 0 done.** Blind critic installed and live-tested (`docs/research/m1-evidence/critic_live_test.txt`);
-  `tools/critic.py` (headless run with a tool-call audit) and `tools/critic_gemini.py` (milestone
-  gates) work; first review `review/critiques/001_claude.md` scored 3.8/10 and is triaged in
-  `review/LEDGER.md` (7 FIX items, all mapped to M1 steps). Exposure lifted.
-- **M1 skeleton done** (`docs/ARCHITECTURE.md`): ShipWorld (player and enemy run the same hazard and
-  crew code), RunState with phases and integer resources, a module registry (systems, drill, combat,
-  encounter own their commands, state and lint), crew repair jobs, HazardSim add_heat/add_water and
-  power-driven cooling and pump scales, every data folder loads as a table. 33 tests pass.
-- **Writing voice set** (`docs/STYLE_GUIDE.md`), event file format, three example events, codex
-  entries, a TOPSIDE radio file.
-- **Specs written** for steps 3 (run, map, pursuer, profile), 4 (combat), 5 (events, store) and the
-  run screen (`docs/plans/specs/`).
-- **Drilling segment sim merged** (step 1): rock grid from data, steering, power, heat into the drill
-  room, bit wear, noise, water pockets, exact conservation; 2-bar segments 30 to 38 s on 20 of 20
-  seeds, 4 bars about 20 s.
-- **Power and systems merged** (step 2): reactor, allocation by priority, fire damage, heat failure,
-  coolant billed in units, manning, evasion, bracing layers. Lead changes: power returns after
-  repairs (remembered allocation), an overheated reactor limps at half (D018); the drill uses the
-  helm and manned-drill bonuses.
-- **Events, store and crew merged** (step 5 sim): the event runner with every effect, the store,
-  recruitment, permadeath, the lint. 108 tests pass.
-- **Run, map and pursuer merged** (step 3): 10-row node map, travel by drilling (28 m rows), the
-  pursuer by time and noise, overtaken nodes, strikes, FullRun, run summary, profile and run records.
-- **Combat merged** (step 4): borer turret, thermal lance, charge launcher, bracing, evasion, enemy
-  ships rival_light and rival_heavy (the gate boss) with AI, loot, flee. 166 tests pass.
-- **Writing:** 12 crust events, 9 codex entries, 24 TOPSIDE lines (D019: TOPSIDE is uncanny).
-- **Sound:** 29 ElevenLabs placeholder sounds and the audio director (not mounted yet).
-- **Run screen pieces merged:** HUD (top bar, power panel, crew cards, alerts, seismic scanner),
-  dossier, store, fonts, UI gallery (`python tools/gallery.py`). Not yet mounted in main.gd.
-- **The run screen is playable** (`game/view/main.gd`, `run_screen.gd`): no arguments starts a real run
-  from the profile with the HUD, node map, dossier, store, codex, death screen, audio; Space pauses;
-  every run (finished or not) is saved as a replayable record (`tools/replay.py`, `--replay=<file>`).
-- **Painted art in the game:** six painted rooms with props, hull, crown, puppet and frame-animated
-  crew, readable hazards (filled water, red rims, flames), painted rock tiles
-  (`docs/progress/011`, `012`).
-- **Combat view:** enemy tower, tracers, lance beam, BLOCKED and MISS pops, weapon cards (F1, F2),
-  enemy panel, flee (`docs/progress/010`).
-- **Bots and balance** (step 7): cautious, greedy, balanced policy bots; `python tools/balance.py
-  --full --runs 1000 --procs 6 --pack` in about 12 minutes; first tuning pass D021: balanced wins
-  25%, cautious 21%, greedy 13%, no killer above 44%, every event seen
-  (`docs/research/m1-evidence/balance_full_report_1000_runs.md`). 184 tests pass; determinism holds.
-- **Art bake-off done: painted pulp chosen, provisional** (D017, `docs/progress/005_m1-art-bakeoff.jpg`,
-  sent to Stewart); pixel art not tried (no PixelLab key).
-- **Making-of record** started (`docs/making-of/README.md`, tag `m0-loop-proven`), at Stewart's request.
+## The playtest build
+- `builds\InnerSun.exe` (exported 2026-10-16 00:08), launched by `Play Inner Sun.bat` (the
+  `builds\PLAYTEST` marker is present). A labeled copy for the making-of record:
+  `builds\milestones\m1a-playtest\` (git tag `m1a-playtest`).
+- How to play: README.md ("How to play"). Every run Stewart plays is saved for replay in
+  `%APPDATA%\InnerSun\runs\` (`python tools/replay.py --latest`, or `--watch` to see it).
 
-## Done (M0)
-- **Plan approved** by Stewart (`PLAN.md`); he chose the tall tower ship.
-- **M0, the autonomous loop, proven** (`docs/research/godot-loop.md`, evidence in
-  `docs/research/m0-evidence/`):
-  - headless tests (24) and selftest; a bot that plays through the command chain;
-  - off-screen frames from the game camera (shots, Movie Maker clip, motion sheets, review inbox);
-  - three planted bugs caught and named;
-  - balance: 2,100 runs in 71 s;
-  - the bench says GDScript is fast enough (28,491 ticks/s against a 6,000 budget);
-  - the same hash headless, under Movie Maker and in the exported build;
-  - perf on the NVIDIA GPU (p95 4.7 ms, GPU 0.7 ms);
-  - side-by-side checks with Black Diamond.
-- **Small but real architecture in place:**
-  - sim core: tick, commands, replay, seeded streams, state hash;
-  - room-level heat, fire and water with exact conservation;
-  - crew job AI on ladders;
-  - data and lint; the six-room tower (`light_drill`, the M1 starter draft);
-  - a lit cutaway view.
-- **Agent team definitions** in `.claude/agents/`. The blind critic is staged in `docs/setup/critic/`.
-- **Private repo** `Samizdat-Publications/inner-sun` created and pushed. A fresh clone from GitHub
-  passes `python tools/check.py` (24 of 24, selftest ok), so a new session can resume from the repo
-  alone.
+## What M1a delivers
+- **A whole run:** a 10-row node map of the Crust (event, cavern, hazard, store, fight, gate), travel
+  by drilling segments (steering, drill power, heat, bit wear, noise, ore and gems, water pockets,
+  about 25 to 35 s each), a pursuer that advances with time and noise and strikes when it catches
+  you, death (hull, crew, flooding) or the layer gate, a death report, the codex, a saved profile.
+- **The ship:** six painted rooms with systems and power (reactor bars, damage, overheating, coolant
+  billed in units, manning, bracing layers); fire, water and heat spread room to room; three crew with
+  job AI, recruitment and permadeath; power returns after repairs (D018).
+- **Combat:** real time with pause against rival rigs and the gate boss; borer turret, charge launcher,
+  thermal lance; bracing, evasion, system damage, fire and breach chances; enemy AI; loot; flee.
+- **Events and store:** 12 dossier events with redactions that lift with the codex, 9 codex entries,
+  24 TOPSIDE lines, a store (supplies, repairs, upgrades, the lance, a hire).
+- **Presentation:** the painted pulp art style (D017), a readable HUD, node map, dossier, store,
+  death and codex screens, the combat view with weapon cards, placeholder sound (ElevenLabs) and an
+  audio director.
+- **Proof:**
+  - `python tools/check.py`: 186 tests pass, selftest ok.
+  - Determinism: the scenario, and a whole run under Movie Maker matching a headless run
+    (`docs/research/m1-evidence/determinism_m1a.txt`). Run records replay exactly.
+  - Balance: 1,000 full runs by three policy bots in about 12 minutes; after D021 and D022,
+    balanced wins 19%, cautious 16%, greedy 12%; fires in 99% of runs; no killer above 44%
+    (`docs/research/m1-evidence/`).
+  - The blind critic: 3.8/10 (M0 view), then 5.8, then 6.1 at the gate (Opus). Its FIX items
+    are done; DEFER items are in `review/LEDGER.md`.
+  - The exported build plays a whole bot run to its end.
 
 ## In flight
-Nothing in worktrees. A review capture of a balanced-bot run may be filling `review/inbox`.
+Nothing. Everything is committed and pushed (check `git status`, `git log origin/main -1`).
 
 ## Known issues
-- **Capture windows flash on screen for about one second** at the start of each windowed run (shots,
-  capture, perf, determinism, export). Before the fix they sat in the top-left corner for the whole
-  run and took the keyboard. They never take focus now. Keep windowed runs rare and batched
-  (HANDOFF, "Windows on Stewart's screen").
-- **The M0 cutaway is very dark** (mean luminance about 6 out of 255): lift the exposure before the
-  first critic review.
-- **The audit (qa-auditor, end of M0)** passed the core claims: a fresh clone passes check, the
-  conservation tests caught 7 of 7 planted mutations, determinism and the export hash match, and
-  hygiene is clean. Its fixes are applied: critic guard hole, hook path, timeline, disk figure, and
-  `--help` safety.
-- HDR 2D glow bloom is not visible yet (configured, unverified); check in the art bake-off.
-- Movie Maker and perf runs are slowed or flagged when Black Diamond renders at the same time; that
-  is expected, re-measure perf when the GPU is idle.
-- Everything you see is placeholder art.
+- **Perf is UNVERIFIED as trusted for whole runs.** Black Diamond had several Godot processes
+  running during every run-mode measurement. The fire drill was trusted at p99 12.8 ms (78 fps
+  floor). A contended whole run read 90 fps average with 1% lows of 22 fps; the rock repaint at a
+  segment start is a known hitch source. Re-measure on an idle machine first thing in M1b:
+  `python tools/perf.py --mode run --seconds 30 --runs 3`.
+- **Interactive play was not tested with real mouse and keys** (it would take over Stewart's screen).
+  Every control is covered by code paths and tests, and bots drive the same commands, but Stewart's
+  playtest is the first real hands-on test.
+- The Gemini critic and new Gemini art are blocked by the Gemini monthly spend cap
+  (`docs/NEEDS_STEWART.md`). No PixelLab key.
+- Capture windows flash on screen for about a second at startup; keep windowed runs batched.
+- RAM on this PC was nearly full (leftover node processes from Claude sessions); git pushes failed
+  intermittently until it freed up.
+- Non-blocking polish and the balance report's weak spots: `docs/BACKLOG.md`.
 
 ## Exactly what is next
-1. Critic loop on the balanced-bot capture (`python tools/critic.py`; the Gemini critic may be blocked
-   by the Gemini spend cap), triage in `review/LEDGER.md`, fix the FIX items.
-2. Perf in run mode (`python tools/perf.py --mode run --seconds 30`), `python tools/determinism.py`.
-3. `python tools/export.py --playtest --label m1a-playtest`, qa-auditor on PROGRESS and HANDOFF,
-   tag `m1a-playtest`, making-of row, then STOP for Stewart's playtest (notes go at the top of
-   `docs/STEWART_FEEDBACK.md`).
-4. M1b ideas already known from the balance report: the middle rows rarely kill, rivals feel scripted,
-   gems pile up unspent, ore is too cheap, the lance is never bought, bits never break.
+1. Stewart plays and writes notes at the top of `docs/STEWART_FEEDBACK.md`.
+2. Start M1b with the prompt in `HANDOFF.md`: re-measure perf on an idle machine, replay any runs he
+   mentions, triage his notes plus the balance weak spots into `docs/plans/M1b.md`, iterate, new
+   playtest builds, until he says the core loop is fun. Then plan M2.
