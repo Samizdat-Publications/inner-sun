@@ -19,7 +19,7 @@
     "spread_up_factor": 2.0,
     "spread_down_factor": 0.4,
     "spread_wall_factor": 0.15,
-    "autoignite_c": 140.0,
+    "autoignite_c": 100.0,
     "autoignite_per_s": 0.05,
     "water_suppress_per_m_s": 0.6,
     "crew_dps": 9.0

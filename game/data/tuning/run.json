@@ -3,7 +3,7 @@
     "strike_every_s": 10.0,
     "strike_hull_pts": 2,
     "strike_breach_m2": 0.015,
-    "strike_fire_chance": 0.25,
+    "strike_fire_chance": 0.45,
     "strike_fire_level": 0.2,
     "reserve_speed_factor": 0.5,
     "pursuer_cap_gap_rows": 0.001

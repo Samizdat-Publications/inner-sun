@@ -128,3 +128,12 @@ Result (1,002 runs from a frozen pack, harness/out/balance/full_report.md): bala
 cautious 21% (its losses are all late: the gate, or the pursuer catching a slow ship), greedy 13% but
 richest when it wins (103 gems gained against 92 to 93); the top killer is the gate at 38 to 44%;
 every event fires; most runs fight 3 times (2 to 4 in 93% of runs). The tests that hard-coded the old numbers now read them from the data.
+
+## D022 (AI): Hazard pressure (critic 002: "no fire anywhere in a whole dive")
+Borer rounds start fires 22 percent of the time (was 10) and breach 25 (was 15); charges start fires
+30 percent (was 20); pursuer strikes ignite 45 percent (was 25); rooms autoignite at 100 C (was 140);
+drilling heat is 5.5 kW per bar (was 4). Result on 300 runs: fires in 99 percent of runs (about 5.5 per
+run), crew lost in 61 percent, win rates balanced 19, cautious 16, greedy 12 percent (was 25, 21, 13),
+still inside the target band. Hull damage still lands mostly at the gate: the middle of a run threatens
+crew and systems, not the hull. Evidence: `docs/research/m1-evidence/balance_after_d022_300_runs.md`.
+Revert: the six numbers in game/data/weapons, tuning/run.json, tuning/hazards.json, tuning/drill.json.

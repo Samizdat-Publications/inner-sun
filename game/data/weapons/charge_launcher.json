@@ -9,7 +9,7 @@
   "damage": 2,
   "sys_damage": 1.0,
   "crew_damage": 25.0,
-  "fire_chance": 0.2,
+  "fire_chance": 0.3,
   "breach_chance": 0.6,
   "breach_m2": 0.03,
   "heat_kj": 150,
