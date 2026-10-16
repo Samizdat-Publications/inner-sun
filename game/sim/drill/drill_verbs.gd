@@ -13,8 +13,8 @@ extends RefCounted
 ##   "drill/rockfall") takes rockfall_sys_bars of damage. A run killed by it ends with cause "rockfall".
 ## - Blast: the charge launcher fires a charge into the rock (fire_blast; blast_ready says why not).
 ##   It spends one charge at once and goes off blast_fuse_s later: every non-air cell whose centre is
-##   within blast_radius_m is cut (counted in mined, yields paid exactly, "mined" events at the blast
-##   point), a water pocket cell drains its whole connected pocket (cells become air, no water enters
+##   within blast_radius_m is cut (counted in mined; blast_yield_pct of each material's yield is paid,
+##   rounded down, the rest shatters (D039); "mined" events at the blast point), a water pocket cell drains its whole connected pocket (cells become air, no water enters
 ##   the ship; counted in mined and in drained_cells), a gas pocket cell burns off its whole pocket
 ##   (and lights the drill room like a gas burst only when the blast is within blast_fire_m of the
 ##   ship). Blasts make blast_noise and no strain. A blast still in flight when the segment ends goes
@@ -49,6 +49,7 @@ var _fuse_ticks: int = 36
 var _radius: float = 1.75
 var _fire_m: float = 3.0
 var _noise: float = 15.0
+var _yield_pct: int = 100  ## Share of a blast's yield that survives (blast_yield_pct).
 var _breach_m2: float = 0.0
 var _gas_fire: float = 0.3
 var _gas_noise: float = 0.0
@@ -66,6 +67,7 @@ func _init(db: DataDB) -> void:
 	_radius = db.tune("drill.blast_radius_m")
 	_fire_m = db.tune("drill.blast_fire_m")
 	_noise = db.tune("drill.blast_noise")
+	_yield_pct = clampi(roundi(db.tune("drill.blast_yield_pct")), 0, 100)
 	_breach_m2 = db.tune("drill.pocket_breach_m2")
 	_gas_fire = db.tune("drill.gas_fire_level")
 	_gas_noise = db.tune("drill.gas_noise")
@@ -263,6 +265,7 @@ func detonate(sim: Sim, d: DrillSim) -> void:
 	blast_fuse_ticks = 0
 	blasts += 1
 	var p: Vector2 = blast_point
+	d.flush_yields(sim, snappedf(p.x, 0.01), snappedf(p.y, 0.01))  # Nothing of the drill's own may be scaled.
 	var before: PackedInt32Array = d.yield_mat.duplicate()
 	var cells: int = 0
 	var drained: bool = false
@@ -289,6 +292,7 @@ func detonate(sim: Sim, d: DrillSim) -> void:
 		else:
 			d.take_cell(i)
 			cells += 1
+	d.scale_pending(_yield_pct)
 	d.flush_yields(sim, snappedf(p.x, 0.01), snappedf(p.y, 0.01))
 	d.noise_segment += _noise
 	d.noise_total += _noise

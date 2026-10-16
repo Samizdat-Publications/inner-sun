@@ -333,3 +333,10 @@ by editing the constants in `research.gd` and `cost` in the requisition files. N
 choice (every owned item always applies), a toast in the first seconds of a dive.
 Revert: delete `research.gd`, `requisitions*.gd`, the data folder and the one `Requisitions.apply`
 line in `Sim._init`; old profiles keep two harmless fields.
+
+## D039 (AI): A blast shatters half the ore it frees
+After D035 to D038 the balanced bot won 40% (target 10 to 30%): blasts paid about 230 ore and 30 gems
+a run at full yield for a charge that costs 4 gems, so blasting beat cutting everywhere. Now a blast
+pays `drill.blast_yield_pct` (50) of each material's yield, rounded down per material per blast; the
+rest shatters. That makes it a real choice: a blast is quick and reaches 14 m without a detour, but
+cutting a vein with the drill pays all of it. Revert: set `blast_yield_pct` to 100.

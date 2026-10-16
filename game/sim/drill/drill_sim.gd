@@ -43,6 +43,7 @@ const TUNING_KEYS: Array[String] = [
 	"drill.hard_rock_min_hardness", "drill.at_wall_heading_deg", "drill.rockfall_strain_cells",
 	"drill.rockfall_warn_s", "drill.rockfall_hull_pts", "drill.rockfall_sys_bars", "drill.blast_cooldown_s",
 	"drill.blast_range_m", "drill.blast_fuse_s", "drill.blast_radius_m", "drill.blast_fire_m", "drill.blast_noise",
+	"drill.blast_yield_pct",
 ]
 
 # Read by the view (never written outside this class and DrillMaterials).
@@ -508,6 +509,8 @@ func flush_yields(sim: Sim, x: float, y: float) -> void:
 	for k: int in range(_pend_n):
 		var m: int = _pend_codes[k]
 		var ri: int = yield_res_of[m]
+		if _pend_amt[m] <= 0:  # A blast's shattered share can round a small yield down to nothing.
+			continue
 		var got: int = sim.run.add(sim, RunState.RESOURCES[ri], _pend_amt[m])
 		_pend_amt[m] = 0
 		yielded[ri] += got
@@ -515,6 +518,13 @@ func flush_yields(sim: Sim, x: float, y: float) -> void:
 		sim.emit("mined", {"material": str(materials[m].get("id", "")), "res": RunState.RESOURCES[ri], "amount": got,
 				"x_m": x, "y_m": y})
 	_pend_n = 0
+
+
+## Keep pct percent of every pending yield, per material, rounded down (a blast shatters the rest).
+func scale_pending(pct: int) -> void:
+	for k: int in range(_pend_n):
+		var m: int = _pend_codes[k]
+		_pend_amt[m] = _pend_amt[m] * pct / 100
 
 
 ## Sum the hardness of the cells just beyond the footprint: below it and on each side.

@@ -324,15 +324,21 @@ func test_blast_clears_the_circle_and_pays_exactly() -> void:
 	var want_cells: int = 0
 	var want_ore: int = 0
 	var want_gems: int = 0
+	var per_mat: Dictionary = {}  # material code -> full yield in the circle
 	for i: int in circle:
 		var m: int = d.grid[i]
 		if m == 0:
 			continue
 		want_cells += 1
+		if d.yield_res_of[m] >= 0:
+			per_mat[m] = int(per_mat.get(m, 0)) + d.yield_amount_of[m]
+	var pct: int = roundi(s.db.tune("drill.blast_yield_pct"))
+	for m: int in per_mat:
+		var kept: int = int(per_mat[m]) * pct / 100  # Each material's share, rounded down; the rest shatters.
 		if d.yield_res_of[m] == RunState.RESOURCES.find("ore"):
-			want_ore += d.yield_amount_of[m]
+			want_ore += kept
 		elif d.yield_res_of[m] == RunState.RESOURCES.find("gems"):
-			want_gems += d.yield_amount_of[m]
+			want_gems += kept
 	check_gt(float(want_ore), 0.0, "ore in the circle")
 	check_gt(float(want_gems), 0.0, "gems in the circle")
 	var mined0: int = _sum(d.mined)

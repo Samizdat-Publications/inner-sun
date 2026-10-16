@@ -39,6 +39,7 @@
     "blast_fuse_s": 0.6,
     "blast_radius_m": 1.75,
     "blast_fire_m": 3.0,
-    "blast_noise": 4.0
+    "blast_noise": 4.0,
+    "blast_yield_pct": 50
   }
 }
