@@ -93,3 +93,4 @@ unless Stewart says otherwise; going over needs a line in `docs/NEEDS_STEWART.md
 
 Session total (2026-10-15 to 16, M1a): about 15 USD (logged 11.96 plus the 3.00 reconciliation), under the 40 USD soft cap.
 | 2026-10-16 | Gemini (gemini-3.1-pro-preview) | video critic -> 004_gemini.md | 0.13 (est, 44088 in / 3483 out tokens) |
+| 2026-10-16 | Gemini (gemini-3.1-pro-preview) | video critic -> 005_gemini.md | 0.15 (est, 44132 in / 5207 out tokens) |

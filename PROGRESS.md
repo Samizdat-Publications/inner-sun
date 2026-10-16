@@ -20,13 +20,17 @@ Updated: 2026-10-16, M1b playtest build 3 ready (D024 "digging is the game").
   wins cautious 10%, greedy 12%, balanced 23%; median runs 17 to 21 minutes; deaths over rows 7 to 13
   (`docs/research/m1-evidence/balance_m1b_tuned.md`).
 - **Checks:** `check: ok` (231 tests), determinism ok, perf 1% low about 85 to 100 fps (contended).
-- **Critics:** Gemini baseline before M1b 5.6 (`review/critiques/004_gemini.md`); build 3 review in
-  `review/critiques/` (see `review/scores.csv`).
+- **Critics:** Gemini 5.6 before M1b (`review/critiques/004_gemini.md`), 6.8 on build 3
+  (`005_gemini.md`: readability 8, crew 7, UI 8; the world outside the hull still 3).
 - **Making-of page:** https://claude.ai/artifact/UJjDA4PJkSXMKjpg2zxQpc (source `docs/making-of/index.html`).
 - **Hands-on tool:** `python tools/play.py [--exe] -- <game args>` (a normal focusable window in a job
   object, its own profile folder).
 
 ## Known gaps (M1b)
+- Critic 005's top problem: the rock texture's horizontal wavy bands read as "scrolling wallpaper";
+  it wants chunky, jagged, varied rock, a less rectangular ship silhouette, and darker surroundings
+  lit by the ship's own lights. Taste note: keep ore visible within the floodlights (Stewart wants to
+  see the dig), so darken only beyond them.
 - Only two hazard events exist, so hazard nodes are often empty; the gate boss is still the top killer
   for the balanced bot (a bracing-piercing gate weapon is one option).
 - Wheel zoom and the brightened pickup text were never seen in a still. `ship_view.gd`, `main.gd`,
