@@ -12,10 +12,11 @@ extends Control
 
 signal crew_selected(crew_id: String)
 
-const WIDTH: float = 380.0
-const HEAD_H: float = 38.0
-const CARD_H: float = 104.0
-const GAP: float = 6.0
+const WIDTH: float = 400.0
+const HEAD_H: float = 42.0
+const CARD_H: float = 112.0
+const GAP: float = 5.0
+const TOP: float = 512.0
 const JOB_LABEL: Dictionary = {"": "IDLE", "extinguish": "EXTINGUISH", "patch": "PATCH", "repair": "REPAIR", "go": "GO TO"}
 const JOB_ICON: Dictionary = {"": "", "extinguish": "flame", "patch": "hammer", "repair": "hammer", "go": ""}
 const FLASH_S: float = 0.8
@@ -30,7 +31,7 @@ var _hp_shown: Dictionary = {}
 
 static func build(parent: Control, p_sim: Sim) -> CrewCards:
 	var p := CrewCards.new()
-	p.position = Vector2(1540, 494)
+	p.position = Vector2(1920.0 - WIDTH, TOP)
 	parent.add_child(p)
 	p.bind(p_sim)
 	return p
@@ -148,17 +149,17 @@ func _draw_card(i: int, c: CrewMember) -> void:
 		edge = UiTheme.AMBER
 	draw_rect(rect, edge, false, 2.5 if selected else 1.0)
 	if selected:
-		draw_colored_polygon(PackedVector2Array([rect.position + Vector2(-8, 44), rect.position + Vector2(0, 38), rect.position + Vector2(0, 50)]), UiTheme.AMBER)
+		draw_colored_polygon(PackedVector2Array([rect.position + Vector2(-8, 50), rect.position + Vector2(0, 44), rect.position + Vector2(0, 56)]), UiTheme.AMBER)
 	var left: float = rect.position.x + 12.0
 	var name_col: Color = UiTheme.TEXT if c.alive else UiTheme.TEXT_DIM
 	# Hotkey badge and name.
-	var badge := Rect2(left, rect.position.y + 10.0, 20, 20)
+	var badge := Rect2(left, rect.position.y + 9.0, 24, 24)
 	draw_rect(badge, UiTheme.STEEL_DEEP, true)
 	draw_rect(badge, UiTheme.BRASS if c.alive else UiTheme.BRASS_DARK, false, 1.0)
-	UiTheme.text(self, Vector2(badge.position.x, badge.position.y + 15), str(i + 1), 14, UiTheme.BRASS_LIGHT if c.alive else UiTheme.TEXT_DIM, null, HORIZONTAL_ALIGNMENT_CENTER, 20.0)
-	UiTheme.text(self, Vector2(left + 30.0, rect.position.y + 28.0), c.name.to_upper(), 21, name_col)
+	UiTheme.text(self, Vector2(badge.position.x, badge.position.y + 18), str(i + 1), 17, UiTheme.BRASS_LIGHT if c.alive else UiTheme.TEXT_DIM, null, HORIZONTAL_ALIGNMENT_CENTER, 24.0)
+	UiTheme.bold_text(self, Vector2(left + 34.0, rect.position.y + 29.0), c.name.to_upper(), 24, name_col)
 	# HP bar.
-	var bar := Rect2(left, rect.position.y + 40.0, rect.size.x - 24.0 - 52.0, 14.0)
+	var bar := Rect2(left, rect.position.y + 42.0, rect.size.x - 24.0 - 56.0, 18.0)
 	draw_rect(bar, UiTheme.STEEL_DEEP, true)
 	var shown: float = clampf(float(_hp_shown.get(c.id, c.hp)) / CrewMember.MAX_HP, 0.0, 1.0)
 	var now: float = clampf(c.hp / CrewMember.MAX_HP, 0.0, 1.0)
@@ -169,36 +170,36 @@ func _draw_card(i: int, c: CrewMember) -> void:
 		hp_col = Color(0.3, 0.3, 0.3)
 	draw_rect(Rect2(bar.position, Vector2(bar.size.x * now, bar.size.y)), hp_col, true)
 	draw_rect(bar, UiTheme.BRASS_DARK, false, 1.0)
-	UiTheme.text(self, Vector2(bar.end.x + 8.0, bar.position.y + 13.0), "%d" % roundi(c.hp), 16, name_col)
+	UiTheme.bold_text(self, Vector2(bar.end.x + 8.0, bar.position.y + 16.0), "%d" % roundi(c.hp), 22, name_col)
 	if not c.alive:
-		UiTheme.text(self, Vector2(left, rect.position.y + 76.0), "LOST: %s" % cause_text(c.cause_of_death), 17, UiTheme.ALARM)
+		UiTheme.bold_text(self, Vector2(left, rect.position.y + 90.0), "LOST: %s" % cause_text(c.cause_of_death), 20, UiTheme.ALARM)
 		draw_line(rect.position + Vector2(6, 6), rect.end - Vector2(6, 6), Color(0.5, 0.15, 0.12, 0.45), 2.0)
 		return
 	# Job chip and place.
 	var job: String = c.job_kind
 	var label: String = job_text_for(c)
-	var jw: float = UiTheme.text_width(label, 15) + 30.0
-	var chip := Rect2(rect.end.x - jw - 10.0, rect.position.y + 10.0, jw, 22.0)
+	var jw: float = UiTheme.text_width(label, 17) + 34.0
+	var chip := Rect2(rect.end.x - jw - 10.0, rect.position.y + 8.0, jw, 28.0)
 	var busy: bool = job != ""
 	draw_rect(chip, UiTheme.STEEL_DEEP, true)
 	draw_rect(chip, UiTheme.AMBER if busy else UiTheme.BRASS_DARK, false, 1.0)
 	var icon_kind: String = str(JOB_ICON.get(job, ""))
 	if not icon_kind.is_empty():
-		UiTheme.icon(self, icon_kind, chip.position + Vector2(12, 11), 13.0)
+		UiTheme.icon(self, icon_kind, chip.position + Vector2(14, 14), 16.0)
 	elif job == "go":
-		draw_colored_polygon(PackedVector2Array([chip.position + Vector2(6, 5), chip.position + Vector2(17, 11), chip.position + Vector2(6, 17)]), UiTheme.AMBER)
-	UiTheme.text(self, Vector2(chip.position.x + 24.0, chip.position.y + 16.0), label, 15, UiTheme.AMBER if busy else UiTheme.TEXT_DIM)
+		draw_colored_polygon(PackedVector2Array([chip.position + Vector2(7, 7), chip.position + Vector2(20, 14), chip.position + Vector2(7, 21)]), UiTheme.AMBER)
+	UiTheme.text(self, Vector2(chip.position.x + 28.0, chip.position.y + 21.0), label, 17, UiTheme.AMBER if busy else UiTheme.TEXT_DIM)
 	var place: String = sim.ship.rooms[c.room].name.to_upper() if c.room >= 0 and c.room < sim.ship.rooms.size() else ""
 	if c.order_room >= 0 and c.order_room < sim.ship.rooms.size():
 		place += "  > STATION %s" % sim.ship.rooms[c.order_room].name.to_upper()
 	elif c.job_room >= 0 and c.job_room != c.room and c.job_room < sim.ship.rooms.size():
 		place += "  > %s" % sim.ship.rooms[c.job_room].name.to_upper()
-	UiTheme.text(self, Vector2(left, rect.position.y + 74.0), place, 14, UiTheme.TEXT)
+	UiTheme.text(self, Vector2(left, rect.position.y + 84.0), place, 17, UiTheme.TEXT, null, HORIZONTAL_ALIGNMENT_LEFT, rect.size.x - 24.0)
 	# Skills.
-	UiTheme.text(self, Vector2(left, rect.position.y + 94.0), "FIRE %.1f" % c.skill_fire, 14, UiTheme.TEXT_DIM)
-	_draw_skill_bar(Vector2(left + 80.0, rect.position.y + 84.0), c.skill_fire)
-	UiTheme.text(self, Vector2(left + 150.0, rect.position.y + 94.0), "REPAIR %.1f" % c.skill_repair, 14, UiTheme.TEXT_DIM)
-	_draw_skill_bar(Vector2(left + 250.0, rect.position.y + 84.0), c.skill_repair)
+	UiTheme.text(self, Vector2(left, rect.position.y + 106.0), "FIRE %.1f" % c.skill_fire, 16, UiTheme.TEXT)
+	_draw_skill_bar(Vector2(left + 84.0, rect.position.y + 96.0), c.skill_fire)
+	UiTheme.text(self, Vector2(left + 164.0, rect.position.y + 106.0), "REPAIR %.1f" % c.skill_repair, 16, UiTheme.TEXT)
+	_draw_skill_bar(Vector2(left + 270.0, rect.position.y + 96.0), c.skill_repair)
 
 
 func job_text_for(c: CrewMember) -> String:
@@ -208,7 +209,7 @@ func job_text_for(c: CrewMember) -> String:
 
 
 func _draw_skill_bar(at: Vector2, skill: float) -> void:
-	var r := Rect2(at, Vector2(56, 8))
+	var r := Rect2(at, Vector2(64, 10))
 	draw_rect(r, UiTheme.STEEL_DEEP, true)
 	draw_rect(Rect2(r.position, Vector2(r.size.x * clampf(skill / 2.0, 0.0, 1.0), r.size.y)), UiTheme.BRASS, true)
 	draw_rect(r, UiTheme.BRASS_DARK, false, 1.0)

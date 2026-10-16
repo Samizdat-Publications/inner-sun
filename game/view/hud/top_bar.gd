@@ -12,14 +12,14 @@ extends Control
 ## ship is on as a float (return a negative number for "no row yet"), and `row_count` to the number
 ## of rows in the layer. Until then the ship marker stays out.
 
-const DESIGN_SIZE: Vector2 = Vector2(1920, 84)
+const DESIGN_SIZE: Vector2 = Vector2(1920, 90)
 const RES_ORDER: Array[String] = ["ore", "gems", "coolant", "cells", "bits", "charges"]
 const RES_LABEL: Dictionary = {"ore": "ORE", "gems": "GEMS", "coolant": "COOLANT", "cells": "CELLS", "bits": "BITS", "charges": "CHARGES"}
 const PHASE_LABEL: Dictionary = {
 	"scenario": "SCENARIO", "idle": "STANDING BY", "drill": "DRILLING", "dialog": "DOSSIER",
 	"store": "TRADING POST", "combat": "ENGAGED", "dead": "LOST", "won": "BREAKTHROUGH",
 }
-const HULL_BAR: Rect2 = Rect2(92, 14, 340, 24)
+const HULL_BAR: Rect2 = Rect2(104, 11, 320, 28)
 const FLASH_S: float = 0.7
 
 var sim: Sim = null
@@ -91,7 +91,7 @@ func _draw() -> void:
 	_draw_hull(run)
 	_draw_resources(run)
 	_draw_depth(run)
-	draw_line(Vector2(18, 48), Vector2(size.x - 18, 48), UiTheme.BRASS_DARK, 1.0)
+	draw_line(Vector2(18, 51), Vector2(size.x - 18, 51), UiTheme.BRASS_DARK, 1.0)
 	_draw_pursuer(run)
 	_draw_status(run)
 
@@ -101,7 +101,7 @@ func _draw_hull(run: RunState) -> void:
 	var cur: int = run.get_res("hull")
 	var frac: float = float(cur) / float(maxh)
 	var low: bool = frac <= 0.34
-	UiTheme.text(self, Vector2(24, 32), "HULL", 17, UiTheme.AMBER if not low else UiTheme.ALARM)
+	UiTheme.bold_text(self, Vector2(22, 34), "HULL", 21, UiTheme.AMBER if not low else UiTheme.ALARM)
 	var bar: Rect2 = HULL_BAR
 	draw_rect(bar.grow(3.0), UiTheme.STEEL_DEEP, true)
 	draw_rect(bar.grow(3.0), UiTheme.BRASS_DARK, false, 1.0)
@@ -123,7 +123,7 @@ func _draw_hull(run: RunState) -> void:
 		var a: float = clampf(_flash / FLASH_S, 0.0, 1.0)
 		draw_rect(bar.grow(3.0), Color(1.0, 0.92, 0.85, 0.55 * a), true)
 		draw_rect(bar.grow(3.0), Color(UiTheme.ALARM, a), false, 3.0)
-	UiTheme.text(self, Vector2(bar.end.x + 18, 33), "%d/%d" % [cur, maxh], 20, UiTheme.ALARM if low else UiTheme.TEXT)
+	UiTheme.bold_text(self, Vector2(bar.end.x + 18, 35), "%d/%d" % [cur, maxh], 26, UiTheme.ALARM if low else UiTheme.TEXT)
 
 
 func _draw_resources(run: RunState) -> void:
@@ -134,16 +134,16 @@ func _draw_resources(run: RunState) -> void:
 		var col: Color = UiTheme.AMBER
 		if warn:
 			col = UiTheme.ALARM.lerp(UiTheme.AMBER, 1.0 - UiTheme.pulse(_t, 2.0))
-		UiTheme.icon(self, r, Vector2(x + 14.0, 26.0), 24.0)
-		UiTheme.text(self, Vector2(x + 34.0, 21), str(RES_LABEL[r]), 11, UiTheme.TEXT_DIM)
-		UiTheme.glow_text(self, Vector2(x + 34.0, 42), str(n), 24, col)
-		x += 136.0
+		UiTheme.icon(self, r, Vector2(x + 16.0, 27.0), 30.0)
+		UiTheme.text(self, Vector2(x + 40.0, 20), str(RES_LABEL[r]), 15, UiTheme.TEXT)
+		UiTheme.glow_text(self, Vector2(x + 40.0, 46), str(n), 28, col)
+		x += 150.0
 
 
 func _draw_depth(run: RunState) -> void:
-	UiTheme.text(self, Vector2(size.x - 228, 21), "DEPTH", 12, UiTheme.TEXT_DIM, null, HORIZONTAL_ALIGNMENT_RIGHT, 200.0)
+	UiTheme.text(self, Vector2(size.x - 280, 20), "DEPTH", 14, UiTheme.TEXT, null, HORIZONTAL_ALIGNMENT_RIGHT, 256.0)
 	var s: String = "%s m" % _spaced(roundi(run.depth_m))
-	UiTheme.glow_text(self, Vector2(size.x - 240, 44), s, 34, UiTheme.CRT, null, HORIZONTAL_ALIGNMENT_RIGHT, 212.0)
+	UiTheme.glow_text(self, Vector2(size.x - 292, 47), s, 38, UiTheme.CRT, null, HORIZONTAL_ALIGNMENT_RIGHT, 268.0)
 
 
 static func _spaced(n: int) -> String:
@@ -157,14 +157,14 @@ static func _spaced(n: int) -> String:
 
 
 func _draw_pursuer(run: RunState) -> void:
-	UiTheme.text(self, Vector2(24, 71), "PURSUER", 15, UiTheme.TEXT_DIM)
-	var track := Rect2(118, 57, 960, 14)
+	UiTheme.text(self, Vector2(22, 77), "PURSUER", 18, UiTheme.TEXT)
+	var track := Rect2(124, 59, 960, 20)
 	draw_rect(track, UiTheme.STEEL_DEEP, true)
 	draw_rect(track, UiTheme.BRASS_DARK, false, 1.0)
 	var rows: float = float(maxi(1, row_count))
 	for i: int in range(1, row_count):
 		var tx: float = track.position.x + track.size.x * float(i) / rows
-		draw_line(Vector2(tx, track.position.y + 9), Vector2(tx, track.end.y), Color(1, 1, 1, 0.10), 1.0)
+		draw_line(Vector2(tx, track.position.y + 12), Vector2(tx, track.end.y), Color(1, 1, 1, 0.10), 1.0)
 	var front: float = clampf((run.pursuer_row + 1.0) / rows, 0.0, 1.0)
 	if front > 0.0:
 		var shade := Rect2(track.position, Vector2(track.size.x * front, track.size.y))
@@ -176,23 +176,23 @@ func _draw_pursuer(run: RunState) -> void:
 	if row >= 0.0:
 		var sx: float = track.position.x + track.size.x * clampf((row + 0.5) / rows, 0.0, 1.0)
 		draw_colored_polygon(PackedVector2Array([Vector2(sx - 6, track.position.y - 1), Vector2(sx + 6, track.position.y - 1), Vector2(sx, track.end.y + 1)]), UiTheme.CRT)
-		UiTheme.text(self, Vector2(sx + 10, 71), "SHIP", 13, UiTheme.CRT)
+		UiTheme.bold_text(self, Vector2(sx + 10, 76), "SHIP", 16, UiTheme.CRT)
 
 
 func _draw_status(run: RunState) -> void:
 	var label: String = phase_label(run.phase)
-	var chip := Rect2(1130, 54, 230, 22)
+	var chip := Rect2(1130, 57, 240, 28)
 	var hot: bool = run.phase == "dead"
 	draw_rect(chip, UiTheme.STEEL_DEEP, true)
 	draw_rect(chip, UiTheme.ALARM if hot else UiTheme.BRASS, false, 1.5)
-	UiTheme.text(self, Vector2(chip.position.x, 71), label, 17, UiTheme.ALARM if hot else UiTheme.AMBER, null, HORIZONTAL_ALIGNMENT_CENTER, chip.size.x)
-	UiTheme.text(self, Vector2(1400, 71), clock_text(sim.seconds()), 17, UiTheme.TEXT)
+	UiTheme.bold_text(self, Vector2(chip.position.x, 78), label, 20, UiTheme.ALARM if hot else UiTheme.AMBER, null, HORIZONTAL_ALIGNMENT_CENTER, chip.size.x)
+	UiTheme.text(self, Vector2(1400, 78), clock_text(sim.seconds()), 22, UiTheme.TEXT)
 	# Pause slot: two bars and a word while paused, an empty socket otherwise.
-	var slot := Rect2(1556, 54, 150, 22)
+	var slot := Rect2(1556, 57, 170, 28)
 	draw_rect(slot, UiTheme.STEEL_DEEP, true)
 	draw_rect(slot, UiTheme.BRASS_DARK, false, 1.0)
 	if paused:
 		var on: float = 0.65 + 0.35 * UiTheme.pulse(_t, 1.0)
-		draw_rect(Rect2(slot.position.x + 10, slot.position.y + 4, 5, 14), Color(UiTheme.AMBER, on), true)
-		draw_rect(Rect2(slot.position.x + 20, slot.position.y + 4, 5, 14), Color(UiTheme.AMBER, on), true)
-		UiTheme.text(self, Vector2(slot.position.x + 36, 71), "PAUSED", 17, Color(UiTheme.AMBER, on))
+		draw_rect(Rect2(slot.position.x + 10, slot.position.y + 6, 5, 16), Color(UiTheme.AMBER, on), true)
+		draw_rect(Rect2(slot.position.x + 20, slot.position.y + 6, 5, 16), Color(UiTheme.AMBER, on), true)
+		UiTheme.bold_text(self, Vector2(slot.position.x + 36, 78), "PAUSED", 20, Color(UiTheme.AMBER, on))

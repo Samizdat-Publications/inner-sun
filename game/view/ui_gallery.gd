@@ -5,7 +5,7 @@ extends Control
 ## open and steps the sim live: Left and Right switch state, and every panel works with the mouse.
 ## The states are set up with test helpers (direct pokes at the sim). This is not the game.
 
-const STATES: Array[String] = ["hud_calm", "hud_crisis", "hud_drill", "dossier_page", "dossier_known", "dossier_greyed", "store",
+const STATES: Array[String] = ["hud_calm", "hud_crisis", "hud_combat", "hud_drill", "dossier_page", "dossier_known", "dossier_greyed", "store",
 		"map_start", "map_mid", "death_dead", "death_won", "codex"]
 const SETTLE_S: float = 0.9
 
@@ -16,6 +16,8 @@ var power: PowerPanel
 var crew: CrewCards
 var alerts: AlertsStrip
 var scanner: ScannerPanel
+var weapons: WeaponCards
+var enemy: EnemyPanel
 var dossier: Dossier
 var store: StoreView
 var map: MapView
@@ -43,6 +45,8 @@ func _ready() -> void:
 	crew = CrewCards.build(_layer, sim)
 	alerts = AlertsStrip.build(_layer, sim)
 	scanner = ScannerPanel.build(_layer, sim)
+	weapons = WeaponCards.build(_layer, sim)
+	enemy = EnemyPanel.build(_layer, sim)
 	dossier = Dossier.build(_layer, sim)
 	store = StoreView.build(_layer, sim)
 	map = MapView.build(_layer, sim)
@@ -78,6 +82,8 @@ func show_state(i: int) -> void:
 	crew.bind(sim)
 	alerts.bind(sim)
 	scanner.bind(sim)
+	weapons.bind(sim)
+	enemy.bind(sim)
 	dossier.bind(sim)
 	store.bind(sim)
 	profile = make_profile(STATES[i])
@@ -88,6 +94,8 @@ func show_state(i: int) -> void:
 		map.open()
 	elif STATES[i] == "codex":
 		codex.open()
+	if STATES[i] == "hud_combat":
+		weapons.arm(1)
 	top.snap()
 	power.snap()
 	crew.snap()
@@ -185,6 +193,13 @@ func make_state(state_name: String) -> Sim:
 			_run(s, 8.0)
 		"hud_crisis":
 			_crisis(s)
+		"hud_combat":
+			s.combat.start_fight(s, "rival_light", false)
+			s.push({"type": "power", "room": "weapons", "bars": 2})
+			_run(s, 3.0)
+			s.push({"type": "target", "weapon": 0, "room": s.enemy.ship.rooms[1].id})
+			_run(s, 1.0)
+			s.ship.crew[0].hp = 58.0
 		"hud_drill":
 			s.push({"type": "begin_segment", "segment": "gallery", "depth_m": 70.0, "lateral_m": 8.0})
 			s.push({"type": "steer", "angle": 16.0})
@@ -239,15 +254,17 @@ func _crisis(s: Sim) -> void:
 
 func _draw() -> void:
 	# A stand-in for the world view: strata, a shaft and a tower block, so the panels read in context.
+	var wr: Rect2 = RunScreen.WORLD_RECT
 	draw_rect(Rect2(Vector2.ZERO, size), Color(0.055, 0.052, 0.058), true)
 	for i: int in range(18):
-		var y: float = 90.0 + float(i) * 54.0
+		var y: float = wr.position.y + float(i) * 54.0
 		var a: float = 0.05 + 0.03 * float(i % 3)
-		draw_rect(Rect2(300, y, 1240, 20.0 + float((i * 7) % 24)), Color(0.35, 0.3, 0.25, a), true)
-	draw_rect(Rect2(820, 90, 300, 890), Color(0.02, 0.02, 0.025), true)
-	draw_rect(Rect2(840, 300, 260, 480), Color(0.16, 0.19, 0.22), true)
-	draw_rect(Rect2(840, 300, 260, 480), UiTheme.BRASS_DARK, false, 3.0)
+		draw_rect(Rect2(wr.position.x, y, wr.size.x, 20.0 + float((i * 7) % 24)), Color(0.35, 0.3, 0.25, a), true)
+	var cx: float = wr.get_center().x
+	draw_rect(Rect2(cx - 150.0, wr.position.y, 300, wr.size.y), Color(0.02, 0.02, 0.025), true)
+	draw_rect(Rect2(cx - 130.0, 300, 260, 480), Color(0.16, 0.19, 0.22), true)
+	draw_rect(Rect2(cx - 130.0, 300, 260, 480), UiTheme.BRASS_DARK, false, 3.0)
 	for r: int in range(3):
 		for c: int in range(2):
-			draw_rect(Rect2(856 + c * 124, 320 + r * 150, 112, 130), Color(0.10, 0.12, 0.14), true)
-			draw_rect(Rect2(856 + c * 124, 320 + r * 150, 112, 130), Color(UiTheme.AMBER, 0.25), false, 2.0)
+			draw_rect(Rect2(cx - 114.0 + c * 124, 320 + r * 150, 112, 130), Color(0.10, 0.12, 0.14), true)
+			draw_rect(Rect2(cx - 114.0 + c * 124, 320 + r * 150, 112, 130), Color(UiTheme.AMBER, 0.25), false, 2.0)

@@ -75,6 +75,13 @@ static func text_width(s: String, size: int = 16, font: Font = null) -> float:
 	return f.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
 
 
+## Heavier text: the same line drawn twice, a pixel apart. For alert chips and key numbers.
+static func bold_text(ci: CanvasItem, pos: Vector2, s: String, size: int, color: Color,
+		font: Font = null, align: HorizontalAlignment = HORIZONTAL_ALIGNMENT_LEFT, width: float = -1.0) -> void:
+	text(ci, pos + Vector2(1.0, 0.0), s, size, color, font, align, width)
+	text(ci, pos, s, size, color, font, align, width)
+
+
 ## Text with a soft glow behind it, for the green and amber instruments.
 static func glow_text(ci: CanvasItem, pos: Vector2, s: String, size: int, color: Color,
 		font: Font = null, align: HorizontalAlignment = HORIZONTAL_ALIGNMENT_LEFT, width: float = -1.0) -> void:
@@ -108,10 +115,10 @@ static func draw_panel(ci: CanvasItem, rect: Rect2, title: String = "", stripes:
 		ci.draw_circle(p + Vector2(-1.0, -1.0), 0.8, BRASS_LIGHT)
 	if title.is_empty():
 		return
-	var strip: Rect2 = Rect2(rect.position + Vector2(14, 5), Vector2(rect.size.x - 28, 22))
+	var strip: Rect2 = Rect2(rect.position + Vector2(14, 5), Vector2(rect.size.x - 28, 28))
 	ci.draw_rect(strip, STEEL_DEEP, true)
 	ci.draw_line(strip.position + Vector2(0, strip.size.y), strip.position + strip.size, BRASS_DARK, 1.0)
-	text(ci, strip.position + Vector2(8, 16), title, 15, AMBER)
+	text(ci, strip.position + Vector2(8, 21), title, 19, AMBER)
 	if stripes:
 		hazard_stripes(ci, Rect2(strip.end.x - 54.0, strip.position.y + 3.0, 48.0, strip.size.y - 6.0))
 

@@ -7,7 +7,7 @@ extends CanvasLayer
 
 signal new_run_requested
 
-const WORLD_RECT: Rect2 = Rect2(300.0, 84.0, 1240.0, 900.0)  ## Between the panels (see view_m1.md).
+const WORLD_RECT: Rect2 = Rect2(340.0, 90.0, 1180.0, 938.0)  ## Between the panels, above the alert strip.
 
 var sim: Sim
 var profile: Profile

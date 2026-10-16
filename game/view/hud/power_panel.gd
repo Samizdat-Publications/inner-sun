@@ -14,9 +14,9 @@ extends Control
 ##   power.bind(new_sim)
 ## Set `keys_enabled = false` while an overlay is open. Needs the keys Q W E R T Y unused elsewhere.
 
-const WIDTH: float = 300.0
-const ROW_H: float = 64.0
-const ROW_TOP: float = 150.0
+const WIDTH: float = 340.0
+const ROW_H: float = 76.0
+const ROW_TOP: float = 160.0
 const KEYS: Array[Key] = [KEY_Q, KEY_W, KEY_E, KEY_R, KEY_T, KEY_Y]
 const KEY_NAMES: Array[String] = ["Q", "W", "E", "R", "T", "Y"]
 
@@ -32,7 +32,7 @@ var _hover_bar: int = -1
 
 static func build(parent: Control, p_sim: Sim) -> PowerPanel:
 	var p := PowerPanel.new()
-	p.position = Vector2(0, 84)
+	p.position = Vector2(0, 90)
 	parent.add_child(p)
 	p.bind(p_sim)
 	return p
@@ -42,7 +42,7 @@ func bind(p_sim: Sim) -> void:
 	sim = p_sim
 	_shown.clear()
 	_rows = powered_rooms(sim.ship) if sim != null else ([] as Array[int])
-	size = Vector2(WIDTH, ROW_TOP + float(_rows.size()) * ROW_H + 128.0)
+	size = Vector2(WIDTH, ROW_TOP + float(_rows.size()) * ROW_H + 140.0)
 	snap()
 	queue_redraw()
 
@@ -68,8 +68,8 @@ static func powered_rooms(ship: Ship) -> Array[int]:
 static func bar_rect(row: int, i: int, n: int) -> Rect2:
 	var avail: float = WIDTH - 36.0
 	var gap: float = 4.0
-	var w: float = minf(44.0, (avail - gap * float(n - 1)) / float(maxi(1, n)))
-	return Rect2(18.0 + float(i) * (w + gap), ROW_TOP + float(row) * ROW_H + 26.0, w, 28.0)
+	var w: float = minf(52.0, (avail - gap * float(n - 1)) / float(maxi(1, n)))
+	return Rect2(18.0 + float(i) * (w + gap), ROW_TOP + float(row) * ROW_H + 32.0, w, 34.0)
 
 
 ## Which (row, bar) is at a panel-space point, or Vector2i(-1, -1).
@@ -168,7 +168,7 @@ func _draw() -> void:
 
 func _draw_reactor() -> void:
 	var ri: int = sim.ship.room_with_system("reactor")
-	UiTheme.text(self, Vector2(18, 56), "REACTOR", 16, UiTheme.AMBER)
+	UiTheme.bold_text(self, Vector2(18, 62), "REACTOR", 20, UiTheme.AMBER)
 	if ri < 0:
 		return
 	var r: Room = sim.ship.rooms[ri]
@@ -177,9 +177,9 @@ func _draw_reactor() -> void:
 	var n: int = maxi(1, r.sys_max)
 	var avail: float = WIDTH - 36.0
 	var gap: float = 3.0
-	var w: float = minf(26.0, (avail - gap * float(n - 1)) / float(n))
+	var w: float = minf(30.0, (avail - gap * float(n - 1)) / float(n))
 	for i: int in range(n):
-		var rect := Rect2(18.0 + float(i) * (w + gap), 64.0, w, 26.0)
+		var rect := Rect2(18.0 + float(i) * (w + gap), 72.0, w, 32.0)
 		var kind: String = "off"
 		if i < used:
 			kind = "on"
@@ -193,10 +193,10 @@ func _draw_reactor() -> void:
 		if kind == "on":
 			a = clampf(_used_shown - float(i), 0.0, 1.0) * 0.6 + 0.4
 		_draw_bar(rect, kind, a)
-	UiTheme.text(self, Vector2(18, 112), "IN USE %d" % used, 15, UiTheme.AMBER)
-	UiTheme.text(self, Vector2(110, 112), "FREE %d" % maxi(0, out - used), 15, UiTheme.CRT if out > used else UiTheme.TEXT_DIM)
-	UiTheme.text(self, Vector2(WIDTH - 138, 56), "OUTPUT %d" % out, 15, UiTheme.TEXT if out > 0 else UiTheme.ALARM, null, HORIZONTAL_ALIGNMENT_RIGHT, 120.0)
-	draw_line(Vector2(18, 124), Vector2(WIDTH - 18, 124), UiTheme.BRASS_DARK, 1.0)
+	UiTheme.bold_text(self, Vector2(18, 132), "IN USE %d" % used, 20, UiTheme.AMBER)
+	UiTheme.bold_text(self, Vector2(160, 132), "FREE %d" % maxi(0, out - used), 20, UiTheme.CRT if out > used else UiTheme.TEXT_DIM)
+	UiTheme.text(self, Vector2(WIDTH - 178, 62), "OUTPUT %d" % out, 19, UiTheme.TEXT if out > 0 else UiTheme.ALARM, null, HORIZONTAL_ALIGNMENT_RIGHT, 160.0)
+	draw_line(Vector2(18, 146), Vector2(WIDTH - 18, 146), UiTheme.BRASS_DARK, 1.0)
 
 
 func _draw_row(row: int, sys_defs: Dictionary) -> void:
@@ -204,22 +204,22 @@ func _draw_row(row: int, sys_defs: Dictionary) -> void:
 	var def: Dictionary = sys_defs.get(r.system, {})
 	var y: float = ROW_TOP + float(row) * ROW_H
 	# Key badge, name, count and station mark.
-	var badge := Rect2(18, y + 2, 20, 20)
+	var badge := Rect2(18, y + 2, 26, 26)
 	draw_rect(badge, UiTheme.STEEL_DEEP, true)
 	draw_rect(badge, UiTheme.BRASS, false, 1.0)
-	UiTheme.text(self, Vector2(badge.position.x, y + 17), KEY_NAMES[row] if row < KEY_NAMES.size() else "", 14, UiTheme.BRASS_LIGHT, null, HORIZONTAL_ALIGNMENT_CENTER, 20.0)
+	UiTheme.text(self, Vector2(badge.position.x, y + 22), KEY_NAMES[row] if row < KEY_NAMES.size() else "", 18, UiTheme.BRASS_LIGHT, null, HORIZONTAL_ALIGNMENT_CENTER, 26.0)
 	var failed: bool = r.sys_failed
 	var dim: bool = r.intact_bars() <= 0
 	var name_col: Color = UiTheme.TEXT_DIM if dim else (UiTheme.FIRE if failed else UiTheme.TEXT)
-	UiTheme.text(self, Vector2(46, y + 18), str(def.get("name", r.system)).to_upper(), 15, name_col)
-	UiTheme.text(self, Vector2(WIDTH - 74, y + 18), "%d/%d" % [r.effective_bars(), r.sys_max], 15, UiTheme.AMBER if r.effective_bars() > 0 else UiTheme.TEXT_DIM, null, HORIZONTAL_ALIGNMENT_RIGHT, 56.0)
+	UiTheme.text(self, Vector2(52, y + 22), str(def.get("name", r.system)).to_upper(), 18, name_col)
+	UiTheme.bold_text(self, Vector2(WIDTH - 78, y + 23), "%d/%d" % [r.effective_bars(), r.sys_max], 24, UiTheme.AMBER if r.effective_bars() > 0 else UiTheme.TEXT_DIM, null, HORIZONTAL_ALIGNMENT_RIGHT, 60.0)
 	var wants_crew: bool = bool(def.get("needs_crew", false)) or float(def.get("manned_bonus", 0.0)) > 0.0
 	if wants_crew:
 		var manned: bool = sim.systems.is_manned(sim.player, r.index)
 		var c: Color = UiTheme.CRT if manned else Color(0.35, 0.37, 0.37)
 		if not manned and bool(def.get("needs_crew", false)) and r.sys_power > 0:
 			c = UiTheme.ALARM.lerp(Color(0.35, 0.37, 0.37), UiTheme.pulse(_t, 1.4))
-		UiTheme.icon(self, "crew", Vector2(198, y + 11), 15.0, c)
+		UiTheme.icon(self, "crew", Vector2(238, y + 15), 20.0, c)
 	var n: int = r.sys_max
 	var lit: float = float(_shown.get(r.index, float(r.sys_power)))
 	var intact: int = r.intact_bars()
@@ -240,7 +240,7 @@ func _draw_row(row: int, sys_defs: Dictionary) -> void:
 			draw_rect(rect.grow(1.0), UiTheme.BRASS_LIGHT, false, 1.0)
 	if failed:
 		var flick: float = 0.65 + 0.35 * UiTheme.pulse(_t, 2.4)
-		UiTheme.icon(self, "flame", Vector2(224, y + 11), 14.0, Color(1, 1, 1, flick))
+		UiTheme.icon(self, "flame", Vector2(262, y + 15), 20.0, Color(1, 1, 1, flick))
 
 
 func _draw_bar(rect: Rect2, kind: String, a: float) -> void:
@@ -281,25 +281,25 @@ func _draw_bar(rect: Rect2, kind: String, a: float) -> void:
 func _draw_bracing() -> void:
 	var y: float = ROW_TOP + float(_rows.size()) * ROW_H + 8.0
 	draw_line(Vector2(18, y - 4), Vector2(WIDTH - 18, y - 4), UiTheme.BRASS_DARK, 1.0)
-	UiTheme.text(self, Vector2(18, y + 20), "BRACING LAYERS", 15, UiTheme.AMBER)
+	UiTheme.bold_text(self, Vector2(18, y + 24), "BRACING LAYERS", 19, UiTheme.AMBER)
 	var layers: int = sim.systems.bracing_layers(sim.player)
 	var most: int = maxi(layers, sim.systems.max_layers(sim.player))
 	for i: int in range(most):
-		var c := Vector2(30.0 + float(i) * 30.0, y + 46.0)
+		var c := Vector2(32.0 + float(i) * 38.0, y + 56.0)
 		if i < layers:
-			UiTheme.icon(self, "shield", c, 24.0)
+			UiTheme.icon(self, "shield", c, 32.0)
 		else:
-			UiTheme.icon(self, "shield", c, 24.0, Color(0.22, 0.24, 0.26))
+			UiTheme.icon(self, "shield", c, 32.0, Color(0.22, 0.24, 0.26))
 	if most == 0:
-		UiTheme.text(self, Vector2(18, y + 50), "NONE", 15, UiTheme.TEXT_DIM)
+		UiTheme.text(self, Vector2(18, y + 60.0), "NONE", 18, UiTheme.TEXT_DIM)
 
 
 func _draw_legend() -> void:
-	var y: float = size.y - 22.0
+	var y: float = size.y - 20.0
 	var x: float = 18.0
 	var items: Array[String] = ["on", "off", "damaged", "hot"]
 	var names: Array[String] = ["LIT", "IDLE", "DOWN", "HOT"]
 	for i: int in range(items.size()):
-		_draw_bar(Rect2(x, y - 10.0, 14.0, 12.0), items[i], 1.0)
-		UiTheme.text(self, Vector2(x + 18.0, y), names[i], 12, UiTheme.TEXT_DIM)
-		x += 68.0
+		_draw_bar(Rect2(x, y - 13.0, 16.0, 15.0), items[i], 1.0)
+		UiTheme.text(self, Vector2(x + 21.0, y), names[i], 14, UiTheme.TEXT)
+		x += 78.0
