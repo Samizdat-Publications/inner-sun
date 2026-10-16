@@ -518,9 +518,9 @@ func _build_crown() -> void:
 		_floods.append(fl)
 	if not _enemy:
 		# One wide, faint warm fill over the shaft so the rock around the tower is never pitch black.
-		var fill: PointLight2D = _light(Vector2(size.x * 0.5, size.y * 0.8), Color(0.95, 0.82, 0.68), 0.55, ppm * 15.0, false, 220.0)
+		var fill: PointLight2D = _light(Vector2(size.x * 0.5, size.y * 0.8), Color(0.95, 0.82, 0.68), 1.1, ppm * 20.0, false, 220.0)
 		fill.texture = wide
-		fill.texture_scale = ppm * 15.0 * 2.0 / 128.0 / 0.4
+		fill.texture_scale = ppm * 20.0 * 2.0 / 128.0 / 0.4
 		fill.range_item_cull_mask = 2
 		fill.enabled = false
 		_floods.append(fill)

@@ -42,7 +42,7 @@ const WALL_CHUNK_PX: int = 512  ## Back wall and apron sprites, so each meets on
 const ROCK_SHADOWS: bool = false
 const AMBIENT: Color = Color(0.30, 0.30, 0.34)
 ## Albedo gain for rock sprites (HDR modulate): the ambient is so dark that plain rock colors read black.
-const ROCK_GAIN: float = 1.45
+const ROCK_GAIN: float = 2.1
 
 ## The whole rock as ONE canvas item (a mosaic of the painted chunks). Measured in captures: Godot lit
 ## a rock item only with the lights that sit inside its rectangle, so separate chunk sprites came out
@@ -538,6 +538,7 @@ func _paint_glint(idx: int, cx: int, cy: int) -> void:
 				px.resize(CHUNK_PX * CHUNK_PX * 4)
 				any = true
 			var gem: bool = kind == 2
+			_ore_fill(px, code, lc, lr, gem)
 			if gem:
 				_gem_glow(px, c, r, lc, lr)
 			else:
@@ -570,6 +571,17 @@ func _paint_glint(idx: int, cx: int, cy: int) -> void:
 	else:
 		_gtex[idx].update(img)
 	g.visible = true
+
+
+## A soft wash of the material's own colour over an ore or gem cell (additive, unshaded), so veins and
+## pockets read plainly from across the shaft and not only when a glint twinkles.
+func _ore_fill(px: PackedByteArray, code: int, lc: int, lr: int, gem: bool) -> void:
+	var col: Color = Color.html(str(drill.material(code).get("color", "#808080")))
+	var k: float = 0.5 if gem else 0.62
+	for yy: int in range(CELL_PX):
+		for xx: int in range(CELL_PX):
+			var edge: float = minf(minf(float(xx), float(CELL_PX - 1 - xx)), minf(float(yy), float(CELL_PX - 1 - yy)))
+			_put(px, lc * CELL_PX + xx, lr * CELL_PX + yy, col.r, col.g, col.b, k * (0.55 + 0.15 * minf(edge, 3.0)))
 
 
 ## Gem cells glow from the painted emission tile (the same warped world position as the tile).
