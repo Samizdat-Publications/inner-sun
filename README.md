@@ -32,7 +32,10 @@ is one descent. Dying is normal: what you learn goes into the codex and lifts re
 
 - **The map.** Between stops the node map opens. Click one of the lit nodes below you to drill there
   (it costs one power cell). Icons show what is there: event, cavern (salvage), hazard, store, fight,
-  the gate. Nodes past your scanner show as "?". The dark front creeping down from the top is the
+  the gate, and the rich deposit (a gem icon: a known rich seam). Nodes inside your scanner range show
+  what the rock on the way to them holds: gold pips for richness, coloured squares for the ores, diamonds
+  for the gems, a yellow flame for gas pockets and a blue drop for water pockets (hover a node for it in
+  words). Nodes past your scanner show as "?". The dark front creeping down from the top is the
   thing that follows your noise: nodes it swallows are lost, and if it reaches you it strikes the hull.
   Press **M** to open or close the map. Time stands still while the map is open; you can still give
   orders from it.
@@ -40,6 +43,10 @@ is one descent. Dying is normal: what you learn goes into the codex and lifts re
   right), which shows the rock ahead: ore veins, gem pockets, hard rock, water pockets. More drill
   power is faster, hotter and louder. Detour for ore and gems, or go straight and stay ahead of the
   front. A worn bit slows you down: press **B** (or click the button on the scanner) to fit a new one.
+  The scanner colours each ore and gem as the rock does (a legend runs along its foot); gas pockets are
+  yellow-green and water pockets blue. Whatever the crown cuts floats up as "+2 IRON", "+5 EMERALD"
+  (bigger for gold and gems), a line at the top of the world shows the dig so far, and a plaque sums
+  up the segment on arrival. The mouse wheel zooms the drilling view.
 - **Power.** The panel on the left splits the reactor's bars between systems. Click a bar, or press
   **Q W E R T** to add a bar to helm, bracing, weapons, drill, coolant (hold **Shift** to remove
   one). Damaged bars are crossed out; overheated systems stop working. Power comes back by itself
@@ -56,8 +63,9 @@ is one descent. Dying is normal: what you learn goes into the codex and lifts re
   very first run. **Esc** or **H** closes it.
 - **Events.** Read the dossier and click an option (or press its number). Greyed options say what
   they need: the power keys still work while a dossier is open, so you can give it the bars it asks for.
-- **Store.** Buy coolant, power cells, drill bits, charges, hull repairs (paid in ore), upgrades, a
-  weapon or a new crew member. **Esc** leaves.
+- **Store.** Every line shows its price with the ore or gem icon it is paid in (red when you are short).
+  Ore buys refits, hull repairs and gear (drill heads, hull plating, pumps; a line says what the gear
+  changes and what it replaces); gems buy coolant, cells, bits, charges, a weapon or a new crew member. **Esc** leaves.
 - **Fights.** When a rival rig attacks, its tower appears beside yours. Put power into weapons
   (**E**) and bracing (**W**), take some from the drill (**Shift+R**). Press **F1** or **F2** (or click a
   weapon card at the bottom) to arm a weapon, then click an enemy room to aim it: it fires by itself

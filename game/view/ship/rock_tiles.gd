@@ -83,12 +83,16 @@ void fragment() {
 const GLINT_CODE: String = """
 shader_type canvas_item;
 render_mode blend_add, unshaded;
+// The canvas modulate (the dark ambient) still multiplies this item, so the colours are lifted by its
+// inverse: what the painted wash says is what reaches the screen. Without this the veins came out
+// as a dim bluish smudge (found in a still, M1b round 3b).
+uniform vec3 gain = vec3(3.33, 3.33, 2.94);
 void fragment() {
 	vec4 c = texture(TEXTURE, UV);
 	vec2 cell = floor(UV * 16.0);
 	float ph = fract(sin(dot(cell, vec2(12.9898, 78.233))) * 43758.5453) * 6.2832;
 	float tw = pow(max(0.0, sin(TIME * (1.6 + 1.4 * fract(ph)) + ph)), 10.0);
-	COLOR = vec4(c.rgb * (0.55 + 2.2 * tw), c.a);
+	COLOR = vec4(c.rgb * (0.55 + 2.2 * tw) * gain, c.a);
 }
 """
 
@@ -105,6 +109,7 @@ static func glint_material() -> ShaderMaterial:
 		sh.code = GLINT_CODE
 		_glint_mat = ShaderMaterial.new()
 		_glint_mat.shader = sh
+		_glint_mat.set_shader_parameter("gain", Vector3(1.0 / RockView.AMBIENT.r, 1.0 / RockView.AMBIENT.g, 1.0 / RockView.AMBIENT.b))
 	return _glint_mat
 
 

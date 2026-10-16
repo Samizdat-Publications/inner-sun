@@ -24,6 +24,7 @@ var map: MapView
 var codex: CodexView
 var death: DeathScreen
 var help: HelpView
+var tally: DigTally  ## The dig tally and the arrival toast; owns the DigLog.
 var _banner: Label
 var _root: Control
 var _layer: Control
@@ -57,6 +58,9 @@ func build(p_sim: Sim, p_profile: Profile) -> void:
 	help = HelpView.build(_layer)
 	death = DeathScreen.build(_layer, sim, profile)
 	death.new_run_requested.connect(func() -> void: new_run_requested.emit())
+	tally = DigTally.build(_layer, sim)
+	tally.hide_tally = func() -> bool: return overlay_open() or (sim.combat.active and sim.enemy != null)
+	tally.hide_toast = func() -> bool: return death.is_open() or store.is_open() or dossier.is_open() or codex.is_open() or help.is_open()
 	top.current_row_getter = func() -> float: return _ship_row()
 	top.help_requested.connect(help.toggle)
 	_build_banner()
@@ -78,6 +82,7 @@ func bind(p_sim: Sim, p_profile: Profile) -> void:
 	store.bind(sim)
 	codex.bind(sim, profile)
 	death.bind(sim, profile)
+	tally.bind(sim)
 	_bind_rows()
 
 

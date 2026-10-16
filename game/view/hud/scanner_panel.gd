@@ -36,6 +36,8 @@ var _rows_shown: int = 0
 var _frac: float = 0.0
 var _kind: PackedInt32Array = PackedInt32Array()
 var _glints: Array[Vector3] = []  ## x, y in image cells (cell units), z = twinkle phase.
+var _glint_cols: PackedColorArray = PackedColorArray()  ## One colour per glint (the material's own).
+var _tints: PackedColorArray = PackedColorArray()  ## Per material code: its scanner colour (ore, gems, gas).
 ## The whole segment's CRT colors, built a row at a time as rows come into view and patched where
 ## cells are cut, so a refresh is one native blit instead of thousands of per-cell calls.
 var _full: Image = null
@@ -55,6 +57,7 @@ const K_HARD: int = 2
 const K_ORE: int = 3
 const K_GEM: int = 4
 const K_WATER: int = 5
+const K_GAS: int = 6
 
 
 static func build(parent: Control, p_sim: Sim) -> ScannerPanel:
@@ -98,6 +101,8 @@ func _classify() -> void:
 	var d: DrillSim = sim.drill
 	_kind = PackedInt32Array()
 	_kind.resize(DrillSim.MAX_CODES)
+	_tints = PackedColorArray()
+	_tints.resize(DrillSim.MAX_CODES)
 	for code: int in range(DrillSim.MAX_CODES):
 		var m: Dictionary = d.material(code)
 		if m.is_empty():
@@ -106,12 +111,15 @@ func _classify() -> void:
 			_kind[code] = K_VOID
 		elif d.water_of[code] == 1:
 			_kind[code] = K_WATER
+		elif d.gas_of[code] == 1:
+			_kind[code] = K_GAS
 		elif d.yield_res_of[code] >= 0:
 			_kind[code] = K_GEM if RunState.RESOURCES[d.yield_res_of[code]] == "gems" else K_ORE
 		elif d.hardness_of[code] >= 3.0:
 			_kind[code] = K_HARD
 		else:
 			_kind[code] = K_ROCK
+		_tints[code] = scan_tint(Color.html(str(m.get("color", "#80c090"))), _kind[code]) if not m.is_empty() else Color.WHITE
 
 
 func _refresh_image() -> void:
@@ -148,11 +156,14 @@ func _refresh_image() -> void:
 	if r1 > r0:
 		_img.blit_rect(_full, Rect2i(0, r0, d.cols, r1 - r0), Vector2i(0, r0 - top))
 	_glints.clear()
+	_glint_cols.clear()
 	for ar: int in range(r0, r1):
 		for c: int in _row_glints[ar]:
-			var k: int = _kind[d.grid[ar * d.cols + c]]
+			var code: int = d.grid[ar * d.cols + c]
+			var k: int = _kind[code]
 			if (k == K_ORE or k == K_GEM) and _glints.size() < MAX_GLINTS:
 				_glints.append(Vector3(float(c), float(ar - top), float((c * 7 + ar * 13) % 17) / 17.0 * TAU))
+				_glint_cols.append(_tints[code].lerp(Color(1, 1, 1), 0.55))
 	_tex.update(_img)
 
 
@@ -163,7 +174,7 @@ func _build_row(d: DrillSim, ar: int) -> void:
 		var code: int = d.grid[ar * d.cols + c]
 		_seen[ar * d.cols + c] = code
 		var k: int = _kind[code]
-		_full.set_pixel(c, ar, cell_color(k, d.hardness_of[code], c, ar))
+		_full.set_pixel(c, ar, cell_color(k, d.hardness_of[code], c, ar, _tints[code]))
 		if k == K_ORE or k == K_GEM:
 			g.append(c)
 	_row_glints[ar] = g
@@ -183,11 +194,11 @@ func _apply_cuts(d: DrillSim, ci: int) -> void:
 				continue
 			_seen[k] = code
 			if _built[r] == 1:
-				_full.set_pixel(c, r, cell_color(_kind[code], d.hardness_of[code], c, r))
+				_full.set_pixel(c, r, cell_color(_kind[code], d.hardness_of[code], c, r, _tints[code]))
 
 
 ## The CRT color of one cell. Pure: the cell kind, the material's hardness and the absolute cell.
-static func cell_color(k: int, hardness: float, c: int, r: int) -> Color:
+static func cell_color(k: int, hardness: float, c: int, r: int, tint: Color = Color(0.78, 1.0, 0.62)) -> Color:
 	var n: float = float(((c * 73856093) ^ (r * 19349663)) & 255) / 255.0
 	match k:
 		K_VOID:
@@ -195,15 +206,28 @@ static func cell_color(k: int, hardness: float, c: int, r: int) -> Color:
 		K_WATER:
 			return Color(0.05, 0.16 + 0.05 * n, 0.50 + 0.1 * n)
 		K_ORE:
-			return Color(0.78, 1.0, 0.62)
+			return tint
 		K_GEM:
-			return Color(0.72, 1.0, 0.98)
+			return tint
+		K_GAS:
+			return Color(tint.r, tint.g, tint.b).lerp(Color(1, 1, 0.5), 0.15 * n)
 		K_HARD:
 			if (c + r) % 3 == 0:
 				return Color(0.66, 1.0, 0.72)
 			return Color(0.10, 0.46 + 0.1 * n, 0.20)
 	var lum: float = 0.20 + 0.12 * hardness + 0.05 * n
 	return Color(0.03 + 0.05 * lum, lum, 0.08 + 0.1 * lum)
+
+
+## The scanner colour of an ore, gem or gas cell from the material's colour hint: kept in its hue,
+## lifted so even coal reads on the dark screen. Rock and water keep their own looks.
+static func scan_tint(col: Color, k: int) -> Color:
+	if k != K_ORE and k != K_GEM and k != K_GAS:
+		return Color.WHITE
+	var lum: float = col.r * 0.3 + col.g * 0.59 + col.b * 0.11
+	var lift: float = clampf((0.62 - lum) * 1.1, 0.0, 0.6)
+	var out: Color = col.lerp(Color(1, 1, 1), lift)
+	return Color(out.r, out.g, out.b, 1.0)
 
 
 # Steering -------------------------------------------------------------------------------------
@@ -325,13 +349,15 @@ func _draw_rock() -> void:
 	var px_x: float = SCREEN.size.x / (float(d.cols))
 	var px_y: float = SCREEN.size.y / float(_rows_shown)
 	# Glints.
-	for g: Vector3 in _glints:
+	for gi: int in range(_glints.size()):
+		var g: Vector3 = _glints[gi]
 		var gp := Vector2(SCREEN.position.x + (g.x + 0.5) * px_x, SCREEN.position.y + (g.y - _frac + 0.5) * px_y)
 		if not SCREEN.has_point(gp):
 			continue
 		var tw: float = 0.5 + 0.5 * sin(_t * 3.2 + g.z)
 		var s: float = 2.0 + 5.0 * tw
-		var gc: Color = Color(0.85, 1.0, 0.9, 0.35 + 0.55 * tw)
+		var base_c: Color = _glint_cols[gi] if gi < _glint_cols.size() else Color(0.85, 1.0, 0.9)
+		var gc: Color = Color(base_c.r, base_c.g, base_c.b, 0.35 + 0.55 * tw)
 		draw_line(gp - Vector2(s, 0), gp + Vector2(s, 0), gc, 1.0)
 		draw_line(gp - Vector2(0, s), gp + Vector2(0, s), gc, 1.0)
 	# Depth ticks every 5 m below the crown.
@@ -362,6 +388,7 @@ func _draw_rock() -> void:
 		var tx: float = SCREEN.position.x + d.target_x / (float(d.cols) * d.cell_m) * SCREEN.size.x
 		draw_colored_polygon(PackedVector2Array([Vector2(tx, ny - 9), Vector2(tx + 9, ny), Vector2(tx, ny + 9), Vector2(tx - 9, ny)]), UiTheme.AMBER)
 		UiTheme.text(self, Vector2(SCREEN.end.x - 86.0, ny - 8.0), "NODE", 15, UiTheme.AMBER, null, HORIZONTAL_ALIGNMENT_RIGHT, 80.0)
+	_draw_legend()
 	# The sweep.
 	var sy: float = SCREEN.position.y + fposmod(_t * SWEEP_HZ, 1.0) * SCREEN.size.y
 	for i: int in range(14):
@@ -370,6 +397,31 @@ func _draw_rock() -> void:
 			break
 		draw_rect(Rect2(SCREEN.position.x, y2, SCREEN.size.x, 3.0), Color(UiTheme.CRT, 0.16 * (1.0 - float(i) / 14.0)), true)
 	draw_line(Vector2(SCREEN.position.x, sy), Vector2(SCREEN.end.x, sy), Color(0.8, 1.0, 0.85, 0.7), 1.5)
+
+
+## A tiny legend along the foot of the screen: a swatch for every ore, gem, gas and water material
+## the rock table has, in the colours the screen uses. Drawn from the material table, so new ores show.
+func _draw_legend() -> void:
+	var d: DrillSim = sim.drill
+	var groups: Array = [["ORE", K_ORE], ["GEM", K_GEM], ["GAS", K_GAS], ["WATER", K_WATER]]
+	var x: float = SCREEN.position.x + 6.0
+	var y: float = SCREEN.end.y - 17.0
+	draw_rect(Rect2(SCREEN.position.x, y, SCREEN.size.x, 17.0), Color(0.0, 0.03, 0.02, 0.82), true)
+	for g: Array in groups:
+		var kind: int = int(g[1])
+		var swatches: Array[Color] = []
+		for code: int in range(1, d.materials.size()):
+			if _kind[code] == kind:
+				swatches.append(_tints[code] if kind != K_WATER else cell_color(K_WATER, 0.6, 3, 4))
+		if swatches.is_empty():
+			continue
+		UiTheme.text(self, Vector2(x, y + 13.0), str(g[0]), 12, Color(UiTheme.CRT, 0.9))
+		x += UiTheme.text_width(str(g[0]), 12) + 4.0
+		for col: Color in swatches:
+			draw_rect(Rect2(x, y + 4.0, 8.0, 9.0), col, true)
+			draw_rect(Rect2(x, y + 4.0, 8.0, 9.0), Color(0, 0, 0, 0.6), false, 1.0)
+			x += 10.0
+		x += 8.0
 
 
 static func _end_of(cx: float, rad: float, reach: float) -> Vector2:

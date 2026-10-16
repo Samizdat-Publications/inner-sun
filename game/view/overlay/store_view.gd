@@ -14,7 +14,7 @@ extends Control
 
 const DESIGN_SIZE: Vector2 = Vector2(1920, 1080)
 const PAGE_W: float = 1240.0
-const TAG: Dictionary = {"res": "SUPPLY", "hull": "HULL", "weapon": "ARMS", "crew": "CREW", "upgrade": "REFIT"}
+const TAG: Dictionary = {"res": "SUPPLY", "hull": "HULL", "weapon": "ARMS", "crew": "CREW", "upgrade": "REFIT", "gear": "GEAR"}
 const FADE_S: float = 0.2
 
 var sim: Sim = null
@@ -123,6 +123,8 @@ static func info_text(s: Sim, line: Dictionary) -> String:
 			return "MOUNTED %d" % s.ship.weapons.size()
 		"crew":
 			return candidate_text(s)
+		"gear":
+			return gear_effects(s.db, str(line.get("gear", "")))
 		"upgrade":
 			var ri: int = s.ship.room_with_system(str(line.get("system", "")))
 			if ri < 0:
@@ -133,6 +135,35 @@ static func info_text(s: Sim, line: Dictionary) -> String:
 				return "%s AT MAXIMUM" % sys_name
 			return "%s %d > %d BARS" % [sys_name, r.sys_max, r.sys_max + 1]
 	return ""
+
+
+## What a piece of gear does, in a few words ("CUT +25%  WEAR -40%"), from its effects in the data.
+static func gear_effects(db: DataDB, id: String) -> String:
+	var eff: Dictionary = (db.table("gear").get(id, {}) as Dictionary).get("effects", {})
+	var parts: PackedStringArray = PackedStringArray()
+	if eff.has("cut_speed_x"):
+		parts.append("CUT %+d%%" % roundi((float(eff["cut_speed_x"]) - 1.0) * 100.0))
+	if eff.has("wear_x"):
+		parts.append("WEAR %+d%%" % roundi((float(eff["wear_x"]) - 1.0) * 100.0))
+	if eff.has("hard_rock_x"):
+		parts.append("HARD ROCK %+d%%" % roundi((float(eff["hard_rock_x"]) - 1.0) * 100.0))
+	if eff.has("pump_x"):
+		parts.append("PUMPS x%s" % str(snappedf(float(eff["pump_x"]), 0.1)))
+	if eff.has("max_hull_add"):
+		parts.append("+%d HULL" % int(eff["max_hull_add"]))
+	return "  ".join(parts)
+
+
+## "REPLACES TUNGSTEN HEAD" when this gear takes over an occupied slot, else "".
+static func gear_replaces(s: Sim, id: String) -> String:
+	var def: Dictionary = s.db.table("gear").get(id, {})
+	var slot: String = str(def.get("slot", ""))
+	if slot.is_empty():
+		return ""
+	var fitted: String = Gear.fitted_in(s, slot)
+	if fitted.is_empty() or Gear.tier_of(s.db, fitted) >= int(def.get("tier", 0)):
+		return ""
+	return "REPLACES " + str((s.db.table("gear").get(fitted, {}) as Dictionary).get("name", fitted)).to_upper()
 
 
 ## The hire candidate: name and skills, or that nobody is left.
@@ -262,7 +293,12 @@ func _stock_row(i: int, line: Dictionary) -> Control:
 	info.alignment = BoxContainer.ALIGNMENT_CENTER
 	info.add_theme_constant_override("separation", 0)
 	info.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	info.add_child(_mono_label(info_text(sim, line), 15, UiTheme.STEEL_LIGHT))
+	var is_gear: bool = str(line.get("item", "")) == "gear"
+	info.add_child(_mono_label(info_text(sim, line), 13 if is_gear else 15, UiTheme.STEEL_LIGHT))
+	if is_gear:
+		var rep: String = gear_replaces(sim, str(line.get("gear", "")))
+		if not rep.is_empty() and why.is_empty():
+			info.add_child(_mono_label(rep, 13, UiTheme.INK_RED))
 	if not why.is_empty():
 		info.add_child(_mono_label(why.to_upper(), 13, UiTheme.INK_RED))
 	row.add_child(info)
@@ -271,7 +307,8 @@ func _stock_row(i: int, line: Dictionary) -> Control:
 	price.alignment = BoxContainer.ALIGNMENT_END
 	price.add_theme_constant_override("separation", 6)
 	price.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	price.add_child(_label("%d" % int(line.get("price", 0)), 24, UiTheme.INK))
+	var short: bool = sim.run.get_res(str(line.get("currency", "gems"))) < int(line.get("price", 0))
+	price.add_child(_label("%d" % int(line.get("price", 0)), 24, UiTheme.INK_RED if short else UiTheme.INK))
 	price.add_child(CurrencyIcon.new().with_kind(str(line.get("currency", "gems")), 24.0))
 	row.add_child(price)
 	var left_txt: String = ""

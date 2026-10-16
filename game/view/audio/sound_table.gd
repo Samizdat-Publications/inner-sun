@@ -26,6 +26,7 @@ const EVENTS: Dictionary = {
 	"bracing_absorbed": {"sound": "bracing_absorb", "db": -2.0, "jitter": 0.05, "bus": "SFX"},
 	"fight_start": {"sound": "radio_squelch", "db": 0.0, "jitter": 0.0, "bus": "Radio"},
 	"event_started": {"sound": "radio_squelch", "db": -3.0, "jitter": 0.04, "bus": "Radio"},
+	"mined": {"sound": "ui_click", "db": -13.0, "jitter": 0.18, "bus": "SFX"},  # A soft tick per pickup.
 	"store_opened": {"sound": "ui_click", "db": 0.0, "jitter": 0.0, "bus": "SFX"},
 	"phase_dead": {"sound": "hull_groan", "db": 2.0, "jitter": 0.0, "bus": "SFX"},
 	# Combat: names the combat sim is expected to emit. Harmless until it does.
