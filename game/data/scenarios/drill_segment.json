@@ -2,7 +2,7 @@
   "id": "drill_segment",
   "name": "Drilling segment: the drill bot bores a 36 m segment between two nodes",
   "ship": "light_drill",
-  "duration_s": 60,
+  "duration_s": 90,
   "bot": "drill",
   "timeline": [
     {"at_s": 1.0, "cmd": {"type": "begin_segment", "segment": "demo", "depth_m": 36.0, "lateral_m": 4.0}}
