@@ -155,6 +155,7 @@ func _drill_cam_target(d: DrillSim) -> Vector2:
 
 
 func _process(delta: float) -> void:
+	PerfRecorder.frame_start()
 	if run == null or view == null:
 		return
 	var d: DrillSim = run.sim.drill
@@ -209,7 +210,9 @@ func _physics_process(_delta: float) -> void:
 		return
 	if paused:
 		return
+	var t0: int = Time.get_ticks_usec()
 	run.step()
+	PerfRecorder.span(PerfRecorder.SPAN_SIM, Time.get_ticks_usec() - t0)
 	if run_ticks > 0 and run.sim.tick >= run_ticks:
 		finish()
 

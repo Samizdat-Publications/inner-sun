@@ -23,6 +23,7 @@ const ALERT_FONT: int = 24
 var sim: Sim = null
 var alerts: Array[Dictionary] = []
 var _t: float = 0.0
+var _pacer: RedrawPacer = RedrawPacer.new()  ## Redraws at most 60 times a second.
 
 
 static func build(parent: Control, p_sim: Sim) -> AlertsStrip:
@@ -95,7 +96,8 @@ func _process(delta: float) -> void:
 	_t += delta
 	if sim != null:
 		alerts = compute(sim)
-	queue_redraw()
+	if _pacer.due():
+		queue_redraw()
 
 
 static func icon_for(kind: String) -> String:

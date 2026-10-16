@@ -2,27 +2,40 @@ class_name RockView
 extends Node2D
 ## Draws a drilling segment's rock grid (DrillSim.grid) in segment space: this node's origin is the
 ## segment's top-left corner and it never moves; the camera and the ship move over it.
-## The grid is cut into 16 x 16 cell chunks. Each chunk is one sprite with a CanvasTexture (albedo and
-## normal) painted from the grid at 8 px per cell and scaled up to the view's pixels per meter:
+## The grid is painted at 8 px per cell into one mosaic (albedo, normal and material id images) that a
+## single canvas item draws, scaled up to the view's pixels per meter:
 ##  - colors come from the material's data color hint, with value noise, strata banding, a depth tint
 ##    and darker rims where solid meets air; boundaries between materials and between rock and air are
 ##    ragged (the lookup is warped by noise), so the rock does not read as a grid of squares;
 ##  - the normal map comes from a smooth height field (bilinear solid/air) plus noise bumps, so shaft
 ##    walls and pockets catch the hull floodlights;
-##  - gem and ore cells get a second, additive and unshaded glint layer that blooms;
+##  - gem and ore cells get a second, additive and unshaded glint layer (one sprite per 16 x 16 chunk)
+##    that blooms;
 ##  - air cells are transparent over a dim back wall, so the shaft is not pure black.
-## Only chunks whose change counter moved are repainted (plus neighbours when a cell on a border
-## changed), a few per frame. Rock is on light mask 2: only the hull floodlights and the crown glow
+## Repainting is incremental and budgeted. The view keeps its own copy of the grid; when a chunk's
+## change counter moves it diffs that chunk against the copy and marks the changed cells plus one cell
+## around them dirty (a pixel reads only cells within one cell of its own: the bilinear height, the
+## warped material lookup and the air fallback). Dirty cells are painted in small strips (one cell
+## row, at most UNIT_CELLS wide), nearest the ship first, and a strip starts only if its estimated
+## cost still fits this frame's budget; the rest waits for the next frame. The mosaic textures are
+## uploaded at most once every UPLOAD_EVERY frames. A new segment's first build spreads over a few
+## dozen frames. Rock is on light mask 2: only the hull floodlights and the crown glow
 ## (range_item_cull_mask 2) reach it, never the ship's interior lamps.
 ## Reads sim state only; paints with its own integer hash, so the picture is the same every run.
 
 const CELLS: int = 16
 const CELL_PX: int = 8
 const CHUNK_PX: int = CELLS * CELL_PX
-const PAD: int = CELLS + 2
 const TILE: int = 256
 const LIGHT_MASK: int = 2
-const BUDGET_USEC: int = 9000
+## Painting budget per frame (microseconds). A strip is started only if its estimate still fits.
+const BUDGET_USEC: int = 3500
+## Widest paint strip in cells (one cell row tall): about 1.5 ms of painting at most.
+const UNIT_CELLS: int = 16
+## Frames between mosaic texture uploads (each upload sends the whole mosaic, about 6 MB).
+const UPLOAD_EVERY: int = 3
+## Starting estimate of the paint cost per pixel (microseconds); refined as strips are painted.
+const START_US_PER_PX: float = 1.6
 const WALL_CHUNK_PX: int = 512  ## Back wall and apron sprites, so each meets only nearby lights.
 ## Occluders are built only if rock shadows are on. They are off: the shadow of a solid polygon also
 ## covers its own rock face, which would black out the very walls the floodlights should reveal.
@@ -45,6 +58,11 @@ class RockNode extends Node2D:
 
 static var _tile: PackedFloat32Array = PackedFloat32Array()
 static var _flat_normal: PackedByteArray = PackedByteArray()
+## Per pixel column (or row) inside a strip: left cell index (+1 for the pad), smoothstep weight and
+## its derivative. Strips start on cell boundaries, so one table serves every strip.
+static var _ci: PackedInt32Array = PackedInt32Array()
+static var _ft: PackedFloat32Array = PackedFloat32Array()
+static var _dft: PackedFloat32Array = PackedFloat32Array()
 
 var drill: DrillSim
 var ppm: float = 80.0
@@ -53,9 +71,20 @@ var serial: int = -1
 var _scale: float = 5.0
 var _slot: PackedByteArray = PackedByteArray()  # painted tile slot per material code
 var _kind: PackedByteArray = PackedByteArray()  # 0 rock, 1 ore, 2 gem, 3 water
-var _seen: PackedByteArray = PackedByteArray()
+var _seen: PackedByteArray = PackedByteArray()  # the view's copy of the grid
 var _last: PackedInt32Array = PackedInt32Array()
-var _dirty: Dictionary = {}
+var _mcols: int = 0  # mosaic size in cells (whole chunks, so it can be wider and taller than the grid)
+var _mrows: int = 0
+var _cdirty: PackedByteArray = PackedByteArray()  # per mosaic cell: 1 = repaint
+var _row_dirty: PackedInt32Array = PackedInt32Array()  # dirty cells per mosaic row
+var _dirty_total: int = 0
+var _gdirty: PackedByteArray = PackedByteArray()  # per chunk: glint (and occluder) repaint
+var _gdirty_total: int = 0
+var _us_per_px: float = START_US_PER_PX
+var _since_upload: int = 0
+var _pc: PackedByteArray = PackedByteArray()  # strip scratch: padded codes, solidity, value jitter
+var _ps: PackedFloat32Array = PackedFloat32Array()
+var _pv: PackedFloat32Array = PackedFloat32Array()
 var _rock: RockNode
 var _img_a: Image
 var _img_n: Image
@@ -68,8 +97,7 @@ var _glints: Array[Sprite2D] = []
 var _occluders: Array[LightOccluder2D] = []
 var _gtex: Array[ImageTexture] = []
 var _time: float = 0.0
-var last_build_ms: float = 0.0
-var builds: int = 0
+var strips_painted: int = 0  ## Paint strips done so far (tests and diagnostics).
 
 
 func setup(p_drill: DrillSim, p_ppm: float) -> void:
@@ -84,18 +112,16 @@ func setup(p_drill: DrillSim, p_ppm: float) -> void:
 	_last = drill.chunk_changes.duplicate()
 	_build_backdrop()
 	var n: int = drill.chunk_cols * drill.chunk_rows
-	var origin_cy: int = clampi(floori(drill.ship_pos.y / (drill.cell_m * float(CELLS))), 0, drill.chunk_rows - 1)
-	# Nearest rows to the ship first, so the picture fills in around it.
-	var order: Array[int] = []
-	for d: int in range(drill.chunk_rows):
-		for sign_i: int in [1, -1]:
-			var cy: int = origin_cy + d * sign_i
-			if cy < 0 or cy >= drill.chunk_rows or (d == 0 and sign_i == -1):
-				continue
-			for cx: int in range(drill.chunk_cols):
-				order.append(cy * drill.chunk_cols + cx)
-	var mw: int = drill.chunk_cols * CHUNK_PX
-	var mh: int = drill.chunk_rows * CHUNK_PX
+	_mcols = drill.chunk_cols * CELLS
+	_mrows = drill.chunk_rows * CELLS
+	_cdirty.resize(_mcols * _mrows)
+	_row_dirty.resize(_mrows)
+	_gdirty.resize(n)
+	_pc.resize((UNIT_CELLS + 2) * 3)
+	_ps.resize((UNIT_CELLS + 2) * 3)
+	_pv.resize((UNIT_CELLS + 2) * 3)
+	var mw: int = _mcols * CELL_PX
+	var mh: int = _mrows * CELL_PX
 	_img_a = Image.create(mw, mh, false, Image.FORMAT_RGBA8)
 	_img_n = Image.create(mw, mh, false, Image.FORMAT_RGBA8)
 	_img_n.fill(Color8(128, 128, 255, 255))
@@ -119,72 +145,149 @@ func setup(p_drill: DrillSim, p_ppm: float) -> void:
 		_glints.append(null)
 		_gtex.append(null)
 		_occluders.append(null)
-	for i: int in order:
-		_dirty[i] = true
+		_gdirty[i] = 1
+	_gdirty_total = n
+	_mark_rect(0, 0, _mcols - 1, _mrows - 1)
 
 
-## Chunks still waiting to be painted (captures wait for zero).
+## Paint work still waiting: dirty cells, glint chunks and a pending upload (captures wait for zero).
 func pending() -> int:
-	return _dirty.size()
+	return _dirty_total + _gdirty_total + (1 if _mosaic_dirty else 0)
 
 
 func _process(delta: float) -> void:
 	_time += delta
 	if drill == null:
 		return
+	var t0: int = Time.get_ticks_usec()
 	var ch: PackedInt32Array = drill.chunk_changes
 	for i: int in range(ch.size()):
 		if ch[i] != _last[i]:
 			_last[i] = ch[i]
 			_note_change(i)
-	var t0: int = Time.get_ticks_usec()
-	var keys: Array = _dirty.keys()
-	for k: Variant in keys:
-		var i: int = k
-		_dirty.erase(i)
-		_paint(i % drill.chunk_cols, i / drill.chunk_cols)
-		if Time.get_ticks_usec() - t0 > BUDGET_USEC:
-			break
-	if _mosaic_dirty:
-		_mosaic_dirty = false
-		_tex_a.update(_img_a)
-		_tex_n.update(_img_n)
-		_tex_id.update(_img_id)
+	_work(t0, BUDGET_USEC)
+	_since_upload += 1
+	if _mosaic_dirty and _since_upload >= UPLOAD_EVERY:
+		_upload()
 	for i: int in range(_glints.size()):
 		var g: Sprite2D = _glints[i]
 		if g != null:
 			var tw: float = 0.78 + 0.22 * sin(_time * 3.1 + float(i) * 1.9) + 0.08 * sin(_time * 7.3 + float(i))
 			g.self_modulate = Color(tw, tw, tw, 1.0)
+	PerfRecorder.span(PerfRecorder.SPAN_ROCK, Time.get_ticks_usec() - t0)
 
 
+## Paint everything still dirty now, ignoring the budget, and upload (tests and tools).
+func paint_all_now() -> void:
+	while _dirty_total > 0 or _gdirty_total > 0:
+		_work(Time.get_ticks_usec(), 1 << 40)
+	if _mosaic_dirty:
+		_upload()
+
+
+func _upload() -> void:
+	var tu: int = Time.get_ticks_usec()
+	_mosaic_dirty = false
+	_since_upload = 0
+	_tex_a.update(_img_a)
+	_tex_n.update(_img_n)
+	_tex_id.update(_img_id)
+	PerfRecorder.span(PerfRecorder.SPAN_ROCK_UPLOAD, Time.get_ticks_usec() - tu)
+
+
+## Paint strips (nearest the ship first), then glint chunks, while the next one's estimate fits the
+## budget. The first strip of a frame always runs, so the work always moves.
+func _work(t0: int, budget_usec: int) -> void:
+	var first: bool = true
+	while _dirty_total > 0:
+		var r: int = _next_row()
+		var c0: int = 0
+		while _cdirty[r * _mcols + c0] == 0:
+			c0 += 1
+		var c1: int = c0 + 1
+		while c1 < _mcols and c1 - c0 < UNIT_CELLS and _cdirty[r * _mcols + c1] != 0:
+			c1 += 1
+		var px: int = (c1 - c0) * CELL_PX * CELL_PX
+		var now: int = Time.get_ticks_usec()
+		if not first and now - t0 + roundi(float(px) * _us_per_px) > budget_usec:
+			return
+		first = false
+		for c: int in range(c0, c1):
+			_cdirty[r * _mcols + c] = 0
+		_row_dirty[r] -= c1 - c0
+		_dirty_total -= c1 - c0
+		_paint_run(c0, c1, r)
+		var took: int = Time.get_ticks_usec() - now
+		_us_per_px = lerpf(_us_per_px, float(took) / float(px), 0.25)
+	while _gdirty_total > 0:
+		if not first and Time.get_ticks_usec() - t0 > budget_usec * 3 / 4:
+			return
+		first = false
+		var idx: int = _gdirty.find(1)
+		_gdirty[idx] = 0
+		_gdirty_total -= 1
+		var cx: int = idx % drill.chunk_cols
+		var cy: int = idx / drill.chunk_cols
+		_paint_glint(idx, cx, cy)
+		if ROCK_SHADOWS:
+			_build_occluder(idx, cx, cy)
+
+
+## The dirty mosaic row nearest the ship's middle row.
+func _next_row() -> int:
+	var focus: int = clampi(floori((drill.ship_pos.y + drill.ship_size.y * 0.5) / drill.cell_m), 0, _mrows - 1)
+	for d: int in range(_mrows):
+		var a: int = focus + d
+		if a < _mrows and _row_dirty[a] > 0:
+			return a
+		var b: int = focus - d - 1
+		if b >= 0 and _row_dirty[b] > 0:
+			return b
+	return 0
+
+
+## Diff one chunk against the view's grid copy and mark what the changed cells can affect.
 func _note_change(ci: int) -> void:
 	var ccols: int = drill.chunk_cols
 	var cx: int = ci % ccols
 	var cy: int = ci / ccols
 	var cols: int = drill.cols
+	var rows: int = drill.rows
 	var grid: PackedByteArray = drill.grid
-	for r: int in range(cy * CELLS, mini((cy + 1) * CELLS, drill.rows)):
+	for r: int in range(cy * CELLS, mini((cy + 1) * CELLS, rows)):
 		for c: int in range(cx * CELLS, mini((cx + 1) * CELLS, cols)):
 			var k: int = r * cols + c
-			if grid[k] == _seen[k]:
+			var now_code: int = grid[k]
+			var was: int = _seen[k]
+			if now_code == was:
 				continue
-			_seen[k] = grid[k]
-			_dirty[ci] = true
-			var lc: int = c - cx * CELLS
-			var lr: int = r - cy * CELLS
-			var dx: int = -1 if lc == 0 else (1 if lc == CELLS - 1 else 0)
-			var dy: int = -1 if lr == 0 else (1 if lr == CELLS - 1 else 0)
-			if dx != 0:
-				_mark(cx + dx, cy)
-			if dy != 0:
-				_mark(cx, cy + dy)
-			if dx != 0 and dy != 0:
-				_mark(cx + dx, cy + dy)
+			_seen[k] = now_code
+			# The last column and row are repeated past the grid's edge (clamped lookups), so a change
+			# there reaches to the mosaic's edge.
+			var c_hi: int = _mcols - 1 if c == cols - 1 else c + 1
+			var r_hi: int = _mrows - 1 if r == rows - 1 else r + 1
+			_mark_rect(c - 1, r - 1, c_hi, r_hi)
+			var kw: int = _kind[was]
+			var kn: int = _kind[now_code]
+			if ROCK_SHADOWS or kw == 1 or kw == 2 or kn == 1 or kn == 2:
+				if _gdirty[ci] == 0:
+					_gdirty[ci] = 1
+					_gdirty_total += 1
 
 
-func _mark(cx: int, cy: int) -> void:
-	if cx >= 0 and cx < drill.chunk_cols and cy >= 0 and cy < drill.chunk_rows:
-		_dirty[cy * drill.chunk_cols + cx] = true
+## Mark mosaic cells [c0..c1] x [r0..r1] (inclusive, clamped) for repainting.
+func _mark_rect(c0: int, r0: int, c1: int, r1: int) -> void:
+	var ca: int = maxi(c0, 0)
+	var cb: int = mini(c1, _mcols - 1)
+	for r: int in range(maxi(r0, 0), mini(r1, _mrows - 1) + 1):
+		var row: int = r * _mcols
+		var added: int = 0
+		for c: int in range(ca, cb + 1):
+			if _cdirty[row + c] == 0:
+				_cdirty[row + c] = 1
+				added += 1
+		_row_dirty[r] += added
+		_dirty_total += added
 
 
 # Painting ----------------------------------------------------------------------------------------
@@ -254,6 +357,17 @@ static func _make_tile() -> void:
 		_flat_normal[i * 4 + 1] = 128
 		_flat_normal[i * 4 + 2] = 255
 		_flat_normal[i * 4 + 3] = 255
+	var strip_px: int = UNIT_CELLS * CELL_PX
+	_ci.resize(strip_px)
+	_ft.resize(strip_px)
+	_dft.resize(strip_px)
+	for p: int in range(strip_px):
+		var u: float = (float(p) + 0.5) / float(CELL_PX) - 0.5
+		var i0: int = floori(u)
+		var f: float = u - float(i0)
+		_ci[p] = i0 + 1
+		_ft[p] = f * f * (3.0 - 2.0 * f)
+		_dft[p] = 6.0 * f * (1.0 - f)
 
 
 func _make_palette() -> void:
@@ -278,82 +392,86 @@ func _code_at(col: int, row: int) -> int:
 	return drill.grid[r * drill.cols + c]
 
 
-func _paint(cx: int, cy: int) -> void:
-	var t0: int = Time.get_ticks_usec()
-	var idx: int = cy * drill.chunk_cols + cx
-	var gx0: int = cx * CELLS
-	var gy0: int = cy * CELLS
-	var pc := PackedByteArray()
-	pc.resize(PAD * PAD)
-	var ps := PackedFloat32Array()
-	ps.resize(PAD * PAD)
-	var pv := PackedFloat32Array()
-	pv.resize(PAD * PAD)
-	for j: int in range(PAD):
-		for i: int in range(PAD):
-			var code: int = _code_at(gx0 - 1 + i, gy0 - 1 + j)
-			pc[j * PAD + i] = code
-			ps[j * PAD + i] = 0.0 if code == 0 else 1.0
-			pv[j * PAD + i] = 0.88 + 0.24 * _hash(gx0 - 1 + i, gy0 - 1 + j, 9)
-	# Per column and per row lookups.
-	var ci := PackedInt32Array()
-	var ft := PackedFloat32Array()
-	var dft := PackedFloat32Array()
-	ci.resize(CHUNK_PX)
-	ft.resize(CHUNK_PX)
-	dft.resize(CHUNK_PX)
-	for p: int in range(CHUNK_PX):
-		var u: float = (float(p) + 0.5) / float(CELL_PX) - 0.5
-		var i0: int = floori(u)
-		var f: float = u - float(i0)
-		ci[p] = i0 + 1
-		ft[p] = f * f * (3.0 - 2.0 * f)
-		dft[p] = 6.0 * f * (1.0 - f)
-	var alb: PackedByteArray = PackedByteArray()
-	alb.resize(CHUNK_PX * CHUNK_PX * 4)
-	var nrm: PackedByteArray = _flat_normal.duplicate()
+
+## Paint mosaic cells [c0, c1) of row r (one strip, 8 px tall) and blit it into the mosaic images.
+## Every pixel depends only on its global position and the cells within one cell of its own, so a
+## strip comes out exactly as the same pixels of a whole-segment paint would.
+func _paint_run(c0: int, c1: int, r: int) -> void:
+	var w: int = c1 - c0
+	var pw: int = w + 2
+	var wpx: int = w * CELL_PX
+	var pc: PackedByteArray = _pc
+	var ps: PackedFloat32Array = _ps
+	var pv: PackedFloat32Array = _pv
+	for j: int in range(3):
+		for i: int in range(pw):
+			var code: int = _code_at(c0 - 1 + i, r - 1 + j)
+			pc[j * pw + i] = code
+			ps[j * pw + i] = 0.0 if code == 0 else 1.0
+			pv[j * pw + i] = 0.88 + 0.24 * _hash(c0 - 1 + i, r - 1 + j, 9)
+	var ci: PackedInt32Array = _ci
+	var ft: PackedFloat32Array = _ft
+	var dft: PackedFloat32Array = _dft
+	var kinds: PackedByteArray = _kind
+	var slots: PackedByteArray = _slot
+	var n_px: int = wpx * CELL_PX
+	var alb := PackedByteArray()
+	alb.resize(n_px * 4)
+	var nrm: PackedByteArray = _flat_normal.slice(0, n_px * 4)
 	var idb := PackedByteArray()
-	idb.resize(CHUNK_PX * CHUNK_PX)
+	idb.resize(n_px)
 	var tile: PackedFloat32Array = _tile
 	var total_px: float = float(drill.rows * CELL_PX)
-	for y: int in range(CHUNK_PX):
+	var cells_n: int = pw * 3
+	for y: int in range(CELL_PX):
 		var pj: int = ci[y]
 		var ty: float = ft[y]
 		var dty: float = dft[y]
-		var Y: int = gy0 * CELL_PX + y
+		var Y: int = r * CELL_PX + y
 		var ydepth: float = clampf(float(Y) / total_px, 0.0, 1.0)
-		for x: int in range(CHUNK_PX):
+		var row_n: int = (Y & 255) << 8
+		for x: int in range(wpx):
 			var pi: int = ci[x]
+			var k00: int = pj * pw + pi
+			var s00: float = ps[k00]
+			var s10: float = ps[k00 + 1]
+			var s01: float = ps[k00 + pw]
+			var s11: float = ps[k00 + pw + 1]
+			var sum: float = s00 + s10 + s01 + s11
+			if sum == 0.0:
+				continue  # All air around: h = 0, so v <= 0.15 and the cover is zero.
 			var tx: float = ft[x]
-			var s00: float = ps[pj * PAD + pi]
-			var s10: float = ps[pj * PAD + pi + 1]
-			var s01: float = ps[(pj + 1) * PAD + pi]
-			var s11: float = ps[(pj + 1) * PAD + pi + 1]
-			var top: float = s00 + (s10 - s00) * tx
-			var bot: float = s01 + (s11 - s01) * tx
-			var h: float = top + (bot - top) * ty
-			var X: int = gx0 * CELL_PX + x
-			var na: float = tile[((Y & 255) << 8) | (X & 255)]
+			var h: float = 1.0
+			if sum != 4.0:
+				var top: float = s00 + (s10 - s00) * tx
+				var bot: float = s01 + (s11 - s01) * tx
+				h = top + (bot - top) * ty
+			var X: int = c0 * CELL_PX + x
+			var na: float = tile[row_n | (X & 255)]
 			var v: float = h + (na - 0.5) * 0.3
 			var cover: float = clampf((v - 0.5) * 10.0 + 0.5, 0.0, 1.0)
 			if cover <= 0.004:
 				continue
 			var nb: float = tile[(((Y + (X >> 2) * 5 + 17) & 255) << 8) | ((X + (Y >> 1) * 3 + 101) & 255)]
 			# Material from a noise-warped lookup, so boundaries are ragged.
-			var wi: int = clampi(floori((float(x) + (nb - 0.5) * 8.0) / float(CELL_PX)) + 1, 0, PAD - 1)
-			var wj: int = clampi(floori((float(y) + (na - 0.5) * 8.0) / float(CELL_PX)) + 1, 0, PAD - 1)
-			var cell: int = wj * PAD + wi
+			var wi: int = clampi(floori((float(x) + (nb - 0.5) * 8.0) / float(CELL_PX)) + 1, 0, pw - 1)
+			var wj: int = clampi(floori((float(y) + (na - 0.5) * 8.0) / float(CELL_PX)) + 1, 0, 2)
+			var cell: int = wj * pw + wi
 			var code: int = pc[cell]
 			if code == 0:
-				cell = clampi(y / CELL_PX + 1, 0, PAD - 1) * PAD + clampi(x / CELL_PX + 1, 0, PAD - 1)
+				cell = pw + x / CELL_PX + 1
 				code = pc[cell]
 				if code == 0:
-					for nbr: int in [cell - 1, cell + 1, cell - PAD, cell + PAD]:
-						if nbr >= 0 and nbr < PAD * PAD and pc[nbr] != 0:
-							cell = nbr
-							code = pc[nbr]
-							break
-			var kind: int = _kind[code]
+					if cell - 1 >= 0 and pc[cell - 1] != 0:
+						cell -= 1
+					elif cell + 1 < cells_n and pc[cell + 1] != 0:
+						cell += 1
+					elif cell - pw >= 0 and pc[cell - pw] != 0:
+						cell -= pw
+					elif cell + pw < cells_n and pc[cell + pw] != 0:
+						cell += pw
+					code = pc[cell]
+			var kind: int = kinds[code]
 			var tex: float = 0.8 + (na - 0.5) * 0.4 + (nb - 0.5) * 0.24
 			var band: float = 0.07 * sin(float(Y) * 0.045 + nb * 2.6)
 			var shade: float = tex * pv[cell] * (1.0 + band) * (1.0 - 0.28 * ydepth)
@@ -366,16 +484,20 @@ func _paint(cx: int, cy: int) -> void:
 				var sheen: float = smoothstep(0.78, 0.95, 0.5 + 0.5 * sin(float(Y) * 0.4 + na * 5.0))
 				shade = shade * 0.8 + sheen * 0.25
 				bump = 0.25
-			var o: int = (y * CHUNK_PX + x) * 4
+			var p: int = y * wpx + x
+			var o: int = p * 4
 			var sh8: int = clampi(roundi(shade * 255.0), 0, 255)
 			alb[o] = sh8
 			alb[o + 1] = sh8
 			alb[o + 2] = sh8
-			idb[y * CHUNK_PX + x] = _slot[code] * 16
+			idb[p] = slots[code] * 16
 			alb[o + 3] = clampi(roundi(cover * 255.0), 0, 255)
-			var dhdx: float = ((s10 - s00) * (1.0 - ty) + (s11 - s01) * ty) * dft[x] * 0.125
-			var dhdy: float = ((s01 - s00) * (1.0 - tx) + (s11 - s10) * tx) * dty * 0.125
-			var gxn: float = tile[((Y & 255) << 8) | ((X + 2) & 255)] - tile[((Y & 255) << 8) | ((X - 2) & 255)]
+			var dhdx: float = 0.0
+			var dhdy: float = 0.0
+			if sum != 4.0:
+				dhdx = ((s10 - s00) * (1.0 - ty) + (s11 - s01) * ty) * dft[x] * 0.125
+				dhdy = ((s01 - s00) * (1.0 - tx) + (s11 - s10) * tx) * dty * 0.125
+			var gxn: float = tile[row_n | ((X + 2) & 255)] - tile[row_n | ((X - 2) & 255)]
 			var gyn: float = tile[(((Y + 2) & 255) << 8) | (X & 255)] - tile[(((Y - 2) & 255) << 8) | (X & 255)]
 			var nx: float = -(dhdx * 3.4 + gxn * 0.32 * bump)
 			var ny: float = dhdy * 3.4 + gyn * 0.32 * bump
@@ -383,21 +505,13 @@ func _paint(cx: int, cy: int) -> void:
 			nrm[o] = clampi(roundi((nx * inv * 0.5 + 0.5) * 255.0), 0, 255)
 			nrm[o + 1] = clampi(roundi((ny * inv * 0.5 + 0.5) * 255.0), 0, 255)
 			nrm[o + 2] = clampi(roundi((inv * 0.5 + 0.5) * 255.0), 0, 255)
-	_apply(idx, alb, nrm, idb)
-	_paint_glint(idx, cx, cy)
-	if ROCK_SHADOWS:
-		_build_occluder(idx, cx, cy)
-	last_build_ms = float(Time.get_ticks_usec() - t0) / 1000.0
-	builds += 1
-
-
-func _apply(idx: int, alb: PackedByteArray, nrm: PackedByteArray, idb: PackedByteArray) -> void:
-	var at := Vector2i((idx % drill.chunk_cols) * CHUNK_PX, (idx / drill.chunk_cols) * CHUNK_PX)
-	var src := Rect2i(0, 0, CHUNK_PX, CHUNK_PX)
-	_img_a.blit_rect(Image.create_from_data(CHUNK_PX, CHUNK_PX, false, Image.FORMAT_RGBA8, alb), src, at)
-	_img_n.blit_rect(Image.create_from_data(CHUNK_PX, CHUNK_PX, false, Image.FORMAT_RGBA8, nrm), src, at)
-	_img_id.blit_rect(Image.create_from_data(CHUNK_PX, CHUNK_PX, false, Image.FORMAT_R8, idb), src, at)
+	var at := Vector2i(c0 * CELL_PX, r * CELL_PX)
+	var src := Rect2i(0, 0, wpx, CELL_PX)
+	_img_a.blit_rect(Image.create_from_data(wpx, CELL_PX, false, Image.FORMAT_RGBA8, alb), src, at)
+	_img_n.blit_rect(Image.create_from_data(wpx, CELL_PX, false, Image.FORMAT_RGBA8, nrm), src, at)
+	_img_id.blit_rect(Image.create_from_data(wpx, CELL_PX, false, Image.FORMAT_R8, idb), src, at)
 	_mosaic_dirty = true
+	strips_painted += 1
 
 
 ## The additive glint layer: sparkles on gem and ore cells, unshaded, brightened so it blooms.

@@ -23,6 +23,7 @@ const KEY_NAMES: Array[String] = ["Q", "W", "E", "R", "T", "Y"]
 var sim: Sim = null
 var keys_enabled: bool = true
 var _t: float = 0.0
+var _pacer: RedrawPacer = RedrawPacer.new()  ## Redraws at most 60 times a second.
 var _rows: Array[int] = []  ## Room indices of the powered systems, in ship order.
 var _shown: Dictionary = {}  ## room index -> eased lit bars (float).
 var _used_shown: float = 0.0
@@ -151,7 +152,8 @@ func _process(delta: float) -> void:
 		for ri: int in _rows:
 			_shown[ri] = move_toward(float(_shown.get(ri, 0.0)), float(sim.ship.rooms[ri].sys_power), 9.0 * delta)
 		_used_shown = move_toward(_used_shown, float(sim.systems.allocated(sim.player)), 9.0 * delta)
-	queue_redraw()
+	if _pacer.due():
+		queue_redraw()
 
 
 func _draw() -> void:

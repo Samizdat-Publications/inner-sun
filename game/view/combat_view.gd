@@ -282,6 +282,12 @@ func _draw_strata(n: Node2D, area: Rect2) -> void:
 
 
 func _process(delta: float) -> void:
+	var t0: int = Time.get_ticks_usec()
+	_update(delta)
+	PerfRecorder.span(PerfRecorder.SPAN_COMBAT, Time.get_ticks_usec() - t0)
+
+
+func _update(delta: float) -> void:
 	_t += delta
 	if sim == null or player_view == null:
 		return

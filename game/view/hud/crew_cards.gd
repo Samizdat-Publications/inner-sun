@@ -24,6 +24,7 @@ const FLASH_S: float = 0.8
 var sim: Sim = null
 var selected_id: String = ""
 var _t: float = 0.0
+var _pacer: RedrawPacer = RedrawPacer.new()  ## Redraws at most 60 times a second.
 var _hp_last: Dictionary = {}
 var _flash: Dictionary = {}
 var _hp_shown: Dictionary = {}
@@ -125,7 +126,8 @@ func _process(delta: float) -> void:
 			_hp_last[c.id] = c.hp
 			_hp_shown[c.id] = move_toward(float(_hp_shown.get(c.id, c.hp)), c.hp, (10.0 + absf(float(_hp_shown.get(c.id, c.hp)) - c.hp)) * delta)
 			_flash[c.id] = maxf(0.0, float(_flash.get(c.id, 0.0)) - delta)
-	queue_redraw()
+	if _pacer.due():
+		queue_redraw()
 
 
 func _draw() -> void:

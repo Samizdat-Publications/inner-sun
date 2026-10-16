@@ -12,6 +12,7 @@ const DESIGN_RECT: Rect2 = Rect2(340.0, 98.0, 1180.0, 80.0)
 
 var sim: Sim = null
 var _t: float = 0.0
+var _pacer: RedrawPacer = RedrawPacer.new()  ## Redraws at most 60 times a second.
 var _hull_shown: float = 0.0
 var _charge_shown: PackedFloat32Array = PackedFloat32Array()
 
@@ -52,7 +53,8 @@ func _process(delta: float) -> void:
 		_charge_shown.resize(wv.size())
 	for i: int in range(wv.size()):
 		_charge_shown[i] = move_toward(_charge_shown[i], float(wv[i]["charge_s"]), 18.0 * delta)
-	queue_redraw()
+	if _pacer.due():
+		queue_redraw()
 
 
 func _draw() -> void:

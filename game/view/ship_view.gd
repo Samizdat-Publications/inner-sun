@@ -635,6 +635,12 @@ func _build_tags() -> void:
 
 
 func _process(delta: float) -> void:
+	var t0: int = Time.get_ticks_usec()
+	_update(delta)
+	PerfRecorder.span(PerfRecorder.SPAN_SHIP, Time.get_ticks_usec() - t0)
+
+
+func _update(delta: float) -> void:
 	_time += delta
 	var ship: Ship = world.ship
 	if ship.crew.size() < _crew.size():
