@@ -27,3 +27,4 @@ that record. Keep it current as you go; never prune it.
 | 2026-10-15 | Run screen pieces | `docs/progress/006`, `007` | UI merge | The HUD and the typewritten dossier with redaction bars and TOPSIDE's radio strip. |
 | 2026-10-15 | The ship comes alive | `stills/004`, `docs/progress/011`, `012` | painted cutaway merge | Painted rooms, props, crew puppets and the glowing crown replace the grey boxes; hazards read at a glance. |
 | 2026-10-15 | First fight on screen | `stills/005`, `docs/progress/010` | combat view merge | Two drill towers trade fire through the rock: tracers, a BLOCKED pop, weapon cards. |
+| 2026-10-16 | M1a playtest build | `clips/002`, `stills/006`, `docs/progress/018` | `m1a-playtest` | A whole run, painted, with fights in the rock, events, a store and a death report; the blind critic's score climbs 3.8, 5.8, 6.1; the bots win 12 to 19 percent. Handed to Stewart to play. |
