@@ -131,6 +131,12 @@ func _refresh() -> void:
 		_close_button.text = "CLOSE  [M]"
 
 
+## Only the chart's frame takes the mouse: the power panel and crew cards beside it stay usable
+## while the map holds the world (orders still apply, see main.gd).
+func _has_point(point: Vector2) -> bool:
+	return FRAME.has_point(point)
+
+
 func _unhandled_key_input(event: InputEvent) -> void:
 	var k: InputEventKey = event as InputEventKey
 	if k == null or not k.pressed or k.echo or sim == null:

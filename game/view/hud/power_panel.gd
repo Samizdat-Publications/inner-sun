@@ -29,6 +29,7 @@ var _shown: Dictionary = {}  ## room index -> eased lit bars (float).
 var _used_shown: float = 0.0
 var _hover_room: int = -1
 var _hover_bar: int = -1
+var _pend: Dictionary = {}  ## room index -> {"bars": wanted bars, "tick": sim tick of the push}.
 
 
 static func build(parent: Control, p_sim: Sim) -> PowerPanel:
@@ -42,6 +43,7 @@ static func build(parent: Control, p_sim: Sim) -> PowerPanel:
 func bind(p_sim: Sim) -> void:
 	sim = p_sim
 	_shown.clear()
+	_pend.clear()
 	_rows = powered_rooms(sim.ship) if sim != null else ([] as Array[int])
 	size = Vector2(WIDTH, ROW_TOP + float(_rows.size()) * ROW_H + 140.0)
 	snap()
@@ -90,17 +92,44 @@ static func target_bars(lit: int, i: int) -> int:
 	return i if i + 1 == lit else i + 1
 
 
+## The bars a row will have once the queued order applies, or -1 when nothing is queued. An order
+## stays pending until the sim steps past the tick it was pushed on or its value is reached.
+func pending_bars(ri: int) -> int:
+	if sim == null or not _pend.has(ri):
+		return -1
+	var p: Dictionary = _pend[ri]
+	if int(p["tick"]) != sim.tick or int(p["bars"]) == sim.ship.rooms[ri].sys_power:
+		_pend.erase(ri)
+		return -1
+	return int(p["bars"])
+
+
+## What the row is heading for: its queued order, or what the sim last granted it.
+func wanted_bars(ri: int) -> int:
+	var p: int = pending_bars(ri)
+	return p if p >= 0 else sim.ship.rooms[ri].sys_power
+
+
 func set_bars(row: int, bars: int) -> void:
 	if sim == null or row < 0 or row >= _rows.size():
 		return
-	var r: Room = sim.ship.rooms[_rows[row]]
+	var ri: int = _rows[row]
+	var r: Room = sim.ship.rooms[ri]
+	# The reactor has only so many bars: count what the other rows are heading for.
+	var others: int = 0
+	for oi: int in _rows:
+		if oi != ri:
+			others += wanted_bars(oi)
+	var room_left: int = maxi(0, sim.systems.reactor_output(sim.player) - others)
+	var granted: int = mini(clampi(bars, 0, r.intact_bars()), room_left)
+	_pend[ri] = {"bars": granted, "tick": sim.tick}
 	sim.push({"type": "power", "room": r.id, "bars": clampi(bars, 0, r.sys_max)})
 
 
 func change_bars(row: int, delta: int) -> void:
 	if sim == null or row < 0 or row >= _rows.size():
 		return
-	set_bars(row, sim.ship.rooms[_rows[row]].sys_want + delta)
+	set_bars(row, wanted_bars(_rows[row]) + delta)
 
 
 func _gui_input(event: InputEvent) -> void:
@@ -121,7 +150,7 @@ func _gui_input(event: InputEvent) -> void:
 	var room: Room = sim.ship.rooms[_rows[h2.x]]
 	match mb.button_index:
 		MOUSE_BUTTON_LEFT:
-			set_bars(h2.x, target_bars(room.sys_power, h2.y))
+			set_bars(h2.x, target_bars(wanted_bars(room.index), h2.y))
 		MOUSE_BUTTON_RIGHT, MOUSE_BUTTON_WHEEL_DOWN:
 			change_bars(h2.x, -1)
 		MOUSE_BUTTON_WHEEL_UP:
@@ -131,13 +160,18 @@ func _gui_input(event: InputEvent) -> void:
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	var k: InputEventKey = event as InputEventKey
-	if k == null or not k.pressed or k.echo or not keys_enabled or sim == null or not sim.run.world_running():
+	if k == null or not k.pressed or k.echo or not keys_enabled or sim == null or not takes_orders(sim):
 		return
 	var row: int = KEYS.find(k.physical_keycode)
 	if row < 0 or row >= _rows.size():
 		return
 	change_bars(row, -1 if k.shift_pressed else 1)
 	get_viewport().set_input_as_handled()
+
+
+## Power orders are allowed while the world runs and while a dossier is open (options need power).
+static func takes_orders(s: Sim) -> bool:
+	return s.run.world_running() or s.run.phase == "dialog"
 
 
 func _notification(what: int) -> void:
@@ -225,6 +259,7 @@ func _draw_row(row: int, sys_defs: Dictionary) -> void:
 	var n: int = r.sys_max
 	var lit: float = float(_shown.get(r.index, float(r.sys_power)))
 	var intact: int = r.intact_bars()
+	var pend: int = pending_bars(r.index)
 	for i: int in range(n):
 		var rect: Rect2 = bar_rect(row, i, n)
 		var kind: String = "off"
@@ -236,6 +271,14 @@ func _draw_row(row: int, sys_defs: Dictionary) -> void:
 		elif float(i) < lit:
 			kind = "on"
 			a = clampf(lit - float(i), 0.0, 1.0) * 0.6 + 0.4
+		if pend >= 0 and i < intact:
+			# A queued order: bars about to light blink outlined, bars about to drop blink dim.
+			if i < pend and i >= r.sys_power:
+				kind = "pend_on"
+				a = 0.35 + 0.65 * UiTheme.pulse(_t, 2.4)
+			elif i >= pend and i < r.sys_power:
+				kind = "pend_off"
+				a = 0.35 + 0.65 * UiTheme.pulse(_t, 2.4)
 		_draw_bar(rect, kind, a)
 		if _hover_room == row and i <= _hover_bar:
 			draw_rect(rect.grow(1.0), Color(1, 1, 1, 0.16), true)
@@ -255,6 +298,12 @@ func _draw_bar(rect: Rect2, kind: String, a: float) -> void:
 			draw_rect(rect, Color(UiTheme.CRT, 0.85), true)
 			draw_rect(Rect2(rect.position, Vector2(rect.size.x, 5.0)), Color(1, 1, 1, 0.25), true)
 			draw_rect(rect, UiTheme.CRT, false, 1.0)
+		"pend_on":
+			draw_rect(rect, Color(UiTheme.AMBER, 0.28 * a), true)
+			draw_rect(rect, Color(UiTheme.BRASS_LIGHT, a), false, 3.0)
+		"pend_off":
+			draw_rect(rect, Color(UiTheme.AMBER, 0.55 * (1.0 - a) + 0.1), true)
+			draw_rect(rect, Color(UiTheme.ALARM, a), false, 3.0)
 		"damaged":
 			draw_rect(rect, Color(0.10, 0.04, 0.04), true)
 			draw_rect(rect, Color(UiTheme.ALARM, 0.8), false, 1.0)

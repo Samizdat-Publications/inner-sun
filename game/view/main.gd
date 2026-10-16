@@ -1,3 +1,4 @@
+class_name Main
 extends Node2D
 ## Entry point. Builds the world view (the cutaway, the rock while drilling, the camera) and the run
 ## screen UI, and drives the simulation at the fixed 60 Hz physics tick (the sim never reads frame
@@ -23,6 +24,7 @@ const COMBAT_BOTTOM_PX: float = 124.0  ## The weapon cards at the bottom of the 
 const ROCK_BELOW_M: float = 2.5  ## Rock visible below the crown while drilling.
 const STEER_DEG: float = 30.0
 const HUMAN_CAP_S: float = 6.0 * 3600.0  ## A human run never hits the stuck cap.
+const FIGHT_BANNER: String = "HOSTILE CONTACT. Paused. Power weapons (E) and bracing (W), arm a gun (F1, F2) and click an enemy room. Space to fight."
 
 var args: Args
 var db: DataDB
@@ -40,20 +42,24 @@ var paused: bool = false
 var bot_driven: bool = false
 var replaying: bool = false
 var run_ticks: int = -1
+var test_args: Args = null  ## Tests only: used instead of the command line.
+var build_headless: bool = false  ## Tests only: build the world and the UI even without a display.
 var _held: Dictionary = {}
 var _steer_sent: float = 0.0
 var _finished: bool = false
+var _in_fight: bool = false
+var _fight_banner: bool = false
 var _saved: bool = false
 
 
 func _ready() -> void:
-	args = Args.from_cmdline()
+	args = test_args if test_args != null else Args.from_cmdline()
 	db = DataDB.load_all()
 	var problems: PackedStringArray = db.lint()
 	for p: String in problems:
 		push_error("data: " + p)
 	if args.has("selftest"):
-		_selftest(problems)
+		await _selftest(problems)
 		return
 	if args.has("print-window-settings"):
 		# Diagnostic (works headless, also in the exported build): does normal play get keyboard focus?
@@ -68,7 +74,7 @@ func _ready() -> void:
 	if not _start_run():
 		return
 	run_ticks = args.get_int("run-ticks", -1)
-	if DisplayServer.get_name() == "headless":
+	if DisplayServer.get_name() == "headless" and not build_headless:
 		return
 	_build_world()
 	if args.has("shots") or args.has("capture"):
@@ -83,6 +89,8 @@ func _ready() -> void:
 
 func _start_run() -> bool:
 	_saved = false
+	_in_fight = false
+	_fight_banner = false
 	if replaying:
 		var rec: Dictionary = RunRecord.load_record(args.get_str("replay", ""))
 		if rec.is_empty():
@@ -165,7 +173,11 @@ func _process(delta: float) -> void:
 	_ease_camera(d, delta)
 	combat_view.armed = screen.weapons.armed
 	combat_view.cam_zoom = cam.zoom.x
-	screen.set_paused(paused)
+	var held: bool = _world_held()
+	screen.set_paused(paused or held, screen.hold_label() if held and not paused else "PAUSED")
+	if not paused:
+		_fight_banner = false
+	screen.set_banner(FIGHT_BANNER if _fight_banner and paused else "")
 
 
 ## The camera eases to its framing: the drill rock while there is one, the cutaway otherwise, and in a
@@ -208,13 +220,34 @@ func _physics_process(_delta: float) -> void:
 		elif run_ticks > 0:
 			finish()
 		return
-	if paused:
+	if not RunScreen.should_step(run.sim, paused, _is_human(), _world_held()):
 		return
 	var t0: int = Time.get_ticks_usec()
 	run.step()
 	PerfRecorder.span(PerfRecorder.SPAN_SIM, Time.get_ticks_usec() - t0)
+	_watch_fight()
 	if run_ticks > 0 and run.sim.tick >= run_ticks:
 		finish()
+
+
+## A person is playing: not a bot, a capture or a replay. Only a human's world pauses and holds.
+func _is_human() -> bool:
+	return not bot_driven and not replaying
+
+
+## True while a human has the node map or the help page open: time stops (orders still apply).
+func _world_held() -> bool:
+	return _is_human() and screen != null and screen.holds_world()
+
+
+## When a fight begins a human's game pauses, so the weapons and bracing can be powered and aimed
+## before the first round (the banner says what to do). Bots and replays never pause.
+func _watch_fight() -> void:
+	var fighting: bool = run.sim.combat.active and run.sim.enemy != null
+	if fighting and not _in_fight and _is_human() and screen != null:
+		paused = true
+		_fight_banner = true
+	_in_fight = fighting
 
 
 ## A run ended (or the window is closing mid-run): fold it into the profile and save its record once.
@@ -275,7 +308,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if c == null:
 		return
 	if mb.button_index == MOUSE_BUTTON_LEFT:
-		var p: Vector2 = view.get_local_mouse_position() / PPM
+		var p: Vector2 = (view.get_global_transform_with_canvas().affine_inverse() * mb.position) / PPM
 		var room: int = run.sim.ship.room_at(p + Vector2(0, 0.06), -1)
 		if room >= 0:
 			run.sim.push({"type": "assign", "crew": c.id, "room": run.sim.ship.rooms[room].id})
@@ -285,6 +318,12 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _key(key: InputEventKey) -> void:
 	var code: Key = key.keycode
+	if key.pressed and code == KEY_H and screen.help.is_open():
+		screen.help.close_help()
+		return
+	if key.pressed and code == KEY_H and not screen.codex.is_open() and not screen.death.is_open():
+		screen.help.open()
+		return
 	if key.pressed and code == KEY_SPACE and not screen.overlay_open():
 		paused = not paused
 		return
@@ -313,7 +352,7 @@ func _drill_key(key: InputEventKey) -> void:
 	if code == KEY_A or code == KEY_D or code == KEY_LEFT or code == KEY_RIGHT:
 		if dir * STEER_DEG != _steer_sent:
 			_steer_sent = dir * STEER_DEG
-			run.sim.push({"type": "steer", "angle": _steer_sent})
+			screen.scanner.queue_steer(_steer_sent)
 
 
 func _build_world() -> void:
@@ -346,6 +385,8 @@ func _build_world() -> void:
 	add_child(screen)
 	screen.build(run.sim, profile)
 	screen.new_run_requested.connect(_start_run)
+	if run_mode and _is_human() and profile != null and profile.runs == 0:
+		screen.help.open()  # A fresh profile sees the help page first (never in bot captures).
 	if args.has("arm"):
 		screen.weapons.armed = args.get_int("arm", -1)  # Dev only: look at the aiming highlights.
 	if args.has("debug-hud"):
@@ -371,6 +412,12 @@ func _selftest(problems: PackedStringArray) -> void:
 			fr.step()
 		if fr.sim.run.phase == "scenario" or fr.sim.tick != 600:
 			why = "a full run did not start"
+	if why.is_empty():
+		# Real input against the run screen (tests/ is not in the export: skipped there).
+		var ui: GDScript = load("res://tests/ui_selftest.gd") as GDScript
+		if ui != null:
+			var ui_why: Variant = await ui.call("run", self)
+			why = str(ui_why)
 	print("SELFTEST ok" if why.is_empty() else "SELFTEST FAIL: " + why)
 	get_tree().quit(0 if why.is_empty() else 1)
 

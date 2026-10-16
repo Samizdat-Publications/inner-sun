@@ -22,6 +22,7 @@ const KNOWN_INK: String = "#7a1e1e"
 
 var sim: Sim = null
 var _sig: String = ""
+var _page_key: String = ""  ## Event, page and picked crew: the page's identity, apart from its option states.
 var _sheet: DossierSheet = null
 var _center: CenterContainer = null
 var _age: float = 0.0
@@ -39,7 +40,9 @@ static func build(parent: Control, p_sim: Sim) -> Dossier:
 
 func _init() -> void:
 	theme = UiTheme.make_theme()
-	mouse_filter = Control.MOUSE_FILTER_STOP
+	# The dim backdrop lets clicks through to the power panel (options can need power); the sheet
+	# itself still takes them. World clicks stay blocked by main.gd while an overlay is open.
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	visible = false
 	_center = CenterContainer.new()
 	_center.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -71,11 +74,20 @@ func _refresh() -> void:
 	visible = open
 	if not open:
 		_sig = ""
+		_page_key = ""
 		return
 	var sig: String = signature()
 	if sig != _sig:
 		_sig = sig
-		_rebuild()
+		var key: String = "%s|%s|%s" % [sim.encounter.event_id, sim.encounter.page, str(sim.encounter.picked)]
+		var fresh: bool = key != _page_key
+		_page_key = key
+		var keep_age: float = _age
+		_rebuild()  # Option states change live (power comes in): rebuild, but do not fade the page in again.
+		if not fresh:
+			_age = keep_age
+			if _sheet != null:
+				_sheet.modulate.a = 1.0
 
 
 ## Everything the page's look depends on; a change rebuilds it.

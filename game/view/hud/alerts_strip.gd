@@ -17,6 +17,7 @@ const FLOOD_MIN: float = 0.03
 const BIT_WORN: float = 0.7
 const COOLANT_LOW: int = 4
 const HULL_LOW: float = 0.34
+const DRILL_ROOM_DEEP_M: float = 1.2  ## Crew skip rooms deeper than 1.4 m on their own (crew_ai).
 const CHIP_H: float = 38.0
 const ALERT_FONT: int = 24
 
@@ -64,6 +65,15 @@ static func compute(s: Sim) -> Array[Dictionary]:
 			_add(out, 75, "failed", "%s OFFLINE: %s %d C" % [str(def.get("name", r.system)).to_upper(), rn, roundi(r.temp_c())], r.id)
 		elif r.sys_max > 0 and r.intact_bars() < r.sys_max:
 			_add(out, 55, "damaged", "%s DAMAGED %d/%d: %s" % [str(def.get("name", r.system)).to_upper(), r.intact_bars(), r.sys_max, rn], r.id)
+	var drill_ri: int = s.ship.room_with_system("drill")
+	if drill_ri >= 0 and s.ship.rooms[drill_ri].level_m() > DRILL_ROOM_DEEP_M:
+		_add(out, 93, "flood", "DRILL ROOM FLOODING: crew won't wade in on their own. Select one (1-3) and click the drill room.", s.ship.rooms[drill_ri].id)
+	if s.run.mode == "run" and s.run.phase == "drill" and not s.run.target_node.is_empty():
+		var kind: String = str(s.run.node(s.run.target_node).get("type", ""))
+		if kind == "fight" or kind == "gate":
+			_add(out, 65, "ahead", "HOSTILE AHEAD: power weapons (E) before you arrive", "")
+		elif kind == "hazard":
+			_add(out, 62, "ahead", "HAZARD AHEAD", "")
 	if s.drill.active:
 		if s.drill.bit_broken:
 			_add(out, 78, "bit", "BIT BROKEN", "")

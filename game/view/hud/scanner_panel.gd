@@ -19,9 +19,12 @@ const UPDATE_S: float = 0.1
 const MAX_GLINTS: int = 90
 const SWEEP_HZ: float = 0.45
 const STEER_STEP_DEG: float = 1.0
+const BIT_WEAR_OFFER: float = 0.5  ## The new-bit button shows once the bit is worn past this.
+const BIT_BUTTON: Rect2 = Rect2(184, 386, 196, 28)
 
 var sim: Sim = null
 var steer_by_mouse: bool = true
+var keys_enabled: bool = true  ## B fits a new bit; main turns this off while an overlay is open.
 
 var _t: float = 0.0
 var _pacer: RedrawPacer = RedrawPacer.new()  ## Redraws at most 60 times a second.
@@ -40,7 +43,9 @@ var _built: PackedByteArray = PackedByteArray()  ## Per grid row: 1 once its col
 var _seen: PackedByteArray = PackedByteArray()  ## The grid as _full shows it.
 var _last: PackedInt32Array = PackedInt32Array()  ## DrillSim.chunk_changes as last seen.
 var _row_glints: Array[PackedInt32Array] = []  ## Per grid row: columns that were ore or gem.
-var _last_steer: float = 1000.0
+var _last_steer: float = 1000.0  ## The last angle sent in this drag (a new press always sends).
+var _pend_angle: float = 0.0  ## A steer order waiting for the next sim step, shown at once.
+var _pend_tick: int = -1  ## The sim tick it was queued on; -1 for none.
 var _dragging: bool = false
 
 # Cell kinds.
@@ -68,6 +73,7 @@ func bind(p_sim: Sim) -> void:
 	_img = null
 	_tex = null
 	_last_steer = 1000.0
+	_pend_tick = -1
 	queue_redraw()
 
 
@@ -215,13 +221,41 @@ func angle_toward(p: Vector2) -> float:
 	return rad_to_deg(atan2(dx, dy))
 
 
+## Fit a new bit (the B key and the button): one command, refused by the sim with a reason when
+## there are no bits or one is being fitted.
+func change_bit() -> void:
+	if is_live():
+		sim.push({"type": "change_bit"})
+
+
+func _unhandled_key_input(event: InputEvent) -> void:
+	var k: InputEventKey = event as InputEventKey
+	if k == null or not k.pressed or k.echo or not keys_enabled or not is_live():
+		return
+	if k.physical_keycode == KEY_B:
+		change_bit()
+		get_viewport().set_input_as_handled()
+
+
+## The new-bit button shows while the bit is worn past half (or broken), and not while one is fitted.
+func bit_offer() -> bool:
+	return is_live() and sim.drill.bit_change_left_s <= 0.0 and (sim.drill.bit_broken or sim.drill.bit_wear > BIT_WEAR_OFFER)
+
+
 func _gui_input(event: InputEvent) -> void:
-	if not steer_by_mouse or not is_live():
+	if not is_live():
 		return
 	var mb: InputEventMouseButton = event as InputEventMouseButton
+	if mb != null and mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT and bit_offer() and BIT_BUTTON.has_point(mb.position):
+		change_bit()
+		accept_event()
+		return
+	if not steer_by_mouse:
+		return
 	if mb != null and mb.button_index == MOUSE_BUTTON_LEFT:
 		_dragging = mb.pressed and SCREEN.has_point(mb.position)
 		if _dragging:
+			_last_steer = 1000.0  # A new press always sends, even to the angle the last one used.
 			_steer_to(mb.position)
 			accept_event()
 		return
@@ -236,7 +270,23 @@ func _steer_to(p: Vector2) -> void:
 	if absf(a - _last_steer) < 0.5:
 		return
 	_last_steer = a
-	sim.push({"type": "steer", "angle": a})
+	queue_steer(a)
+
+
+## Queue a steer order (the click and main's A and D keys use this) and remember it, so TGT and the
+## dashed line show the new course even while the world is paused and the sim has not stepped.
+func queue_steer(angle: float) -> void:
+	var limit: float = sim.db.tune("drill.max_heading_deg")
+	_pend_angle = clampf(angle, -limit, limit)
+	_pend_tick = sim.tick
+	sim.push({"type": "steer", "angle": angle})
+
+
+## The course the drill is steering to: the queued order until the sim steps past it.
+func target_heading() -> float:
+	if _pend_tick == sim.tick:
+		return _pend_angle
+	return sim.drill.target_heading_deg
 
 
 # Drawing --------------------------------------------------------------------------------------
@@ -297,9 +347,10 @@ func _draw_rock() -> void:
 	draw_line(Vector2(cx - half, SCREEN.position.y), Vector2(cx - half, SCREEN.position.y + 10.0), UiTheme.CRT, 2.0)
 	draw_line(Vector2(cx + half, SCREEN.position.y), Vector2(cx + half, SCREEN.position.y + 10.0), UiTheme.CRT, 2.0)
 	var reach: float = SCREEN.size.y
-	var tgt: float = deg_to_rad(d.target_heading_deg)
+	var tgt_deg: float = target_heading()
+	var tgt: float = deg_to_rad(tgt_deg)
 	var cur: float = deg_to_rad(d.heading_deg)
-	if absf(d.target_heading_deg - d.heading_deg) > 0.5:
+	if absf(tgt_deg - d.heading_deg) > 0.5:
 		draw_dashed_line(Vector2(cx, SCREEN.position.y + 4.0), _end_of(cx, tgt, reach), Color(UiTheme.AMBER, 0.95), 2.0, 6.0)
 	draw_line(Vector2(cx, SCREEN.position.y + 4.0), _end_of(cx, cur, reach), Color(0.9, 1.0, 0.9), 2.5)
 	# The next node: a line across the screen with a diamond where it sits.
@@ -347,7 +398,7 @@ func _draw_readout() -> void:
 		return
 	var crown: float = d.ship_pos.y + d.ship_size.y
 	var remain: float = maxf(0.0, d.target_y - crown)
-	UiTheme.bold_text(self, Vector2(22, y), "HDG %+d  TGT %+d" % [roundi(d.heading_deg), roundi(d.target_heading_deg)], 20, UiTheme.CRT)
+	UiTheme.bold_text(self, Vector2(22, y), "HDG %+d  TGT %+d" % [roundi(d.heading_deg), roundi(target_heading())], 20, UiTheme.CRT)
 	UiTheme.bold_text(self, Vector2(size.x - 22.0 - 190.0, y), "NODE IN %d M" % roundi(remain), 20, UiTheme.AMBER, null, HORIZONTAL_ALIGNMENT_RIGHT, 190.0)
 	var wear: int = roundi(d.bit_wear * 100.0)
 	var bit_col: Color = UiTheme.ALARM if d.bit_broken else (UiTheme.AMBER if wear >= 70 else UiTheme.CRT)
@@ -356,4 +407,17 @@ func _draw_readout() -> void:
 	if d.bit_change_left_s > 0.0:
 		bit_text = "FITTING BIT %.0f S" % d.bit_change_left_s
 		bit_col = UiTheme.AMBER
+	if bit_offer():
+		_draw_bit_button(sim.run.get_res("bits"))
+		return
 	UiTheme.text(self, Vector2(size.x - 22.0 - 210.0, y + 28.0), bit_text, 18, bit_col, null, HORIZONTAL_ALIGNMENT_RIGHT, 210.0)
+
+
+func _draw_bit_button(bits: int) -> void:
+	var r: Rect2 = BIT_BUTTON
+	var can: bool = bits > 0
+	var p: float = UiTheme.pulse(_t, 1.6)
+	draw_rect(r, Color(0.22, 0.15, 0.05).lerp(Color(0.32, 0.21, 0.06), p) if can else UiTheme.STEEL_DEEP, true)
+	draw_rect(r, UiTheme.AMBER if can else UiTheme.ALARM, false, 2.0)
+	var label: String = "[B] NEW BIT (%d left)" % bits if can else "NO BITS LEFT"
+	UiTheme.bold_text(self, Vector2(r.position.x, r.position.y + 21.0), label, 17, UiTheme.BRASS_LIGHT if can else UiTheme.ALARM, null, HORIZONTAL_ALIGNMENT_CENTER, r.size.x)
