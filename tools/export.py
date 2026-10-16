@@ -26,6 +26,7 @@ EXE = os.path.join(BUILDS, "InnerSun.exe")
 
 def main(argv=None):
     args = sys.argv[1:] if argv is None else argv
+    cli = list(args)  # the run below reuses `args` for the game's own arguments
     if "-h" in args or "--help" in args:
         print(__doc__)
         return 0
@@ -61,8 +62,8 @@ def main(argv=None):
         print("export: FAIL (no `FINAL tick=1200 hash=` line from the exported build) " + str(proc.bad_lines(text, 3)))
         return 1
     print(f"export: ok (hash {m.group(1)}, {size / 1e6:.1f} MB)")
-    if "--playtest" in args:
-        label = args[args.index("--label") + 1] if "--label" in args else "playtest"
+    if "--playtest" in cli:
+        label = cli[cli.index("--label") + 1] if "--label" in cli else "playtest"
         return playtest(exe, label)
     return 0
 
