@@ -1,0 +1,219 @@
+class_name RoomArt
+extends Node2D
+## The painted layers of one room (a node at the room's top-left corner, children in room pixels):
+## the system's wall, floor grating (with gaps at hatches), the system's props standing on the floor,
+## the ceiling lamp, hatch rims and doors. Lit sprites carry albedo and normal in a CanvasTexture so
+## the room lamp, alarm and fire lights shade the paint. Emission twins (helm screens, coolant sight
+## glass, reactor core, lamp bulb) are additive and unshaded (see ArtLib.set_glow).
+
+const WALL_ART: Dictionary = {
+	"helm": "bridge", "bracing": "bracing", "reactor": "reactor", "weapons": "weapons", "drill": "drill", "coolant": "coolant",
+}
+## Props per system: [texture, x as a fraction of the room width, mirrored, glows]
+const PROPS: Dictionary = {
+	"helm": [["bridge_helm", 0.56, false, true]],
+	"bracing": [["bracing_jack", 0.13, false, false], ["bracing_manifold", 0.5, false, false], ["bracing_jack", 0.87, true, false]],
+	"reactor": [["reactor_core", 0.5, false, true]],
+	"weapons": [["weapons_breech", 0.42, false, false], ["weapons_ammo", 0.88, false, false]],
+	"drill": [["drill_bitrack", 0.13, false, false], ["drill_motor", 0.46, false, false]],
+	"coolant": [["coolant_pump", 0.33, false, false], ["coolant_tank", 0.76, false, true]],
+}
+const GRATING_ART_H: float = 40.0
+const WALL_GAIN: float = 1.25
+
+var room: Room
+var ppm: float = 80.0
+var rect_px: Rect2
+var floor_h_px: float = 20.0
+var lamp_pos: Vector2 = Vector2.ZERO  ## Where the lamp bulb is, in room pixels (the PointLight2D goes here).
+var _glows: Array[Sprite2D] = []
+var _glow_kind: Array[String] = []
+var _lamp_glow: Sprite2D
+
+
+## Where a room's lamp bulb sits, in the room's own pixels.
+static func lamp_point(rect: Rect2, p_ppm: float) -> Vector2:
+	return Vector2(rect.size.x * 0.5, p_ppm * 0.42)
+
+
+func build(ship: Ship, r: Room, p_ppm: float) -> void:
+	room = r
+	ppm = p_ppm
+	rect_px = Rect2(r.rect.position * ppm, r.rect.size * ppm)
+	position = rect_px.position
+	var k: float = ppm / ArtLib.ART_PPM
+	floor_h_px = GRATING_ART_H * k
+	lamp_pos = lamp_point(rect_px, ppm)
+	_build_wall()
+	_build_floor(ship)
+	_build_props()
+	_build_lamp()
+	_build_links(ship)
+
+
+func floor_line_y() -> float:
+	return rect_px.size.y - floor_h_px * 0.7
+
+
+func _build_wall() -> void:
+	var name_key: String = str(WALL_ART.get(room.system, "bracing"))
+	var tex: Texture2D = ArtLib.lit("ship", name_key + "_wall")
+	if tex == null:
+		return
+	var k: float = ppm / ArtLib.ART_PPM
+	var src: Vector2 = tex.get_size()
+	var want: Vector2 = rect_px.size / k  # art pixels the room would span at the art scale
+	var fill: float = maxf(want.x / src.x, want.y / src.y)
+	if fill < 1.0:
+		fill = 1.0
+	var region_size: Vector2 = want / fill
+	region_size = region_size.min(src)
+	var s := Sprite2D.new()
+	s.texture = tex
+	s.centered = false
+	s.region_enabled = true
+	s.region_rect = Rect2((src - region_size) * 0.5, region_size)
+	s.scale = Vector2(rect_px.size.x / region_size.x, rect_px.size.y / region_size.y)
+	s.self_modulate = Color(WALL_GAIN, WALL_GAIN, WALL_GAIN, 1.0)
+	s.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	s.z_index = -5
+	add_child(s)
+
+
+func _build_floor(ship: Ship) -> void:
+	var tex: Texture2D = ArtLib.lit("ship", "floor_grating")
+	if tex == null:
+		return
+	var k: float = ppm / ArtLib.ART_PPM
+	var gaps: Array[Vector2] = []
+	for l: Link in ship.links:
+		if l.kind == Link.Kind.HATCH and l.a == room.index:
+			var cx: float = (l.x - room.rect.position.x) * ppm
+			gaps.append(Vector2(cx - l.span_m * 0.5 * ppm, cx + l.span_m * 0.5 * ppm))
+	gaps.sort_custom(func(p: Vector2, q: Vector2) -> bool: return p.x < q.x)
+	var cursor: float = 0.0
+	for g: Vector2 in gaps:
+		if g.x > cursor:
+			_floor_span(tex, cursor, g.x, k)
+		cursor = maxf(cursor, g.y)
+	if cursor < rect_px.size.x:
+		_floor_span(tex, cursor, rect_px.size.x, k)
+
+
+func _floor_span(tex: Texture2D, x0: float, x1: float, k: float) -> void:
+	var s := Sprite2D.new()
+	s.texture = tex
+	s.centered = false
+	s.region_enabled = true
+	s.region_rect = Rect2(x0 / k, 0.0, (x1 - x0) / k, GRATING_ART_H)
+	s.scale = Vector2(k, k)
+	s.position = Vector2(x0, rect_px.size.y - floor_h_px)
+	s.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	s.z_index = -4
+	add_child(s)
+
+
+func _build_props() -> void:
+	var list: Array = PROPS.get(room.system, [])
+	var foot_y: float = floor_line_y()
+	for entry: Array in list:
+		var tname: String = str(entry[0])
+		var tex: Texture2D = ArtLib.lit("ship", tname)
+		if tex == null:
+			continue
+		var extra: float = minf(1.0, rect_px.size.y * 0.8 / (tex.get_size().y * ppm / ArtLib.ART_PPM))
+		var half: float = tex.get_size().x * ppm / ArtLib.ART_PPM * extra * 0.5
+		var x: float = clampf(rect_px.size.x * float(entry[1]), half + 4.0, rect_px.size.x - half - 4.0)
+		var s: Sprite2D = ArtLib.prop("ship", tname, Vector2(x, foot_y), ppm, bool(entry[2]), extra)
+		if s == null:
+			continue
+		s.z_index = -3
+		add_child(s)
+		if bool(entry[3]):
+			var g: Sprite2D = ArtLib.glow_of(s, "ship", tname, 0.9)
+			if g != null:
+				g.z_index = -2
+				add_child(g)
+				_glows.append(g)
+				_glow_kind.append(room.system)
+
+
+func _build_lamp() -> void:
+	var tex: Texture2D = ArtLib.lamp_texture()
+	if tex == null:
+		return
+	var k: float = ppm / ArtLib.ART_PPM
+	var s := Sprite2D.new()
+	s.texture = tex
+	s.centered = false
+	s.scale = Vector2(k, k)
+	s.position = lamp_pos - Vector2(0.42 * 80.0, 0.72 * 80.0) * k
+	s.z_index = -2
+	add_child(s)
+	var e: Texture2D = ArtLib.plain("ship", "lamp", "emission")
+	if e != null:
+		_lamp_glow = Sprite2D.new()
+		_lamp_glow.texture = e
+		_lamp_glow.centered = false
+		_lamp_glow.scale = s.scale
+		_lamp_glow.position = s.position
+		_lamp_glow.material = ArtLib.additive_unshaded()
+		_lamp_glow.z_index = -1
+		ArtLib.set_glow(_lamp_glow, 1.1)
+		add_child(_lamp_glow)
+
+
+func _build_links(ship: Ship) -> void:
+	var k: float = ppm / ArtLib.ART_PPM
+	for l: Link in ship.links:
+		if l.a != room.index:
+			continue
+		var x: float = (l.x - room.rect.position.x) * ppm
+		if l.kind == Link.Kind.HATCH:
+			var rim: Sprite2D = ArtLib.prop("ship", "hatch_rim", Vector2(x, rect_px.size.y - floor_h_px * 0.55), ppm)
+			if rim != null:
+				rim.z_index = 2
+				add_child(rim)
+		else:
+			var s: Sprite2D = ArtLib.prop("ship", "door_closed", Vector2(x, floor_line_y() + floor_h_px * 0.25), ppm)
+			if s != null:
+				var want_h: float = l.height_m * ppm
+				var tex_h: float = s.texture.get_size().y * k
+				s.scale = s.scale * (want_h / tex_h)
+				s.position.y = floor_line_y() + floor_h_px * 0.25 - want_h
+				s.position.x = x - s.texture.get_size().x * 0.5 * s.scale.x
+				s.z_index = 2
+				s.set_meta("link", l.index)
+				add_child(s)
+				_door_nodes.append(s)
+
+
+var _door_nodes: Array[Sprite2D] = []
+
+
+## Per frame: door art follows Link.open, glows breathe with the system's power.
+func update(ship: Ship, r: Room, t: float, lamp_k: float) -> void:
+	for s: Sprite2D in _door_nodes:
+		var l: Link = ship.links[int(s.get_meta("link"))]
+		var name_key: String = "door_open" if l.open else "door_closed"
+		var tex: Texture2D = ArtLib.lit("ship", name_key)
+		if tex != null and s.texture != tex:
+			s.texture = tex
+	var power: float = 1.0
+	if r.sys_max > 0:
+		power = clampf(float(r.sys_power) / float(r.sys_max), 0.0, 1.0)
+	if r.sys_failed:
+		power *= 0.35
+	for i: int in range(_glows.size()):
+		var v: float = 1.0
+		match _glow_kind[i]:
+			"reactor":
+				v = (0.55 + 0.45 * power) * (0.92 + 0.08 * sin(t * 3.1 + float(room.index)))
+			"helm":
+				v = 0.8 + 0.2 * sin(t * 1.7) * sin(t * 0.43 + 1.0)
+				v *= 0.4 + 0.6 * clampf(float(r.sys_power) + 0.5, 0.0, 1.0)
+			_:
+				v = 0.7 + 0.3 * sin(t * 2.0 + float(room.index))
+		ArtLib.set_glow(_glows[i], 0.9 * v)
+	if _lamp_glow != null:
+		ArtLib.set_glow(_lamp_glow, 1.1 * lamp_k)

@@ -28,7 +28,7 @@ const BUDGET_USEC: int = 9000
 const ROCK_SHADOWS: bool = false
 const AMBIENT: Color = Color(0.30, 0.30, 0.34)
 ## Albedo gain for rock sprites (HDR modulate): the ambient is so dark that plain rock colors read black.
-const ROCK_GAIN: float = 1.9
+const ROCK_GAIN: float = 1.45
 
 ## The whole rock as ONE canvas item (a mosaic of the painted chunks). Measured in captures: Godot lit
 ## a rock item only with the lights that sit inside its rectangle, so separate chunk sprites came out
@@ -50,9 +50,7 @@ var ppm: float = 80.0
 var serial: int = -1
 
 var _scale: float = 5.0
-var _cr: PackedFloat32Array = PackedFloat32Array()
-var _cg: PackedFloat32Array = PackedFloat32Array()
-var _cb: PackedFloat32Array = PackedFloat32Array()
+var _slot: PackedByteArray = PackedByteArray()  # painted tile slot per material code
 var _kind: PackedByteArray = PackedByteArray()  # 0 rock, 1 ore, 2 gem, 3 water
 var _seen: PackedByteArray = PackedByteArray()
 var _last: PackedInt32Array = PackedInt32Array()
@@ -62,6 +60,8 @@ var _img_a: Image
 var _img_n: Image
 var _tex_a: ImageTexture
 var _tex_n: ImageTexture
+var _img_id: Image
+var _tex_id: ImageTexture
 var _mosaic_dirty: bool = false
 var _glints: Array[Sprite2D] = []
 var _occluders: Array[LightOccluder2D] = []
@@ -100,6 +100,8 @@ func setup(p_drill: DrillSim, p_ppm: float) -> void:
 	_img_n.fill(Color8(128, 128, 255, 255))
 	_tex_a = ImageTexture.create_from_image(_img_a)
 	_tex_n = ImageTexture.create_from_image(_img_n)
+	_img_id = Image.create(mw, mh, false, Image.FORMAT_R8)
+	_tex_id = ImageTexture.create_from_image(_img_id)
 	var ct := CanvasTexture.new()
 	ct.diffuse_texture = _tex_a
 	ct.normal_texture = _tex_n
@@ -108,6 +110,7 @@ func setup(p_drill: DrillSim, p_ppm: float) -> void:
 	_rock.tex = ct
 	_rock.size_px = Vector2(float(mw), float(mh)) * _scale
 	_rock.light_mask = LIGHT_MASK
+	_rock.material = RockTiles.material_for(_rock.size_px, _tex_id, ppm)
 	_rock.z_index = -20
 	_rock.self_modulate = Color(ROCK_GAIN, ROCK_GAIN, ROCK_GAIN, 1.0)
 	add_child(_rock)
@@ -145,6 +148,7 @@ func _process(delta: float) -> void:
 		_mosaic_dirty = false
 		_tex_a.update(_img_a)
 		_tex_n.update(_img_n)
+		_tex_id.update(_img_id)
 	for i: int in range(_glints.size()):
 		var g: Sprite2D = _glints[i]
 		if g != null:
@@ -252,18 +256,11 @@ static func _make_tile() -> void:
 
 
 func _make_palette() -> void:
-	_cr.resize(256)
-	_cg.resize(256)
-	_cb.resize(256)
+	_slot.resize(256)
 	_kind.resize(256)
 	for code: int in range(256):
 		var m: Dictionary = drill.material(code)
-		var col := Color(0.42, 0.38, 0.34)
-		if not m.is_empty() and m.has("color"):
-			col = Color.html(str(m["color"]))
-		_cr[code] = col.r
-		_cg[code] = col.g
-		_cb[code] = col.b
+		_slot[code] = RockTiles.slot_of(str(m.get("id", "")))
 		var kind: int = 0
 		if code < drill.water_of.size() and drill.water_of[code] == 1:
 			kind = 3
@@ -314,6 +311,8 @@ func _paint(cx: int, cy: int) -> void:
 	var alb: PackedByteArray = PackedByteArray()
 	alb.resize(CHUNK_PX * CHUNK_PX * 4)
 	var nrm: PackedByteArray = _flat_normal.duplicate()
+	var idb := PackedByteArray()
+	idb.resize(CHUNK_PX * CHUNK_PX)
 	var tile: PackedFloat32Array = _tile
 	var total_px: float = float(drill.rows * CELL_PX)
 	for y: int in range(CHUNK_PX):
@@ -359,30 +358,19 @@ func _paint(cx: int, cy: int) -> void:
 			var shade: float = tex * pv[cell] * (1.0 + band) * (1.0 - 0.28 * ydepth)
 			var depth_in: float = clampf((v - 0.5) * 3.2, 0.0, 1.0)
 			shade *= 0.32 + 0.68 * depth_in
-			var r: float = _cr[code]
-			var g: float = _cg[code]
-			var b: float = _cb[code]
 			var bump: float = 1.0
-			if kind == 1:
-				if na > 0.7:
-					var m: float = clampf((na - 0.7) * 5.0, 0.0, 0.7)
-					r = lerpf(r, 1.0, m)
-					g = lerpf(g, 0.78, m)
-					b = lerpf(b, 0.5, m)
-			elif kind == 2:
-				var f: float = smoothstep(0.45, 0.85, nb)
-				shade = 0.4 + 0.55 * f * (0.7 + 0.5 * na)
-				bump = 1.5
+			if kind == 2:
+				bump = 1.3
 			elif kind == 3:
-				shade *= 0.55
 				var sheen: float = smoothstep(0.78, 0.95, 0.5 + 0.5 * sin(float(Y) * 0.4 + na * 5.0))
-				b += sheen * 0.35
-				g += sheen * 0.15
-				bump = 0.15
+				shade = shade * 0.8 + sheen * 0.25
+				bump = 0.25
 			var o: int = (y * CHUNK_PX + x) * 4
-			alb[o] = clampi(roundi(r * shade * 255.0), 0, 255)
-			alb[o + 1] = clampi(roundi(g * shade * 255.0), 0, 255)
-			alb[o + 2] = clampi(roundi(b * shade * 255.0), 0, 255)
+			var sh8: int = clampi(roundi(shade * 255.0), 0, 255)
+			alb[o] = sh8
+			alb[o + 1] = sh8
+			alb[o + 2] = sh8
+			idb[y * CHUNK_PX + x] = _slot[code] * 16
 			alb[o + 3] = clampi(roundi(cover * 255.0), 0, 255)
 			var dhdx: float = ((s10 - s00) * (1.0 - ty) + (s11 - s01) * ty) * dft[x] * 0.125
 			var dhdy: float = ((s01 - s00) * (1.0 - tx) + (s11 - s10) * tx) * dty * 0.125
@@ -394,7 +382,7 @@ func _paint(cx: int, cy: int) -> void:
 			nrm[o] = clampi(roundi((nx * inv * 0.5 + 0.5) * 255.0), 0, 255)
 			nrm[o + 1] = clampi(roundi((ny * inv * 0.5 + 0.5) * 255.0), 0, 255)
 			nrm[o + 2] = clampi(roundi((inv * 0.5 + 0.5) * 255.0), 0, 255)
-	_apply(idx, alb, nrm)
+	_apply(idx, alb, nrm, idb)
 	_paint_glint(idx, cx, cy)
 	if ROCK_SHADOWS:
 		_build_occluder(idx, cx, cy)
@@ -402,11 +390,12 @@ func _paint(cx: int, cy: int) -> void:
 	builds += 1
 
 
-func _apply(idx: int, alb: PackedByteArray, nrm: PackedByteArray) -> void:
+func _apply(idx: int, alb: PackedByteArray, nrm: PackedByteArray, idb: PackedByteArray) -> void:
 	var at := Vector2i((idx % drill.chunk_cols) * CHUNK_PX, (idx / drill.chunk_cols) * CHUNK_PX)
 	var src := Rect2i(0, 0, CHUNK_PX, CHUNK_PX)
 	_img_a.blit_rect(Image.create_from_data(CHUNK_PX, CHUNK_PX, false, Image.FORMAT_RGBA8, alb), src, at)
 	_img_n.blit_rect(Image.create_from_data(CHUNK_PX, CHUNK_PX, false, Image.FORMAT_RGBA8, nrm), src, at)
+	_img_id.blit_rect(Image.create_from_data(CHUNK_PX, CHUNK_PX, false, Image.FORMAT_R8, idb), src, at)
 	_mosaic_dirty = true
 
 
@@ -431,28 +420,15 @@ func _paint_glint(idx: int, cx: int, cy: int) -> void:
 				px.resize(CHUNK_PX * CHUNK_PX * 4)
 				any = true
 			var gem: bool = kind == 2
-			var cr: float = 0.75 if gem else 1.0
-			var cg: float = 1.0 if gem else 0.78
-			var cb: float = 0.95 if gem else 0.4
-			var n: int = 6 if gem else 3
 			if gem:
-				for yy: int in range(CELL_PX):
-					for xx: int in range(CELL_PX):
-						var d: float = Vector2(float(xx) - 3.5, float(yy) - 3.5).length() / 5.0
-						_put(px, lc * CELL_PX + xx, lr * CELL_PX + yy, cr, cg, cb, 0.12 * clampf(1.0 - d, 0.0, 1.0))
-			for k: int in range(n):
-				var sx: int = lc * CELL_PX + 1 + floori(_hash(c, r, 20 + k) * 6.0)
-				var sy: int = lr * CELL_PX + 1 + floori(_hash(c, r, 40 + k) * 6.0)
-				var inten: float = 0.55 + 0.45 * _hash(c, r, 60 + k)
-				if not gem:
-					inten *= 0.4
-				_put(px, sx, sy, cr, cg, cb, inten)
-				if gem:
-					for dxy: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
-						_put(px, sx + dxy.x, sy + dxy.y, cr, cg, cb, inten * 0.5)
-				if gem:
-					for dxy2: Vector2i in [Vector2i(2, 0), Vector2i(-2, 0), Vector2i(0, 2), Vector2i(0, -2)]:
-						_put(px, sx + dxy2.x, sy + dxy2.y, cr, cg, cb, inten * 0.25)
+				_gem_glow(px, c, r, lc, lr)
+			else:
+				# Ore reads as metal in rock: a few small cool glints, not lava.
+				for k: int in range(2):
+					var sx: int = lc * CELL_PX + 1 + floori(_hash(c, r, 20 + k) * 6.0)
+					var sy: int = lr * CELL_PX + 1 + floori(_hash(c, r, 40 + k) * 6.0)
+					var inten: float = 0.3 + 0.3 * _hash(c, r, 60 + k)
+					_put(px, sx, sy, 0.82, 0.9, 1.0, inten)
 	var g: Sprite2D = _glints[idx]
 	if not any:
 		if g != null:
@@ -470,8 +446,8 @@ func _paint_glint(idx: int, cx: int, cy: int) -> void:
 		mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 		mat.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
 		g.material = mat
-		# CanvasModulate multiplies everything, so divide it out and push the sparkles above 1.0.
-		g.modulate = Color(1.7 / AMBIENT.r, 1.7 / AMBIENT.g, 1.7 / AMBIENT.b, 1.0)
+		# Unshaded items are not touched by the CanvasModulate, so this is the on-screen brightness.
+		g.modulate = Color(1.15, 1.15, 1.15, 1.0)
 		add_child(g)
 		_glints[idx] = g
 		_gtex[idx] = ImageTexture.create_from_image(img)
@@ -479,6 +455,21 @@ func _paint_glint(idx: int, cx: int, cy: int) -> void:
 	else:
 		_gtex[idx].update(img)
 	g.visible = true
+
+
+## Gem cells glow from the painted emission tile (the same warped world position as the tile).
+func _gem_glow(px: PackedByteArray, c: int, r: int, lc: int, lr: int) -> void:
+	var em: Image = RockTiles.emission_image()
+	var tile_mp: float = RockTiles.TILE_M * float(CELL_PX) / drill.cell_m  # mosaic px per tile
+	for yy: int in range(CELL_PX):
+		for xx: int in range(CELL_PX):
+			var wx: float = (float(c * CELL_PX + xx)) / tile_mp
+			var wy: float = (float(r * CELL_PX + yy)) / tile_mp
+			var tx: int = clampi(floori((wx - floorf(wx)) * 128.0), 0, 127)
+			var ty: int = clampi(floori((wy - floorf(wy)) * 128.0), 0, 127)
+			var e: Color = em.get_pixel(tx, ty) if em != null else Color(0.3, 1.0, 0.8, 0.5)
+			var k: float = e.a * 0.8
+			_put(px, lc * CELL_PX + xx, lr * CELL_PX + yy, e.r, e.g, e.b, k)
 
 
 static func _put(px: PackedByteArray, x: int, y: int, r: float, g: float, b: float, a: float) -> void:
@@ -539,17 +530,16 @@ func _build_occluder(idx: int, cx: int, cy: int) -> void:
 
 ## The dim back wall behind the shaft, and solid rock beyond the grid's sides and bottom.
 func _build_backdrop() -> void:
-	var tex: Texture2D = ShipView.canvas_tex("res://assets/test/rock_albedo.png", "res://assets/test/rock_normal.png")
-	if tex == null:
-		return
+	var tex: Texture2D = RockTiles.canvas_tile("shaft")
 	var w: float = float(drill.cols) * drill.cell_m * ppm
 	var h: float = float(drill.rows) * drill.cell_m * ppm
 	var pad: float = 16.0 * ppm
-	_wall(tex, Rect2(-pad, -pad, w + pad * 2.0, h + pad * 2.0), Color(1.7, 1.45, 1.3), -30)
-	var apron := Color(1.5, 1.4, 1.3)
-	_wall(tex, Rect2(-pad, -pad, pad, h + pad * 2.0), apron, -21)
-	_wall(tex, Rect2(w, -pad, pad, h + pad * 2.0), apron, -21)
-	_wall(tex, Rect2(0.0, h, w, pad), apron, -21)
+	_wall(tex, Rect2(-pad, -pad, w + pad * 2.0, h + pad * 2.0), Color(1.9, 1.7, 1.55), -30)
+	var apron: Texture2D = RockTiles.canvas_tile("dense")
+	var tint := Color(1.1, 1.05, 1.0)
+	_wall(apron, Rect2(-pad, -pad, pad, h + pad * 2.0), tint, -21)
+	_wall(apron, Rect2(w, -pad, pad, h + pad * 2.0), tint, -21)
+	_wall(apron, Rect2(0.0, h, w, pad), tint, -21)
 
 
 func _wall(tex: Texture2D, rect: Rect2, tint: Color, z: int) -> void:
@@ -557,8 +547,10 @@ func _wall(tex: Texture2D, rect: Rect2, tint: Color, z: int) -> void:
 	s.texture = tex
 	s.centered = false
 	s.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+	var k: float = RockTiles.TILE_M * ppm / float(RockTiles.TILE_PX)
+	s.scale = Vector2(k, k)
 	s.region_enabled = true
-	s.region_rect = Rect2(rect.position, rect.size)
+	s.region_rect = Rect2(rect.position / k, rect.size / k)
 	s.position = rect.position
 	s.self_modulate = tint
 	s.light_mask = LIGHT_MASK
