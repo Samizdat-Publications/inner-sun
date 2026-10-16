@@ -2,7 +2,8 @@ class_name DrillLint
 extends RefCounted
 ## Checks the rock tables (game/data/rock/*.json) and the drill tuning: unique material codes and
 ## ids, code 0 is air, numeric hardness, yields naming real run resources, strata and features
-## naming real materials, every tuning key present.
+## naming real materials, feature groups and depth windows, a yield and a hazard flag (water, gas)
+## never on one material, every tuning key present.
 
 const FEATURE_KINDS: Array[String] = ["vein", "lens", "pocket", "blob"]
 
@@ -47,6 +48,13 @@ static func _lint_table(table: Dictionary, file: String, errs: PackedStringArray
 		var color: String = str(md.get("color", ""))
 		if not Color.html_is_valid(color):
 			errs.append("%s: color \"%s\" is not a hex color" % [where, color])
+		for flag: String in ["water", "gas"]:
+			if md.has(flag) and not (md[flag] is bool):
+				errs.append("%s: \"%s\" must be true or false" % [where, flag])
+		if bool(md.get("water", false)) and bool(md.get("gas", false)):
+			errs.append("%s: a material is a water pocket or a gas pocket, not both" % where)
+		if md.has("yield") and (bool(md.get("water", false)) or bool(md.get("gas", false))):
+			errs.append("%s: a pocket (water or gas) cannot also yield a resource" % where)
 		if md.has("yield"):
 			var y: Variant = md["yield"]
 			if not (y is Dictionary):
@@ -89,6 +97,14 @@ static func _lint_table(table: Dictionary, file: String, errs: PackedStringArray
 		var count: Variant = fd.get("count", [1, 1])
 		if not (count is Array) or (count as Array).size() != 2 or int((count as Array)[0]) < 0 or int((count as Array)[1]) < int((count as Array)[0]):
 			errs.append("%s: count must be [min, max] with 0 <= min <= max" % where)
+		var group: String = str(fd.get("group", ""))
+		if not RockGen.GROUPS.has(group):
+			errs.append("%s: unknown group \"%s\" (known: ore, gems, gas, water)" % [where, group])
+		for key: String in ["from_depth_m", "to_depth_m"]:
+			if fd.has(key) and not (fd[key] is float or fd[key] is int):
+				errs.append("%s: \"%s\" must be a number" % [where, key])
+		if float(fd.get("from_depth_m", 0.0)) >= float(fd.get("to_depth_m", 1.0e12)):
+			errs.append("%s: from_depth_m must be below to_depth_m" % where)
 		for key: String in ["at", "offset_m", "length_m", "thickness_m", "angle_deg", "width_m", "height_m", "radius_m"]:
 			if fd.has(key):
 				var v: Variant = fd[key]

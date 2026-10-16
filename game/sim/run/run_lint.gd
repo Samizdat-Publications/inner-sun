@@ -1,7 +1,9 @@
 class_name RunLint
 extends RefCounted
 ## Checks the run tuning and every layer in data/layers: numbers in range, the rock table and enemy
-## ships exist, and maps generated from a few seeds keep the map rules (store, fights per path).
+## ships exist, the survey block is sane, and maps generated from a few seeds keep the map rules (a
+## store in every store window on every path, no two stores in a row, fights per path). Also the
+## gear table and the store lines that sell gear (Gear.lint).
 
 ## Enemy ship ids the layer data may name before the ships exist. The combat step (M1 step 4) adds
 ## "rival_light" and "rival_heavy" to data/ships; remove them from here then.
@@ -16,6 +18,7 @@ static func lint(db: DataDB, errs: PackedStringArray) -> void:
 	var layers: Dictionary = db.table("layers")
 	for id: String in layers.keys():
 		_lint_layer(db, layers[id], db.source_of("layers", id), errs)
+	Gear.lint(db, errs)
 
 
 static func _num(d: Dictionary, key: String) -> bool:
@@ -64,14 +67,19 @@ static func _lint_layer(db: DataDB, def: Dictionary, file: String, errs: PackedS
 				total += float(wd[t])
 		if total <= 0.0:
 			errs.append("%s: node_weights must add up to more than zero" % file)
-	var sr: Variant = def.get("store_rows")
-	if not (sr is Array) or (sr as Array).size() != 2:
-		errs.append("%s: store_rows must be [first, last]" % file)
+	var sw: Variant = def.get("store_windows")
+	if not (sw is Array):
+		errs.append("%s: store_windows must be a list of [first, last] row pairs" % file)
 	else:
-		var a: int = int((sr as Array)[0])
-		var b: int = int((sr as Array)[1])
-		if a < 1 or b < a or b > rows - 2:
-			errs.append("%s: store_rows must lie in the middle rows 1..%d, first <= last" % [file, rows - 2])
+		for win: Variant in (sw as Array):
+			if not (win is Array) or (win as Array).size() != 2:
+				errs.append("%s: store_windows entries must be [first, last]" % file)
+				continue
+			var a: int = int((win as Array)[0])
+			var b: int = int((win as Array)[1])
+			if a < 1 or b < a or b > rows - 2:
+				errs.append("%s: store_windows must lie in the middle rows 1..%d, first <= last" % [file, rows - 2])
+	Survey.lint(def.get("survey"), file, errs)
 	var need: int = int(def["min_fights_per_path"])
 	if need < 0 or need > rows - 2:
 		errs.append("%s: min_fights_per_path must be between 0 and the number of middle rows" % file)
@@ -104,12 +112,11 @@ static func _lint_layer(db: DataDB, def: Dictionary, file: String, errs: PackedS
 		var m: Array = MapGen.generate(def, RngStreams.new(s).get_stream("map"))
 		if MapGen.min_fights(m) < need:
 			errs.append("%s: seed %d: a path has fewer than %d fights" % [file, s, need])
-		var store: bool = false
-		for r: int in range(int((sr as Array)[0]), int((sr as Array)[1]) + 1):
-			for n: Dictionary in (m[r] as Array):
-				store = store or str(n["type"]) == "store"
-		if not store:
-			errs.append("%s: seed %d: no store in the store rows" % [file, s])
+		for win: Variant in (sw as Array):
+			if MapGen.min_on_paths(m, "store", int((win as Array)[0]), int((win as Array)[1])) < 1:
+				errs.append("%s: seed %d: a path meets no store in rows %s" % [file, s, str(win)])
+		if MapGen.has_store_pair(m):
+			errs.append("%s: seed %d: a path has two stores in a row" % [file, s])
 
 
 static func _check_ship(db: DataDB, id: String, file: String, field: String, errs: PackedStringArray) -> void:

@@ -46,8 +46,13 @@ var fight_value: float = -6.0  ## Value of an event option that starts a fight.
 var repair_to_frac: float = 0.8  ## Store repairs bring the hull up to this fraction.
 var gate_repair_frac: float = 1.0  ## ...and up to this one when the gate is two rows away or less.
 var keep: Dictionary = {}  ## Store: resource -> units to stock up to.
-var upgrades: Array[String] = []  ## Store: wanted extras in order ("system:<id>", "weapon", "crew").
+var upgrades: Array[String] = []  ## Store: wanted extras in order ("gear:<id>", "system:<id>", "weapon", "crew").
 var gem_reserve: int = 10  ## Gems kept back from extras.
+var ore_reserve: int = 10  ## Ore kept back from extras (hull repairs at the next store).
+var survey_weight: float = 2.0  ## Node score per unit of survey richness above 1 (revealed nodes).
+var gem_bonus: float = 0.5  ## Node score when the survey found gems.
+var gas_fear: float = 0.8  ## Node score lost when the survey found gas.
+var water_fear: float = 0.5  ## Node score lost when the survey found water.
 
 var _drill_bot: DrillBot = DrillBot.new()
 var _next: int = 0
@@ -61,23 +66,25 @@ static func make_policy(p_policy: String) -> PolicyBot:
 	var b := PolicyBot.new()
 	b.policy = p_policy
 	# Balanced, the reasonable middle; the other policies override below.
-	b.node_scores = {"event": 1.2, "cavern": 1.3, "hazard": -0.5, "store": 0.4, "fight": 0.3, "gate": 50.0}
+	b.node_scores = {"event": 1.2, "cavern": 1.3, "hazard": -0.5, "store": 0.4, "fight": 0.3, "deposit": 1.6, "gate": 50.0}
 	b.keep = {"coolant": 12, "cells": 0, "bits": 1, "charges": 5}
-	b.upgrades = ["system:bracing", "system:reactor", "system:helm", "system:weapons", "weapon"]
+	b.upgrades = ["gear:tungsten_head", "system:bracing", "gear:hull_plating", "system:reactor", "gear:diamond_head",
+			"gear:pumps", "system:helm", "system:weapons", "weapon"]
 	b.repair_to_frac = 0.9
 	b.fight_ok_frac = 0.7
 	b.flee_hull_frac = 0.3
 	b.wait_s = 10.0
-	b._drill_bot.noise_budget = 35.0
-	b._drill_bot.max_detour_m = 4.5
+	b.ore_reserve = 15
+	b._drill_bot.noise_budget = 80.0
+	b._drill_bot.max_detour_m = 6.0
 	match p_policy:
 		"cautious":
-			b.drill_bars = 2
+			b.drill_bars = 3
 			b.low_coolant = 6
-			b.wait_s = 15.0
+			b.wait_s = 10.0
 			b.flee_hull_frac = 0.4
 			b.flee_enemy_frac = 0.3
-			b.node_scores = {"event": 1.0, "cavern": 1.0, "hazard": -1.5, "store": 0.8, "fight": -2.0, "gate": 50.0}
+			b.node_scores = {"event": 1.0, "cavern": 1.0, "hazard": -1.5, "store": 0.8, "fight": -2.0, "deposit": 1.0, "gate": 50.0}
 			b.hurt_frac = 0.65
 			b.fight_ok_frac = 0.85
 			b.risk_down = 0.7
@@ -85,10 +92,17 @@ static func make_policy(p_policy: String) -> PolicyBot:
 			b.fight_value = -20.0
 			b.repair_to_frac = 1.0
 			b.keep = {"coolant": 16, "cells": 1, "bits": 2, "charges": 6}
-			b.upgrades = ["system:bracing", "system:helm", "system:reactor"]
+			b.upgrades = ["gear:hull_plating", "system:bracing", "gear:pumps", "gear:tungsten_head", "system:helm",
+					"system:reactor"]
 			b.gem_reserve = 20
-			b._drill_bot.noise_budget = 25.0
-			b._drill_bot.max_detour_m = 3.0
+			b.ore_reserve = 30
+			b.survey_weight = 1.0
+			b.gas_fear = 2.0
+			b.water_fear = 1.5
+			b._drill_bot.noise_budget = 50.0
+			b._drill_bot.max_detour_m = 4.0
+			b._drill_bot.cost_gas = 12.0
+			b._drill_bot.cost_water = 8.0
 		"greedy":
 			b.drill_bars = 4
 			b.low_coolant = 4
@@ -98,7 +112,7 @@ static func make_policy(p_policy: String) -> PolicyBot:
 			b.flee_when_caught = false
 			b.charge_reserve = 0
 			b.gate_charges = 1
-			b.node_scores = {"event": 1.5, "cavern": 2.0, "hazard": 0.5, "store": 0.2, "fight": 2.0, "gate": 50.0}
+			b.node_scores = {"event": 1.5, "cavern": 2.0, "hazard": 0.5, "store": 0.2, "fight": 2.0, "deposit": 2.5, "gate": 50.0}
 			b.hurt_frac = 0.35
 			b.fight_ok_frac = 0.4
 			b.risk_down = 0.0
@@ -109,10 +123,18 @@ static func make_policy(p_policy: String) -> PolicyBot:
 			b.repair_to_frac = 0.6
 			b.gate_repair_frac = 0.8
 			b.keep = {"coolant": 8, "cells": 0, "bits": 2, "charges": 4}
-			b.upgrades = ["weapon", "system:weapons", "system:reactor", "system:drill"]
+			b.upgrades = ["gear:tungsten_head", "gear:diamond_head", "weapon", "system:weapons", "system:drill",
+					"system:reactor", "gear:hull_plating"]
 			b.gem_reserve = 0
-			b._drill_bot.noise_budget = 90.0
+			b.ore_reserve = 0
+			b.survey_weight = 3.0
+			b.gem_bonus = 1.0
+			b.gas_fear = 0.0
+			b.water_fear = 0.0
+			b._drill_bot.noise_budget = 200.0
 			b._drill_bot.max_detour_m = 9.0
+			b._drill_bot.cost_gas = 1.0
+			b._drill_bot.cost_water = 1.5
 	return b
 
 
@@ -199,17 +221,24 @@ func _gun_bars(sim: Sim) -> int:
 	return bars
 
 
+## The wanted list is a priority order over the reactor's output: each system's target is capped by
+## its intact bars and by what the systems before it left (M1b, D027: before, bars held by helm and
+## bracing were never freed, so the drill ran at about 1.6 bars whatever the policy wanted, and in a
+## fight the guns got only what the drill released).
 func _apply_power(sim: Sim, want: Array) -> void:
 	var sy: Systems = sim.systems
 	var ship: Ship = sim.ship
 	var free: int = sy.free_bars(sim.player)
+	var budget: int = sy.reactor_output(sim.player)
 	var targets := PackedInt32Array()
 	var rooms := PackedInt32Array()
 	for w: Variant in want:
 		var pair: Array = w
 		var ri: int = ship.room_with_system(str(pair[0]))
 		rooms.append(ri)
-		targets.append(mini(int(pair[1]), ship.rooms[ri].intact_bars()) if ri >= 0 else 0)
+		var t: int = mini(mini(int(pair[1]), ship.rooms[ri].intact_bars()), budget) if ri >= 0 else 0
+		budget -= t
+		targets.append(t)
 	for i: int in range(rooms.size()):
 		var ri: int = rooms[i]
 		if ri >= 0 and ship.rooms[ri].sys_power > targets[i]:

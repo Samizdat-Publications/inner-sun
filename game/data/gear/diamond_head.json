@@ -1,0 +1,8 @@
+{
+  "id": "diamond_head",
+  "name": "Diamond drill head",
+  "slot": "drill_head",
+  "tier": 2,
+  "text": "Industrial diamond set in a steel matrix. Half again as fast, the bit barely wears, and basalt cuts like granite.",
+  "effects": {"cut_speed_x": 1.5, "wear_x": 0.35, "hard_rock_x": 0.5}
+}

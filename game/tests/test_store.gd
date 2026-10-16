@@ -1,6 +1,7 @@
 extends TestCase
 ## The store: purchases spend gems or ore exactly, respect limits and caps, refuse cleanly, and the
-## crew hire is deterministic (docs/plans/specs/step5_events.md).
+## crew hire is deterministic (docs/plans/specs/step5_events.md). M1b: ore buys upgrades, gear and
+## repairs; gems buy supplies, crew and weapons (docs/plans/specs/m1b_dig_sim.md).
 
 const COOLANT: int = 0
 const CELLS: int = 1
@@ -11,11 +12,18 @@ const LANCE: int = 5
 const HIRE: int = 6
 const UP_HELM: int = 7
 const UP_REACTOR: int = 9
+const TUNGSTEN: int = 13
+const DIAMOND: int = 14
+const PLATING: int = 15
+const PUMPS: int = 16
 
 
-func _store(p_seed: int = 7, gems: int = 500) -> Sim:
+## A run with an open store; gems set to `gems`, ore to `ore` (-1 keeps the ship's starting ore).
+func _store(p_seed: int = 7, gems: int = 500, ore: int = -1) -> Sim:
 	var s := Sim.new(db(), p_seed, "light_drill", {"mode": "run"})
 	s.run.add(s, "gems", gems - s.run.get_res("gems"))
+	if ore >= 0:
+		s.run.add(s, "ore", ore - s.run.get_res("ore"))
 	s.encounter.open_store(s, "crust_trader")
 	return s
 
@@ -34,12 +42,58 @@ func test_stock_lines_match_the_spec() -> void:
 	var st: Dictionary = db().table("stores")["crust_trader"]
 	var stock: Array = st["stock"]
 	var want: Array = [["res", 6], ["res", 8], ["res", 10], ["res", 8], ["hull", 2], ["weapon", 70], ["crew", 45],
-		["upgrade", 20], ["upgrade", 20], ["upgrade", 30], ["upgrade", 30], ["upgrade", 25], ["upgrade", 25]]
-	check_eq(stock.size(), want.size(), "thirteen stock lines")
+		["upgrade", 120], ["upgrade", 140], ["upgrade", 200], ["upgrade", 160], ["upgrade", 150], ["upgrade", 120],
+		["gear", 180], ["gear", 450], ["gear", 200], ["gear", 120]]
+	check_eq(stock.size(), want.size(), "seventeen stock lines")
 	for i: int in range(mini(stock.size(), want.size())):
 		var line: Dictionary = stock[i]
 		check_eq(str(line["item"]), str(want[i][0]), "line %d item" % i)
 		check_eq(int(line["price"]), int(want[i][1]), "line %d price" % i)
+
+
+## Ore buys gear, upgrades and hull; gems buy supplies, crew and weapons (every line, from the data).
+func test_store_currency_per_line() -> void:
+	var stock: Array = (db().table("stores")["crust_trader"] as Dictionary)["stock"]
+	for i: int in range(stock.size()):
+		var line: Dictionary = stock[i]
+		var item: String = str(line["item"])
+		var want: String = "ore" if item == "gear" or item == "upgrade" or item == "hull" else "gems"
+		check_eq(str(line.get("currency", "gems")), want, "line %d (%s) is paid in %s" % [i, item, want])
+	var s: Sim = _store(7, 100, 400)
+	_buy(s, TUNGSTEN)
+	check_eq(s.run.get_res("ore"), 220, "the tungsten head costs 180 ore")
+	check_eq(s.run.get_res("gems"), 100, "and no gems")
+	_buy(s, COOLANT)
+	check_eq(s.run.get_res("gems"), 94, "coolant costs 6 gems")
+	check_eq(s.run.get_res("ore"), 220, "and no ore")
+
+
+func test_gear_lines_fit_gear() -> void:
+	var s: Sim = _store(7, 100, 1000)
+	_buy(s, TUNGSTEN)
+	check_eq(Array(s.run.gear), ["tungsten_head"], "the head is fitted")
+	_buy(s, TUNGSTEN)
+	check(_refused(s), "once per visit and already fitted")
+	_buy(s, DIAMOND)
+	check_eq(Array(s.run.gear), ["diamond_head"], "the diamond head replaces it")
+	check_eq(s.run.get_res("ore"), 1000 - 180 - 450, "both paid exactly")
+	var max0: int = s.ship.hull_max
+	_buy(s, PLATING)
+	check_eq(s.ship.hull_max, max0 + 5, "plating raises the maximum hull")
+	_buy(s, PUMPS)
+	check_eq(s.run.gear_x("pump_x"), 2.0, "the pumps are fitted")
+	_buy(s, PUMPS, 2)
+	check(_refused(s), "gear is fitted one at a time")
+	var bought: int = 0
+	for e: Dictionary in s.events:
+		if str(e["kind"]) == "gear_fitted":
+			bought += 1
+	check_eq(bought, 4, "four gear_fitted events")
+	s.push({"type": "leave"})
+	s.step()
+	s.encounter.open_store(s, "crust_trader")
+	_buy(s, TUNGSTEN)
+	check(_refused(s), "a worse head is refused on the next visit too")
 
 
 func test_resource_packs_spend_gems_exactly() -> void:
@@ -125,11 +179,12 @@ func test_lance_once_per_visit() -> void:
 
 
 func test_upgrades_capped_and_limited() -> void:
-	var s: Sim = _store()
+	var s: Sim = _store(7, 500, 500)
 	_buy(s, UP_HELM)
 	check_eq(room(s, "bridge").sys_max, 3, "helm 2 -> 3")
 	check_eq(room(s, "bridge").sys_power, 1, "power is the player's to allocate")
-	check_eq(s.run.get_res("gems"), 480, "20 gems")
+	check_eq(s.run.get_res("ore"), 380, "120 ore")
+	check_eq(s.run.get_res("gems"), 500, "no gems")
 	_buy(s, UP_HELM)
 	check(_refused(s), "once per visit (and helm is at its maximum of 3)")
 	s.push({"type": "leave"})

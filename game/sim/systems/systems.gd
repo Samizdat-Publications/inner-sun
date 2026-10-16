@@ -14,7 +14,8 @@ extends SimModule
 ##   3. power: allocations are clamped to each system's intact bars, then, while the total exceeds the
 ##      reactor output, bars are cut lowest priority first ("power_cut"); cut bars stay cut;
 ##   4. coolant: hazards.cooling_scale = coolant effective bars / coolant_bars_full and
-##      hazards.pump_scale = 1 with at least one bar; in run mode the player's cooling is billed in
+##      hazards.pump_scale = 1 with at least one bar (times the player's gear pump_x, RunState.gear_x);
+##      in run mode the player's cooling is billed in
 ##      whole run "coolant" units (exact integer joules, remainder carried) and stops at zero units;
 ##   5. bracing: layers are capped at effective bars / bracing_bars_per_layer; a missing layer
 ##      recharges after bracing_recharge_s, one at a time.
@@ -424,7 +425,8 @@ func _coolant(sim: Sim, world: ShipWorld, sd: SystemsSide) -> void:
 		else:
 			sd.empty_warned = false
 	h.cooling_scale = scale
-	h.pump_scale = 1.0 if bars >= 1 else 0.0
+	var pumps: float = sim.run.gear_x("pump_x") if world.is_player() else 1.0  # Gear: better pumps.
+	h.pump_scale = pumps if bars >= 1 else 0.0
 
 
 func _bracing(world: ShipWorld, sd: SystemsSide) -> void:

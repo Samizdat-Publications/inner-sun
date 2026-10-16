@@ -2,10 +2,22 @@ class_name RockGen
 extends RefCounted
 ## Builds a drilling segment's rock grid from a rock table (game/data/rock/*.json) and ONE seeded
 ## stream (the sim's "drill/<segment id>"). Square cells, row-major, one material code per cell.
-## Order: strata bands (base rock by depth, wavy boundaries), then features in data order (ore veins,
-## hard rock lenses, gem pockets in hard shells, water pockets, air caverns), then the open start
-## shaft. Features sit around the corridor from the start to the next node so detours are choices.
+## Order: strata bands (base rock by depth, wavy boundaries), then features in data order (hard rock
+## lenses, ore veins, ore and gem pockets in hard shells, water and gas pockets, air caverns), then
+## the open start shaft. Features sit around the corridor from the start to the next node so detours
+## are choices; their centres are kept inside the band the ship can steer through.
+##
+## Features (all optional fields):
+## - "group": "ore" or "gems" (counts scale with the survey richness; "gems" only when the survey
+##   found gems), "gas" or "water" (only when the survey found gas or water), or none (always).
+## - "from_depth_m", "to_depth_m": the run depths (meters below the layer top) where the feature can
+##   occur. A segment that overlaps the window only in part places it only there, with its count
+##   scaled by the share of the "at" range inside the window (the same density per meter).
+## - "count": [min, max] at scale 1. With scale k the count is drawn from [min k, max k] and rounded
+##   up with the fractional chance, so the expected count is exactly k times the mean.
 ## Pure function of its inputs: no other randomness, no engine noise.
+
+const GROUPS: Array[String] = ["", "ore", "gems", "gas", "water"]
 
 
 ## Material id -> code for one rock table.
@@ -17,21 +29,54 @@ static func codes_of(table: Dictionary) -> Dictionary:
 	return out
 
 
+## The canonical options a segment is generated with, from a survey reading (keys in this order):
+## richness (ore and gem count scale), gems, gas, water (groups switched on). A missing survey
+## (scenarios, tests) means richness 1, gems and water on, gas off.
+static func options_of(survey: Dictionary) -> Dictionary:
+	var gems: bool = true
+	if survey.has("gems"):
+		var g: Variant = survey["gems"]
+		gems = (not (g as Array).is_empty()) if g is Array else bool(g)
+	return {"richness": maxf(0.0, float(survey.get("richness", 1.0))), "gems": gems,
+		"gas": bool(survey.get("gas", false)), "water": bool(survey.get("water", true))}
+
+
 ## start: the ship's footprint at the start (meters, cell aligned). target_cx_m: the corridor's end
-## (centre x at the target depth). run_depth_m: the run's depth at the start (strata eligibility).
+## (centre x at the target depth). run_depth_m: the run's depth at the start (strata and feature
+## windows). opts: options_of(survey).
 static func generate(table: Dictionary, rng: RandomNumberGenerator, cols: int, rows: int, cell_m: float,
 		start: Rect2, target_cx_m: float, depth_m: float, run_depth_m: float, shaft_margin_m: float,
-		top_air_m: float) -> PackedByteArray:
+		top_air_m: float, opts: Dictionary = {}) -> PackedByteArray:
+	var o: Dictionary = opts if not opts.is_empty() else options_of({})
 	var codes: Dictionary = codes_of(table)
 	var grid := PackedByteArray()
 	grid.resize(cols * rows)
 	_strata(table, codes, rng, grid, cols, rows, cell_m, start.end.y, run_depth_m)
 	var sx: float = start.get_center().x
 	var y0: float = start.end.y
+	var band := Vector2(start.size.x * 0.5, float(cols) * cell_m - start.size.x * 0.5)
 	for f: Variant in table.get("features", []):
-		_feature(f as Dictionary, codes, rng, grid, cols, rows, cell_m, sx, target_cx_m, y0, depth_m)
+		var fd: Dictionary = f
+		var group: String = str(fd.get("group", ""))
+		if (group == "gems" and not bool(o["gems"])) or (group == "gas" and not bool(o["gas"])) \
+				or (group == "water" and not bool(o["water"])):
+			continue
+		var k: float = float(o["richness"]) if group == "ore" or group == "gems" else 1.0
+		_feature(fd, codes, rng, grid, cols, rows, cell_m, sx, target_cx_m, y0, depth_m, run_depth_m, k, band)
 	_carve(grid, cols, rows, cell_m, start, shaft_margin_m, top_air_m)
 	return grid
+
+
+## The share of the segment (0 = start depth, 1 = target depth) where a feature may sit: its "at"
+## range cut to its depth window, as Vector2(from, to). Empty (from > to) when the window misses.
+static func window(fd: Dictionary, depth_m: float, run_depth_m: float) -> Vector2:
+	var at: Variant = fd.get("at", 0.5)
+	var a0: float = float((at as Array)[0]) if at is Array else float(at)
+	var a1: float = float((at as Array)[1]) if at is Array else float(at)
+	var d: float = maxf(depth_m, 0.000001)
+	var lo: float = (float(fd.get("from_depth_m", -1.0e12)) - run_depth_m) / d
+	var hi: float = (float(fd.get("to_depth_m", 1.0e12)) - run_depth_m) / d
+	return Vector2(maxf(a0, lo), minf(a1, hi))
 
 
 static func _range(d: Dictionary, key: String, rng: RandomNumberGenerator, fallback: float) -> float:
@@ -85,19 +130,31 @@ static func _strata(table: Dictionary, codes: Dictionary, rng: RandomNumberGener
 			grid[r * cols + c] = band_codes[b] if nb > 0 else 0
 
 
+## One feature: draw its count (scaled), then place each instance in its window. band: the x range
+## (meters) the ship's centre can reach; feature centres are clamped into it.
 static func _feature(fd: Dictionary, codes: Dictionary, rng: RandomNumberGenerator, grid: PackedByteArray,
-		cols: int, rows: int, cell_m: float, sx: float, tx: float, y0: float, depth_m: float) -> void:
+		cols: int, rows: int, cell_m: float, sx: float, tx: float, y0: float, depth_m: float, run_depth_m: float,
+		scale: float, band: Vector2) -> void:
 	var kind: String = str(fd.get("kind", ""))
 	var code: int = int(codes.get(str(fd.get("material", "")), 0))
+	var at: Variant = fd.get("at", 0.5)
+	var full: float = float((at as Array)[1]) - float((at as Array)[0]) if at is Array else 0.0
+	var win: Vector2 = window(fd, depth_m, run_depth_m)
+	if win.x > win.y or (full > 0.0 and win.x >= win.y):
+		return
+	var k: float = scale * ((win.y - win.x) / full if full > 0.0 else 1.0)
 	var count: Array = fd.get("count", [1, 1])
-	var n: int = rng.randi_range(int(count[0]), int(count[1]))
+	var nf: float = rng.randf_range(float(count[0]) * k, float(count[1]) * k)
+	var n: int = floori(nf)
+	if rng.randf() < nf - float(n):
+		n += 1
 	for i: int in range(n):
-		var frac: float = _range(fd, "at", rng, 0.5)
+		var frac: float = rng.randf_range(win.x, win.y) if win.y > win.x else win.x
 		var cy: float = y0 + frac * depth_m
 		var off: float = _range(fd, "offset_m", rng, 0.0)
 		if str(fd.get("side", "")) == "either" and rng.randf() < 0.5:
 			off = -off
-		var cx: float = lerpf(sx, tx, frac) + off
+		var cx: float = clampf(lerpf(sx, tx, frac) + off, band.x, band.y)
 		match kind:
 			"vein":
 				var length: float = _range(fd, "length_m", rng, 6.0)

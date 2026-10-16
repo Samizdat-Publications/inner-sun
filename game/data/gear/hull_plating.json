@@ -1,0 +1,7 @@
+{
+  "id": "hull_plating",
+  "name": "Hull plating",
+  "max_owned": 2,
+  "text": "Armour plate bolted over the outer skin. Five more points of hull, fitted whole.",
+  "effects": {"max_hull_add": 5, "hull_add": 5}
+}
