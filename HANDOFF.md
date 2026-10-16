@@ -25,11 +25,11 @@ design round, in this order unless he says otherwise:
 4. Park and send out a miner (an away team on foot) to mine a vein by hand, with risks.
 5. Meta progression: keep something on death (banked samples or research) that unlocks ships and
    starting gear across runs.
-Prototype 2 to 4 cheaply, judge them with the critics and by hand, and keep what is fun. Effort high
+Prototype 2 to 4 cheaply, judge them with the critics and by hand, and keep what is fun. Effort xhigh for the lead (a design round), high once it is plain building
 (Stewart's quota is tight); Sonnet builders for implementation, Opus builders only for sim-heavy work.
 
 Paste this into a new session (folder `C:\Users\stewa\Documents\Claude\Inner Sun`, Opus 5.5, effort
-high, Auto):
+xhigh, Auto):
 ```
 Continue Inner Sun: M1c. Read CLAUDE.md, PROGRESS.md and HANDOFF.md (the newest paragraph lists the next round), then docs/STEWART_FEEDBACK.md (my build 3 notes are at the top), docs/plans/M1b.md and docs/DECISIONS.md D024 onward. Write docs/plans/M1c.md from my notes, then work autonomously per CLAUDE.md: quick fixes first, then prototype the mining ideas, judge them with the Gemini critic and by playing the build by hand (python tools/play.py plus computer use), keep what is fun. Republish the making-of page (https://claude.ai/artifact/UJjDA4PJkSXMKjpg2zxQpc) when something visible lands. Stop with a new playtest build. Stop earlier only for "checkpoint", a usage limit, or a decision that is genuinely mine.
 ```
