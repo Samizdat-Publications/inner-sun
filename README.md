@@ -22,7 +22,8 @@ Double-click `Play Inner Sun.bat` in this folder, or paste this into Windows Pow
 cd "C:\Users\stewa\Documents\Claude\Inner Sun"; & "C:\Users\stewa\Documents\Claude\Inner Sun\Play Inner Sun.bat"
 ```
 
-It starts a new run. Close the window to quit (an unfinished run is saved too).
+It starts a new run. Close the window to quit (an unfinished run is saved too). If the keys do
+nothing at first, click once inside the game window to give it the keyboard.
 
 ### How to play (one page)
 

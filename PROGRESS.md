@@ -2,11 +2,15 @@
 
 Updated: 2026-10-16, end of the M1a build session.
 
-## Milestone: M1a done. STOPPED for Stewart's playtest. Next: M1b (iterate on his notes).
+## Milestone: M1a built and handed to Stewart for the playtest. Next: M1b (iterate on his notes).
+
+Exit criteria met except two: trusted whole-run perf is UNVERIFIED (another Godot project was
+rendering during every run-mode measurement) and the Gemini video critic could not run at the gate
+(Gemini spend cap). Both are first items for M1b.
 
 ## The playtest build
-- `builds\InnerSun.exe` (exported 2026-10-16 00:08), launched by `Play Inner Sun.bat` (the
-  `builds\PLAYTEST` marker is present). A labeled copy for the making-of record:
+- `builds\InnerSun.exe` (exported 2026-10-16 00:36 from commit e51d43a; the `builds\PLAYTEST`
+  marker was written 00:45), launched by `Play Inner Sun.bat`. A labeled copy for the making-of record:
   `builds\milestones\m1a-playtest\` (git tag `m1a-playtest`).
 - How to play: README.md ("How to play"). Every run Stewart plays is saved for replay in
   `%APPDATA%\InnerSun\runs\` (`python tools/replay.py --latest`, or `--watch` to see it).
@@ -30,11 +34,15 @@ Updated: 2026-10-16, end of the M1a build session.
   - `python tools/check.py`: 186 tests pass, selftest ok.
   - Determinism: the scenario, and a whole run under Movie Maker matching a headless run
     (`docs/research/m1-evidence/determinism_m1a.txt`). Run records replay exactly.
-  - Balance: 1,000 full runs by three policy bots in about 12 minutes; after D021 and D022,
-    balanced wins 19%, cautious 16%, greedy 12%; fires in 99% of runs; no killer above 44%
-    (`docs/research/m1-evidence/`).
-  - The blind critic: 3.8/10 (M0 view), then 5.8, then 6.1 at the gate (Opus). Its FIX items
-    are done; DEFER items are in `review/LEDGER.md`.
+  - Balance: three policy bots; 1,002 full runs in about 12 minutes after D021 (balanced 25%,
+    cautious 21%, greedy 13%), then a 300-run check after D022's hazard pressure (balanced 19%,
+    cautious 16%, greedy 12%; fires in 97 to 100% of runs; top killer 42%). The post-D022 sample is
+    small; re-run 1,000 before tuning further (`docs/research/m1-evidence/`).
+  - The blind critic (category means): 3.8/10 (M0 view), then 5.8, then 6.1 at the gate (Opus).
+    The code changes for its FIX items are in; the critic-003 fixes (zoom, combat framing, labels)
+    were checked in shots (`docs/progress/019`, `020`) but not re-reviewed by a critic. Fires are
+    frequent in balance runs (D022) but no captured still of the final build shows one. DEFER items:
+    `review/LEDGER.md`.
   - The exported build plays a whole bot run to its end.
 
 ## In flight
@@ -48,7 +56,10 @@ Nothing. Everything is committed and pushed (check `git status`, `git log origin
   `python tools/perf.py --mode run --seconds 30 --runs 3`.
 - **Interactive play was not tested with real mouse and keys** (it would take over Stewart's screen).
   Every control is covered by code paths and tests, and bots drive the same commands, but Stewart's
-  playtest is the first real hands-on test.
+  playtest is the first real hands-on test. Keyboard focus: tool windows are created unfocusable;
+  exported builds override that (`no_focus.template=false`, verified in the exported game with
+  `--print-window-settings`: `no_focus=false template=true`) and boot pulls the window to the
+  front. If keys still do nothing, clicking the window gives it the keyboard (README says so).
 - The Gemini critic and new Gemini art are blocked by the Gemini monthly spend cap
   (`docs/NEEDS_STEWART.md`). No PixelLab key.
 - Capture windows flash on screen for about a second at startup; keep windowed runs batched.

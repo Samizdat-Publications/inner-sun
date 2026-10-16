@@ -22,3 +22,5 @@ A visual record of Inner Sun, oldest first.
 | 016 | 2026-10-15 23:13 | [016_world-view-combat.jpg](016_world-view-combat.jpg) | Combat keeps the world: rock behind and between both towers, the hostile rig in oxide red with marker lights and a name plate. | 111cc42 |
 | 017 | 2026-10-15 23:13 | [017_flood-fire-crew-work.jpg](017_flood-fire-crew-work.jpg) | Breach spray and a blue-washed flooded room, ripples at the hatch, a crew member spraying foam at the fire. | 111cc42 |
 | 018 | 2026-10-15 23:34 | [018_m1a-gate-frames.jpg](018_m1a-gate-frames.jpg) | review frames, build 20261015-231813-930fa47, seed 33 | 3679a0b |
+| 019 | 2026-10-16 00:46 | [019_m1a-final-drilling.jpg](019_m1a-final-drilling.jpg) | Final M1a build after critic 003: the ship zoomed in (drilling zoom 1.0), readable room labels, the scanner showing the rock ahead | e51d43a |
+| 020 | 2026-10-16 00:46 | [020_m1a-final-combat.jpg](020_m1a-final-combat.jpg) | Final M1a build after critic 003: combat framed inside the world area (no tower behind the panels), the hostile rig plate, weapon cards and enemy panel | e51d43a |

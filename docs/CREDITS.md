@@ -9,3 +9,6 @@ Every third-party asset: source, license, URL, date. Art and sound: CC0 or CC-BY
 | Special Elite (typewriter font, `game/assets/fonts/SpecialElite-Regular.ttf`) | Astigmatic, google/fonts repository | Apache 2.0 (LICENSE-SpecialElite.txt) | https://github.com/google/fonts/tree/main/apache/specialelite | 2026-10-15 |
 
 Software: Godot Engine 4.7.2 (MIT), Python 3.14, Pillow, NumPy, FFmpeg.
+| Painted art (rooms, props, fittings, crown, rock tiles, crew; `game/assets/ship`, `game/assets/crew`, `game/assets/rock`, `game/assets/bakeoff/painted`) | Generated for this project with Google Gemini (gemini-3-pro-image); prompts, models and picks in `pipeline/manifests/` | Ours (generated) | - | 2026-10-15 |
+| Blender sprites (`game/assets/bakeoff/blender`) | Made for this project in Blender 5.1 by `pipeline/blender/bake_sprites.py` | Ours | - | 2026-10-15 |
+| Placeholder sound effects (`game/assets/audio`, 29 OGGs) | Generated for this project with ElevenLabs sound effects (eleven_text_to_sound_v2); prompts in `pipeline/manifests/audio.json` | Ours (generated) | - | 2026-10-15 |
