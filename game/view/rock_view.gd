@@ -23,6 +23,7 @@ const PAD: int = CELLS + 2
 const TILE: int = 256
 const LIGHT_MASK: int = 2
 const BUDGET_USEC: int = 9000
+const WALL_CHUNK_PX: int = 512  ## Back wall and apron sprites, so each meets only nearby lights.
 ## Occluders are built only if rock shadows are on. They are off: the shadow of a solid polygon also
 ## covers its own rock face, which would black out the very walls the floodlights should reveal.
 const ROCK_SHADOWS: bool = false
@@ -542,18 +543,31 @@ func _build_backdrop() -> void:
 	_wall(apron, Rect2(0.0, h, w, pad), tint, -21)
 
 
+## A tiled wall in chunks. One huge sprite would overlap every light in the scene and Godot gives a
+## canvas item only about 15 lights, so the floodlights past that were dropped (the rock beside the
+## fight stayed black). Small chunks only meet the lights near them.
 func _wall(tex: Texture2D, rect: Rect2, tint: Color, z: int) -> void:
-	var s := Sprite2D.new()
-	s.texture = tex
-	s.centered = false
-	s.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 	var k: float = RockTiles.TILE_M * ppm / float(RockTiles.TILE_PX)
-	s.scale = Vector2(k, k)
-	s.region_enabled = true
-	s.region_rect = Rect2(rect.position / k, rect.size / k)
-	s.position = rect.position
-	s.self_modulate = tint
-	s.light_mask = LIGHT_MASK
-	s.modulate = Color.WHITE
-	s.z_index = z
-	add_child(s)
+	var step: float = float(WALL_CHUNK_PX)
+	var y: float = rect.position.y
+	while y < rect.end.y:
+		var h: float = minf(step, rect.end.y - y)
+		var x: float = rect.position.x
+		while x < rect.end.x:
+			var w: float = minf(step, rect.end.x - x)
+			var s := Sprite2D.new()
+			s.texture = tex
+			s.centered = false
+			s.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+			s.scale = Vector2(k, k)
+			s.region_enabled = true
+			var tile_w: float = float(RockTiles.TILE_PX) * k
+			s.region_rect = Rect2(Vector2(fposmod(x, tile_w), fposmod(y, tile_w)) / k, Vector2(w, h) / k)
+			s.position = Vector2(x, y)
+			s.self_modulate = tint
+			s.light_mask = LIGHT_MASK
+			s.modulate = Color.WHITE
+			s.z_index = z
+			add_child(s)
+			x += step
+		y += step

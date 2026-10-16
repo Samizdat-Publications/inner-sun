@@ -5,12 +5,18 @@ extends Node2D
 ## from pipeline/manifests/crew_<name>.json in a sine cycle). Lindqvist and the rivals use their four
 ## painted walk frames. Everyone flips to face the way they move, sways on ladders, leans in while
 ## working (extinguish, patch, repair), lies down dimmed when dead, and flashes red when HP drops.
-## Reads sim state only.
+## Idle crew are never statues: they breathe, glance around, shuffle a step or two at their station
+## and lean into the console when the room has a system. Working crew show it: a foam spray from the
+## extinguisher, a hammer swing with sparks on every hit, a welder crouch with a hot white spot and
+## a stream of sparks. All of it is view-side and driven by the clock, never the sim. Reads sim state only.
 
 const FIGURE_H_ART: float = 288.0
 const STRIDE_M: float = 1.5  ## One full walk cycle covers this much floor.
 const FRAME_M: float = 0.38  ## Floor covered per walk frame for the painted frames.
 const CLIMB_M: float = 0.55
+const SHUFFLE_S: float = 0.9  ## How long one idle shuffle takes.
+const SHUFFLE_M: float = 0.2  ## How far a shuffle moves the figure from its station.
+const GLANCE_S: float = 1.5
 
 ## Puppet joints in part pixels (second manifest run, the art in game/assets/crew).
 ## part: [pivot, child]; torso: [pivot, neck, shoulder]; head: [pivot]
@@ -50,6 +56,19 @@ var _speed: Vector2 = Vector2.ZERO
 var _last_hp: float = 100.0
 var _flash: float = 0.0
 var _joints: Dictionary = {}
+## The system of the room the crew member stands in ("none" for a bare room); set by the ShipView.
+var station_system: String = "none"
+var _idle_clock: float = 0.0
+var _next_ev: float = 1.0
+var _ev_n: int = 0
+var _glance_left: float = 0.0
+var _shuffle_left: float = 0.0
+var _off: float = 0.0  ## Sideways offset from the station, meters.
+var _off_to: float = 0.0
+var _manned: bool = false
+var _spray: CPUParticles2D
+var _sparks: CPUParticles2D
+var _weld: Sprite2D
 
 
 ## Which painted figure and tint a crew member gets. Enemies use the rivals; recruits borrow a
@@ -74,6 +93,7 @@ func setup(c: CrewMember, p_ppm: float, enemy: bool) -> void:
 	_face = -1.0 if enemy else 1.0
 	_last_pos = c.pos
 	_last_hp = c.hp
+	_next_ev = 1.0 + float(c.index) * 0.85
 	z_index = 6
 	_body = Node2D.new()
 	add_child(_body)
@@ -176,30 +196,179 @@ func update(delta: float, t: float) -> void:
 	var flash_c: Color = Color.WHITE.lerp(Color(2.0, 0.3, 0.25), clampf(_flash / 0.5, 0.0, 1.0))
 	_body.modulate = tint * flash_c
 	if not c.alive:
+		_work_fx(false, t)
 		_lie_down()
 		return
 	_body.rotation = 0.0
 	_body.position = Vector2.ZERO
 	var climbing: bool = c.climbing
-	var walking: bool = (not climbing) and absf(_speed.x) > 0.12
+	var walking_real: bool = (not climbing) and absf(_speed.x) > 0.12
 	if absf(move.x) > 0.0004 and not climbing:
 		_face = 1.0 if move.x > 0.0 else -1.0
-	_body.scale = Vector2(_face, 1.0)
-	var working: bool = (not climbing) and (not walking) and WORK_JOBS.has(c.job_kind) and c.job_room == c.room
+	var working: bool = (not climbing) and (not walking_real) and WORK_JOBS.has(c.job_kind) and c.job_room == c.room
+	var idle: bool = (not climbing) and (not walking_real) and (not working)
+	var shuffle_dx: float = _idle_step(d, idle)
+	var shuffling: bool = absf(shuffle_dx) > 0.00001
+	if shuffling:
+		_face = 1.0 if shuffle_dx > 0.0 else -1.0
+	var walking: bool = walking_real or shuffling
+	_manned = idle and (not shuffling) and station_system != "none" and station_system != ""
+	var glance: float = -1.0 if (_glance_left > 0.0 and not shuffling) else 1.0
+	var breath: float = 0.012 * sin(t * 1.7 + float(c.index) * 2.3)
+	_body.scale = Vector2(_face * glance, 1.0 + breath)
+	_body.position.x = _off * ppm
 	if climbing:
 		_phase += absf(move.y) / CLIMB_M * TAU
 		_body.rotation = 0.05 * sin(_phase)
 		_body.position.y = -2.0 * absf(sin(_phase * 0.5))
 	elif walking:
-		_phase += absf(move.x) / (STRIDE_M if puppet else FRAME_M * 4.0) * TAU
+		var stride: float = STRIDE_M if puppet else FRAME_M * 4.0
+		_phase += (absf(move.x) + absf(shuffle_dx) * 2.4) / stride * TAU
 	var mode_amp: float = 1.0 if (walking or climbing) else 0.0
 	_amp = lerpf(_amp, mode_amp, clampf(d * 9.0, 0.0, 1.0))
+	if _manned:
+		_body.rotation = _face * glance * (0.05 + 0.012 * sin(t * 1.3))
 	if working:
-		_body.rotation = _face * (0.11 + 0.05 * sin(t * 8.0))
+		_work_pose(t)
+	_work_fx(working, t)
 	if puppet:
-		_pose_puppet(t, climbing, working)
+		_pose_puppet(t, climbing, working, glance < 0.0)
 	else:
 		_pose_frames(climbing, walking, working, t)
+
+
+## Idle life: every few seconds a glance (the figure turns its head) or a short shuffle along the
+## floor, chosen by a hash of the crew index and a counter, so it varies but never touches an RNG.
+## Returns how far the figure moved sideways this frame, in meters.
+func _idle_step(d: float, idle: bool) -> float:
+	if not idle:
+		_glance_left = 0.0
+		_shuffle_left = 0.0
+		_off = move_toward(_off, 0.0, d * 1.2)
+		return 0.0
+	_idle_clock += d
+	_glance_left = maxf(0.0, _glance_left - d)
+	if _idle_clock >= _next_ev and _shuffle_left <= 0.0:
+		_ev_n += 1
+		var h: int = absi(hash((crew.index + 1) * 7919 + _ev_n * 104729))
+		var kind: int = h % 5
+		_next_ev = _idle_clock + 3.0 + float((h >> 3) % 40) / 10.0
+		if kind <= 1 or kind == 4:
+			_glance_left = GLANCE_S
+		if kind >= 2:
+			var dir: float = 1.0 if (h >> 9) % 2 == 0 else -1.0
+			_off_to = 0.0 if absf(_off) > 0.02 else dir * SHUFFLE_M
+			_shuffle_left = SHUFFLE_S
+	if _shuffle_left > 0.0:
+		var step: float = minf(d, _shuffle_left)
+		var before: float = _off
+		_off += (_off_to - _off) * clampf(step / maxf(_shuffle_left, 0.0001), 0.0, 1.0)
+		_shuffle_left -= step
+		if _shuffle_left <= 0.0:
+			_off = _off_to
+		return _off - before
+	return 0.0
+
+
+## Whole-body work lean per job, on top of the arm motion in _pose_puppet.
+func _work_pose(t: float) -> void:
+	match crew.job_kind:
+		"extinguish":
+			_body.rotation = _face * (0.13 + 0.015 * sin(t * 19.0))
+			_body.position.x += -_face * 1.5 * absf(sin(t * 13.0))
+		"patch":
+			var hit: float = _hammer_hit(t)
+			_body.rotation = _face * (0.04 + 0.11 * hit)
+			_body.position.y = 2.5 * hit
+		_:
+			_body.rotation = _face * (0.2 + 0.015 * sin(t * 11.0))
+			_body.scale.y = 0.94
+
+
+func _hammer_hit(t: float) -> float:
+	return pow(maxf(0.0, sin(t * 6.5 + float(crew.index))), 3.0)
+
+
+## Foam from the extinguisher, hammer sparks and a welder's spark stream with a hot white spot. The
+## emitters are made the first time a job needs them and switched off otherwise.
+func _work_fx(working: bool, t: float) -> void:
+	var job: String = crew.job_kind if working else ""
+	var h: float = FIGURE_H_ART * _k
+	if job == "extinguish":
+		if _spray == null:
+			_spray = _make_spray(h)
+		_spray.position = Vector2(_face * 0.4 * h, -0.55 * h)
+		_spray.direction = Vector2(_face, -0.12)
+		_spray.emitting = true
+	elif _spray != null:
+		_spray.emitting = false
+	if job == "repair" or job == "patch":
+		if _sparks == null:
+			_sparks = _make_sparks(h)
+		_sparks.position = Vector2(_face * 0.34 * h, -0.36 * h if job == "repair" else -0.5 * h)
+		_sparks.direction = Vector2(_face * 0.5, -1.0)
+		_sparks.emitting = job == "repair" or _hammer_hit(t) > 0.55
+	elif _sparks != null:
+		_sparks.emitting = false
+	if job == "repair":
+		if _weld == null:
+			_weld = Sprite2D.new()
+			_weld.texture = ShipView.radial_texture(32)
+			_weld.material = ArtLib.additive_unshaded()
+			_weld.z_index = 2
+			add_child(_weld)
+		_weld.visible = true
+		_weld.position = Vector2(_face * 0.34 * h, -0.36 * h)
+		var flick: float = 0.8 + 0.4 * sin(t * 47.0) * sin(t * 31.0)
+		var sc: float = ppm / 80.0 * 0.55 * flick
+		_weld.scale = Vector2(sc, sc)
+		_weld.modulate = Color(1.8, 2.0, 2.4, 1.0)
+	elif _weld != null:
+		_weld.visible = false
+
+
+func _make_spray(h: float) -> CPUParticles2D:
+	var p := CPUParticles2D.new()
+	p.texture = ShipView.radial_texture(24)
+	p.material = ArtLib.additive_unshaded()
+	p.amount = 70
+	p.lifetime = 0.55
+	p.spread = 14.0
+	p.gravity = Vector2(0.0, 90.0)
+	p.initial_velocity_min = 0.9 * h
+	p.initial_velocity_max = 1.5 * h
+	p.scale_amount_min = 0.5 * ppm / 80.0
+	p.scale_amount_max = 1.1 * ppm / 80.0
+	var ramp := Gradient.new()
+	ramp.set_color(0, Color(1.5, 1.7, 1.9, 0.9))
+	ramp.set_color(1, Color(0.7, 0.85, 1.0, 0.0))
+	p.color_ramp = ramp
+	p.emitting = false
+	p.z_index = 2
+	add_child(p)
+	return p
+
+
+func _make_sparks(h: float) -> CPUParticles2D:
+	var p := CPUParticles2D.new()
+	p.texture = ShipView.radial_texture(8)
+	p.material = ArtLib.additive_unshaded()
+	p.amount = 30
+	p.lifetime = 0.5
+	p.spread = 70.0
+	p.gravity = Vector2(0.0, 520.0)
+	p.initial_velocity_min = 0.7 * h
+	p.initial_velocity_max = 1.6 * h
+	p.scale_amount_min = 0.5 * ppm / 80.0
+	p.scale_amount_max = 1.1 * ppm / 80.0
+	var ramp := Gradient.new()
+	ramp.set_color(0, Color(2.0, 1.8, 1.1, 1.0))
+	ramp.set_color(1, Color(1.0, 0.25, 0.05, 0.0))
+	p.color_ramp = ramp
+	p.emitting = false
+	p.z_index = 2
+	add_child(p)
+	return p
 
 
 func _lie_down() -> void:
@@ -208,7 +377,7 @@ func _lie_down() -> void:
 	_body.position = Vector2(0.0, -0.1 * ppm)
 	_body.modulate = Color(0.5, 0.46, 0.46, 1.0)
 	if puppet:
-		_pose_puppet(0.0, false, false)
+		_pose_puppet(0.0, false, false, false)
 	elif _sprite != null:
 		_show_texture(_still)
 
@@ -220,12 +389,14 @@ func _pose_frames(climbing: bool, walking: bool, working: bool, t: float) -> voi
 	else:
 		_show_texture(_still)
 		if working:
-			_body.position.y = -1.5 * absf(sin(t * 8.0))
+			_body.position.y += -1.5 * absf(sin(t * 8.0))
+		elif _manned:
+			_body.position.y = -1.0 * absf(sin(t * 5.5 + float(crew.index)))
 		else:
-			_body.position.y = -0.6 * (0.5 + 0.5 * sin(t * 1.9 + float(crew.index)))
+			_body.position.y = -1.6 * (0.5 + 0.5 * sin(t * 1.7 + float(crew.index) * 2.3))
 
 
-func _pose_puppet(t: float, climbing: bool, working: bool) -> void:
+func _pose_puppet(t: float, climbing: bool, working: bool, glancing: bool = false) -> void:
 	var s: float = sin(_phase)
 	var amp: float = _amp
 	for side: int in range(2):
@@ -247,11 +418,30 @@ func _pose_puppet(t: float, climbing: bool, working: bool) -> void:
 			arm.rotation = 0.5 * ph * amp
 			fore.rotation = -0.35 * amp * (0.5 + 0.5 * ph)
 		if working:
-			arm.rotation = -1.25 + 0.2 * sin(t * 9.0 + sg)
-			fore.rotation = -0.5 + 0.15 * sin(t * 9.0 + 1.0)
+			_pose_work_arm(arm, fore, t, sg)
+		elif _manned and amp < 0.05:
+			arm.rotation = -1.0 + 0.06 * sin(t * 9.0 + sg * 2.0 + float(crew.index))
+			fore.rotation = -0.85 + 0.1 * sin(t * 12.0 + sg)
 		elif amp < 0.05:
 			arm.rotation = 0.04 * sin(t * 1.9 + sg)
 			fore.rotation = -0.08
 	var torso: Node2D = _joints["torso"]
-	torso.scale = Vector2(1.0, 1.0 + 0.008 * sin(t * 2.0 + float(crew.index)))
+	torso.scale = Vector2(1.0, 1.0 + 0.018 * sin(t * 1.7 + float(crew.index) * 2.3))
 	torso.position.y = -2.0 * absf(s) * amp
+	var head: Node2D = _joints["head"]
+	head.rotation = 0.16 * sin(t * 4.0) * (1.0 if glancing else 0.0) + 0.03 * sin(t * 0.9 + float(crew.index))
+
+
+## One arm of a working figure: extinguisher held out, hammer overhead then down, welder held low.
+func _pose_work_arm(arm: Node2D, fore: Node2D, t: float, sg: float) -> void:
+	match crew.job_kind:
+		"extinguish":
+			arm.rotation = -1.45 + 0.04 * sin(t * 17.0 + sg)
+			fore.rotation = -0.15
+		"patch":
+			var hit: float = _hammer_hit(t)
+			arm.rotation = lerpf(-2.5, -0.75, hit) + 0.05 * sg
+			fore.rotation = lerpf(-0.9, -0.1, hit)
+		_:
+			arm.rotation = -1.05 + 0.04 * sin(t * 23.0 + sg)
+			fore.rotation = -0.65 + 0.06 * sin(t * 29.0 + 1.0)
