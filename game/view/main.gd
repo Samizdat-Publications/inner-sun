@@ -179,6 +179,8 @@ func _process(delta: float) -> void:
 	if not paused:
 		_fight_banner = false
 	screen.set_banner(FIGHT_BANNER if _fight_banner and paused else "")
+	var stop_notice: String = str(AlertsStrip.drill_stop(run.sim).get("notice", ""))
+	screen.set_notice("" if (_fight_banner and paused) or screen.overlay_open() else stop_notice)
 
 
 ## The camera eases to its framing: the drill rock while there is one, the cutaway otherwise, and in a

@@ -261,3 +261,14 @@ Final: cautious 10% wins, 21.0 min median; greedy 12%, 17.2 min; balanced 23%, 2
 stays 13 (probes at 14 to 16 moved deaths back to the gate). Gate share of deaths: balanced 58%
 (was 73%), greedy 38%, cautious 34%; the rest are rivals, drill heat and fire, and the pursuer.
 Evidence and the pass history: `docs/research/m1-evidence/balance_m1b_tuned.md`.
+
+## D034 (AI): M1c direction: every system has a job in the dig
+Stewart's build 3 notes: the dig is "picking a spot based on the radar and going straight down", he
+could not see what helm and bracing do, and he wants "more things to manage". Answer: give every
+powered system a job while drilling, so each segment is a power-split puzzle like an FTL fight: helm
+sets the turn rate and the sideways cutting speed (heading to +-90, "hold depth"), bracing soaks
+rockfalls in a new fault rock, coolant can douse a fire for a unit, and the charge launcher blasts
+rock at range for a charge. Then buried structures to break into and a requisition meta. The away
+miner (his "up to you") comes last and only if the budget allows: charges and sideways cutting cover
+most of "reach the vein", and the meta answers his "reason to come back", which he stated as a need.
+Plan: `docs/plans/M1c.md`. Revert: the M1c merges.

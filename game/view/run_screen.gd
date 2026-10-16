@@ -26,6 +26,7 @@ var death: DeathScreen
 var help: HelpView
 var tally: DigTally  ## The dig tally and the arrival toast; owns the DigLog.
 var _banner: Label
+var _notice: Label  ## The loud line low over the world (the drill is stopped and why).
 var _root: Control
 var _layer: Control
 
@@ -97,6 +98,13 @@ func set_banner(text: String) -> void:
 	_banner.visible = not text.is_empty()
 
 
+## The notice low over the world area (AlertsStrip.drill_stop); an empty text hides it.
+func set_notice(text: String) -> void:
+	if _notice.text != text:
+		_notice.text = text
+	_notice.visible = not text.is_empty()
+
+
 ## True while a human has the map or the help page open: the world holds still (main.gd).
 func holds_world() -> bool:
 	return sim != null and (map.is_open() or help.is_open())
@@ -166,3 +174,15 @@ func _build_banner() -> void:
 	_banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_banner.visible = false
 	_layer.add_child(_banner)
+	_notice = Label.new()
+	_notice.position = Vector2(WORLD_RECT.position.x + 120.0, WORLD_RECT.end.y - 190.0)
+	_notice.custom_minimum_size = Vector2(WORLD_RECT.size.x - 240.0, 0)
+	_notice.size = Vector2(WORLD_RECT.size.x - 240.0, 0)
+	_notice.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_notice.add_theme_font_size_override("font_size", 30)
+	_notice.add_theme_color_override("font_color", UiTheme.TEXT)
+	_notice.add_theme_stylebox_override("normal", UiTheme.box(Color(0.32, 0.06, 0.04, 0.94), UiTheme.ALARM, 4, 2, 18))
+	_notice.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_notice.visible = false
+	_layer.add_child(_notice)

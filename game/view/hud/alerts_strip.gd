@@ -74,11 +74,9 @@ static func compute(s: Sim) -> Array[Dictionary]:
 			_add(out, 65, "ahead", "HOSTILE AHEAD: power weapons (E) before you arrive", "")
 		elif kind == "hazard":
 			_add(out, 62, "ahead", "HAZARD AHEAD", "")
-	if s.drill.active:
-		if s.drill.bit_broken:
-			_add(out, 78, "bit", "BIT BROKEN", "")
-		elif s.drill.bit_wear >= BIT_WORN:
-			_add(out, 50, "bit", "BIT WORN %d%%" % roundi(s.drill.bit_wear * 100.0), "")
+	var stop: Dictionary = drill_stop(s)
+	if not str(stop.get("alert", "")).is_empty():
+		_add(out, int(stop["sev"]), str(stop["kind"]), str(stop["alert"]), "")
 	var coolant: int = s.run.get_res("coolant")
 	if s.run.mode != "run":
 		coolant = COOLANT_LOW + 1  # Scenarios do not bill coolant: no supply alerts there.
@@ -96,6 +94,53 @@ static func compute(s: Sim) -> Array[Dictionary]:
 			return int(a["sev"]) > int(b["sev"])
 		return int(a["order"]) < int(b["order"]))
 	return out
+
+
+## Why the drill is stopped or crawling while a segment runs, said loudly enough to act on:
+## {"sev", "kind", "alert" (the chip text, empty when another alert already names it), "notice" (the
+## line over the world, empty when it needs no shouting)}, or {} while the drill cuts normally.
+static func drill_stop(s: Sim) -> Dictionary:
+	var d: DrillSim = s.drill
+	if not d.active or s.run.phase != "drill":
+		return {}
+	var ri: int = s.ship.room_with_system("drill")
+	if ri < 0:
+		return {}
+	var r: Room = s.ship.rooms[ri]
+	var bits: int = s.run.get_res("bits")
+	if s.run.mode != "run":
+		bits = maxi(bits, 1)  # Scenarios hand out bits freely.
+	if d.bit_change_left_s > 0.0:
+		return {"sev": 40, "kind": "bit", "alert": "FITTING NEW BIT: %d s" % ceili(d.bit_change_left_s), "notice": ""}
+	if r.sys_failed:
+		var def: Dictionary = s.db.table("systems").get("drill", {})
+		var cool_key: String = power_key(s.ship, s.ship.room_with_system("coolant"))
+		return {"sev": 75, "kind": "failed", "alert": "", "notice": "DRILL OVERHEATED (%d C): it restarts below %d C. Power COOLANT AND PUMPS (%s) to cool it faster." % [
+				roundi(r.temp_c()), roundi(float(def.get("recover_c", 95.0))), cool_key]}
+	if r.sys_max > 0 and r.intact_bars() == 0:
+		return {"sev": 75, "kind": "damaged", "alert": "", "notice": "DRILL WRECKED: crew repair it on their own. Send one in to hurry (1-3, then click the drill room)."}
+	if r.sys_power <= 0:
+		var key: String = power_key(s.ship, ri)
+		return {"sev": 87, "kind": "power", "alert": "DRILL HAS NO POWER: press %s" % key,
+				"notice": "DRILL HAS NO POWER. Press %s or click the DRILL bars on the power panel. Free a bar first (Shift plus a system's key) if the reactor is full." % key}
+	if d.bit_broken:
+		var crawl: int = roundi(s.db.tune("drill.broken_bit_factor") * 100.0)
+		if bits > 0:
+			return {"sev": 86, "kind": "bit", "alert": "BIT BROKEN: press B (%d spare)" % bits,
+					"notice": "BIT BROKEN: the drill crawls at %d%% speed. Press B to fit a new one (%d spare)." % [crawl, bits]}
+		return {"sev": 86, "kind": "bit", "alert": "BIT BROKEN: no spares",
+				"notice": "BIT BROKEN and no spare bits: the drill crawls at %d%% speed. Buy bits at a trading post." % crawl}
+	if d.bit_wear >= BIT_WORN:
+		return {"sev": 50, "kind": "bit", "alert": "BIT WORN %d%%: B fits a new one" % roundi(d.bit_wear * 100.0), "notice": ""}
+	return {}
+
+
+## The power panel key (Q W E R T Y) of a system's room, or "" when it has no row.
+static func power_key(ship: Ship, ri: int) -> String:
+	var row: int = PowerPanel.powered_rooms(ship).find(ri)
+	if ri < 0 or row < 0 or row >= PowerPanel.KEY_NAMES.size():
+		return ""
+	return PowerPanel.KEY_NAMES[row]
 
 
 static func _add(out: Array[Dictionary], sev: int, kind: String, text: String, room: String) -> void:

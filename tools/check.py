@@ -36,8 +36,9 @@ def main(argv=None):
     targs = ["--headless", "--path", paths.GAME, "--script", "res://tests/runner.gd"]
     if a.only:
         targs += ["--", f"--only={a.only}"]
-    # Tests normally take seconds; a short timeout turns a hang into a quick, named failure.
-    r2 = proc.run_godot(targs, 240, log_name="check_tests")
+    # Tests take about two minutes on a quiet PC; the timeout turns a hang into a named failure. It
+    # leaves room for a busy PC (Black Diamond building alongside doubles the time).
+    r2 = proc.run_godot(targs, 480, log_name="check_tests")
     full.append("=== tests (exit %d, %.0fs)\n%s" % (r2.returncode, r2.seconds, r2.out))
     if r2.timed_out:
         started = [l.strip()[len("TEST START "):] for l in r2.out.splitlines() if l.startswith("TEST START ")]

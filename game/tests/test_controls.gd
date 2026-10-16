@@ -123,6 +123,30 @@ func test_alerts_warn_ahead_and_about_the_drill_room() -> void:
 	check(_has_text(AlertsStrip.compute(s), "Select one (1-3) and click the drill room"), "a deep drill room gets the flood hint")
 
 
+func test_drill_stop_says_why() -> void:
+	var s: Sim = _run_sim()
+	s.run.phase = "idle"
+	check(s.drill.begin_segment(s, "stop_test", 20.0, 0.0), "a segment begins")
+	var di: int = s.ship.room_with_system("drill")
+	var dr: Room = s.ship.rooms[di]
+	dr.sys_power = 2
+	check(AlertsStrip.drill_stop(s).is_empty(), "a powered drill with a good bit cuts quietly")
+	dr.sys_power = 0
+	var key: String = AlertsStrip.power_key(s.ship, di)
+	check_eq(key, "R", "the drill is the R row on the starter")
+	check(_has_text(AlertsStrip.compute(s), "DRILL HAS NO POWER: press R"), "no power gets a chip naming the key")
+	check(str(AlertsStrip.drill_stop(s)["notice"]).begins_with("DRILL HAS NO POWER"), "and the loud notice")
+	dr.sys_power = 2
+	s.drill.bit_broken = true
+	s.drill.bit_wear = 1.0
+	check(_has_text(AlertsStrip.compute(s), "BIT BROKEN: press B (%d spare)" % s.run.get_res("bits")), "a broken bit names B and the spares")
+	s.run.resources["bits"] = 0
+	check(_has_text(AlertsStrip.compute(s), "BIT BROKEN: no spares"), "no spares says so")
+	check(str(AlertsStrip.drill_stop(s)["notice"]).contains("trading post"), "and where to get one")
+	s.run.phase = "dialog"
+	check(AlertsStrip.drill_stop(s).is_empty(), "nothing outside the drill phase")
+
+
 func _has_text(list: Array[Dictionary], part: String) -> bool:
 	for a: Dictionary in list:
 		if str(a["text"]).contains(part):
