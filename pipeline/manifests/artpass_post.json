@@ -1,0 +1,1191 @@
+{
+  "asset": "artpass_post",
+  "runs": [
+    {
+      "groups": [
+        "rooms"
+      ],
+      "ppm": 160,
+      "picks": {
+        "wall_bracing": 1,
+        "wall_bridge": 2,
+        "wall_coolant": 1,
+        "wall_drill": 1,
+        "wall_weapons": 1
+      },
+      "result": {
+        "bridge_wall": {
+          "size": [
+            640,
+            480
+          ],
+          "emission": false,
+          "candidate": "wall_bridge_v2"
+        },
+        "bracing_wall": {
+          "size": [
+            640,
+            480
+          ],
+          "emission": false,
+          "candidate": "wall_bracing_v1"
+        },
+        "weapons_wall": {
+          "size": [
+            640,
+            480
+          ],
+          "emission": false,
+          "candidate": "wall_weapons_v1"
+        },
+        "drill_wall": {
+          "size": [
+            640,
+            480
+          ],
+          "emission": false,
+          "candidate": "wall_drill_v1"
+        },
+        "coolant_wall": {
+          "size": [
+            640,
+            480
+          ],
+          "emission": false,
+          "candidate": "wall_coolant_v1"
+        },
+        "bridge_helm": {
+          "size": [
+            288,
+            303
+          ],
+          "emission": true,
+          "candidate": "prop_helm_v1"
+        },
+        "bracing_jack": {
+          "size": [
+            255,
+            384
+          ],
+          "emission": false,
+          "candidate": "prop_jack_v1"
+        },
+        "bracing_manifold": {
+          "size": [
+            190,
+            176
+          ],
+          "emission": false,
+          "candidate": "prop_manifold_v1"
+        },
+        "weapons_breech": {
+          "size": [
+            304,
+            172
+          ],
+          "emission": false,
+          "candidate": "prop_breech_v1"
+        },
+        "weapons_ammo": {
+          "size": [
+            160,
+            256
+          ],
+          "emission": false,
+          "candidate": "prop_ammo_v1"
+        },
+        "drill_motor": {
+          "size": [
+            296,
+            448
+          ],
+          "emission": false,
+          "candidate": "prop_drillmotor_v1"
+        },
+        "drill_bitrack": {
+          "size": [
+            127,
+            144
+          ],
+          "emission": false,
+          "candidate": "prop_bitrack_v1"
+        },
+        "coolant_tank": {
+          "size": [
+            208,
+            336
+          ],
+          "emission": true,
+          "candidate": "prop_tank_v1"
+        },
+        "coolant_pump": {
+          "size": [
+            240,
+            161
+          ],
+          "emission": false,
+          "candidate": "prop_pump_v1"
+        },
+        "reactor": {
+          "reactor_wall": "copied from bakeoff/painted/room_wall",
+          "reactor_core": "copied from bakeoff/painted/reactor",
+          "lamp": "copied from bakeoff/painted/lamp",
+          "floor_plate": "copied from bakeoff/painted/floor"
+        }
+      },
+      "script": "pipeline/artpass_post.py + pipeline/normals.py + style_post.py",
+      "date": "2026-10-15"
+    },
+    {
+      "groups": [
+        "fittings"
+      ],
+      "ppm": 160,
+      "picks": {
+        "wall_bracing": 1,
+        "wall_bridge": 2,
+        "wall_coolant": 1,
+        "wall_drill": 1,
+        "wall_weapons": 1,
+        "rock_soft": 2,
+        "rock_rock": 2,
+        "rock_dense": 2,
+        "rock_hard": 2,
+        "rock_iron": 2,
+        "rock_gem": 2,
+        "rock_water": 2,
+        "rock_shaft": 2,
+        "fit_door_open": 2
+      },
+      "result": {
+        "door_closed": {
+          "size": [
+            160,
+            336
+          ],
+          "emission": false,
+          "candidate": "fit_door_closed_v1"
+        },
+        "hatch_rim": {
+          "size": [
+            128,
+            32
+          ],
+          "emission": false,
+          "candidate": "fit_hatch_v1"
+        },
+        "ladder": {
+          "size": [
+            80,
+            160
+          ],
+          "emission": false,
+          "candidate": "fit_ladder_v1",
+          "period_px_src": 314
+        },
+        "floor_grating": {
+          "size": [
+            320,
+            40
+          ],
+          "emission": false,
+          "candidate": "fit_grating_v1"
+        },
+        "hull_top": {
+          "size": [
+            320,
+            48
+          ],
+          "emission": false,
+          "candidate": "fit_hull_v1"
+        },
+        "hull_left": {
+          "size": [
+            48,
+            320
+          ],
+          "emission": false
+        },
+        "hull_right": {
+          "size": [
+            48,
+            320
+          ],
+          "emission": false
+        },
+        "drill_crown": {
+          "size": [
+            1280,
+            535
+          ],
+          "emission": true,
+          "candidate": "fit_crown_v1"
+        }
+      },
+      "script": "pipeline/artpass_post.py + pipeline/normals.py + style_post.py",
+      "date": "2026-10-15"
+    },
+    {
+      "groups": [
+        "rock"
+      ],
+      "ppm": 160,
+      "picks": {
+        "wall_bracing": 1,
+        "wall_bridge": 2,
+        "wall_coolant": 1,
+        "wall_drill": 1,
+        "wall_weapons": 1,
+        "rock_soft": 2,
+        "rock_rock": 2,
+        "rock_dense": 2,
+        "rock_hard": 2,
+        "rock_iron": 2,
+        "rock_gem": 2,
+        "rock_water": 2,
+        "rock_shaft": 2,
+        "fit_door_open": 2
+      },
+      "result": {
+        "rock_soft": {
+          "size": [
+            128,
+            128
+          ],
+          "emission": false,
+          "candidate": "rock_soft_v2"
+        },
+        "rock_iron": {
+          "size": [
+            128,
+            128
+          ],
+          "emission": false,
+          "candidate": "rock_iron_v2"
+        },
+        "rock_gem": {
+          "size": [
+            128,
+            128
+          ],
+          "emission": true,
+          "candidate": "rock_gem_v2"
+        },
+        "rock_water": {
+          "size": [
+            128,
+            128
+          ],
+          "emission": false,
+          "candidate": "rock_water_v2"
+        },
+        "rock_shaft": {
+          "size": [
+            128,
+            128
+          ],
+          "emission": false,
+          "candidate": "rock_shaft_v2"
+        }
+      },
+      "script": "pipeline/artpass_post.py + pipeline/normals.py + style_post.py",
+      "date": "2026-10-15"
+    },
+    {
+      "groups": [
+        "fittings"
+      ],
+      "ppm": 160,
+      "picks": {
+        "wall_bracing": 1,
+        "wall_bridge": 2,
+        "wall_coolant": 1,
+        "wall_drill": 1,
+        "wall_weapons": 1,
+        "rock_soft": 2,
+        "rock_rock": 2,
+        "rock_dense": 2,
+        "rock_hard": 2,
+        "rock_iron": 2,
+        "rock_gem": 2,
+        "rock_water": 2,
+        "rock_shaft": 2,
+        "fit_door_open": 2
+      },
+      "result": {
+        "drill_crown": {
+          "size": [
+            1280,
+            466
+          ],
+          "emission": true,
+          "candidate": "fit_crown_v1"
+        }
+      },
+      "script": "pipeline/artpass_post.py + pipeline/normals.py + style_post.py",
+      "date": "2026-10-15"
+    },
+    {
+      "groups": [
+        "rooms"
+      ],
+      "ppm": 160,
+      "picks": {
+        "wall_bracing": 1,
+        "wall_bridge": 2,
+        "wall_coolant": 1,
+        "wall_drill": 1,
+        "wall_weapons": 1,
+        "rock_soft": 2,
+        "rock_rock": 2,
+        "rock_dense": 2,
+        "rock_hard": 2,
+        "rock_iron": 2,
+        "rock_gem": 2,
+        "rock_water": 2,
+        "rock_shaft": 2,
+        "fit_door_open": 2
+      },
+      "result": {
+        "bracing_jack": {
+          "size": [
+            238,
+            384
+          ],
+          "emission": false,
+          "candidate": "prop_jack_v1"
+        }
+      },
+      "script": "pipeline/artpass_post.py + pipeline/normals.py + style_post.py",
+      "date": "2026-10-15"
+    },
+    {
+      "groups": [
+        "fittings"
+      ],
+      "ppm": 160,
+      "picks": {
+        "wall_bracing": 1,
+        "wall_bridge": 2,
+        "wall_coolant": 1,
+        "wall_drill": 1,
+        "wall_weapons": 1,
+        "rock_soft": 2,
+        "rock_rock": 2,
+        "rock_dense": 2,
+        "rock_hard": 2,
+        "rock_iron": 2,
+        "rock_gem": 2,
+        "rock_water": 2,
+        "rock_shaft": 2,
+        "fit_door_open": 2
+      },
+      "result": {
+        "door_open": {
+          "size": [
+            160,
+            336
+          ],
+          "emission": false,
+          "candidate": "fit_door_open_v2"
+        },
+        "ladder": {
+          "size": [
+            80,
+            160
+          ],
+          "emission": false,
+          "candidate": "fit_ladder_v1",
+          "period_px_src": 315
+        },
+        "drill_crown": {
+          "size": [
+            1280,
+            300
+          ],
+          "emission": true,
+          "candidate": "fit_crown_v1"
+        }
+      },
+      "script": "pipeline/artpass_post.py + pipeline/normals.py + style_post.py",
+      "date": "2026-10-15"
+    },
+    {
+      "groups": [
+        "rooms"
+      ],
+      "ppm": 160,
+      "picks": {
+        "wall_bracing": 1,
+        "wall_bridge": 2,
+        "wall_coolant": 1,
+        "wall_drill": 1,
+        "wall_weapons": 1,
+        "rock_soft": 2,
+        "rock_rock": 2,
+        "rock_dense": 2,
+        "rock_hard": 2,
+        "rock_iron": 2,
+        "rock_gem": 2,
+        "rock_water": 2,
+        "rock_shaft": 2,
+        "fit_door_open": 2
+      },
+      "result": {
+        "bracing_jack": {
+          "size": [
+            259,
+            384
+          ],
+          "emission": false,
+          "candidate": "prop_jack_v1"
+        }
+      },
+      "script": "pipeline/artpass_post.py + pipeline/normals.py + style_post.py",
+      "date": "2026-10-15"
+    },
+    {
+      "groups": [
+        "rock"
+      ],
+      "ppm": 160,
+      "picks": {
+        "wall_bracing": 1,
+        "wall_bridge": 2,
+        "wall_coolant": 1,
+        "wall_drill": 1,
+        "wall_weapons": 1,
+        "rock_soft": 2,
+        "rock_rock": 2,
+        "rock_dense": 2,
+        "rock_hard": 2,
+        "rock_iron": 2,
+        "rock_gem": 2,
+        "rock_water": 2,
+        "rock_shaft": 2,
+        "fit_door_open": 2
+      },
+      "result": {
+        "rock_rock": {
+          "size": [
+            128,
+            128
+          ],
+          "emission": false,
+          "candidate": "rock_rock_v2"
+        },
+        "rock_dense": {
+          "size": [
+            128,
+            128
+          ],
+          "emission": false,
+          "candidate": "rock_dense_v2"
+        },
+        "rock_hard": {
+          "size": [
+            128,
+            128
+          ],
+          "emission": false,
+          "candidate": "rock_hard_v2"
+        }
+      },
+      "script": "pipeline/artpass_post.py + pipeline/normals.py + style_post.py",
+      "date": "2026-10-15"
+    },
+    {
+      "groups": [
+        "fittings"
+      ],
+      "ppm": 160,
+      "picks": {
+        "wall_bracing": 1,
+        "wall_bridge": 2,
+        "wall_coolant": 1,
+        "wall_drill": 1,
+        "wall_weapons": 1,
+        "rock_soft": 2,
+        "rock_rock": 2,
+        "rock_dense": 2,
+        "rock_hard": 2,
+        "rock_iron": 2,
+        "rock_gem": 2,
+        "rock_water": 2,
+        "rock_shaft": 2,
+        "fit_door_open": 2
+      },
+      "result": {
+        "door_open": {
+          "size": [
+            160,
+            336
+          ],
+          "emission": false,
+          "candidate": "fit_door_open_v2"
+        },
+        "drill_crown": {
+          "size": [
+            1280,
+            300
+          ],
+          "emission": true,
+          "candidate": "fit_crown_v1"
+        }
+      },
+      "script": "pipeline/artpass_post.py + pipeline/normals.py + style_post.py",
+      "date": "2026-10-15"
+    },
+    {
+      "groups": [
+        "rooms"
+      ],
+      "ppm": 160,
+      "picks": {
+        "wall_bracing": 1,
+        "wall_bridge": 2,
+        "wall_coolant": 1,
+        "wall_drill": 1,
+        "wall_weapons": 1,
+        "rock_soft": 2,
+        "rock_rock": 2,
+        "rock_dense": 2,
+        "rock_hard": 2,
+        "rock_iron": 2,
+        "rock_gem": 2,
+        "rock_water": 2,
+        "rock_shaft": 2,
+        "fit_door_open": 2
+      },
+      "result": {
+        "bridge_helm": {
+          "size": [
+            288,
+            303
+          ],
+          "emission": true,
+          "candidate": "prop_helm_v1"
+        },
+        "bracing_jack": {
+          "size": [
+            259,
+            384
+          ],
+          "emission": false,
+          "candidate": "prop_jack_v1"
+        },
+        "coolant_tank": {
+          "size": [
+            208,
+            336
+          ],
+          "emission": true,
+          "candidate": "prop_tank_v1"
+        }
+      },
+      "script": "pipeline/artpass_post.py + pipeline/normals.py + style_post.py",
+      "date": "2026-10-15"
+    },
+    {
+      "groups": [
+        "rooms"
+      ],
+      "ppm": 160,
+      "picks": {
+        "wall_bracing": 1,
+        "wall_bridge": 2,
+        "wall_coolant": 1,
+        "wall_drill": 1,
+        "wall_weapons": 1,
+        "rock_soft": 2,
+        "rock_rock": 2,
+        "rock_dense": 2,
+        "rock_hard": 2,
+        "rock_iron": 2,
+        "rock_gem": 2,
+        "rock_water": 2,
+        "rock_shaft": 2,
+        "fit_door_open": 2
+      },
+      "result": {
+        "bracing_jack": {
+          "size": [
+            237,
+            384
+          ],
+          "emission": false,
+          "candidate": "prop_jack_v1"
+        }
+      },
+      "script": "pipeline/artpass_post.py + pipeline/normals.py + style_post.py",
+      "date": "2026-10-15"
+    },
+    {
+      "groups": [
+        "fittings"
+      ],
+      "ppm": 160,
+      "picks": {
+        "wall_bracing": 1,
+        "wall_bridge": 2,
+        "wall_coolant": 1,
+        "wall_drill": 1,
+        "wall_weapons": 1,
+        "rock_soft": 2,
+        "rock_rock": 2,
+        "rock_dense": 2,
+        "rock_hard": 2,
+        "rock_iron": 2,
+        "rock_gem": 2,
+        "rock_water": 2,
+        "rock_shaft": 2,
+        "fit_door_open": 2
+      },
+      "result": {
+        "door_open": {
+          "size": [
+            160,
+            336
+          ],
+          "emission": false,
+          "candidate": "fit_door_open_v2"
+        },
+        "drill_crown": {
+          "size": [
+            1280,
+            300
+          ],
+          "emission": true,
+          "candidate": "fit_crown_v1"
+        }
+      },
+      "script": "pipeline/artpass_post.py + pipeline/normals.py + style_post.py",
+      "date": "2026-10-15"
+    },
+    {
+      "groups": [
+        "rooms"
+      ],
+      "ppm": 160,
+      "picks": {
+        "wall_bracing": 1,
+        "wall_bridge": 2,
+        "wall_coolant": 1,
+        "wall_drill": 1,
+        "wall_weapons": 1,
+        "rock_soft": 2,
+        "rock_rock": 2,
+        "rock_dense": 2,
+        "rock_hard": 2,
+        "rock_iron": 2,
+        "rock_gem": 2,
+        "rock_water": 2,
+        "rock_shaft": 2,
+        "fit_door_open": 2
+      },
+      "result": {
+        "bridge_wall": {
+          "size": [
+            640,
+            480
+          ],
+          "emission": false,
+          "candidate": "wall_bridge_v2"
+        },
+        "bracing_wall": {
+          "size": [
+            640,
+            480
+          ],
+          "emission": false,
+          "candidate": "wall_bracing_v1"
+        },
+        "weapons_wall": {
+          "size": [
+            640,
+            480
+          ],
+          "emission": false,
+          "candidate": "wall_weapons_v1"
+        },
+        "drill_wall": {
+          "size": [
+            640,
+            480
+          ],
+          "emission": false,
+          "candidate": "wall_drill_v1"
+        },
+        "coolant_wall": {
+          "size": [
+            640,
+            480
+          ],
+          "emission": false,
+          "candidate": "wall_coolant_v1"
+        },
+        "bridge_helm": {
+          "size": [
+            288,
+            303
+          ],
+          "emission": true,
+          "candidate": "prop_helm_v1"
+        },
+        "bracing_jack": {
+          "size": [
+            237,
+            384
+          ],
+          "emission": false,
+          "candidate": "prop_jack_v1"
+        },
+        "bracing_manifold": {
+          "size": [
+            190,
+            176
+          ],
+          "emission": false,
+          "candidate": "prop_manifold_v1"
+        },
+        "weapons_breech": {
+          "size": [
+            304,
+            172
+          ],
+          "emission": false,
+          "candidate": "prop_breech_v1"
+        },
+        "weapons_ammo": {
+          "size": [
+            160,
+            256
+          ],
+          "emission": false,
+          "candidate": "prop_ammo_v1"
+        },
+        "drill_motor": {
+          "size": [
+            296,
+            448
+          ],
+          "emission": false,
+          "candidate": "prop_drillmotor_v1"
+        },
+        "drill_bitrack": {
+          "size": [
+            127,
+            144
+          ],
+          "emission": false,
+          "candidate": "prop_bitrack_v1"
+        },
+        "coolant_tank": {
+          "size": [
+            209,
+            336
+          ],
+          "emission": true,
+          "candidate": "prop_tank_v1"
+        },
+        "coolant_pump": {
+          "size": [
+            240,
+            161
+          ],
+          "emission": false,
+          "candidate": "prop_pump_v1"
+        },
+        "reactor": {
+          "reactor_wall": "copied from bakeoff/painted/room_wall",
+          "reactor_core": "copied from bakeoff/painted/reactor",
+          "lamp": "copied from bakeoff/painted/lamp",
+          "floor_plate": "copied from bakeoff/painted/floor"
+        }
+      },
+      "script": "pipeline/artpass_post.py + pipeline/normals.py + style_post.py",
+      "date": "2026-10-15"
+    },
+    {
+      "groups": [
+        "rooms"
+      ],
+      "ppm": 160,
+      "picks": {
+        "wall_bracing": 1,
+        "wall_bridge": 2,
+        "wall_coolant": 1,
+        "wall_drill": 1,
+        "wall_weapons": 1,
+        "rock_soft": 2,
+        "rock_rock": 2,
+        "rock_dense": 2,
+        "rock_hard": 2,
+        "rock_iron": 2,
+        "rock_gem": 2,
+        "rock_water": 2,
+        "rock_shaft": 2,
+        "fit_door_open": 2
+      },
+      "result": {
+        "bridge_helm": {
+          "size": [
+            288,
+            304
+          ],
+          "emission": true,
+          "candidate": "prop_helm_v1"
+        },
+        "bracing_jack": {
+          "size": [
+            237,
+            384
+          ],
+          "emission": false,
+          "candidate": "prop_jack_v1"
+        },
+        "weapons_ammo": {
+          "size": [
+            160,
+            256
+          ],
+          "emission": false,
+          "candidate": "prop_ammo_v1"
+        },
+        "drill_bitrack": {
+          "size": [
+            127,
+            144
+          ],
+          "emission": false,
+          "candidate": "prop_bitrack_v1"
+        },
+        "coolant_tank": {
+          "size": [
+            209,
+            336
+          ],
+          "emission": true,
+          "candidate": "prop_tank_v1"
+        }
+      },
+      "script": "pipeline/artpass_post.py + pipeline/normals.py + style_post.py",
+      "date": "2026-10-15"
+    },
+    {
+      "groups": [
+        "rooms",
+        "fittings",
+        "rock"
+      ],
+      "ppm": 160,
+      "picks": {
+        "wall_bracing": 1,
+        "wall_bridge": 2,
+        "wall_coolant": 1,
+        "wall_drill": 1,
+        "wall_weapons": 1,
+        "rock_soft": 2,
+        "rock_rock": 2,
+        "rock_dense": 2,
+        "rock_hard": 2,
+        "rock_iron": 2,
+        "rock_gem": 2,
+        "rock_water": 2,
+        "rock_shaft": 2,
+        "fit_door_open": 2
+      },
+      "result": {
+        "bridge_wall": {
+          "size": [
+            640,
+            480
+          ],
+          "emission": false,
+          "candidate": "wall_bridge_v2"
+        },
+        "bracing_wall": {
+          "size": [
+            640,
+            480
+          ],
+          "emission": false,
+          "candidate": "wall_bracing_v1"
+        },
+        "weapons_wall": {
+          "size": [
+            640,
+            480
+          ],
+          "emission": false,
+          "candidate": "wall_weapons_v1"
+        },
+        "drill_wall": {
+          "size": [
+            640,
+            480
+          ],
+          "emission": false,
+          "candidate": "wall_drill_v1"
+        },
+        "coolant_wall": {
+          "size": [
+            640,
+            480
+          ],
+          "emission": false,
+          "candidate": "wall_coolant_v1"
+        },
+        "bridge_helm": {
+          "size": [
+            288,
+            304
+          ],
+          "emission": true,
+          "candidate": "prop_helm_v1"
+        },
+        "bracing_jack": {
+          "size": [
+            237,
+            384
+          ],
+          "emission": false,
+          "candidate": "prop_jack_v1"
+        },
+        "bracing_manifold": {
+          "size": [
+            190,
+            176
+          ],
+          "emission": false,
+          "candidate": "prop_manifold_v1"
+        },
+        "weapons_breech": {
+          "size": [
+            304,
+            172
+          ],
+          "emission": false,
+          "candidate": "prop_breech_v1"
+        },
+        "weapons_ammo": {
+          "size": [
+            159,
+            256
+          ],
+          "emission": false,
+          "candidate": "prop_ammo_v1"
+        },
+        "drill_motor": {
+          "size": [
+            295,
+            448
+          ],
+          "emission": false,
+          "candidate": "prop_drillmotor_v1"
+        },
+        "drill_bitrack": {
+          "size": [
+            127,
+            144
+          ],
+          "emission": false,
+          "candidate": "prop_bitrack_v1"
+        },
+        "coolant_tank": {
+          "size": [
+            208,
+            336
+          ],
+          "emission": true,
+          "candidate": "prop_tank_v1"
+        },
+        "coolant_pump": {
+          "size": [
+            240,
+            161
+          ],
+          "emission": false,
+          "candidate": "prop_pump_v1"
+        },
+        "reactor": {
+          "reactor_wall": "copied from bakeoff/painted/room_wall",
+          "reactor_core": "copied from bakeoff/painted/reactor",
+          "lamp": "copied from bakeoff/painted/lamp",
+          "floor_plate": "copied from bakeoff/painted/floor"
+        },
+        "door_closed": {
+          "size": [
+            160,
+            336
+          ],
+          "emission": false,
+          "candidate": "fit_door_closed_v1"
+        },
+        "door_open": {
+          "size": [
+            160,
+            336
+          ],
+          "emission": false,
+          "candidate": "fit_door_open_v2"
+        },
+        "hatch_rim": {
+          "size": [
+            128,
+            32
+          ],
+          "emission": false,
+          "candidate": "fit_hatch_v1"
+        },
+        "ladder": {
+          "size": [
+            80,
+            160
+          ],
+          "emission": false,
+          "candidate": "fit_ladder_v1",
+          "period_px_src": 315
+        },
+        "floor_grating": {
+          "size": [
+            320,
+            40
+          ],
+          "emission": false,
+          "candidate": "fit_grating_v1"
+        },
+        "hull_top": {
+          "size": [
+            320,
+            48
+          ],
+          "emission": false,
+          "candidate": "fit_hull_v1"
+        },
+        "hull_left": {
+          "size": [
+            48,
+            320
+          ],
+          "emission": false
+        },
+        "hull_right": {
+          "size": [
+            48,
+            320
+          ],
+          "emission": false
+        },
+        "drill_crown": {
+          "size": [
+            1280,
+            300
+          ],
+          "emission": true,
+          "candidate": "fit_crown_v1"
+        },
+        "rock_soft": {
+          "size": [
+            128,
+            128
+          ],
+          "emission": false,
+          "candidate": "rock_soft_v2"
+        },
+        "rock_rock": {
+          "size": [
+            128,
+            128
+          ],
+          "emission": false,
+          "candidate": "rock_rock_v2"
+        },
+        "rock_dense": {
+          "size": [
+            128,
+            128
+          ],
+          "emission": false,
+          "candidate": "rock_dense_v2"
+        },
+        "rock_hard": {
+          "size": [
+            128,
+            128
+          ],
+          "emission": false,
+          "candidate": "rock_hard_v2"
+        },
+        "rock_iron": {
+          "size": [
+            128,
+            128
+          ],
+          "emission": false,
+          "candidate": "rock_iron_v2"
+        },
+        "rock_gem": {
+          "size": [
+            128,
+            128
+          ],
+          "emission": true,
+          "candidate": "rock_gem_v2"
+        },
+        "rock_water": {
+          "size": [
+            128,
+            128
+          ],
+          "emission": false,
+          "candidate": "rock_water_v2"
+        },
+        "rock_shaft": {
+          "size": [
+            128,
+            128
+          ],
+          "emission": false,
+          "candidate": "rock_shaft_v2"
+        }
+      },
+      "script": "pipeline/artpass_post.py + pipeline/normals.py + style_post.py",
+      "date": "2026-10-15"
+    },
+    {
+      "groups": [
+        "rooms"
+      ],
+      "ppm": 160,
+      "picks": {
+        "wall_bracing": 1,
+        "wall_bridge": 2,
+        "wall_coolant": 1,
+        "wall_drill": 1,
+        "wall_weapons": 1,
+        "rock_soft": 2,
+        "rock_rock": 2,
+        "rock_dense": 2,
+        "rock_hard": 2,
+        "rock_iron": 2,
+        "rock_gem": 2,
+        "rock_water": 2,
+        "rock_shaft": 2,
+        "fit_door_open": 2
+      },
+      "result": {
+        "coolant_tank": {
+          "size": [
+            208,
+            336
+          ],
+          "emission": true,
+          "candidate": "prop_tank_v1"
+        }
+      },
+      "script": "pipeline/artpass_post.py + pipeline/normals.py + style_post.py",
+      "date": "2026-10-15"
+    }
+  ]
+}

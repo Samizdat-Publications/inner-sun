@@ -1,0 +1,41 @@
+{
+  "asset": "crew_lindqvist",
+  "runs": [
+    {
+      "full": "crew_lindqvist_full_v2",
+      "sheet": "crew_lindqvist_parts_v2",
+      "full_size": {
+        "size": [
+          101,
+          288
+        ],
+        "emission": false
+      },
+      "parts": "route failed twice (parts sheets crew_lindqvist_parts_v2 merged or duplicated limbs); fallback walk cycle",
+      "walk_cell": [
+        149,
+        289
+      ],
+      "walk_source": "crew_lindqvist_walk_v1",
+      "date": "2026-10-15"
+    },
+    {
+      "full": "crew_lindqvist_full_v2",
+      "sheet": "crew_lindqvist_parts_v2",
+      "full_size": {
+        "size": [
+          101,
+          288
+        ],
+        "emission": false
+      },
+      "parts": "route failed twice (parts sheets crew_lindqvist_parts_v2 merged or duplicated limbs); fallback walk cycle",
+      "walk_cell": [
+        149,
+        289
+      ],
+      "walk_source": "crew_lindqvist_walk_v1",
+      "date": "2026-10-15"
+    }
+  ]
+}

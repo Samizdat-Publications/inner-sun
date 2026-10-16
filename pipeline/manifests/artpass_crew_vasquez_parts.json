@@ -1,0 +1,33 @@
+{
+  "asset": "artpass_crew_vasquez_parts",
+  "runs": [
+    {
+      "service": "Gemini",
+      "model": "gemini-3-pro-image",
+      "aspect": "3:4",
+      "size": "2K",
+      "variant": 1,
+      "prompt": "Use the attached image as the exact reference for this character (same face, outfit, colours, gear, painting style, same scale). Draw a CUT-OUT PUPPET PARTS SHEET of this same character: six separate body parts, each isolated and not touching any other part, with wide empty gaps between them, all in strict side view facing right, laid out in a grid of 2 columns and 3 rows. Top row: left the HEAD with neck stump and any headgear, right the TORSO with the belt and any torso gear (no arms, no legs). Middle row: left the UPPER ARM (shoulder to elbow, hanging straight down, vertical), right the FOREARM WITH HAND (elbow to fingertips, hanging straight down, vertical, hand relaxed). Bottom row: left the THIGH (hip to knee, vertical), right the SHIN WITH BOOT (knee to sole, vertical, boot pointing right, sole flat at the bottom). Every part is drawn a little longer than the real joint, with a plain rounded continuation of the sleeve or trouser past each joint end, so the parts can be rotated at the joints and overlap without gaps. Each part is a complete painted object, nothing cut off. No second arm or leg, no extra items, no labels. painted pulp magazine cover illustration, 1970s retro-futurist black-budget hardware, gouache and oil painterly brushwork with visible confident strokes, strong value structure, dark moody palette with warm amber and brass accents and cold blue-grey steel, riveted steel, enamel and brass gauges, hazard stripes, chunky switches, grimy and lived in, Journey to the Center of the Earth meets The X-Files. Flat orthographic side view, NO perspective, NO vignette, NO text, NO border, evenly lit (no dramatic cast shadows, the game adds lighting), readable shapes at small size. Background: perfectly flat solid magenta #ff00ff, nothing else in the background, no shadow on the background, subject fully inside the frame with a small margin.",
+      "reference": "harness\\out\\artpass_cands\\crew_vasquez_full_v3.png",
+      "seed": "none (the API gives no seed)",
+      "usd_estimate": 0.14,
+      "output": "harness\\out\\artpass_cands\\crew_vasquez_parts_v1.png",
+      "attempts": 1,
+      "date": "2026-10-15"
+    },
+    {
+      "service": "Gemini",
+      "model": "gemini-3-pro-image",
+      "aspect": "3:4",
+      "size": "2K",
+      "variant": 2,
+      "prompt": "Use the attached image as the exact reference for this character (same face, outfit, colours, gear, painting style, same scale). Draw a CUT-OUT PUPPET PARTS SHEET of this same character: six separate body parts, each isolated and not touching any other part, with wide empty gaps between them, all in strict side view facing right, laid out in a grid of 2 columns and 3 rows. Top row: left the HEAD with neck stump and any headgear, right the TORSO with the belt and any torso gear (no arms, no legs). Middle row: left the UPPER ARM (shoulder to elbow, hanging straight down, vertical), right the FOREARM WITH HAND (elbow to fingertips, hanging straight down, vertical, hand relaxed). Bottom row: left the THIGH (hip to knee, vertical), right the SHIN WITH BOOT (knee to sole, vertical, boot pointing right, sole flat at the bottom). Every part is drawn a little longer than the real joint, with a plain rounded continuation of the sleeve or trouser past each joint end, so the parts can be rotated at the joints and overlap without gaps. Each part is a complete painted object, nothing cut off. No second arm or leg, no extra items, no labels. EXACTLY SIX objects on the sheet and no more: never draw a pair of boots or both legs; the upper arm is only the sleeve from shoulder to elbow (no hand); the forearm piece starts at the elbow and ends with the glove or hand; the thigh is a vertical trouser tube that ends in a plain cut at the knee with NO boot or shoe on it; the shin piece is the lower trouser leg with ONE boot. Parts stand upright and well apart, none overlapping another, a clean flat magenta gap between all of them, no shadows or smudges on the background. painted pulp magazine cover illustration, 1970s retro-futurist black-budget hardware, gouache and oil painterly brushwork with visible confident strokes, strong value structure, dark moody palette with warm amber and brass accents and cold blue-grey steel, riveted steel, enamel and brass gauges, hazard stripes, chunky switches, grimy and lived in, Journey to the Center of the Earth meets The X-Files. Flat orthographic side view, NO perspective, NO vignette, NO text, NO border, evenly lit (no dramatic cast shadows, the game adds lighting), readable shapes at small size. Background: perfectly flat solid magenta #ff00ff, nothing else in the background, no shadow on the background, subject fully inside the frame with a small margin.",
+      "reference": "harness\\out\\artpass_cands\\crew_vasquez_full_v3.png",
+      "seed": "none (the API gives no seed)",
+      "usd_estimate": 0.14,
+      "output": "harness\\out\\artpass_cands\\crew_vasquez_parts_v2.png",
+      "attempts": 1,
+      "date": "2026-10-15"
+    }
+  ]
+}
