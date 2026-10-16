@@ -3,6 +3,36 @@
 His words outrank everything except CLAUDE.md's hard rules. Newest first. Playtest notes go at the
 top under a dated heading.
 
+## 2026-10-16: playtest build 3 (reached row 8)
+Verbatim:
+- (Mid-run, screenshot) "my bit broke and can't move, how do I fix that?" The drill had 0 of 4 power
+  bars and the bit was broken; nothing on screen said the drill had no power.
+- "Ah ok got it. Ok finished. Amazing so far, this is going rerally well."
+- "Help me understand how helm and bracing work, I can't seem to see what those do. I also feel that
+  giving more power to the drill bit (or helm or something) should allow the drill to move faster
+  horizontally, such that the player may elect to take from other systems to pivot more quickly to a
+  vein. Right now much of the game is just picking a spot based on the radar and going straight down."
+- "The shop was great too, help me understand what coolant is and does etc. If I want to prioritize
+  fixing and putting out fires, is that coolant and pumps?"
+- "Potentially we should explore a park and disembark to allow a single miner to mine out the veins?
+  Up to you"
+- "Does slowing down the drill do anything to help them fix it faster or is drilling at full speed the
+  same in terms of how much they can repair at a given time?"
+- "The digging as it is is kind of boring, it's the right firrst step but hav eot think up some way to
+  make it more interesting than just descending at a set pace and going left or right. I don't know
+  what the answer is, but the mining portion needs more going on in some capacity, something to think
+  through and maybe try a few things with the critic."
+- "Ov erall this is super solid (I got to row 8 on this run). I would like the various levels to have
+  almost terraria style underground cities I don't know how to explain it but we have to think up
+  some way to make the map and mining more interesting I jus tcan't think of how."
+- "Also presumably the user gets to unlock better ships at some point or something. There has to be
+  some sense of progression or reason to come back, almost likea roguelite where if you die you keep
+  something that helps in the next run."
+- "I'm' kind of just spitballing here but that's my feedback. The combat was good, very FTL. I guess
+  ultimately across the wbhole game I want more things to manage so it feels less on rails."
+- Death screenshot from a run (seed 177455): the front caught him at row 7 of 13, 437 m, T+19:09, hull
+  0/30, holding 625 ore and 71 gems unspent, coolant 4, no crew lost, one fight won.
+
 ## 2026-10-16: first playtest (build 2, one run of about 2.5 minutes, abandoned at row 3)
 Verbatim:
 - "Played for a min, was able to steeer left or right to hit the diamonds. Everything looks good with
