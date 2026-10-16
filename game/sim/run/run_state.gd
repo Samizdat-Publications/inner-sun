@@ -20,9 +20,11 @@ extends SimModule
 ## It spends one power cell (none left: the segment runs at reserve_speed_factor) and starts a drilling
 ## segment; on arrival the drill calls arrive(), which hands the node to Encounter or CombatSim.
 ##
-## The pursuer: its front advances every world tick by rows_per_s * dt plus rows_per_noise times the
-## drill noise made since the last tick (layer data). Unvisited nodes in rows at or above
-## floor(pursuer_row) are overtaken; arriving at one, its content is gone and the pursuer strikes. The
+## The pursuer: its front advances every world tick by (rows_per_s + rows_per_s_per_row * current
+## row) * dt plus rows_per_noise times the drill noise made since the last tick (layer data), so it
+## presses harder the deeper the ship is. Unvisited nodes in rows at or above
+## floor(pursuer_row) are overtaken (never the gate: a caught ship still fights for the way down,
+## with the pursuer striking); arriving at one, its content is gone and the pursuer strikes. The
 ## ship's position is a float row (current row plus drilling progress). Caught: the front reaches it;
 ## then it strikes every strike_every_s (hull, a breach in a random room, sometimes a fire). The front
 ## is capped just below the ship's row plus one: it can swallow the row the ship is drilling toward
@@ -72,6 +74,7 @@ var _overtaken_row: int = -1000  ## Highest map row already swept for overtaken 
 var _strike_ticks: int = 0
 # Tuning, read once in begin().
 var _rate_per_tick: float = 0.0
+var _rate_per_row_tick: float = 0.0  ## Extra pursuer rows per tick for each map row of depth.
 var _rows_per_noise: float = 0.0
 var _strike_every: int = 480
 var _strike_hull: int = 2
@@ -141,6 +144,7 @@ func _build_map(sim: Sim) -> void:
 	var pd: Dictionary = layer.get("pursuer", {})
 	pursuer_row = float(pd.get("start_row", -1.5))
 	_rate_per_tick = float(pd.get("rows_per_s", 0.0)) / Sim.TICK_HZ
+	_rate_per_row_tick = float(pd.get("rows_per_s_per_row", 0.0)) / Sim.TICK_HZ
 	_rows_per_noise = float(pd.get("rows_per_noise", 0.0))
 	_overtaken_row = floori(pursuer_row)
 	_last_noise = sim.drill.noise_total
@@ -177,6 +181,20 @@ func ship_row_f(sim: Sim) -> float:
 	if _target >= 0 and phase == "drill":
 		r += sim.drill.progress() * float(int(nodes[_target]["row"]) - current_row())
 	return r
+
+
+## The row an event's "rows" window is checked against. Event windows are written for a map of the
+## layer's "event_rows_of" rows (default: this map's own size); the middle rows 1..rows-2 are spread
+## evenly over 1..event_rows_of-2, so event content keeps its place in the descent when a layer
+## gets longer.
+func event_row(row: int) -> int:
+	var of: int = int(layer.get("event_rows_of", map.size()))
+	var n: int = map.size()
+	if of == n or row <= 0 or n <= 3 or of <= 3:
+		return row
+	if row >= n - 1:
+		return of - 1
+	return 1 + roundi(float(row - 1) * float(of - 3) / float(n - 3))
 
 
 func is_visited(n: Dictionary) -> bool:
@@ -325,7 +343,7 @@ func arrive(sim: Sim) -> void:
 		return
 	match kind:
 		"event", "cavern", "hazard", "store":
-			sim.encounter.start_node(sim, kind, int(n["row"]))
+			sim.encounter.start_node(sim, kind, event_row(int(n["row"])))
 		"fight":
 			sim.combat.start_fight(sim, str(n["enemy"]), false)
 		"gate":
@@ -364,7 +382,7 @@ func step(sim: Sim) -> void:
 	if not world_running():
 		return
 	scanner_rows = _scanner(sim)
-	pursuer_row += _rate_per_tick + _rows_per_noise * new_noise
+	pursuer_row += _rate_per_tick + _rate_per_row_tick * float(current_row()) + _rows_per_noise * new_noise
 	_cap_pursuer(sim)
 	_sweep_overtaken(sim)
 	_check_caught(sim)
@@ -390,7 +408,7 @@ func _sweep_overtaken(sim: Sim) -> void:
 			continue
 		for n: Dictionary in (map[_overtaken_row] as Array):
 			var i: int = int(n["index"])
-			if visited[i] == 0 and overtaken[i] == 0:
+			if visited[i] == 0 and overtaken[i] == 0 and str(n["type"]) != "gate":
 				overtaken[i] = 1
 				sim.emit("overtaken", {"node": n["id"]})
 

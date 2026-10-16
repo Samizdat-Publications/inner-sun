@@ -1,6 +1,6 @@
 extends TestCase
 ## The painted cutaway: every texture the view names exists, crew get a figure, the rock tiles map,
-## and ShipView builds and runs for the player's ship and both enemy ships without errors.
+## and ShipView builds and runs for the player's ship and every enemy ship without errors.
 
 
 func test_room_art_files_exist() -> void:
@@ -35,7 +35,7 @@ func test_rock_tiles_map() -> void:
 
 func test_ship_view_builds_and_runs() -> void:
 	var s := Sim.new(db(), 3, "light_drill")
-	for ship_id: String in ["light_drill", "rival_light", "rival_heavy"]:
+	for ship_id: String in ["light_drill", "rival_light", "rival_raider", "rival_heavy"]:
 		var world: ShipWorld = s.player if ship_id == "light_drill" else ShipWorld.new(s.db, s.db.ships[ship_id], "enemy")
 		var v := ShipView.new()
 		v.setup(s, world, 80.0)

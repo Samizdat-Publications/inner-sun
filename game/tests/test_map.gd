@@ -15,20 +15,25 @@ func _gen(layer: Dictionary, s: int) -> Array:
 
 func test_shape_types_and_positions() -> void:
 	var layer: Dictionary = _layer()
+	var rows: int = int(layer["rows"])
+	var lo_n: int = int(layer["min_nodes_per_row"])
+	var hi_n: int = int(layer["max_nodes_per_row"])
+	var x_lo: float = float(layer["x_min_m"])
+	var x_hi: float = float(layer["x_max_m"])
 	for s: int in range(1, SEEDS + 1):
 		var m: Array = _gen(layer, s)
-		if m.size() != 10:
-			failures.append("seed %d: %d rows, want 10" % [s, m.size()])
+		if m.size() != rows:
+			failures.append("seed %d: %d rows, want the layer's %d" % [s, m.size(), rows])
 			continue
 		var first: Array = m[0]
-		var last: Array = m[9]
+		var last: Array = m[rows - 1]
 		check(first.size() == 1 and str((first[0] as Dictionary)["type"]) == "start", "seed %d: row 0 is one start node" % s)
 		check(last.size() == 1 and str((last[0] as Dictionary)["type"]) == "gate", "seed %d: the last row is one gate node" % s)
 		var index: int = 0
-		for r: int in range(10):
+		for r: int in range(rows):
 			var row: Array = m[r]
-			if r > 0 and r < 9 and (row.size() < 2 or row.size() > 3):
-				failures.append("seed %d row %d: %d nodes, want 2 or 3" % [s, r, row.size()])
+			if r > 0 and r < rows - 1 and (row.size() < lo_n or row.size() > hi_n):
+				failures.append("seed %d row %d: %d nodes, want %d to %d" % [s, r, row.size(), lo_n, hi_n])
 			var prev_x: float = -INF
 			for i: int in range(row.size()):
 				var n: Dictionary = row[i]
@@ -36,16 +41,16 @@ func test_shape_types_and_positions() -> void:
 				check_eq(int(n["index"]), index, "seed %d: flat index in map order" % s)
 				index += 1
 				var x: float = float(n["x_m"])
-				if x < -12.0 or x > 12.0 or x <= prev_x:
+				if x < x_lo or x > x_hi or x <= prev_x:
 					failures.append("seed %d %s: x %.2f out of range or out of order" % [s, n["id"], x])
 				prev_x = x
 				var t: String = str(n["type"])
-				if r > 0 and r < 9 and not MapGen.NODE_TYPES.has(t):
+				if r > 0 and r < rows - 1 and not MapGen.NODE_TYPES.has(t):
 					failures.append("seed %d %s: middle node type \"%s\"" % [s, n["id"], t])
 				if (t == "fight" or t == "gate") and str(n["enemy"]).is_empty():
 					failures.append("seed %d %s: a fight without an enemy" % [s, n["id"]])
 		var gate: Dictionary = last[0]
-		check_eq(str(gate["enemy"]), "rival_heavy", "seed %d: the gate enemy comes from the layer" % s)
+		check_eq(str(gate["enemy"]), str(layer["gate_enemy"]), "seed %d: the gate enemy comes from the layer" % s)
 		if failures.size() > 20:
 			return
 
@@ -89,12 +94,21 @@ func test_connected_and_no_crossings() -> void:
 
 func test_store_and_fight_guarantees() -> void:
 	var layer: Dictionary = _layer()
+	var windows: Array = layer["store_windows"]
+	var need: int = int(layer["min_fights_per_path"])
+	check_gt(float(windows.size()), 0.0, "the layer guarantees stores")
+	check_gt(float(need), 0.0, "the layer guarantees fights")
 	var stores: int = 0
 	var fights: int = 0
+	var middle: int = 0
+	var most_fights: int = 0
+	var path_fight_frac: float = 0.0
 	for s: int in range(1, SEEDS + 1):
 		var m: Array = _gen(layer, s)
-		check(MapGen.min_on_paths(m, "store", 2, 4) >= 1, "seed %d: every path meets a store in rows 2 to 4" % s)
-		check(MapGen.min_on_paths(m, "store", 6, 8) >= 1, "seed %d: every path meets a store in rows 6 to 8" % s)
+		for w: Variant in windows:
+			var r0: int = int((w as Array)[0])
+			var r1: int = int((w as Array)[1])
+			check(MapGen.min_on_paths(m, "store", r0, r1) >= 1, "seed %d: every path meets a store in rows %d to %d" % [s, r0, r1])
 		check(not MapGen.has_store_pair(m), "seed %d: never two stores in a row (helper)" % s)
 		var type_of: Dictionary = {}
 		for row: Array in m:
@@ -102,17 +116,86 @@ func test_store_and_fight_guarantees() -> void:
 				type_of[str(n["id"])] = str(n["type"])
 				stores += 1 if str(n["type"]) == "store" else 0
 				fights += 1 if str(n["type"]) == "fight" else 0
+				middle += 1 if MapGen.NODE_TYPES.has(str(n["type"])) else 0
 		for row: Array in m:
 			for n: Dictionary in row:
 				if str(n["type"]) != "store":
 					continue
 				for to: String in (n["links"] as PackedStringArray):
 					check(str(type_of[to]) != "store", "seed %d: %s and %s are two stores in a row" % [s, n["id"], to])
-		check(MapGen.min_fights(m) >= 1, "seed %d: every path has at least one fight (plus the gate)" % s)
+		check(MapGen.min_fights(m) >= need, "seed %d: every path has at least %d fights (plus the gate)" % [s, need])
+		var worst: int = _most_on_a_path(m, "fight")
+		most_fights = maxi(most_fights, worst)
+		path_fight_frac += float(worst) / float(m.size() - 2)
 		if failures.size() > 20:
 			return
-	check_gt(float(stores) / SEEDS, 2.0, "stores are not only the guaranteed ones")
-	check_lt(float(fights) / SEEDS, 6.0, "fights are occasional: few of the about 20 middle nodes")
+	print("MAP fights: %.2f per map of %.1f middle nodes; the most on any path averages %.2f of its middle nodes (max %d)"
+			% [float(fights) / SEEDS, float(middle) / SEEDS, path_fight_frac / SEEDS, most_fights])
+	check_gt(float(stores) / SEEDS, float(windows.size()), "stores are not only the guaranteed ones")
+	check_lt(float(fights) / float(middle), 0.25, "fights are occasional: well under a quarter of the middle nodes")
+	check_lt(path_fight_frac / SEEDS, 0.30, "even the fight-heaviest path is mostly not fights")
+
+
+## The most nodes of `kind` on any start-to-gate path of a built map.
+func _most_on_a_path(m: Array, kind: String) -> int:
+	var prev: Dictionary = {}
+	for r: int in range(m.size()):
+		var cur: Dictionary = {}
+		for n: Dictionary in (m[r] as Array):
+			var own: int = 1 if str(n["type"]) == kind else 0
+			if r == 0:
+				cur[str(n["id"])] = own
+		if r > 0:
+			var own_of: Dictionary = {}
+			for n: Dictionary in (m[r] as Array):
+				own_of[str(n["id"])] = 1 if str(n["type"]) == kind else 0
+			for p: Dictionary in (m[r - 1] as Array):
+				var base: int = int(prev.get(str(p["id"]), 0))
+				for to: String in (p["links"] as PackedStringArray):
+					cur[to] = maxi(int(cur.get(to, 0)), base + int(own_of[to]))
+		prev = cur
+	return int(prev.get(str(((m[m.size() - 1] as Array)[0] as Dictionary)["id"]), 0))
+
+
+func test_rivals_get_tougher_with_depth() -> void:
+	var layer: Dictionary = _layer()
+	var tiers: Array = layer.get("enemy_tiers", [])
+	check_gt(float(tiers.size()), 1.0, "the layer names tougher rivals for deeper rows")
+	var deep_seen: Dictionary = {}
+	for s: int in range(1, 101):
+		for row: Variant in _gen(layer, s):
+			for n: Dictionary in (row as Array):
+				if str(n["type"]) != "fight":
+					continue
+				var pool: Array = MapGen.enemies_for_row(layer, int(n["row"]))
+				check(pool.has(str(n["enemy"])), "seed %d %s: enemy %s comes from its row's tier" % [s, n["id"], n["enemy"]])
+				deep_seen[str(n["enemy"])] = true
+	var last: Dictionary = tiers[tiers.size() - 1]
+	for ship: Variant in (last["ships"] as Array):
+		check(deep_seen.has(str(ship)), "the deepest tier's %s turns up" % str(ship))
+	var t: Dictionary = {"enemies": ["a"], "enemy_tiers": [{"from_row": 3, "ships": ["b"]}, {"from_row": 6, "ships": ["c", "d"]}]}
+	check_eq(MapGen.enemies_for_row(t, 2), ["a"], "above every tier: the plain list")
+	check_eq(MapGen.enemies_for_row(t, 3), ["b"], "a tier starts at its from_row")
+	check_eq(MapGen.enemies_for_row(t, 9), ["c", "d"], "the last tier that applies wins")
+
+
+func test_survey_gas_and_water_get_likelier_deeper() -> void:
+	var sd: Dictionary = {"tiers": [{"name": "fair", "richness": 1.0, "weight": 1}], "gems_chance": 0.0,
+		"gas_chance": 0.0, "water_chance": 0.0, "per_row": {"gas_chance": 0.5, "water_chance": 0.25}}
+	var rock: Dictionary = db().table("rock")["crust"]
+	var rng: RandomNumberGenerator = RngStreams.new(3).get_stream("survey")
+	var gas_top: int = 0
+	var gas_deep: int = 0
+	var water_mid: int = 0
+	for i: int in range(200):
+		gas_top += 1 if bool(Survey.roll(sd, rock, false, 0.0, 60.0, rng, 0)["gas"]) else 0
+		gas_deep += 1 if bool(Survey.roll(sd, rock, false, 120.0, 60.0, rng, 2)["gas"]) else 0
+		water_mid += 1 if bool(Survey.roll(sd, rock, false, 120.0, 60.0, rng, 2)["water"]) else 0
+	check_eq(gas_top, 0, "no gas in the first segment at chance 0")
+	check_eq(gas_deep, 200, "two rows down 0 + 2 * 0.5 = always gas")
+	check(water_mid > 60 and water_mid < 140, "two rows down water at 0.5 (got %d of 200)" % water_mid)
+	var layer: Dictionary = _layer()
+	check((layer["survey"] as Dictionary).has("per_row"), "the crust's surveys get gassier with depth")
 
 
 func test_mining_first_node_mix() -> void:

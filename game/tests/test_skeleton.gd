@@ -11,7 +11,8 @@ func test_run_mode_starts_idle_with_ship_resources() -> void:
 	var s: Sim = _run_sim()
 	check_eq(s.run.phase, "idle", "a run starts at its first node, idle")
 	check_eq(s.run.get_res("hull"), s.ship.hull_max, "hull starts full")
-	check_eq(s.run.get_res("cells"), 8, "power cells come from the ship's start_resources")
+	check_eq(s.run.get_res("cells"), int((s.ship.source_def["start_resources"] as Dictionary)["cells"]), "power cells come from the ship's start_resources")
+	check_gt(float(s.run.get_res("cells")), 0.0, "the ship starts with cells")
 	var scen := Sim.new(db(), 7, "light_drill")
 	check_eq(scen.run.phase, "scenario", "without options the sim runs a scenario")
 

@@ -51,13 +51,14 @@ func test_choose_only_linked_nodes_and_spend_a_cell() -> void:
 	s.step()
 	check_eq(s.run.phase, "drill", "a linked node starts a segment")
 	check_eq(s.run.target_node, to, "the target is set")
-	check_eq(s.run.get_res("cells"), 7, "one power cell spent")
+	var cells0: int = int((s.ship.source_def["start_resources"] as Dictionary)["cells"])
+	check_eq(s.run.get_res("cells"), cells0 - 1, "one power cell spent")
 	check_eq(s.drill.speed_scale, 1.0, "full speed with cells")
 	check_eq(s.drill.segment_id, "r0c0-" + to, "the segment is named from-to")
 	check_eq(s.drill.depth_m, float(s.run.layer["row_depth_m"]), "one row is the layer row depth of rock")
 	s.push({"type": "choose_node", "node": to})
 	s.step()
-	check_eq(s.run.get_res("cells"), 7, "no second cell while drilling")
+	check_eq(s.run.get_res("cells"), cells0 - 1, "no second cell while drilling")
 	check_eq(_count(s, "bad_command"), 2, "choosing while drilling is refused")
 
 
@@ -86,14 +87,16 @@ func test_arrival_makes_the_node_current_and_hands_it_on() -> void:
 	s.push({"type": "choose_node", "node": to})
 	s.step()
 	_drive(s)
-	var want_phase: Dictionary = {"store": "store", "event": "dialog", "cavern": "dialog", "hazard": "dialog", "fight": "idle"}
+	var want_phase: Dictionary = {"store": "store", "event": "dialog", "cavern": "dialog", "hazard": "dialog", "fight": "combat"}
 	check_eq(s.run.phase, str(want_phase.get(kind, "idle")), "the node's module took over (%s)" % kind)
 	check_eq(s.run.current_node, to, "the node is current")
 	check(s.run.is_visited(s.run.node(to)), "and visited")
 	check_eq(s.run.depth_m, float(s.run.layer["row_depth_m"]), "depth is the row's depth exactly")
 	check_eq(str(_last(s, "arrived").get("node", "")), to, "an arrived event")
 	if kind == "fight":
-		check_eq(_count(s, "fight_skipped"), 1, "the fight went to combat (stub until step 4)")
+		check(s.combat.active, "the fight went to combat")
+		check_eq(s.combat.enemy_id, str(s.run.node(to)["enemy"]), "against the node's enemy")
+		check(not s.combat.boss, "a rival, not the gate")
 	elif kind == "store":
 		check(not s.encounter.current_store().is_empty(), "the store is open")
 	elif kind == "deposit":
@@ -117,6 +120,49 @@ func test_pursuer_advances_with_time_and_noise() -> void:
 	var p2: float = s.run.pursuer_row
 	run_seconds(s, 10.0)
 	check_eq(s.run.pursuer_row, p2, "frozen while a dialog is open")
+
+
+func test_pursuer_presses_harder_deeper_down() -> void:
+	var d: DataDB = db()
+	var pd: Dictionary = (d.table("layers")["crust"] as Dictionary)["pursuer"]
+	pd["rows_per_s"] = 0.0
+	pd["rows_per_noise"] = 0.0
+	pd["rows_per_s_per_row"] = 0.01
+	var s := Sim.new(d, 7, "light_drill", {"mode": "run"})
+	s.step()
+	var p0: float = s.run.pursuer_row
+	run_seconds(s, 10.0)
+	check_eq(s.run.pursuer_row, p0, "at the start row the per-row term adds nothing")
+	var deep: int = -1
+	for n: Dictionary in s.run.nodes:
+		if int(n["row"]) == 3 and deep < 0:
+			deep = int(n["index"])
+	s.run._current = deep
+	check_eq(s.run.current_row(), 3, "the ship sits in row 3")
+	var p1: float = s.run.pursuer_row
+	run_seconds(s, 10.0)
+	check(absf(s.run.pursuer_row - p1 - 0.01 * 3.0 * 10.0) < 0.000001,
+			"three rows down: rows_per_s_per_row * 3 * 10 s (got %.6f)" % (s.run.pursuer_row - p1))
+	check(s.run.pursuer_row < s.run.ship_row_f(s), "still behind the ship")
+
+
+func test_event_rows_keep_their_place_in_a_longer_layer() -> void:
+	var s: Sim = _sim()
+	var n: int = s.run.map.size()
+	var of: int = int(s.run.layer.get("event_rows_of", n))
+	check_eq(s.run.event_row(0), 0, "the start row stays")
+	check_eq(s.run.event_row(1), 1, "the first middle row maps to the first")
+	check_eq(s.run.event_row(n - 2), of - 2, "the last middle row maps to the last event row")
+	var prev: int = 0
+	for r: int in range(1, n - 1):
+		var e: int = s.run.event_row(r)
+		check(e >= prev and e >= 1 and e <= of - 2, "row %d -> event row %d stays in order and in the middle" % [r, e])
+		prev = e
+	var d: DataDB = db()
+	(d.table("layers")["crust"] as Dictionary).erase("event_rows_of")
+	var plain := Sim.new(d, 7, "light_drill", {"mode": "run"})
+	for r: int in range(n):
+		check_eq(plain.run.event_row(r), r, "without event_rows_of a row is its own event row")
 
 
 func test_caught_strikes_and_never_passes() -> void:
@@ -166,6 +212,18 @@ func test_overtaken_node_is_lost_on_arrival() -> void:
 	check_eq(_count(s, "node_skipped") + _count(s, "fight_skipped"), 0, "the node's module never ran")
 
 
+func test_the_gate_is_never_overtaken() -> void:
+	var s: Sim = _sim(3)
+	var last: int = s.run.map.size() - 1
+	var gate: Dictionary = (s.run.map[last] as Array)[0]
+	# Let the front sweep the gate row (as it can while the ship drills the last segment).
+	s.run._current = int(gate["index"])
+	s.run.move_pursuer(s, 100.0)
+	check_gt(s.run.pursuer_row, float(last), "the front sweeps the gate row")
+	check(not s.run.is_overtaken(gate), "the gate is still there: a caught ship fights for the way down")
+	check(s.run.is_overtaken((s.run.map[last - 1] as Array)[1]), "the other nodes of the row before it are swallowed")
+
+
 func test_scenario_mode_drilling_unchanged() -> void:
 	var s := Sim.new(db(), 2, "light_drill")
 	s.push({"type": "begin_segment", "segment": "x", "depth_m": 6.0, "lateral_m": 0.0})
@@ -191,8 +249,9 @@ func test_full_run_ends_replays_and_saves() -> void:
 	check_eq(str(sum["result"]), fr.outcome, "summary result")
 	check_eq(int(sum["seed"]), 31, "summary seed")
 	if fr.outcome == "won":
-		check_eq(int(sum["rows_reached"]), 9, "a win reached the gate row")
-		check_eq(float(sum["depth_m"]), 9.0 * float(fr.sim.run.layer["row_depth_m"]), "nine rows of the layer row depth")
+		var gate_row: int = int(fr.sim.run.layer["rows"]) - 1
+		check_eq(int(sum["rows_reached"]), gate_row, "a win reached the gate row")
+		check_eq(float(sum["depth_m"]), float(gate_row) * float(fr.sim.run.layer["row_depth_m"]), "the gate row times the layer row depth")
 	check_gt(float((sum["gained"] as Dictionary)["ore"]), 0.0, "ore mined on the way")
 	var again: Sim = Sim.replay(db(), 31, "light_drill", fr.sim.command_log, fr.sim.tick, fr.sim.options)
 	check_eq(again.state_hash(), fr.sim.state_hash(), "seed, options and command log rebuild the whole run")

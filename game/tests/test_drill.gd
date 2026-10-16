@@ -144,18 +144,22 @@ func test_segment_length_with_the_drill_bot() -> void:
 	var t2 := PackedFloat64Array()
 	var t4 := PackedFloat64Array()
 	var inside: int = 0
+	# The 30 to 65 s window was set at base_speed_m_s 0.85 (D026); it scales with the tuned base speed.
+	var k: float = 0.85 / db().tune("drill.base_speed_m_s")
+	var lo_s: float = 30.0 * k
+	var hi_s: float = 65.0 * k
 	for p_seed: int in range(1, 21):
 		var s2: Sim = _sim(p_seed, 2)
 		_begin(s2, "len", SEG_DEPTH_M, float(p_seed % 7) - 3.0)
 		t2.append(_drive(s2))
-		if t2[t2.size() - 1] >= 30.0 and t2[t2.size() - 1] <= 65.0:  # M1b (D026): a slower base cut speed.
+		if t2[t2.size() - 1] >= lo_s and t2[t2.size() - 1] <= hi_s:
 			inside += 1
 		var s4: Sim = _sim(p_seed, 4)
 		_begin(s4, "len", SEG_DEPTH_M, float(p_seed % 7) - 3.0)
 		t4.append(_drive(s4))
 	print("DRILL segment seconds at 2 bars: ", t2)
 	print("DRILL segment seconds at 4 bars: ", t4)
-	check(inside >= 19, "at 2 bars at least 19 of 20 36 m segments take 30 to 65 s (got %d)" % inside)
+	check(inside >= 19, "at 2 bars at least 19 of 20 36 m segments take %.0f to %.0f s (got %d)" % [lo_s, hi_s, inside])
 	var sum2: float = 0.0
 	var sum4: float = 0.0
 	for i: int in range(20):
@@ -321,7 +325,12 @@ func test_run_mode_segment_returns_to_idle() -> void:
 
 
 func test_drill_scenario_reaches_the_node() -> void:
-	var r := ScenarioRun.from_scenario(db(), "drill_segment", 1)
+	# The scenario's 60 s was set at base_speed_m_s 0.85; scale it to the tuned base speed (plus 10 s),
+	# so the test keeps checking that the segment ends and the scenario gets its phase back.
+	var d: DataDB = db()
+	var sc: Dictionary = d.scenarios["drill_segment"]
+	sc["duration_s"] = maxf(float(sc["duration_s"]), ceilf(60.0 * 0.85 / d.tune("drill.base_speed_m_s")) + 10.0)
+	var r := ScenarioRun.from_scenario(d, "drill_segment", 1)
 	r.play_to_end()
 	check(has_event(r.sim, "segment_done"), "the scenario's segment finished within its time")
 	check_eq(r.sim.run.phase, "scenario", "a scenario returns to its own phase")

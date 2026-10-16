@@ -92,7 +92,7 @@ static func make_policy(p_policy: String) -> PolicyBot:
 			b.fight_value = -20.0
 			b.repair_to_frac = 1.0
 			b.keep = {"coolant": 16, "cells": 1, "bits": 2, "charges": 6}
-			b.upgrades = ["gear:hull_plating", "system:bracing", "gear:pumps", "gear:tungsten_head", "system:helm",
+			b.upgrades = ["gear:tungsten_head", "gear:hull_plating", "system:bracing", "gear:pumps", "system:helm",
 					"system:reactor"]
 			b.gem_reserve = 20
 			b.ore_reserve = 30

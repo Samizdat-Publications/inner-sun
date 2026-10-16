@@ -92,6 +92,24 @@ static func _lint_layer(db: DataDB, def: Dictionary, file: String, errs: PackedS
 	else:
 		for e: Variant in (enemies as Array):
 			_check_ship(db, str(e), file, "enemies", errs)
+	var tiers: Variant = def.get("enemy_tiers", [])
+	if not (tiers is Array):
+		errs.append("%s: enemy_tiers must be a list of {from_row, ships}" % file)
+	else:
+		var last_from: int = -1
+		for t: Variant in (tiers as Array):
+			if not (t is Dictionary) or not _num(t as Dictionary, "from_row") or not ((t as Dictionary).get("ships") is Array) \
+					or ((t as Dictionary)["ships"] as Array).is_empty():
+				errs.append("%s: enemy_tiers entries need a from_row and a non-empty ships list" % file)
+				continue
+			var from: int = int((t as Dictionary)["from_row"])
+			if from <= last_from:
+				errs.append("%s: enemy_tiers must be in ascending from_row" % file)
+			last_from = from
+			for e: Variant in ((t as Dictionary)["ships"] as Array):
+				_check_ship(db, str(e), file, "enemy_tiers", errs)
+	if def.has("event_rows_of") and (not _num(def, "event_rows_of") or int(def["event_rows_of"]) < 3):
+		errs.append("%s: event_rows_of must be a number, 3 or more" % file)
 	_check_ship(db, str(def.get("gate_enemy", "")), file, "gate_enemy", errs)
 	var pd: Variant = def.get("pursuer")
 	if not (pd is Dictionary):
@@ -103,6 +121,8 @@ static func _lint_layer(db: DataDB, def: Dictionary, file: String, errs: PackedS
 				errs.append("%s: pursuer.%s must be a number" % [file, key])
 			elif key != "start_row" and float(p[key]) < 0.0:
 				errs.append("%s: pursuer.%s must be zero or more" % [file, key])
+		if p.has("rows_per_s_per_row") and (not _num(p, "rows_per_s_per_row") or float(p["rows_per_s_per_row"]) < 0.0):
+			errs.append("%s: pursuer.rows_per_s_per_row must be a number, zero or more" % file)
 		if _num(p, "start_row") and float(p["start_row"]) >= 0.0:
 			errs.append("%s: pursuer.start_row must be above the start row (below zero)" % file)
 	if errs.size() > before:

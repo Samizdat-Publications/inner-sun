@@ -1,7 +1,8 @@
 extends TestCase
 ## The dig economy's targets per segment (docs/plans/specs/m1b_dig_sim.md), measured on real
-## segments driven by the drill bot: 60 m segments of 45 to 75 s at 3 bars (the balanced policy's
-## power; a fresh bit, so runs with worn bits are slower); 8 to 14 deposits in the
+## segments driven by the drill bot: 60 m segments of 45 to 75 s at 3 bars at base_speed_m_s 0.85
+## (D026; the band scales with the tuned base speed, about 60 to 100 s at D029's 0.64), the balanced
+## policy's power, a fresh bit, so runs with worn bits are slower; 8 to 14 deposits in the
 ## steerable band; driving straight for the node yields about 15 to 25 ore, a greedy weaving path 60
 ## to 150 at mid depth. Prints the table it checks (DIG lines) so retuning has numbers.
 
@@ -70,6 +71,7 @@ func _mean(xs: PackedFloat64Array) -> float:
 
 func test_segment_economy_bands() -> void:
 	var fair: Dictionary = {"richness": 1.0, "gems": ["gem"], "gas": false, "water": false}
+	var k: float = 0.85 / db().tune("drill.base_speed_m_s")  # Time bands were set at 0.85 m/s.
 	for depth: float in [0.0, 240.0, 420.0]:
 		var dep := PackedFloat64Array()
 		var straight := PackedFloat64Array()
@@ -94,8 +96,8 @@ func test_segment_economy_bands() -> void:
 		print("DIG depth %3.0f m: deposits %.1f, ore straight %.1f, ore greedy %.1f, gems greedy %.1f, time 2 bars %.1f s (greedy %.1f), 3 bars %.1f s, bit wear per greedy segment %.3f" % [
 				depth, _mean(dep), _mean(straight), _mean(greedy), _mean(gems), _mean(t2), _mean(t2g), _mean(t3), _mean(wear)])
 		check(_mean(dep) >= 6.0 and _mean(dep) <= 16.0, "depth %.0f: about 8 to 14 deposits per segment (%.1f)" % [depth, _mean(dep)])
-		check(_mean(t3) >= 45.0 and _mean(t3) <= 75.0, "depth %.0f: 45 to 75 s at 3 bars, the balanced power (%.1f)" % [depth, _mean(t3)])
-		check(_mean(t2) >= 55.0 and _mean(t2) <= 95.0, "depth %.0f: 2 bars is slower but not a crawl (%.1f)" % [depth, _mean(t2)])
+		check(_mean(t3) >= 45.0 * k and _mean(t3) <= 75.0 * k, "depth %.0f: %.0f to %.0f s at 3 bars, the balanced power (%.1f)" % [depth, 45.0 * k, 75.0 * k, _mean(t3)])
+		check(_mean(t2) >= 55.0 * k and _mean(t2) <= 95.0 * k, "depth %.0f: 2 bars is slower but not a crawl (%.1f)" % [depth, _mean(t2)])
 		check_lt(_mean(t3), _mean(t2), "depth %.0f: 3 bars is faster" % depth)
 		check_gt(_mean(greedy), _mean(straight) * 2.0, "depth %.0f: weaving pays (%.1f against %.1f)" % [depth, _mean(greedy), _mean(straight)])
 		if depth == 240.0:

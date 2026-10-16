@@ -7,7 +7,7 @@
   "hull": 30,
   "weapon_slots": 3,
   "weapons": ["borer_turret", "charge_launcher"],
-  "start_resources": {"ore": 10, "gems": 15, "coolant": 14, "cells": 8, "bits": 2, "charges": 4},
+  "start_resources": {"ore": 10, "gems": 15, "coolant": 14, "cells": 12, "bits": 2, "charges": 4},
   "rooms": [
     {"id": "bridge", "name": "Bridge", "x": 0.0, "y": 0.0, "w": 4.0, "h": 3.0, "system": "helm", "bars": 2, "power": 1},
     {"id": "bracing", "name": "Bracing", "x": 4.0, "y": 0.0, "w": 4.0, "h": 3.0, "system": "bracing", "bars": 2, "power": 2},

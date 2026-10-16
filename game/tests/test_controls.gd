@@ -93,15 +93,23 @@ func test_scanner_bit_button() -> void:
 
 
 func test_alerts_warn_ahead_and_about_the_drill_room() -> void:
-	var s: Sim = _run_sim()
+	# The first seed whose map holds both a fight and a hazard node (map content comes from the layer
+	# data, so no seed is assumed).
+	var s: Sim = null
 	var fight_id: String = ""
 	var hazard_id: String = ""
-	for n: Dictionary in s.run.nodes:
-		if str(n["type"]) == "fight" and fight_id.is_empty():
-			fight_id = str(n["id"])
-		if str(n["type"]) == "hazard" and hazard_id.is_empty():
-			hazard_id = str(n["id"])
-	check(not fight_id.is_empty() and not hazard_id.is_empty(), "the map has a fight and a hazard node")
+	for seed_value: int in range(3, 40):
+		s = _run_sim(seed_value)
+		fight_id = ""
+		hazard_id = ""
+		for n: Dictionary in s.run.nodes:
+			if str(n["type"]) == "fight" and fight_id.is_empty():
+				fight_id = str(n["id"])
+			if str(n["type"]) == "hazard" and hazard_id.is_empty():
+				hazard_id = str(n["id"])
+		if not fight_id.is_empty() and not hazard_id.is_empty():
+			break
+	check(not fight_id.is_empty() and not hazard_id.is_empty(), "a map with a fight and a hazard node")
 	s.run.phase = "drill"
 	s.run.target_node = fight_id
 	check(_has_text(AlertsStrip.compute(s), "HOSTILE AHEAD: power weapons (E) before you arrive"), "a fight ahead warns")
