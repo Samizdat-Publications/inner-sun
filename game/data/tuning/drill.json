@@ -30,7 +30,7 @@
     "gas_noise": 8.0,
     "hard_rock_min_hardness": 3.0,
     "at_wall_heading_deg": 80.0,
-    "rockfall_strain_cells": 80,
+    "rockfall_strain_cells": 50,
     "rockfall_warn_s": 1.2,
     "rockfall_hull_pts": 1,
     "rockfall_sys_bars": 0.5,
@@ -39,6 +39,6 @@
     "blast_fuse_s": 0.6,
     "blast_radius_m": 1.75,
     "blast_fire_m": 3.0,
-    "blast_noise": 15.0
+    "blast_noise": 4.0
   }
 }

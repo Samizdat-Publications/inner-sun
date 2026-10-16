@@ -364,7 +364,7 @@ func test_blast_clears_the_circle_and_pays_exactly() -> void:
 	check_eq(int(e["ore"]), want_ore, "the event's ore")
 	check_eq(int(e["gems"]), want_gems, "the event's gems")
 	check_eq(s.run.get_res("charges"), charges0 - 1, "one charge spent")
-	check_eq(d.noise_total - noise0, 15.0, "the blast made exactly its noise (the drill is off)")
+	check_eq(d.noise_total - noise0, s.db.tune("drill.blast_noise"), "the blast made exactly its noise (the drill is off)")
 	var chunk_sum: int = 0
 	for v: int in d.chunk_changes:
 		chunk_sum += v
@@ -451,7 +451,7 @@ func test_douse_needs_power_and_coolant_and_books_heat_exactly() -> void:
 	check_eq(s.systems.douse_ready(s, "weapons"), "", "ready")
 	var coolant0: int = s.run.get_res("coolant")
 	var billed0: int = s.systems.coolant_units_used(s.player)
-	var want_j: int = clampi(r.energy_j - ceili(r.start_temp_c * r.heat_cap_j_per_k), 0, 300000)
+	var want_j: int = clampi(r.energy_j - ceili(r.start_temp_c * r.heat_cap_j_per_k), 0, roundi(s.db.tune("systems.douse_j")))
 	var e0: int = s.ship.total_energy_j()
 	var in0: int = h.energy_in_j
 	var out0: int = h.energy_out_j
@@ -460,11 +460,11 @@ func test_douse_needs_power_and_coolant_and_books_heat_exactly() -> void:
 	var e: Dictionary = _last(s, "doused")
 	check(not e.is_empty(), "doused")
 	var before: float = float(e["fire_before"])
-	check_lt(absf(float(e["fire_after"]) - maxf(0.0, before - 0.6)), 0.0011, "fire down by 0.6")
+	check_lt(absf(float(e["fire_after"]) - maxf(0.0, before - s.db.tune("systems.douse_fire_level"))), 0.0011, "fire down by the douse level")
 	var billed: int = s.systems.coolant_units_used(s.player) - billed0
 	check_eq(s.run.get_res("coolant"), coolant0 - 1 - billed, "exactly one coolant unit spent by the douse")
 	check_gt(float(want_j), 0.0, "the burning room is above its design temperature")
-	check_eq(int(e["heat_j"]), want_j, "up to 300 kJ taken, never below design temperature")
+	check_eq(int(e["heat_j"]), want_j, "up to douse_j taken, never below design temperature")
 	check_eq(s.ship.total_energy_j() - e0, (h.energy_in_j - in0) - (h.energy_out_j - out0), "heat books balance exactly")
 	s.push({"type": "douse", "room": "weapons"})
 	s.step()
@@ -481,7 +481,7 @@ func test_douse_never_cools_below_design_temperature() -> void:
 	var s: Sim = _sim(0, 1, 0, 0)
 	crew_auto_off(s)
 	var r: Room = room(s, "weapons")
-	s.push({"type": "ignite", "room": "weapons", "level": 0.5})
+	s.push({"type": "ignite", "room": "weapons", "level": 0.25})
 	s.step()
 	r.set_temp_c(r.start_temp_c + 0.5)  # Test setup: barely above the design temperature.
 	var e0: int = s.ship.total_energy_j()
@@ -492,7 +492,7 @@ func test_douse_never_cools_below_design_temperature() -> void:
 	s.step()
 	check_eq(int(_last(s, "doused")["heat_j"]), want, "only the heat above design temperature is taken")
 	check_eq(s.ship.total_energy_j() - e0, (s.hazards.energy_in_j - in0) - (s.hazards.energy_out_j - out0), "books exact")
-	check_eq(r.fire, 0.0, "a 0.5 fire is out")
+	check_eq(r.fire, 0.0, "a 0.25 fire is out")
 	check(has_event(s, "fire_out"), "fire_out by douse")
 
 

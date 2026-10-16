@@ -9,8 +9,8 @@
     "side_cut_per_helm_bar": 0.3,
     "bracing_recharge_s": 6.0,
     "bracing_bars_per_layer": 2,
-    "douse_cooldown_s": 3.0,
-    "douse_fire_level": 0.6,
-    "douse_j": 300000
+    "douse_cooldown_s": 6.0,
+    "douse_fire_level": 0.3,
+    "douse_j": 150000
   }
 }
