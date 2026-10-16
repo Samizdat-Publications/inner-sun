@@ -32,9 +32,9 @@ const NODE_R: float = 27.0
 const PICK_R: float = 34.0
 const TYPE_NAME: Dictionary = {
 	"start": "LANDING SHAFT", "event": "EVENT SITE", "cavern": "CAVERN", "hazard": "HAZARD ZONE",
-	"store": "TRADING POST", "fight": "HOSTILE CONTACT", "gate": "THE GATE",
+	"store": "TRADING POST", "fight": "HOSTILE CONTACT", "gate": "THE GATE", "deposit": "RICH DEPOSIT",
 }
-const LEGEND_ORDER: Array[String] = ["start", "event", "cavern", "hazard", "store", "fight", "gate"]
+const LEGEND_ORDER: Array[String] = ["start", "event", "cavern", "hazard", "store", "fight", "deposit", "gate"]
 const BG: Color = Color(0.022, 0.060, 0.040)
 const CRT_BRIGHT: Color = Color(0.55, 1.0, 0.65)
 const SHADOW: Color = Color(0.0, 0.0, 0.004)
@@ -49,6 +49,8 @@ var _hover: String = ""
 var _t: float = 0.0
 var _traces: Array[PackedVector2Array] = []
 var _close_button: Button = null
+var _mat_info: Dictionary = {}  ## Rock materials of the layer (SurveyMarks.material_info), cached per rock id.
+var _mat_rock: String = ""
 
 
 static func build(parent: Control, p_sim: Sim) -> MapView:
@@ -183,7 +185,22 @@ func describe(n: Dictionary) -> PackedStringArray:
 		note = "OVERTAKEN: ITS CONTENT IS GONE" if not can_choose(str(n["id"])) else "OVERTAKEN: THE FRONT WILL STRIKE"
 	elif can_choose(str(n["id"])):
 		note = "CLICK TO DRILL HERE"
-	return PackedStringArray([title, detail, note])
+	var out: PackedStringArray = PackedStringArray([title, detail, note])
+	if run.is_revealed(n) and str(n.get("type", "")) != "start":
+		out.append_array(SurveyMarks.words(n.get("survey", {}), _tier_count(), _materials(), str(n["type"]) == "deposit"))
+	return out
+
+
+func _tier_count() -> int:
+	return ((sim.run.layer.get("survey", {}) as Dictionary).get("tiers", []) as Array).size()
+
+
+func _materials() -> Dictionary:
+	var rock: String = str(sim.run.layer.get("rock", DrillSim.DEFAULT_ROCK))
+	if rock != _mat_rock or _mat_info.is_empty():
+		_mat_rock = rock
+		_mat_info = SurveyMarks.material_info(sim.db, rock)
+	return _mat_info
 
 
 # Geometry ----------------------------------------------------------------------------------------
@@ -434,6 +451,8 @@ func _draw_node(n: Dictionary) -> void:
 		_glyph(kind, c, NODE_R * 0.62, glyph, st == "overtaken")
 	if st == "overtaken":
 		_crack(c, str(n["id"]))
+	if (st == "open" or st == "seen") and SurveyMarks.has_reading(n):
+		SurveyMarks.draw(self, c + Vector2(NODE_R + 8.0, -12.0), n["survey"], _tier_count(), _materials(), 1.0 if st == "open" else 0.75)
 
 
 ## One node type as a small drawn symbol, centred on c, about 2s across.
@@ -480,6 +499,15 @@ func _glyph(kind: String, c: Vector2, s: float, col: Color, dead: bool) -> void:
 			for d: Vector2 in [Vector2(1, 0), Vector2(-1, 0), Vector2(0, 1), Vector2(0, -1)]:
 				draw_line(c + d * s * 0.45, c + d * s * 1.1, col, 2.0)
 			draw_circle(c, 2.2, col)
+		"deposit":
+			var gem := PackedVector2Array([c + Vector2(0, -s), c + Vector2(s * 0.8, -s * 0.1), c + Vector2(0, s), c + Vector2(-s * 0.8, -s * 0.1)])
+			draw_colored_polygon(gem, col)
+			draw_line(c + Vector2(-s * 0.8, -s * 0.1), c + Vector2(s * 0.8, -s * 0.1), Color(0.03, 0.08, 0.05), 1.5)
+			draw_line(c + Vector2(0, -s), c + Vector2(-s * 0.25, -s * 0.1), Color(0.03, 0.08, 0.05), 1.2)
+			draw_line(c + Vector2(0, -s), c + Vector2(s * 0.25, -s * 0.1), Color(0.03, 0.08, 0.05), 1.2)
+			for sp: Vector2 in [Vector2(-1.1, -0.9), Vector2(1.15, -1.0)]:
+				draw_line(c + sp * s - Vector2(3, 0), c + sp * s + Vector2(3, 0), col, 1.5)
+				draw_line(c + sp * s - Vector2(0, 3), c + sp * s + Vector2(0, 3), col, 1.5)
 		"gate":
 			var g := Rect2(c + Vector2(-s * 0.8, -s * 0.9), Vector2(s * 1.6, s * 1.8))
 			draw_rect(g, col, false, 2.5)
@@ -583,6 +611,9 @@ func _draw_legend() -> void:
 	draw_rect(Rect2(x + 2.0, y - 15.0, 30.0, 20.0), SHADOW, true)
 	draw_rect(Rect2(x + 2.0, y - 15.0, 30.0, 20.0), Color(UiTheme.ALARM, 0.6), false, 1.0)
 	UiTheme.text(self, Vector2(x + 44.0, y), "PURSUIT FRONT", 15, UiTheme.TEXT)
+	y += 30.0
+	y = SurveyMarks.draw_key(self, x, y, _materials())
+	SurveyMarks.draw_last_dig(self, x, y + 8.0, DigLog.last_summary(sim))
 	# The one line the player needs.
 	var hint: String = "CHOOSE A GLOWING ROUTE." if run.phase == "idle" else "DRILLING. MAP IS READ ONLY."
 	var pulse: float = 0.65 + 0.35 * UiTheme.pulse(_t, 1.0) if run.phase == "idle" else 0.7
@@ -599,6 +630,9 @@ func _draw_tooltip() -> void:
 	var lines: Array[String] = [d[0], d[1]]
 	if not d[2].is_empty():
 		lines.append(d[2])
+	var survey_from: int = lines.size()
+	for i: int in range(3, d.size()):
+		lines.append(d[i])
 	var w: float = 0.0
 	for s: String in lines:
 		w = maxf(w, UiTheme.text_width(s, 16))
@@ -610,4 +644,6 @@ func _draw_tooltip() -> void:
 	draw_rect(box, UiTheme.BRASS, false, 1.5)
 	for i: int in range(lines.size()):
 		var col: Color = UiTheme.AMBER if i == 0 else (UiTheme.CRT if i == 1 else UiTheme.BRASS_LIGHT)
+		if i >= survey_from:
+			col = UiTheme.CRT
 		UiTheme.text(self, box.position + Vector2(14.0, 26.0 + 22.0 * float(i)), lines[i], 16, col)

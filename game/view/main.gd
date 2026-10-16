@@ -393,6 +393,9 @@ func _build_world() -> void:
 	add_child(screen)
 	screen.build(run.sim, profile)
 	screen.new_run_requested.connect(_start_run)
+	var pickups := PickupLayer.new()
+	pickups.setup(screen.tally.digs, PPM)
+	add_child(pickups)
 	if run_mode and _is_human() and profile != null and profile.runs == 0:
 		screen.help.open()  # A fresh profile sees the help page first (never in bot captures).
 	if args.has("arm"):

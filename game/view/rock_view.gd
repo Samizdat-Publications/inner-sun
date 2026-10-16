@@ -198,7 +198,7 @@ func _upload() -> void:
 ## Paint strips (nearest the ship first), then glint chunks, while the next one's estimate fits the
 ## budget. The first strip of a frame always runs, so the work always moves.
 func _work(t0: int, budget_usec: int) -> void:
-	var first: bool = true
+	var first: bool = not _glint_pass(t0, budget_usec / 4, true)
 	while _dirty_total > 0:
 		var r: int = _next_row()
 		var c0: int = 0
@@ -219,11 +219,17 @@ func _work(t0: int, budget_usec: int) -> void:
 		_paint_run(c0, c1, r)
 		var took: int = Time.get_ticks_usec() - now
 		_us_per_px = lerpf(_us_per_px, float(took) / float(px), 0.25)
+	_glint_pass(t0, budget_usec * 3 / 4, first)
+
+
+## Paint glint chunks (ore and gem washes), the one nearest the ship first, while the time since t0
+## stays under `limit`. `force_first`: paint one even if the limit is already passed. True if any was.
+func _glint_pass(t0: int, limit: int, force_first: bool) -> bool:
+	var did: bool = false
 	while _gdirty_total > 0:
-		if not first and Time.get_ticks_usec() - t0 > budget_usec * 3 / 4:
-			return
-		first = false
-		var idx: int = _gdirty.find(1)
+		if (did or not force_first) and Time.get_ticks_usec() - t0 > limit:
+			break
+		var idx: int = _nearest_glint()
 		_gdirty[idx] = 0
 		_gdirty_total -= 1
 		var cx: int = idx % drill.chunk_cols
@@ -231,6 +237,25 @@ func _work(t0: int, budget_usec: int) -> void:
 		_paint_glint(idx, cx, cy)
 		if ROCK_SHADOWS:
 			_build_occluder(idx, cx, cy)
+		did = true
+	return did
+
+
+## The dirty glint chunk nearest the crown, so the rock around the ship shows its ore first.
+func _nearest_glint() -> int:
+	var span: float = float(CELLS) * drill.cell_m
+	var hx: float = (drill.ship_pos.x + drill.ship_size.x * 0.5) / span
+	var hy: float = (drill.ship_pos.y + drill.ship_size.y) / span
+	var best: int = -1
+	var best_d: float = 1.0e9
+	for i: int in range(_gdirty.size()):
+		if _gdirty[i] == 0:
+			continue
+		var d: float = absf(float(i % drill.chunk_cols) + 0.5 - hx) + absf(float(i / drill.chunk_cols) + 0.5 - hy)
+		if d < best_d:
+			best_d = d
+			best = i
+	return best
 
 
 ## The dirty mosaic row nearest the ship's middle row.
@@ -577,7 +602,9 @@ func _paint_glint(idx: int, cx: int, cy: int) -> void:
 ## pockets read plainly from across the shaft and not only when a glint twinkles.
 func _ore_fill(px: PackedByteArray, code: int, lc: int, lr: int, gem: bool) -> void:
 	var col: Color = Color.html(str(drill.material(code).get("color", "#808080")))
-	var k: float = 0.5 if gem else 0.62
+	if col.r * 0.3 + col.g * 0.59 + col.b * 0.11 < 0.3:
+		col = col.lerp(Color(0.72, 0.74, 0.78), 0.6)  # Coal's own colour is near black: a grey wash.
+	var k: float = 0.55 if gem else 0.66
 	for yy: int in range(CELL_PX):
 		for xx: int in range(CELL_PX):
 			var edge: float = minf(minf(float(xx), float(CELL_PX - 1 - xx)), minf(float(yy), float(CELL_PX - 1 - yy)))
