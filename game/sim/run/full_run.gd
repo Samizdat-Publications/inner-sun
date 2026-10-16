@@ -1,17 +1,12 @@
 class_name FullRun
-extends RefCounted
+extends Driver
 ## A whole run (map, travel, nodes, pursuer, death or the gate) played by a bot, like ScenarioRun is
 ## for single situations. Used by tests and headless balance runs. No file I/O here: callers save the
 ## profile (Profile.merge_run) and the record (RunRecord.save) from game/meta.
 
 const DEFAULT_CAP_S: float = 3600.0  ## Hard cap on simulated time; a run that reaches it is "stuck".
 
-var sim: Sim
-var bot: Bot
-var bot_name: String = ""
-var cap_ticks: int = 0
-var outcome: String = ""  ## "" while running, then "dead", "won" or "stuck".
-var cause: String = ""
+var cap_ticks: int = 0  ## outcome: "" while running, then "dead", "won" or "stuck".
 
 
 ## options: Profile.run_options() (mode is forced to "run"), plus "layer" if not the default.
@@ -24,11 +19,8 @@ static func start(db: DataDB, run_seed: int, p_bot_name: String = "run", options
 	fr.bot_name = p_bot_name
 	fr.bot = Bot.make(p_bot_name)
 	fr.cap_ticks = roundi(cap_s * Sim.TICK_HZ)
+	fr.duration_ticks = fr.cap_ticks
 	return fr
-
-
-func done() -> bool:
-	return outcome != ""
 
 
 func step() -> void:

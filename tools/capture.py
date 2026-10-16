@@ -80,6 +80,8 @@ def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--seed", type=int, default=None)
     ap.add_argument("--scenario", default="fire_drill")
+    ap.add_argument("--mode", default="", help="run: capture a whole run (map, events, fights) played by --bot")
+    ap.add_argument("--bot", default="", help="bot for --mode run (e.g. balanced)")
     ap.add_argument("--duration", type=float, default=40.0)
     ap.add_argument("--stills", type=int, default=12)
     ap.add_argument("--sheets", type=int, default=3)
@@ -111,11 +113,15 @@ def main(argv=None):
 
     # 2. Movie Maker run.
     movie = os.path.join(raw, "movie.avi")
-    frames_total = int((a.duration + 6) * 30)
+    frames_total = int((a.duration + 6 + (90 if a.mode else 0)) * 30)  # run mode: held screens add frames
     args = ["--path", paths.GAME, "--resolution", "1920x1080", "--position", "-32000,-32000", "--write-movie", movie,
             "--fixed-fps", "30", "--disable-vsync", "--quit-after", str(frames_total), "--",
             f"--scenario={a.scenario}", f"--seed={seed}", f"--duration={a.duration}", f"--capture={raw}",
             f"--stills={a.stills}", f"--sheets={a.sheets}"]
+    if a.mode:
+        args += [f"--mode={a.mode}", f"--profile-dir={os.path.join(paths.OUT, 'profile_capture')}"]
+    if a.bot:
+        args += [f"--bot={a.bot}"]
     r = proc.run_godot(args, 3600, log_name="capture_movie")
     with open(os.path.join(raw, "movie_log.txt"), "w", encoding="utf-8", newline="\n") as f:
         f.write(r.out)

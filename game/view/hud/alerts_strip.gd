@@ -68,6 +68,8 @@ static func compute(s: Sim) -> Array[Dictionary]:
 		elif s.drill.bit_wear >= BIT_WORN:
 			_add(out, 50, "bit", "BIT WORN %d%%" % roundi(s.drill.bit_wear * 100.0), "")
 	var coolant: int = s.run.get_res("coolant")
+	if s.run.mode != "run":
+		coolant = COOLANT_LOW + 1  # Scenarios do not bill coolant: no supply alerts there.
 	if coolant <= 0:
 		_add(out, 72, "coolant", "COOLANT EMPTY", "")
 	elif coolant <= COOLANT_LOW:

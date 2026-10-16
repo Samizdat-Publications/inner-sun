@@ -1,19 +1,13 @@
 class_name ScenarioRun
-extends RefCounted
+extends Driver
 ## One situation to play out: a ship, a timeline of events, a bot and a time limit. The rendered
 ## game, the tests, captures and headless balance runs all play situations through this class.
 ## Timeline events and bot orders both enter the sim as commands, so they all land in the replay log.
 
 const FLOOD_LIMIT_S: float = 10.0
 
-var sim: Sim
-var bot: Bot
 var scenario_id: String = ""
-var bot_name: String = ""
 var timeline: Array[Dictionary] = []
-var duration_ticks: int = 0
-var outcome: String = ""
-var cause: String = ""
 var first_fire_out_s: float = -1.0
 var max_water_ml: int = 0
 var _next: int = 0
@@ -57,10 +51,6 @@ func _finish_setup(p_bot_name: String) -> void:
 	bot_name = p_bot_name
 	bot = Bot.make(p_bot_name)
 	_drill_room = sim.ship.room_with_system("drill")
-
-
-func done() -> bool:
-	return outcome != ""
 
 
 ## Play to the end with a hard cap, so a broken script can never spin a loop forever: if the sim

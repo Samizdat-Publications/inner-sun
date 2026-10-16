@@ -19,7 +19,8 @@ class FnDraw extends Node2D:
 		fn.call(self)
 
 
-var run: ScenarioRun
+var sim: Sim
+var world: ShipWorld  ## The ship this view draws (the player's, or the enemy's in a fight).
 var ppm: float = 80.0
 var _font: Font
 var _radial: GradientTexture2D
@@ -44,8 +45,9 @@ var _sparks: CPUParticles2D
 var _dust: CPUParticles2D
 
 
-func setup(p_run: ScenarioRun, p_ppm: float) -> void:
-	run = p_run
+func setup(p_sim: Sim, p_world: ShipWorld, p_ppm: float) -> void:
+	sim = p_sim
+	world = p_world
 	ppm = p_ppm
 	_font = ThemeDB.fallback_font
 	_radial = ShipView.radial_texture(256)
@@ -60,13 +62,15 @@ func setup(p_run: ScenarioRun, p_ppm: float) -> void:
 	_build_crew()
 
 
-func rebind(p_run: ScenarioRun) -> void:
-	run = p_run
+## Follow a new sim with the same ship layout (a new run of the same ship): the nodes stay.
+func rebind(p_sim: Sim, p_world: ShipWorld) -> void:
+	sim = p_sim
+	world = p_world
 
 
 func ship_size_m() -> Vector2:
 	var end := Vector2.ZERO
-	for r: Room in run.sim.ship.rooms:
+	for r: Room in world.ship.rooms:
 		end = end.max(r.rect.end)
 	return end
 
@@ -159,7 +163,7 @@ func _build_rock() -> void:
 
 func _build_rooms() -> void:
 	var wall: Texture2D = ShipView.canvas_tex("res://assets/test/wall_albedo.png", "res://assets/test/wall_normal.png")
-	var ship: Ship = run.sim.ship
+	var ship: Ship = world.ship
 	for r: Room in ship.rooms:
 		var rp: Rect2 = room_rect_px(r)
 		if wall != null:
@@ -187,7 +191,7 @@ func _build_rooms() -> void:
 
 
 func _build_occluders() -> void:
-	var ship: Ship = run.sim.ship
+	var ship: Ship = world.ship
 	for r: Room in ship.rooms:
 		var rp: Rect2 = room_rect_px(r)
 		var top_gaps: Array[Vector2] = []
@@ -241,7 +245,7 @@ func _occluder_span(origin: Vector2, horizontal: bool, from: float, to: float) -
 
 
 func _build_lights() -> void:
-	for r: Room in run.sim.ship.rooms:
+	for r: Room in world.ship.rooms:
 		var rp: Rect2 = room_rect_px(r)
 		_lamps.append(_light(Vector2(rp.get_center().x, rp.position.y + ppm * 0.35), Color(1.0, 0.86, 0.66), 1.25, rp.size.x * 0.9, true, 220.0))
 		_alarms.append(_light(Vector2(rp.position.x + ppm * 0.4, rp.position.y + ppm * 0.3), Color(1.0, 0.1, 0.06), 0.0, rp.size.x * 0.9, true, 160.0))
@@ -257,7 +261,7 @@ func _build_flames() -> void:
 	var mat := CanvasItemMaterial.new()
 	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 	mat.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
-	for r: Room in run.sim.ship.rooms:
+	for r: Room in world.ship.rooms:
 		var rp: Rect2 = room_rect_px(r)
 		var p := CPUParticles2D.new()
 		p.texture = dot
@@ -282,10 +286,10 @@ func _build_flames() -> void:
 
 
 func _build_drill() -> void:
-	var di: int = run.sim.ship.room_with_system("drill")
+	var di: int = world.ship.room_with_system("drill")
 	if di < 0:
 		return
-	var rp: Rect2 = room_rect_px(run.sim.ship.rooms[di])
+	var rp: Rect2 = room_rect_px(world.ship.rooms[di])
 	var cx: float = rp.get_center().x
 	_drill_poly = Polygon2D.new()
 	_drill_poly.polygon = PackedVector2Array([
@@ -455,10 +459,10 @@ func _process_drilling() -> void:
 
 func _build_props() -> void:
 	var tex: Texture2D = ShipView.canvas_tex("res://assets/test/reactor_albedo.png", "res://assets/test/reactor_normal.png")
-	var ri: int = run.sim.ship.room_with_system("reactor")
+	var ri: int = world.ship.room_with_system("reactor")
 	if tex == null or ri < 0:
 		return
-	var rp: Rect2 = room_rect_px(run.sim.ship.rooms[ri])
+	var rp: Rect2 = room_rect_px(world.ship.rooms[ri])
 	var s := Sprite2D.new()
 	s.texture = tex
 	var k: float = (ppm * 1.7) / 320.0
@@ -469,7 +473,7 @@ func _build_props() -> void:
 
 
 func _build_crew() -> void:
-	for c: CrewMember in run.sim.ship.crew:
+	for c: CrewMember in world.ship.crew:
 		var ci: int = c.index
 		_crew_nodes.append(_fn(4, func(n: Node2D) -> void: _draw_crew(n, ci)))
 		_crew_lights.append(_light(Vector2.ZERO, Color(0.85, 0.92, 1.0), 0.45, ppm * 1.7, false, 120.0))
@@ -477,7 +481,7 @@ func _build_crew() -> void:
 
 func _process(delta: float) -> void:
 	_time += delta
-	var ship: Ship = run.sim.ship
+	var ship: Ship = world.ship
 	for r: Room in ship.rooms:
 		var i: int = r.index
 		var hazard: bool = r.fire > 0.0 or r.breach_m2 > 0.0 or r.level_m() > 0.3
@@ -503,14 +507,14 @@ func _process(delta: float) -> void:
 
 
 func _draw_heat(n: Node2D, ri: int) -> void:
-	var r: Room = run.sim.ship.rooms[ri]
+	var r: Room = world.ship.rooms[ri]
 	var heat: float = clampf((r.temp_c() - 34.0) / 90.0, 0.0, 0.35)
 	if heat > 0.0:
 		n.draw_rect(room_rect_px(r), Color(1.0, 0.3, 0.05, heat))
 
 
 func _draw_water(n: Node2D, ri: int) -> void:
-	var ship: Ship = run.sim.ship
+	var ship: Ship = world.ship
 	var r: Room = ship.rooms[ri]
 	var rp: Rect2 = room_rect_px(r)
 	if r.water_ml > 0:
@@ -524,7 +528,7 @@ func _draw_water(n: Node2D, ri: int) -> void:
 
 
 func _draw_ladder(n: Node2D, li: int) -> void:
-	var ship: Ship = run.sim.ship
+	var ship: Ship = world.ship
 	var l: Link = ship.links[li]
 	var x0: float = (l.x - 0.22) * ppm
 	var x1: float = (l.x + 0.22) * ppm
@@ -537,7 +541,7 @@ func _draw_ladder(n: Node2D, li: int) -> void:
 	while y < y1:
 		n.draw_line(Vector2(x0, y), Vector2(x1, y), col, 2.0)
 		y += ppm * 0.3
-	var flow: float = run.sim.hazards.link_flow_ml_s[li] / Room.ML_PER_M3
+	var flow: float = world.hazards.link_flow_ml_s[li] / Room.ML_PER_M3
 	if flow > 0.0:
 		var lower: Room = ship.rooms[l.b]
 		var top_y: float = ship.rooms[l.a].floor_y() * ppm
@@ -548,7 +552,7 @@ func _draw_ladder(n: Node2D, li: int) -> void:
 
 
 func _draw_frame(n: Node2D, ri: int) -> void:
-	var ship: Ship = run.sim.ship
+	var ship: Ship = world.ship
 	var r: Room = ship.rooms[ri]
 	n.draw_rect(room_rect_px(r), Color(0.14, 0.145, 0.16), false, WALL_PX)
 	for l: Link in ship.links:
@@ -564,7 +568,7 @@ func _draw_frame(n: Node2D, ri: int) -> void:
 
 
 func _draw_label(n: Node2D, ri: int) -> void:
-	var r: Room = run.sim.ship.rooms[ri]
+	var r: Room = world.ship.rooms[ri]
 	var at: Vector2 = room_rect_px(r).position + Vector2(WALL_PX + 6.0, WALL_PX + 18.0)
 	n.draw_string(_font, at, r.name.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(0.85, 0.83, 0.76))
 	var line: String = "%d C" % roundi(r.temp_c())
@@ -578,7 +582,7 @@ func _draw_label(n: Node2D, ri: int) -> void:
 
 
 func _draw_crew(n: Node2D, ci: int) -> void:
-	var c: CrewMember = run.sim.ship.crew[ci]
+	var c: CrewMember = world.ship.crew[ci]
 	var col: Color = CREW_COLORS[ci % CREW_COLORS.size()]
 	if not c.alive:
 		n.draw_rect(Rect2(Vector2(-0.6 * ppm, -0.25 * ppm), Vector2(1.2 * ppm, 0.25 * ppm)), Color(0.35, 0.33, 0.32))

@@ -21,6 +21,8 @@ DEFAULT_NAMES = "start,fire,flood,arrive,fire_out,end"
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--scenario", default="fire_drill")
+    ap.add_argument("--mode", default="", help="run: a whole run (map, events, fights) instead of --scenario")
+    ap.add_argument("--bot", default="", help="bot for --mode run (e.g. balanced) or to override the scenario's")
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--names", default=DEFAULT_NAMES)
     ap.add_argument("--out", default=os.path.join(paths.OUT, "shots"))
@@ -42,6 +44,10 @@ def main(argv=None):
         if a.gpu_index is not None:
             args += ["--gpu-index", str(a.gpu_index)]
         args += ["--", f"--scenario={a.scenario}", f"--seed={a.seed}", f"--shots={','.join(names)}", f"--out={out_dir}"]
+        if a.mode:
+            args += [f"--mode={a.mode}", f"--profile-dir={os.path.join(paths.OUT, 'profile_shots')}"]
+        if a.bot:
+            args += [f"--bot={a.bot}"]
         r = proc.run_godot(args, a.timeout, log_name="shots")
     except proc.ToolError as e:
         print("shots: FAIL (" + str(e) + ")")

@@ -6,13 +6,13 @@ extends CanvasLayer
 const HINT_M0: String = "M0 loop proof. Click a room to send the first crew member there (same command the bots use)."
 const HINT_DRILL: String = "Drilling: A and D steer, W and S add or remove drill power. Click a room to send a crew member."
 
-var run: ScenarioRun
+var run: Driver
 var _label: Label
 var _hint: Label
 var _bg: ColorRect
 
 
-func bind(p_run: ScenarioRun) -> void:
+func bind(p_run: Driver) -> void:
 	run = p_run
 
 
