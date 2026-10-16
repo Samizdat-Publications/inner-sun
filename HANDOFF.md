@@ -13,8 +13,26 @@ a 14-row Crust with about 20-minute runs. Playtest build 3 is exported. A live m
 progress (https://claude.ai/artifact/UJjDA4PJkSXMKjpg2zxQpc); republish it when something visible
 lands. Hands-on testing: `python tools/play.py`, then computer-use `request_access` with the window's
 exe basename (`InnerSun.exe` for `--exe` builds, `Godot_v4.7.2-stable_win64.exe` for the project).
-For the next session, use the prompt below but say "build 3" and effort high (Stewart's quota is
-tight; delegate implementation to Sonnet builders, Opus builders only for sim-heavy work).
+Stewart played build 3 (row 8; then a death to the front at row 7 holding 625 ore unspent): "amazing
+so far", combat good. His asks are at the top of `docs/STEWART_FEEDBACK.md`. Next round (M1c) is a
+design round, in this order unless he says otherwise:
+1. Quick fixes: a loud "DRILL HAS NO POWER" alert and a combined "BIT BROKEN: press B" alert.
+2. Steering that is a choice: lateral cutting speed and turn rate scale with power (drill and helm),
+   a "hold depth" mode that cuts sideways along a vein, so pulling power from other systems pivots
+   faster. Today lateral speed is forward speed x sin(heading), capped at 45 degrees.
+3. Things in the rock: buried structures (old mine works, Soviet rigs, Agartha-style hollows and
+   ruins, later Terraria-like underground towns) you break into for loot, events and trading posts.
+4. Park and send out a miner (an away team on foot) to mine a vein by hand, with risks.
+5. Meta progression: keep something on death (banked samples or research) that unlocks ships and
+   starting gear across runs.
+Prototype 2 to 4 cheaply, judge them with the critics and by hand, and keep what is fun. Effort high
+(Stewart's quota is tight); Sonnet builders for implementation, Opus builders only for sim-heavy work.
+
+Paste this into a new session (folder `C:\Users\stewa\Documents\Claude\Inner Sun`, Opus 5.5, effort
+high, Auto):
+```
+Continue Inner Sun: M1c. Read CLAUDE.md, PROGRESS.md and HANDOFF.md (the newest paragraph lists the next round), then docs/STEWART_FEEDBACK.md (my build 3 notes are at the top), docs/plans/M1b.md and docs/DECISIONS.md D024 onward. Write docs/plans/M1c.md from my notes, then work autonomously per CLAUDE.md: quick fixes first, then prototype the mining ideas, judge them with the Gemini critic and by playing the build by hand (python tools/play.py plus computer use), keep what is fun. Republish the making-of page (https://claude.ai/artifact/UJjDA4PJkSXMKjpg2zxQpc) when something visible lands. Stop with a new playtest build. Stop earlier only for "checkpoint", a usage limit, or a decision that is genuinely mine.
+```
 
 ## State in one paragraph (M1a)
 M1a is built: a whole run plays from the first node to death or the layer gate. A painted drill
