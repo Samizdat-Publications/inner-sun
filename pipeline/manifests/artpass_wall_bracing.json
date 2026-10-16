@@ -1,0 +1,61 @@
+{
+  "asset": "artpass_wall_bracing",
+  "runs": [
+    {
+      "service": "Gemini",
+      "model": "gemini-3-pro-image",
+      "aspect": "4:3",
+      "size": "2K",
+      "variant": 2,
+      "prompt": "The back wall of a drill-ship room, interior cutaway, seen straight on: heavy riveted steel with massive hazard-striped structural ribs and diagonal I-beam braces, thick loops of hydraulic hoses and fat pipes along the wall, a hazard-striped pressure warning panel with two brass gauges, big bolted gusset plates. Yellow and black hazard accents on dark steel. Fills the whole frame edge to edge like a painted backdrop, no floor, no ceiling, no people, no free-standing machinery in front of the wall (machines are separate objects), the wall itself carries the character of the room. painted pulp magazine cover illustration, 1970s retro-futurist black-budget hardware, gouache and oil painterly brushwork with visible confident strokes, strong value structure, dark moody palette with warm amber and brass accents and cold blue-grey steel, riveted steel, enamel and brass gauges, hazard stripes, chunky switches, grimy and lived in, Journey to the Center of the Earth meets The X-Files. Flat orthographic side view, NO perspective, NO vignette, NO text, NO border, evenly lit (no dramatic cast shadows, the game adds lighting), readable shapes at small size.",
+      "reference": null,
+      "seed": "none (the API gives no seed)",
+      "usd_estimate": 0.14,
+      "output": "harness\\out\\artpass_cands\\wall_bracing_v2.png",
+      "attempts": 1,
+      "date": "2026-10-15"
+    },
+    {
+      "service": "Gemini",
+      "model": "gemini-3-pro-image",
+      "aspect": "4:3",
+      "size": "2K",
+      "variant": 1,
+      "prompt": "The back wall of a drill-ship room, interior cutaway, seen straight on: heavy riveted steel with massive hazard-striped structural ribs and diagonal I-beam braces, thick loops of hydraulic hoses and fat pipes along the wall, a hazard-striped pressure warning panel with two brass gauges, big bolted gusset plates. Yellow and black hazard accents on dark steel. Fills the whole frame edge to edge like a painted backdrop, no floor, no ceiling, no people, no free-standing machinery in front of the wall (machines are separate objects), the wall itself carries the character of the room. painted pulp magazine cover illustration, 1970s retro-futurist black-budget hardware, gouache and oil painterly brushwork with visible confident strokes, strong value structure, dark moody palette with warm amber and brass accents and cold blue-grey steel, riveted steel, enamel and brass gauges, hazard stripes, chunky switches, grimy and lived in, Journey to the Center of the Earth meets The X-Files. Flat orthographic side view, NO perspective, NO vignette, NO text, NO border, evenly lit (no dramatic cast shadows, the game adds lighting), readable shapes at small size.",
+      "reference": null,
+      "seed": "none (the API gives no seed)",
+      "usd_estimate": 0.14,
+      "output": "harness\\out\\artpass_cands\\wall_bracing_v1.png",
+      "attempts": 1,
+      "date": "2026-10-15"
+    },
+    {
+      "service": "Gemini",
+      "model": "gemini-3-pro-image",
+      "aspect": "4:3",
+      "size": "2K",
+      "variant": 2,
+      "prompt": "The back wall of a drill-ship room, interior cutaway, seen straight on: heavy riveted steel with massive hazard-striped structural ribs and diagonal I-beam braces, thick loops of hydraulic hoses and fat pipes along the wall, a hazard-striped pressure warning panel with two brass gauges, big bolted gusset plates. Yellow and black hazard accents on dark steel. Fills the whole frame edge to edge like a painted backdrop, no floor, no ceiling, no people, no free-standing machinery in front of the wall (machines are separate objects), the wall itself carries the character of the room. painted pulp magazine cover illustration, 1970s retro-futurist black-budget hardware, gouache and oil painterly brushwork with visible confident strokes, strong value structure, dark moody palette with warm amber and brass accents and cold blue-grey steel, riveted steel, enamel and brass gauges, hazard stripes, chunky switches, grimy and lived in, Journey to the Center of the Earth meets The X-Files. Flat orthographic side view, NO perspective, NO vignette, NO text, NO border, evenly lit (no dramatic cast shadows, the game adds lighting), readable shapes at small size.",
+      "reference": null,
+      "seed": "none (the API gives no seed)",
+      "usd_estimate": 0.14,
+      "output": "harness\\out\\artpass_cands\\wall_bracing_v2.png",
+      "attempts": 1,
+      "date": "2026-10-15"
+    },
+    {
+      "service": "Gemini",
+      "model": "gemini-3-pro-image",
+      "aspect": "4:3",
+      "size": "2K",
+      "variant": 1,
+      "prompt": "The back wall of a drill-ship room, interior cutaway, seen straight on: heavy riveted steel with massive hazard-striped structural ribs and diagonal I-beam braces, thick loops of hydraulic hoses and fat pipes along the wall, a hazard-striped pressure warning panel with two brass gauges, big bolted gusset plates. Yellow and black hazard accents on dark steel. Fills the whole frame edge to edge like a painted backdrop, no floor, no ceiling, no people, no free-standing machinery in front of the wall (machines are separate objects), the wall itself carries the character of the room. painted pulp magazine cover illustration, 1970s retro-futurist black-budget hardware, gouache and oil painterly brushwork with visible confident strokes, strong value structure, dark moody palette with warm amber and brass accents and cold blue-grey steel, riveted steel, enamel and brass gauges, hazard stripes, chunky switches, grimy and lived in, Journey to the Center of the Earth meets The X-Files. Flat orthographic side view, NO perspective, NO vignette, NO text, NO border, evenly lit (no dramatic cast shadows, the game adds lighting), readable shapes at small size.",
+      "reference": null,
+      "seed": "none (the API gives no seed)",
+      "usd_estimate": 0.14,
+      "output": "harness\\out\\artpass_cands\\wall_bracing_v1.png",
+      "attempts": 1,
+      "date": "2026-10-15"
+    }
+  ]
+}

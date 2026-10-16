@@ -1,0 +1,41 @@
+{
+  "asset": "crew_rival_a",
+  "runs": [
+    {
+      "full": "crew_rival_a_full_v1",
+      "sheet": "crew_rival_a_parts_v2",
+      "full_size": {
+        "size": [
+          83,
+          288
+        ],
+        "emission": true
+      },
+      "parts": "route failed twice (parts sheets crew_rival_a_parts_v2 merged or duplicated limbs); fallback walk cycle",
+      "walk_cell": [
+        142,
+        288
+      ],
+      "walk_source": "crew_rival_a_walk_v1",
+      "date": "2026-10-15"
+    },
+    {
+      "full": "crew_rival_a_full_v1",
+      "sheet": "crew_rival_a_parts_v2",
+      "full_size": {
+        "size": [
+          83,
+          288
+        ],
+        "emission": true
+      },
+      "parts": "route failed twice (parts sheets crew_rival_a_parts_v2 merged or duplicated limbs); fallback walk cycle",
+      "walk_cell": [
+        142,
+        288
+      ],
+      "walk_source": "crew_rival_a_walk_v1",
+      "date": "2026-10-15"
+    }
+  ]
+}

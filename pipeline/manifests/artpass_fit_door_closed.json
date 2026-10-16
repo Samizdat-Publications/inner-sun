@@ -1,0 +1,33 @@
+{
+  "asset": "artpass_fit_door_closed",
+  "runs": [
+    {
+      "service": "Gemini",
+      "model": "gemini-3-pro-image",
+      "aspect": "9:16",
+      "size": "2K",
+      "variant": 1,
+      "prompt": "A heavy steel bulkhead door, closed, tall and narrow (about one metre wide and two metres tall) in a thick hazard-striped frame, riveted plate, a central wheel handle, a small slit window, grime. Flat front elevation, orthographic, subject centred. painted pulp magazine cover illustration, 1970s retro-futurist black-budget hardware, gouache and oil painterly brushwork with visible confident strokes, strong value structure, dark moody palette with warm amber and brass accents and cold blue-grey steel, riveted steel, enamel and brass gauges, hazard stripes, chunky switches, grimy and lived in, Journey to the Center of the Earth meets The X-Files. Flat orthographic side view, NO perspective, NO vignette, NO text, NO border, evenly lit (no dramatic cast shadows, the game adds lighting), readable shapes at small size. Background: perfectly flat solid magenta #ff00ff, nothing else in the background, no shadow on the background, subject fully inside the frame with a small margin.",
+      "reference": null,
+      "seed": "none (the API gives no seed)",
+      "usd_estimate": 0.14,
+      "output": "harness\\out\\artpass_cands\\fit_door_closed_v1.png",
+      "attempts": 1,
+      "date": "2026-10-15"
+    },
+    {
+      "service": "Gemini",
+      "model": "gemini-3-pro-image",
+      "aspect": "9:16",
+      "size": "2K",
+      "variant": 1,
+      "prompt": "A heavy steel bulkhead door, closed, tall and narrow (about one metre wide and two metres tall) in a thick hazard-striped frame, riveted plate, a central wheel handle, a small slit window, grime. Flat front elevation, orthographic, subject centred. painted pulp magazine cover illustration, 1970s retro-futurist black-budget hardware, gouache and oil painterly brushwork with visible confident strokes, strong value structure, dark moody palette with warm amber and brass accents and cold blue-grey steel, riveted steel, enamel and brass gauges, hazard stripes, chunky switches, grimy and lived in, Journey to the Center of the Earth meets The X-Files. Flat orthographic side view, NO perspective, NO vignette, NO text, NO border, evenly lit (no dramatic cast shadows, the game adds lighting), readable shapes at small size. Background: perfectly flat solid magenta #ff00ff, nothing else in the background, no shadow on the background, subject fully inside the frame with a small margin.",
+      "reference": null,
+      "seed": "none (the API gives no seed)",
+      "usd_estimate": 0.14,
+      "output": "harness\\out\\artpass_cands\\fit_door_closed_v1.png",
+      "attempts": 1,
+      "date": "2026-10-15"
+    }
+  ]
+}

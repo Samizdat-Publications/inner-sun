@@ -1,0 +1,19 @@
+{
+  "asset": "artpass_prop_helm",
+  "runs": [
+    {
+      "service": "Gemini",
+      "model": "gemini-3-pro-image",
+      "aspect": "1:1",
+      "size": "2K",
+      "variant": 1,
+      "prompt": "A ship's helm and seismic scanner console: a sloped control desk on a steel base, a pilot's yoke wheel, two round CRT monitors with BRIGHT GLOWING GREEN PHOSPHOR screens showing a seismic waveform and a depth profile, banks of chunky toggle switches and push buttons, brass gauges, and on top a boxy military radio set with dials and a coiled cord handset. Flat front elevation, orthographic, subject centred. painted pulp magazine cover illustration, 1970s retro-futurist black-budget hardware, gouache and oil painterly brushwork with visible confident strokes, strong value structure, dark moody palette with warm amber and brass accents and cold blue-grey steel, riveted steel, enamel and brass gauges, hazard stripes, chunky switches, grimy and lived in, Journey to the Center of the Earth meets The X-Files. Flat orthographic side view, NO perspective, NO vignette, NO text, NO border, evenly lit (no dramatic cast shadows, the game adds lighting), readable shapes at small size. Background: perfectly flat solid magenta #ff00ff, nothing else in the background, no shadow on the background, subject fully inside the frame with a small margin.",
+      "reference": null,
+      "seed": "none (the API gives no seed)",
+      "usd_estimate": 0.14,
+      "output": "harness\\out\\artpass_cands\\prop_helm_v1.png",
+      "attempts": 1,
+      "date": "2026-10-15"
+    }
+  ]
+}

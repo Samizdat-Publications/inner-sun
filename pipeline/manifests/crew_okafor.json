@@ -1,0 +1,245 @@
+{
+  "asset": "crew_okafor",
+  "runs": [
+    {
+      "full": "crew_okafor_full_v1",
+      "sheet": "crew_okafor_parts_v1",
+      "full_size": {
+        "size": [
+          79,
+          288
+        ],
+        "emission": false
+      },
+      "scale_from_sheet": 0.1224,
+      "parts": {
+        "head": {
+          "size": [
+            35,
+            47
+          ],
+          "emission": false,
+          "pivots": {
+            "pivot": [
+              15.9,
+              43.0
+            ],
+            "child": null
+          }
+        },
+        "torso": {
+          "size": [
+            62,
+            155
+          ],
+          "emission": false,
+          "pivots": {
+            "pivot": [
+              43.9,
+              144.0
+            ],
+            "neck": [
+              24.2,
+              10.0
+            ],
+            "shoulder": [
+              25.5,
+              28.6
+            ],
+            "child": null
+          }
+        },
+        "upper_arm": {
+          "size": [
+            33,
+            80
+          ],
+          "emission": false,
+          "pivots": {
+            "pivot": [
+              18.1,
+              5.0
+            ],
+            "child": [
+              18.3,
+              74.0
+            ]
+          }
+        },
+        "forearm": {
+          "size": [
+            38,
+            90
+          ],
+          "emission": false,
+          "pivots": {
+            "pivot": [
+              12.3,
+              6.0
+            ],
+            "child": [
+              27.9,
+              83.0
+            ]
+          }
+        },
+        "thigh": {
+          "size": [
+            40,
+            81
+          ],
+          "emission": false,
+          "pivots": {
+            "pivot": [
+              15.0,
+              5.0
+            ],
+            "child": [
+              19.2,
+              75.0
+            ]
+          }
+        },
+        "shin": {
+          "size": [
+            42,
+            82
+          ],
+          "emission": false,
+          "pivots": {
+            "pivot": [
+              16.9,
+              5.0
+            ],
+            "child": [
+              21.0,
+              76.0
+            ]
+          }
+        }
+      },
+      "notes": "pivot = joint with the parent, child = joint where the next part attaches; pixel coordinates inside the part image, y down. Limbs hang vertical. Hierarchy: torso > head, upper_arm > forearm, thigh > shin (torso pivot = hip, torso.neck and torso.shoulder attach head and arm).",
+      "date": "2026-10-15"
+    },
+    {
+      "full": "crew_okafor_full_v1",
+      "sheet": "crew_okafor_parts_v1",
+      "full_size": {
+        "size": [
+          79,
+          288
+        ],
+        "emission": false
+      },
+      "scale_from_sheet": 0.1112,
+      "parts": {
+        "head": {
+          "size": [
+            32,
+            42
+          ],
+          "emission": false,
+          "pivots": {
+            "pivot": [
+              14.7,
+              39.0
+            ],
+            "child": null
+          }
+        },
+        "torso": {
+          "size": [
+            56,
+            141
+          ],
+          "emission": false,
+          "pivots": {
+            "pivot": [
+              39.5,
+              131.0
+            ],
+            "neck": [
+              22.0,
+              9.0
+            ],
+            "shoulder": [
+              22.9,
+              25.9
+            ],
+            "child": null
+          }
+        },
+        "upper_arm": {
+          "size": [
+            30,
+            73
+          ],
+          "emission": false,
+          "pivots": {
+            "pivot": [
+              16.3,
+              5.0
+            ],
+            "child": [
+              16.6,
+              67.0
+            ]
+          }
+        },
+        "forearm": {
+          "size": [
+            34,
+            82
+          ],
+          "emission": false,
+          "pivots": {
+            "pivot": [
+              11.0,
+              5.0
+            ],
+            "child": [
+              24.8,
+              76.0
+            ]
+          }
+        },
+        "thigh": {
+          "size": [
+            36,
+            73
+          ],
+          "emission": false,
+          "pivots": {
+            "pivot": [
+              13.5,
+              5.0
+            ],
+            "child": [
+              17.2,
+              67.0
+            ]
+          }
+        },
+        "shin": {
+          "size": [
+            39,
+            74
+          ],
+          "emission": false,
+          "pivots": {
+            "pivot": [
+              15.5,
+              5.0
+            ],
+            "child": [
+              18.7,
+              68.0
+            ]
+          }
+        }
+      },
+      "notes": "pivot = joint with the parent, child = joint where the next part attaches; pixel coordinates inside the part image, y down. Limbs hang vertical. Hierarchy: torso > head, upper_arm > forearm, thigh > shin (torso pivot = hip, torso.neck and torso.shoulder attach head and arm).",
+      "date": "2026-10-15"
+    }
+  ]
+}

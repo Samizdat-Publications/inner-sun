@@ -1,0 +1,33 @@
+{
+  "asset": "artpass_fit_hull",
+  "runs": [
+    {
+      "service": "Gemini",
+      "model": "gemini-3-pro-image",
+      "aspect": "21:9",
+      "size": "2K",
+      "variant": 1,
+      "prompt": "Seamless flat texture of a ship's outer hull armour seen straight on: overlapping bolted steel plates with big rivets, weld seams, rock dust, rust streaks and scorch marks, dark cold blue-grey with a worn lighter edge. ONLY the plating. Fills the whole frame edge to edge, flat even lighting, no objects, no border. painted pulp magazine cover illustration, 1970s retro-futurist black-budget hardware, gouache and oil painterly brushwork with visible confident strokes, strong value structure, dark moody palette with warm amber and brass accents and cold blue-grey steel, riveted steel, enamel and brass gauges, hazard stripes, chunky switches, grimy and lived in, Journey to the Center of the Earth meets The X-Files. Flat orthographic side view, NO perspective, NO vignette, NO text, NO border, evenly lit (no dramatic cast shadows, the game adds lighting), readable shapes at small size.",
+      "reference": null,
+      "seed": "none (the API gives no seed)",
+      "usd_estimate": 0.14,
+      "output": "harness\\out\\artpass_cands\\fit_hull_v1.png",
+      "attempts": 1,
+      "date": "2026-10-15"
+    },
+    {
+      "service": "Gemini",
+      "model": "gemini-3-pro-image",
+      "aspect": "21:9",
+      "size": "2K",
+      "variant": 1,
+      "prompt": "Seamless flat texture of a ship's outer hull armour seen straight on: overlapping bolted steel plates with big rivets, weld seams, rock dust, rust streaks and scorch marks, dark cold blue-grey with a worn lighter edge. ONLY the plating. Fills the whole frame edge to edge, flat even lighting, no objects, no border. painted pulp magazine cover illustration, 1970s retro-futurist black-budget hardware, gouache and oil painterly brushwork with visible confident strokes, strong value structure, dark moody palette with warm amber and brass accents and cold blue-grey steel, riveted steel, enamel and brass gauges, hazard stripes, chunky switches, grimy and lived in, Journey to the Center of the Earth meets The X-Files. Flat orthographic side view, NO perspective, NO vignette, NO text, NO border, evenly lit (no dramatic cast shadows, the game adds lighting), readable shapes at small size.",
+      "reference": null,
+      "seed": "none (the API gives no seed)",
+      "usd_estimate": 0.14,
+      "output": "harness\\out\\artpass_cands\\fit_hull_v1.png",
+      "attempts": 1,
+      "date": "2026-10-15"
+    }
+  ]
+}

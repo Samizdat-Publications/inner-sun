@@ -1,0 +1,33 @@
+{
+  "asset": "artpass_crew_rival_a_full",
+  "runs": [
+    {
+      "service": "Gemini",
+      "model": "gemini-3-pro-image",
+      "aspect": "3:4",
+      "size": "2K",
+      "variant": 1,
+      "prompt": "Character: a rival black-budget crewman in dark charcoal coveralls with red piping, a round sealed dome helmet with a dark smoked visor and a small respirator, black gloves and boots, stenciled shoulder patch without readable letters. Full body, facing RIGHT in strict side view (profile, not three quarter), relaxed idle stance, both feet flat on the ground at the very bottom of the frame, arms hanging naturally at the sides, the whole figure from head to boots visible. painted pulp magazine cover illustration, 1970s retro-futurist black-budget hardware, gouache and oil painterly brushwork with visible confident strokes, strong value structure, dark moody palette with warm amber and brass accents and cold blue-grey steel, riveted steel, enamel and brass gauges, hazard stripes, chunky switches, grimy and lived in, Journey to the Center of the Earth meets The X-Files. Flat orthographic side view, NO perspective, NO vignette, NO text, NO border, evenly lit (no dramatic cast shadows, the game adds lighting), readable shapes at small size. Background: perfectly flat solid magenta #ff00ff, nothing else in the background, no shadow on the background, subject fully inside the frame with a small margin.",
+      "reference": null,
+      "seed": "none (the API gives no seed)",
+      "usd_estimate": 0.14,
+      "output": "harness\\out\\artpass_cands\\crew_rival_a_full_v1.png",
+      "attempts": 1,
+      "date": "2026-10-15"
+    },
+    {
+      "service": "Gemini",
+      "model": "gemini-3-pro-image",
+      "aspect": "3:4",
+      "size": "2K",
+      "variant": 2,
+      "prompt": "Character: a rival black-budget crewman in dark charcoal coveralls with red piping, a round sealed dome helmet with a dark smoked visor and a small respirator, black gloves and boots, stenciled shoulder patch without readable letters. Full body, facing RIGHT in strict side view (profile, not three quarter), relaxed idle stance, both feet flat on the ground at the very bottom of the frame, arms hanging naturally at the sides, the whole figure from head to boots visible. painted pulp magazine cover illustration, 1970s retro-futurist black-budget hardware, gouache and oil painterly brushwork with visible confident strokes, strong value structure, dark moody palette with warm amber and brass accents and cold blue-grey steel, riveted steel, enamel and brass gauges, hazard stripes, chunky switches, grimy and lived in, Journey to the Center of the Earth meets The X-Files. Flat orthographic side view, NO perspective, NO vignette, NO text, NO border, evenly lit (no dramatic cast shadows, the game adds lighting), readable shapes at small size. Background: perfectly flat solid magenta #ff00ff, nothing else in the background, no shadow on the background, subject fully inside the frame with a small margin.",
+      "reference": null,
+      "seed": "none (the API gives no seed)",
+      "usd_estimate": 0.14,
+      "output": "harness\\out\\artpass_cands\\crew_rival_a_full_v2.png",
+      "attempts": 1,
+      "date": "2026-10-15"
+    }
+  ]
+}

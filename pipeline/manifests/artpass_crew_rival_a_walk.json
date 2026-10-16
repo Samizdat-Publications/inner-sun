@@ -1,0 +1,19 @@
+{
+  "asset": "artpass_crew_rival_a_walk",
+  "runs": [
+    {
+      "service": "Gemini",
+      "model": "gemini-3-pro-image",
+      "aspect": "16:9",
+      "size": "2K",
+      "variant": 1,
+      "prompt": "Use the attached image as the exact reference for this character (same face, outfit, colours, gear, painting style). Draw a WALK CYCLE SPRITE SHEET of this same character: exactly FOUR full-body figures in one row, left to right, each in strict side view facing RIGHT, evenly spaced with wide flat magenta gaps so no figure touches or overlaps another, all the same size, all standing on the same invisible ground line, every head and boot fully inside the frame. Frame 1: contact pose, right leg forward heel down, left leg back, arms swinging opposite. Frame 2: passing pose, legs close together, body slightly higher, arms at the sides. Frame 3: contact pose mirrored, left leg forward heel down, right leg back. Frame 4: passing pose again with the other leg lifted. Clear distinct poses, natural stride. No floor, no shadow, no labels. painted pulp magazine cover illustration, 1970s retro-futurist black-budget hardware, gouache and oil painterly brushwork with visible confident strokes, strong value structure, dark moody palette with warm amber and brass accents and cold blue-grey steel, riveted steel, enamel and brass gauges, hazard stripes, chunky switches, grimy and lived in, Journey to the Center of the Earth meets The X-Files. Flat orthographic side view, NO perspective, NO vignette, NO text, NO border, evenly lit (no dramatic cast shadows, the game adds lighting), readable shapes at small size. Background: perfectly flat solid magenta #ff00ff, nothing else in the background, no shadow on the background, subject fully inside the frame with a small margin.",
+      "reference": "harness\\out\\artpass_cands\\crew_rival_a_full_v1.png",
+      "seed": "none (the API gives no seed)",
+      "usd_estimate": 0.14,
+      "output": "harness\\out\\artpass_cands\\crew_rival_a_walk_v1.png",
+      "attempts": 1,
+      "date": "2026-10-15"
+    }
+  ]
+}

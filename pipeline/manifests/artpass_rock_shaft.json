@@ -1,0 +1,47 @@
+{
+  "asset": "artpass_rock_shaft",
+  "runs": [
+    {
+      "service": "Gemini",
+      "model": "gemini-3-pro-image",
+      "aspect": "1:1",
+      "size": "2K",
+      "variant": 1,
+      "prompt": "Broad-shape flat texture of the dark back wall of a freshly bored shaft: smooth curved cut marks from a drill, very dark cold grey-brown rock, low contrast, calm. Fills the whole frame edge to edge, flat even lighting, no objects, no border. painted pulp magazine cover illustration, 1970s retro-futurist black-budget hardware, gouache and oil painterly brushwork with visible confident strokes, strong value structure, dark moody palette with warm amber and brass accents and cold blue-grey steel, riveted steel, enamel and brass gauges, hazard stripes, chunky switches, grimy and lived in, Journey to the Center of the Earth meets The X-Files. Flat orthographic side view, NO perspective, NO vignette, NO text, NO border, evenly lit (no dramatic cast shadows, the game adds lighting), readable shapes at small size.",
+      "reference": null,
+      "seed": "none (the API gives no seed)",
+      "usd_estimate": 0.14,
+      "output": "harness\\out\\artpass_cands\\rock_shaft_v1.png",
+      "attempts": 1,
+      "date": "2026-10-15"
+    },
+    {
+      "service": "Gemini",
+      "model": "gemini-3-pro-image",
+      "aspect": "1:1",
+      "size": "2K",
+      "variant": 1,
+      "prompt": "Broad-shape flat texture of the dark back wall of a freshly bored shaft: smooth curved cut marks from a drill, very dark cold grey-brown rock, low contrast, calm. Fills the whole frame edge to edge, flat even lighting, no objects, no border. painted pulp magazine cover illustration, 1970s retro-futurist black-budget hardware, gouache and oil painterly brushwork with visible confident strokes, strong value structure, dark moody palette with warm amber and brass accents and cold blue-grey steel, riveted steel, enamel and brass gauges, hazard stripes, chunky switches, grimy and lived in, Journey to the Center of the Earth meets The X-Files. Flat orthographic side view, NO perspective, NO vignette, NO text, NO border, evenly lit (no dramatic cast shadows, the game adds lighting), readable shapes at small size.",
+      "reference": null,
+      "seed": "none (the API gives no seed)",
+      "usd_estimate": 0.14,
+      "output": "harness\\out\\artpass_cands\\rock_shaft_v1.png",
+      "attempts": 2,
+      "date": "2026-10-15"
+    },
+    {
+      "service": "Gemini",
+      "model": "gemini-3-pro-image",
+      "aspect": "1:1",
+      "size": "2K",
+      "variant": 2,
+      "prompt": "Broad-shape flat texture of the dark back wall of a freshly bored shaft: smooth curved cut marks from a drill, very dark cold grey-brown rock, low contrast, calm. Fills the whole frame edge to edge. painted pulp magazine illustration of natural rock, gouache and oil painterly brushwork with confident strokes, strong value structure, moody palette, flat even lighting, seen straight on, orthographic. ONLY natural stone and minerals: NO machinery, NO metal plates, NO rivets, NO gauges, NO switches, NO pipes, NO hazard stripes, NO text, NO border, NO vignette, NO objects of any kind.",
+      "reference": null,
+      "seed": "none (the API gives no seed)",
+      "usd_estimate": 0.14,
+      "output": "harness\\out\\artpass_cands\\rock_shaft_v2.png",
+      "attempts": 1,
+      "date": "2026-10-15"
+    }
+  ]
+}
