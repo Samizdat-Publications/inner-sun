@@ -28,6 +28,7 @@ var current_row_getter: Callable = Callable()  ## Hook for the pursuer meter, se
 var row_count: int = 12
 
 var _t: float = 0.0
+var _pacer: RedrawPacer = RedrawPacer.new()  ## Redraws at most 60 times a second.
 var _hull_shown: float = 0.0
 var _hull_last: int = -1
 var _flash: float = 0.0
@@ -70,7 +71,8 @@ func _process(delta: float) -> void:
 		_hull_last = hull
 		_hull_shown = move_toward(_hull_shown, float(hull), (3.0 + absf(_hull_shown - float(hull)) * 0.8) * delta)
 	_flash = maxf(0.0, _flash - delta)
-	queue_redraw()
+	if _pacer.due():
+		queue_redraw()
 
 
 static func phase_label(phase: String) -> String:

@@ -24,6 +24,7 @@ var sim: Sim = null
 var steer_by_mouse: bool = true
 
 var _t: float = 0.0
+var _pacer: RedrawPacer = RedrawPacer.new()  ## Redraws at most 60 times a second.
 var _since: float = 99.0
 var _serial: int = -1
 var _img: Image = null
@@ -32,6 +33,13 @@ var _rows_shown: int = 0
 var _frac: float = 0.0
 var _kind: PackedInt32Array = PackedInt32Array()
 var _glints: Array[Vector3] = []  ## x, y in image cells (cell units), z = twinkle phase.
+## The whole segment's CRT colors, built a row at a time as rows come into view and patched where
+## cells are cut, so a refresh is one native blit instead of thousands of per-cell calls.
+var _full: Image = null
+var _built: PackedByteArray = PackedByteArray()  ## Per grid row: 1 once its colors are in _full.
+var _seen: PackedByteArray = PackedByteArray()  ## The grid as _full shows it.
+var _last: PackedInt32Array = PackedInt32Array()  ## DrillSim.chunk_changes as last seen.
+var _row_glints: Array[PackedInt32Array] = []  ## Per grid row: columns that were ore or gem.
 var _last_steer: float = 1000.0
 var _dragging: bool = false
 
@@ -74,7 +82,8 @@ func _process(delta: float) -> void:
 	if is_live() and (_since >= UPDATE_S or _serial != sim.drill.grid_serial):
 		_since = 0.0
 		_refresh_image()
-	queue_redraw()
+	if _pacer.due():
+		queue_redraw()
 
 
 # Image ----------------------------------------------------------------------------------------
@@ -107,21 +116,68 @@ func _refresh_image() -> void:
 		_rows_shown = maxi(1, roundi(LOOK_AHEAD_M / d.cell_m))
 		_img = Image.create(d.cols, _rows_shown + 1, false, Image.FORMAT_RGBA8)
 		_tex = ImageTexture.create_from_image(_img)
+		_full = Image.create(d.cols, d.rows, false, Image.FORMAT_RGBA8)
+		_built = PackedByteArray()
+		_built.resize(d.rows)
+		_seen = d.grid.duplicate()
+		_last = d.chunk_changes.duplicate()
+		_row_glints.clear()
+		_row_glints.resize(d.rows)
+	var ch: PackedInt32Array = d.chunk_changes
+	for i: int in range(ch.size()):
+		if ch[i] != _last[i]:
+			_last[i] = ch[i]
+			_apply_cuts(d, i)
 	var crown: float = d.ship_pos.y + d.ship_size.y
 	var top: int = int(floor(crown / d.cell_m))
 	_frac = clampf((crown - float(top) * d.cell_m) / d.cell_m, 0.0, 1.0)
+	var n: int = _rows_shown + 1
+	var r0: int = maxi(top, 0)
+	var r1: int = mini(top + n, d.rows)
+	for ar: int in range(r0, r1):
+		if _built[ar] == 0:
+			_build_row(d, ar)
+	if top < 0 or top + n > d.rows:
+		_img.fill(Color(0.0, 0.03, 0.02))
+	if r1 > r0:
+		_img.blit_rect(_full, Rect2i(0, r0, d.cols, r1 - r0), Vector2i(0, r0 - top))
 	_glints.clear()
-	for r: int in range(_rows_shown + 1):
-		var ar: int = top + r
-		for c: int in range(d.cols):
-			var col: Color = Color(0.0, 0.03, 0.02)
-			if ar >= 0 and ar < d.rows:
-				var k: int = _kind[d.grid[ar * d.cols + c]]
-				col = cell_color(k, d.hardness_of[d.grid[ar * d.cols + c]], c, ar)
-				if (k == K_ORE or k == K_GEM) and _glints.size() < MAX_GLINTS:
-					_glints.append(Vector3(float(c), float(r), float((c * 7 + ar * 13) % 17) / 17.0 * TAU))
-			_img.set_pixel(c, r, col)
+	for ar: int in range(r0, r1):
+		for c: int in _row_glints[ar]:
+			var k: int = _kind[d.grid[ar * d.cols + c]]
+			if (k == K_ORE or k == K_GEM) and _glints.size() < MAX_GLINTS:
+				_glints.append(Vector3(float(c), float(ar - top), float((c * 7 + ar * 13) % 17) / 17.0 * TAU))
 	_tex.update(_img)
+
+
+## Paint one grid row's colors into _full and note its ore and gem columns.
+func _build_row(d: DrillSim, ar: int) -> void:
+	var g := PackedInt32Array()
+	for c: int in range(d.cols):
+		var code: int = d.grid[ar * d.cols + c]
+		_seen[ar * d.cols + c] = code
+		var k: int = _kind[code]
+		_full.set_pixel(c, ar, cell_color(k, d.hardness_of[code], c, ar))
+		if k == K_ORE or k == K_GEM:
+			g.append(c)
+	_row_glints[ar] = g
+	_built[ar] = 1
+
+
+## A chunk's change counter moved: repaint its cut cells in rows already built.
+func _apply_cuts(d: DrillSim, ci: int) -> void:
+	var cx: int = ci % d.chunk_cols
+	var cy: int = ci / d.chunk_cols
+	var n: int = DrillSim.CHUNK_CELLS
+	for r: int in range(cy * n, mini((cy + 1) * n, d.rows)):
+		for c: int in range(cx * n, mini((cx + 1) * n, d.cols)):
+			var k: int = r * d.cols + c
+			var code: int = d.grid[k]
+			if code == _seen[k]:
+				continue
+			_seen[k] = code
+			if _built[r] == 1:
+				_full.set_pixel(c, r, cell_color(_kind[code], d.hardness_of[code], c, r))
 
 
 ## The CRT color of one cell. Pure: the cell kind, the material's hardness and the absolute cell.

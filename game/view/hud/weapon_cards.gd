@@ -23,6 +23,7 @@ var sim: Sim = null
 var armed: int = -1
 var keys_enabled: bool = true
 var _t: float = 0.0
+var _pacer: RedrawPacer = RedrawPacer.new()  ## Redraws at most 60 times a second.
 var _hover: int = -2  ## A slot, -1 for the flee button, -2 for nothing.
 var _charge_shown: PackedFloat32Array = PackedFloat32Array()
 
@@ -159,7 +160,8 @@ func _process(delta: float) -> void:
 		_charge_shown[i] = move_toward(_charge_shown[i], float(wv[i]["charge_s"]), 18.0 * delta)
 	if armed >= n:
 		armed = -1
-	queue_redraw()
+	if _pacer.due():
+		queue_redraw()
 
 
 func _draw() -> void:
