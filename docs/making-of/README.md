@@ -25,3 +25,5 @@ that record. Keep it current as you go; never prune it.
 | 2026-10-15 | Art bake-off, style C | `stills/001` | `3f4b62f` | Blender pre-rendered sprites with real normal maps, lit in Godot; HDR glow finally blooms. |
 | 2026-10-15 | The drill bites | `stills/003`, `docs/progress/008` | merge of the drill view | The tower grinds down a real shaft through layered rock: ore veins glint, a gem geode in a basalt shell, sparks at the crown. The critic's "no world outside" answered. |
 | 2026-10-15 | Run screen pieces | `docs/progress/006`, `007` | UI merge | The HUD and the typewritten dossier with redaction bars and TOPSIDE's radio strip. |
+| 2026-10-15 | The ship comes alive | `stills/004`, `docs/progress/011`, `012` | painted cutaway merge | Painted rooms, props, crew puppets and the glowing crown replace the grey boxes; hazards read at a glance. |
+| 2026-10-15 | First fight on screen | `stills/005`, `docs/progress/010` | combat view merge | Two drill towers trade fire through the rock: tracers, a BLOCKED pop, weapon cards. |

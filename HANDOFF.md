@@ -134,6 +134,11 @@ Critic loop:
   (target about 1.0 to 1.4; 1.6 and up blows out to a white disc). The M0 drill polygon and flames
   do not bloom for this reason. Found in the M1 art bake-off. `Environment.set_glow_level` is
   0-based (0 to 6).
+- **Correction to the glow rule, measured in the art pass:** for items drawn UNSHADED, dividing by the
+  CanvasModulate color blows them out to white; they come out about 2x too dim at plain colors.
+  Empirical values that work: glow sprite modulate 0.9 to 1.1 flat, unshaded drawings boosted x1.8
+  to x2.0 (`boost` argument of `ShipView._fn`). Filled shapes with HDR colors (components above 1)
+  ignore alpha and draw opaque: draw translucent fills on an additive layer with plain colors.
 - **Light height for normal maps.** Normal-mapped sprites need light `height` well above zero (we
   use 120 to 260 px), or they come out nearly black.
 - **Windows on Stewart's screen.** Rendering needs a window, and Stewart works on this laptop while
