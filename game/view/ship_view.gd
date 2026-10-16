@@ -11,6 +11,11 @@ extends Node2D
 const ROCK_CHUNK: int = 512
 const LAMP_ENERGY: float = 1.7
 const HULL_ART_PX: float = 48.0
+## A rival tower: oxide-red hull plating, colder lamps, red marker lights (same room art as ours).
+const ENEMY_HULL_TINT: Color = Color(2.2, 1.3, 1.0)
+const ENEMY_LAMP: Color = Color(0.78, 0.88, 1.0)
+const FLOOD_WARM: Color = Color(1.0, 0.88, 0.72)
+const FLOOD_COLD: Color = Color(0.72, 0.86, 1.0)
 
 ## A node that draws through a callback, so each room or crew member is its own small canvas item.
 class FnDraw extends Node2D:
@@ -30,6 +35,8 @@ var _lamps: Array[PointLight2D] = []
 var _alarms: Array[PointLight2D] = []
 var _fire_lights: Array[PointLight2D] = []
 var _flames: Array[CPUParticles2D] = []
+var _sprays: Array[CPUParticles2D] = []  ## Water jetting in from the hull at a breach, per room.
+var _enemy: bool = false
 var _crew: Array[CrewSprite] = []
 var _crew_lights: Array[PointLight2D] = []
 var _redraw: Array[FnDraw] = []
@@ -52,6 +59,7 @@ func setup(p_sim: Sim, p_world: ShipWorld, p_ppm: float) -> void:
 	world = p_world
 	ppm = p_ppm
 	_font = ThemeDB.fallback_font
+	_enemy = sim != null and world != sim.player
 	_radial = ShipView.radial_texture(256)
 	_foot_lift = RoomArt.GRATING_ART_H * 0.7 * ppm / ArtLib.ART_PPM
 	_build_rock()
@@ -61,9 +69,13 @@ func setup(p_sim: Sim, p_world: ShipWorld, p_ppm: float) -> void:
 	_build_occluders()
 	_build_lights()
 	_build_flames()
+	_build_sprays()
 	_build_crown()
 	_build_crew()
 	_build_tags()
+	if _enemy:
+		_fn(4, func(n: Node2D) -> void: _draw_rust(n), 1, 1.7)
+		_fn(4, func(n: Node2D) -> void: _draw_markers(n), 2, 2.0)
 
 
 ## Follow a new sim with the same ship layout (a new run of the same ship): the nodes stay.
@@ -175,6 +187,8 @@ func _build_rooms() -> void:
 		art.build(ship, r, ppm)
 		add_child(art)
 		_room_art.append(art)
+		if _enemy:
+			art.modulate = Color(0.9, 0.96, 1.1)
 		var ri: int = r.index
 		_fn(0, func(n: Node2D) -> void: RoomFx.draw_heat(n, world.ship.rooms[ri], room_rect_px(world.ship.rooms[ri]), _time), 2, 2.0)
 		_fn(3, func(n: Node2D) -> void: RoomFx.draw_frame(n, room_rect_px(world.ship.rooms[ri])))
@@ -247,7 +261,7 @@ func _strip(tex: Texture2D, at: Vector2, region: Rect2, k: float) -> void:
 	s.region_rect = region
 	s.scale = Vector2(k, k)
 	s.position = at
-	s.self_modulate = Color(1.6, 1.6, 1.6, 1.0)
+	s.self_modulate = ENEMY_HULL_TINT if _enemy else Color(1.6, 1.6, 1.6, 1.0)
 	s.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	s.z_index = 3
 	add_child(s)
@@ -311,7 +325,7 @@ func _build_lights() -> void:
 	for r: Room in world.ship.rooms:
 		var rp: Rect2 = room_rect_px(r)
 		var bulb: Vector2 = rp.position + RoomArt.lamp_point(rp, ppm)
-		_lamps.append(_light(bulb + Vector2(0, ppm * 0.1), Color(1.0, 0.84, 0.62), LAMP_ENERGY, rp.size.x * 0.85, true, 200.0))
+		_lamps.append(_light(bulb + Vector2(0, ppm * 0.1), ENEMY_LAMP if _enemy else Color(1.0, 0.84, 0.62), LAMP_ENERGY, rp.size.x * 0.85, true, 200.0))
 		_alarms.append(_light(Vector2(rp.position.x + ppm * 0.4, rp.position.y + ppm * 0.3), Color(1.0, 0.1, 0.06), 0.0, rp.size.x * 0.9, true, 160.0))
 		_fire_lights.append(_light(Vector2(rp.get_center().x, rp.end.y - ppm * 0.6), Color(1.0, 0.48, 0.16), 0.0, rp.size.x * 0.95, true, 140.0))
 
@@ -347,6 +361,39 @@ func _build_flames() -> void:
 		_flames.append(p)
 
 
+## A jet of water from the outer wall into each room, shown while the room has a breach. The wall is
+## the nearer side of the tower (the sim does not say which); the jet arcs in and falls.
+func _build_sprays() -> void:
+	var dot: GradientTexture2D = ShipView.radial_texture(16)
+	var ramp := Gradient.new()
+	ramp.set_color(0, Color(1.7, 2.1, 2.4, 0.95))
+	ramp.set_color(1, Color(0.35, 0.7, 1.0, 0.0))
+	ramp.add_point(0.5, Color(0.9, 1.5, 1.9, 0.7))
+	var mid_x: float = ship_size_m().x * 0.5
+	for r: Room in world.ship.rooms:
+		var rp: Rect2 = room_rect_px(r)
+		var left: bool = r.rect.get_center().x < mid_x
+		var inward: float = 1.0 if left else -1.0
+		var p := CPUParticles2D.new()
+		p.texture = dot
+		p.material = ArtLib.additive_unshaded()
+		p.amount = 90
+		p.lifetime = 1.0
+		p.emitting = false
+		p.position = Vector2(rp.position.x + 6.0 if left else rp.end.x - 6.0, rp.position.y + rp.size.y * 0.5)
+		p.direction = Vector2(inward, -0.3)
+		p.spread = 9.0
+		p.gravity = Vector2(0.0, 620.0)
+		p.initial_velocity_min = 230.0
+		p.initial_velocity_max = 380.0
+		p.scale_amount_min = 0.9
+		p.scale_amount_max = 1.8
+		p.color_ramp = ramp
+		p.z_index = 11
+		add_child(p)
+		_sprays.append(p)
+
+
 ## True while the node follows a drilling segment (set by Main when a RockView is present).
 func is_drilling() -> bool:
 	return _drill != null
@@ -372,6 +419,12 @@ func set_drilling(d: DrillSim) -> void:
 		_dust.emitting = false
 		position = Vector2.ZERO
 		_set_crown_glow(0.5)
+
+
+## Switch the hull floodlights (they light the rock only; the combat view turns them on for both towers).
+func set_floodlights(on: bool) -> void:
+	for l: PointLight2D in _floods:
+		l.enabled = on
 
 
 ## Show or hide the stand-in rock behind the tower (and its two side lights). The combat view uses
@@ -439,10 +492,11 @@ func _build_crown() -> void:
 	_crown_light.enabled = false
 	_crown_fill = _light(Vector2(size.x * 0.5, size.y + ppm * 0.9), Color(1.0, 0.72, 0.5), 1.1, ppm * 5.5, false, 140.0)
 	# Hull floodlights: low corners throw down and out, mid-hull ones rake the shaft walls.
-	var flood_col := Color(0.9, 0.95, 1.0)
-	var wide: ImageTexture = RockView.light_texture(128, 0.3, 0.65, 0.38)
-	for spec: Vector4 in [Vector4(90.0, size.y - 50.0, 1.5, 11.0), Vector4(size.x - 90.0, size.y - 50.0, 1.5, 11.0),
-			Vector4(110.0, size.y * 0.5, 0.9, 9.0), Vector4(size.x - 110.0, size.y * 0.5, 0.9, 9.0)]:
+	# Warm and soft: no flat core (that read as blown-out plaster), a long gentle falloff.
+	var flood_col: Color = FLOOD_COLD if _enemy else FLOOD_WARM
+	var wide: ImageTexture = RockView.light_texture(128, 0.0, 0.5, 0.3)
+	for spec: Vector4 in [Vector4(90.0, size.y - 50.0, 1.05, 11.0), Vector4(size.x - 90.0, size.y - 50.0, 1.05, 11.0),
+			Vector4(110.0, size.y * 0.5, 0.7, 9.0), Vector4(size.x - 110.0, size.y * 0.5, 0.7, 9.0)]:
 		var fl: PointLight2D = _light(Vector2(spec.x, spec.y), flood_col, spec.z, ppm * spec.w, false, 110.0)
 		fl.texture = wide
 		fl.texture_scale = ppm * spec.w * 2.0 / 128.0 / 0.4
@@ -495,6 +549,44 @@ func _build_crown() -> void:
 	_dust.color_ramp = puff
 	_dust.z_index = -7
 	add_child(_dust)
+
+
+## Oxide-red wash over the blue hull plating (a multiply tint alone cannot turn blue paint red).
+func _draw_rust(n: Node2D) -> void:
+	var size: Vector2 = ship_size_m() * ppm
+	var th: float = HULL_ART_PX * ppm / ArtLib.ART_PPM
+	var rust := Color(0.42, 0.11, 0.06, 0.5)
+	n.draw_rect(Rect2(-th + 3.0, -th + 3.0, size.x + th * 2.0 - 6.0, th), rust)
+	n.draw_rect(Rect2(-th + 3.0, 0.0, th, size.y), rust)
+	n.draw_rect(Rect2(size.x - 3.0, 0.0, th, size.y), rust)
+
+
+## Red marker lights down both hull edges and across the top, blinking out of step.
+func _draw_markers(n: Node2D) -> void:
+	var size: Vector2 = ship_size_m() * ppm
+	var th: float = HULL_ART_PX * ppm / ArtLib.ART_PPM
+	var edge: float = th * 0.5 - 1.5
+
+	var i: int = 0
+	var y: float = ppm * 0.9
+	while y < size.y:
+		for side: int in range(2):
+			var x: float = -edge if side == 0 else size.x + edge
+			_marker(n, Vector2(x, y), i + side)
+		i += 2
+		y += ppm * 2.2
+	var x2: float = ppm * 1.2
+	while x2 < size.x:
+		_marker(n, Vector2(x2, -edge), i)
+		i += 1
+		x2 += ppm * 3.0
+
+
+func _marker(n: Node2D, at: Vector2, i: int) -> void:
+	var pulse: float = 0.5 + 0.5 * sin(_time * 2.6 + float(i) * 1.7)
+	n.draw_circle(at, 9.0, Color(0.5, 0.04, 0.02, 0.18 + 0.2 * pulse))
+	n.draw_circle(at, 3.5, Color(1.0, 0.16, 0.1, 0.55 + 0.45 * pulse))
+	n.draw_circle(at, 1.6, Color(1.0, 0.7, 0.55, 0.6 + 0.4 * pulse))
 
 
 func _process_drilling() -> void:
@@ -559,12 +651,15 @@ func _process(delta: float) -> void:
 		_fire_lights[i].energy = 2.6 * r.fire * (0.8 + 0.2 * sin(_time * 23.0 + float(i) * 1.7) + 0.1 * sin(_time * 41.0))
 		_flames[i].emitting = r.fire > 0.02
 		_flames[i].speed_scale = 0.6 + r.fire
+		_sprays[i].emitting = r.breach_m2 > 0.0
+		_sprays[i].speed_scale = clampf(0.8 + r.breach_m2 * 8.0, 0.8, 1.6)
 		var lamp_k: float = 1.0 - clampf(r.level_m() / r.rect.size.y, 0.0, 0.7)
 		_lamps[i].energy = LAMP_ENERGY * lamp_k
 		_room_art[i].update(ship, r, _time, lamp_k)
 	for c: CrewMember in ship.crew:
 		var spr: CrewSprite = _crew[c.index]
 		spr.crew = c
+		spr.station_system = ship.rooms[c.room].system if c.room >= 0 and c.room < ship.rooms.size() else "none"
 		spr.position = c.pos * ppm + Vector2(0.0, -_foot_lift)
 		spr.update(delta, _time)
 		_crew_lights[c.index].position = (c.pos + Vector2(0, -1.0)) * ppm

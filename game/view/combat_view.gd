@@ -6,7 +6,11 @@ extends Node2D
 ## beam for the thermal lance), impact flashes, bracing shells around each hull, a "BLOCKED" pop and a
 ## shield flash when bracing soaks a hit, a miss streak when evaded, and reticles on targeted rooms.
 ## It only reads the sim: effects come from sim.events and sim.combat.shots_view(). Clean-up is
-## automatic when the fight ends. This node follows the player ShipView's position, so everything is
+## automatic when the fight ends. The world stays: a field of the painted rock tiles (the same tile
+## and a warm strata tint as the drilled rock, with darker bands) is laid under everything in the
+## fight's rectangle, beyond the drilled grid too, lit by both towers' floodlights, so the towers sit
+## in rock and not in a void. The rival is a different tower: oxide-red hull, red marker lights,
+## colder lamps and a name plate. This node follows the player ShipView's position, so everything is
 ## drawn in the player's ship space (pixels = meters * ppm).
 ##
 ## Main: setup(sim, view, ppm, rock_present); each frame set `armed` (the weapon being aimed) and
@@ -19,6 +23,11 @@ const SHELL_COLOR: Color = Color(0.35, 0.78, 1.0)
 const PLAYER_SHOT: Color = Color(1.0, 0.82, 0.40)
 const ENEMY_SHOT: Color = Color(1.0, 0.30, 0.22)
 const MARGIN_PX: float = 56.0
+const FILL_CHUNK: int = 512
+const FILL_Z: int = -20  ## Over the apron (-21), level with the drilled rock, which it never overlaps.
+const FILL_TINT: Color = Color(1.9, 1.62, 1.42)
+const GLOW_COLOR: Color = Color(1.0, 0.84, 0.68)
+const HALO_COLOR: Color = Color(0.14, 0.09, 0.055)
 
 
 ## A node that draws through a callback (one small canvas item per layer).
@@ -40,6 +49,7 @@ var _world: ShipWorld = null
 var _band: Layer
 var _fills: Layer  ## Glowing fills (shell flash, aiming highlights): additive, plain colours.
 var _unshaded: CanvasItemMaterial
+var _fill: Node2D = null
 var _fx: Array[Dictionary] = []
 var _landed: Array[Dictionary] = []
 var _prev: Dictionary = {}
@@ -133,6 +143,11 @@ func _clear() -> void:
 	if enemy_view != null:
 		enemy_view.queue_free()
 		enemy_view = null
+	if _fill != null:
+		_fill.queue_free()
+		_fill = null
+	if player_view != null and not player_view.is_drilling():
+		player_view.set_floodlights(false)
 	_world = null
 	_fx.clear()
 	_landed.clear()
@@ -151,17 +166,119 @@ func _spawn_enemy() -> void:
 	enemy_view = ShipView.new()
 	enemy_view.setup(sim, sim.enemy, ppm)
 	get_parent().add_child(enemy_view)
-	if rock_present.is_valid() and bool(rock_present.call()):
-		# The drilling rock fills the world; the enemy's stand-in rock would paint over it.
-		for n: Node in enemy_view.get_children():
-			var sp: Sprite2D = n as Sprite2D
-			if sp != null and sp.z_index <= -10:
-				sp.visible = false
+	# The fight's own rock field replaces the enemy's stand-in rock; both towers' floodlights light it.
+	enemy_view.set_backdrop_visible(false)
+	enemy_view.set_floodlights(true)
+	player_view.set_floodlights(true)
+	enemy_view.position = player_view.position + _origin_px()
+	_build_fill()
 	_fx.clear()
 	_landed.clear()
 	_prev.clear()
 	_seen = sim.events.size()
 	_band.visible = true
+
+
+## The rock field under the fight: painted tiles over the fight rectangle plus a wide margin, in
+## world pixel space, covering everything outside the drilled grid (the grid draws its own rock, and
+## is narrower than the fight). Unshaded and pre-brightened to read like dim rock under the
+## floodlights: the lit apron around the grid is dropped by Godot's per-item light limit out there,
+## so a lit fill stayed black. Dark strata bands and a warm halo behind each tower sit on top.
+func _build_fill() -> void:
+	if _fill != null:
+		_fill.queue_free()
+	_fill = Node2D.new()
+	_fill.z_index = FILL_Z
+	get_parent().add_child(_fill)
+	var area: Rect2 = bounds_px().grow(ppm * 30.0)
+	var grid := Rect2()
+	if rock_present.is_valid() and bool(rock_present.call()) and sim.drill.cols > 0:
+		grid = Rect2(0.0, 0.0, float(sim.drill.cols) * sim.drill.cell_m * ppm, float(sim.drill.rows) * sim.drill.cell_m * ppm)
+	if grid.size == Vector2.ZERO:
+		_fill_rect(area)
+	else:
+		_fill_rect(Rect2(area.position, Vector2(grid.position.x - area.position.x, area.size.y)))
+		_fill_rect(Rect2(grid.end.x, area.position.y, area.end.x - grid.end.x, area.size.y))
+		_fill_rect(Rect2(grid.position.x, area.position.y, grid.size.x, grid.position.y - area.position.y))
+		_fill_rect(Rect2(grid.position.x, grid.end.y, grid.size.x, area.end.y - grid.end.y))
+	var bands := Layer.new()
+	bands.material = _unshaded
+	bands.fn = func(n: Node2D) -> void: _draw_strata(n, area)
+	_fill.add_child(bands)
+	var halo: GradientTexture2D = ShipView.radial_texture(128)
+	var soft: ImageTexture = RockView.light_texture(128, 0.0, 0.45, 0.45)
+	var mid: Vector2 = bounds_px().get_center()
+	var spots: Array[Vector2] = [player_view.position + _rect_px(false).get_center(),
+		player_view.position + _rect_px(true).get_center(), mid]
+	for at: Vector2 in spots:
+		var g := Sprite2D.new()
+		g.texture = halo
+		g.material = ArtLib.additive_unshaded()
+		g.position = at
+		var d: float = ppm * 26.0 * 2.0 / 128.0
+		g.scale = Vector2(d, d)
+		g.modulate = HALO_COLOR
+		_fill.add_child(g)
+		# The lit rock of the drilled grid keeps its light from the same spots.
+		var l := PointLight2D.new()
+		l.texture = soft
+		var radius: float = ppm * 24.0
+		l.texture_scale = radius * 2.0 / 128.0 / 0.4
+		l.position = at
+		l.color = GLOW_COLOR
+		l.energy = 0.9
+		l.height = 150.0
+		l.range_item_cull_mask = RockView.LIGHT_MASK
+		_fill.add_child(l)
+
+
+## Tile one rectangle (world pixels) with chunked sprites, keeping the world's tile phase.
+func _fill_rect(r: Rect2) -> void:
+	if r.size.x <= 1.0 or r.size.y <= 1.0:
+		return
+	var tex: Texture2D = RockTiles.canvas_tile("dense")
+	var k: float = RockTiles.TILE_M * ppm / float(RockTiles.TILE_PX)
+	var tile_w: float = float(RockTiles.TILE_PX) * k
+	var step: float = float(FILL_CHUNK)
+	var y: float = r.position.y
+	while y < r.end.y:
+		var h: float = minf(step, r.end.y - y)
+		var x: float = r.position.x
+		while x < r.end.x:
+			var w: float = minf(step, r.end.x - x)
+			var sp := Sprite2D.new()
+			sp.texture = tex
+			sp.centered = false
+			sp.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+			sp.region_enabled = true
+			# Phase of the world tiling, kept positive: a region that starts below zero does not wrap.
+			sp.region_rect = Rect2(Vector2(fposmod(x, tile_w), fposmod(y, tile_w)) / k, Vector2(w, h) / k)
+			sp.scale = Vector2(k, k)
+			sp.position = Vector2(x, y)
+			sp.self_modulate = FILL_TINT
+			sp.material = ArtLib.unshaded()
+			_fill.add_child(sp)
+			x += step
+		y += step
+
+
+## Darker strata bands across the fill, wavy and in a fixed order from a small integer hash.
+func _draw_strata(n: Node2D, area: Rect2) -> void:
+	var h: int = 104729
+	var y: float = area.position.y
+	while y < area.end.y:
+		h = (h * 1103515245 + 12345) & 0x7fffffff
+		var th: float = ppm * (1.2 + float(h % 40) / 10.0)
+		var a: float = 0.05 + float((h >> 8) % 20) / 100.0
+		var pts := PackedVector2Array()
+		var steps: int = 24
+		for i: int in range(steps + 1):
+			var x: float = area.position.x + area.size.x * float(i) / float(steps)
+			pts.append(Vector2(x, y + ppm * 0.5 * sin(x * 0.004 + float(h % 7))))
+		for i: int in range(steps, -1, -1):
+			pts.append(Vector2(pts[i].x, pts[i].y + th))
+		n.draw_colored_polygon(pts, Color(0.0, 0.0, 0.0, a))
+		y += th + ppm * (1.0 + float((h >> 4) % 30) / 10.0)
 
 
 func _process(delta: float) -> void:
@@ -179,7 +296,6 @@ func _process(delta: float) -> void:
 	position = player_view.position
 	if enemy_view == null:
 		return
-	enemy_view.position = player_view.position + _origin_px()
 	_track_landed()
 	_consume_events()
 	_landed.clear()
@@ -279,6 +395,7 @@ func _draw() -> void:
 	if not active():
 		return
 	_draw_shells()
+	_draw_plate()
 	_draw_targets()
 	_draw_shots()
 	_draw_fx()
@@ -296,7 +413,6 @@ func _draw_band(n: Node2D) -> void:
 	var x1: float = right.position.x
 	var y0: float = -ppm * 3.0
 	var y1: float = maxf(a.end.y, b.end.y) + ppm * 3.0
-	n.draw_rect(Rect2(x0, y0, x1 - x0, y1 - y0), Color(0.03, 0.028, 0.034, 0.55), true)
 	var h: int = 7919
 	for i: int in range(14):
 		h = (h * 1103515245 + 12345) & 0x7fffffff
@@ -325,6 +441,21 @@ static func _rounded(r: Rect2, rad: float) -> PackedVector2Array:
 			pts.append(corners[c] + Vector2(cos(ang), sin(ang)) * rad)
 	pts.append(pts[0])
 	return pts
+
+
+## The rival's name plate above its hull, kept the same size on screen as the camera zooms.
+func _draw_plate() -> void:
+	var r: Rect2 = _rect_px(true)
+	var title: String = "HOSTILE  " + sim.enemy.ship.name.to_upper()
+	var px: int = _text_px(22)
+	var f: Font = UiTheme.mono()
+	var tw: float = f.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
+	var pad: float = float(px) * 0.6
+	var box := Rect2(r.get_center().x - tw * 0.5 - pad, r.position.y - float(px) * 3.6, tw + pad * 2.0, float(px) * 1.7)
+	draw_rect(box, Color(0.04, 0.01, 0.01, 0.82), true)
+	draw_rect(box, hdr(Color(1.0, 0.22, 0.16, 0.95), 0.5), false, maxf(2.0, float(px) * 0.12))
+	draw_rect(Rect2(box.position.x, box.position.y, float(px) * 0.35, box.size.y), hdr(Color(1.0, 0.25, 0.18), 0.5), true)
+	draw_string(f, Vector2(box.position.x + pad, box.position.y + float(px) * 1.2), title, HORIZONTAL_ALIGNMENT_LEFT, -1, px, hdr(Color(1.0, 0.82, 0.76), 0.33))
 
 
 ## Bracing layers as shells around each hull; spent ones are faint, a block flashes them all.

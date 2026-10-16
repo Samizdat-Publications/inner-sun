@@ -18,3 +18,5 @@ A visual record of Inner Sun, oldest first.
 | 012 | 2026-10-15 20:53 | [012_m1-painted-drilling.jpg](012_m1-painted-drilling.jpg) | Painted rock tiles with floodlights, the crown biting, flooded drill room with a filled water body, stacked crew tags | 61c1c42 |
 | 013 | 2026-10-15 21:10 | [013_m1-run-screen-frames.jpg](013_m1-run-screen-frames.jpg) | review frames, build 20261015-205833-3ba21ea, seed 21 | 3ba21ea |
 | 014 | 2026-10-15 21:29 | [014_m1-balanced-run-frames.jpg](014_m1-balanced-run-frames.jpg) | review frames, build 20261015-211550-4e6f253, seed 21 | 718f7fd |
+| 015 | 2026-10-15 23:13 | [015_world-view-combat.jpg](015_world-view-combat.jpg) | Combat keeps the world: rock behind and between both towers, the hostile rig in oxide red with marker lights and a name plate. | 111cc42 |
+| 016 | 2026-10-15 23:13 | [016_flood-fire-crew-work.jpg](016_flood-fire-crew-work.jpg) | Breach spray and a blue-washed flooded room, ripples at the hatch, a crew member spraying foam at the fire. | 111cc42 |
