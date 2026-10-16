@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import paths  # noqa: E402
 import proc  # noqa: E402
 
-STATES = ["hud_calm", "hud_crisis", "hud_drill", "dossier_page", "dossier_known", "dossier_greyed", "store",
+STATES = ["hud_calm", "hud_crisis", "hud_combat", "hud_drill", "dossier_page", "dossier_known", "dossier_greyed", "store",
           "map_start", "map_mid", "death_dead", "death_won", "codex"]
 
 
