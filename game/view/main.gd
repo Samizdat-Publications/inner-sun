@@ -55,6 +55,11 @@ func _ready() -> void:
 	if args.has("selftest"):
 		_selftest(problems)
 		return
+	if args.has("print-window-settings"):
+		# Diagnostic (works headless, also in the exported build): does normal play get keyboard focus?
+		print("WINDOW no_focus=%s template=%s" % [str(ProjectSettings.get_setting_with_override("display/window/size/no_focus")), str(OS.has_feature("template"))])
+		get_tree().quit(0)
+		return
 	bot_driven = args.has("shots") or args.has("capture") or args.has("perf") or args.has("run-ticks")
 	replaying = args.has("replay")
 	run_mode = not replaying and (args.get_str("mode", "") == "run" or (not args.has("scenario") and not bot_driven))

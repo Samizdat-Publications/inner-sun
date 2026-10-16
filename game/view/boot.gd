@@ -19,6 +19,9 @@ func _init() -> void:
 	if DisplayServer.get_name() == "headless":
 		return
 	if is_bot_run():
+		# Exported builds create focusable windows (no_focus.template=false, so normal play gets the
+		# keyboard); a bot-driven run turns focus off again at once.
+		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_NO_FOCUS, true)
 		DisplayServer.window_set_position(PARK)
 		return
 	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_NO_FOCUS, false)
