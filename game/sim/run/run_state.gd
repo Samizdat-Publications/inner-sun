@@ -8,7 +8,10 @@ extends SimModule
 ##
 ## For the view (read only):
 ## - map: Array of rows, each an Array of node Dictionaries (format in map_gen.gd: id, index, row,
-##   col, x_m, type, links, enemy). nodes: the same Dictionaries flat, by index.
+##   col, x_m, type, links, enemy) plus "survey" (survey.gd: what the rock on the way to it holds;
+##   show it only when is_revealed). nodes: the same Dictionaries flat, by index.
+## - gear (fitted gear ids), gear_x(key) (gear multipliers, see gear.gd).
+## A "deposit" node holds no encounter: its reward is the rich rock on the way (its survey).
 ## - current_node / target_node: node ids ("" when none). links_from_current().
 ## - is_revealed(node), is_visited(node), is_overtaken(node); scanner_rows (rows seen ahead).
 ## - pursuer_row (float map row of the pursuer's front), caught, ship_row_f(sim).
@@ -45,6 +48,8 @@ var learned: PackedStringArray = PackedStringArray()  ## Codex entries learned t
 var end_cause: String = ""
 var pursuer_row: float = -1.5  ## Map row the pursuer's front has reached.
 var reveal_bonus: int = 0  ## Extra scanner rows for the rest of the layer (events).
+var gear: PackedStringArray = PackedStringArray()  ## Gear ids fitted, in order (Gear; bought at stores).
+var gear_mult: Dictionary = {}  ## Gear multipliers by key (Gear.MULTIPLIERS); read with gear_x().
 # The map (run mode only).
 var layer_id: String = ""
 var layer: Dictionary = {}
@@ -83,6 +88,8 @@ func _init(p_mode: String, p_known_codex: PackedStringArray) -> void:
 	known_codex.sort()
 	for r: String in RESOURCES:
 		resources[r] = 0
+	for k: String in Gear.MULTIPLIERS:
+		gear_mult[k] = 1.0
 
 
 func commands() -> PackedStringArray:
@@ -118,11 +125,14 @@ func begin(sim: Sim) -> void:
 
 func _build_map(sim: Sim) -> void:
 	map = MapGen.generate(layer, sim.rng.get_stream("map"))
+	var rock: Dictionary = sim.db.table("rock").get(str(layer.get("rock", DrillSim.DEFAULT_ROCK)), {})
+	Survey.add_to_map(map, layer, rock, sim.rng.get_stream("survey"))
 	for row: Array in map:
 		for n: Dictionary in row:
 			_index_of[str(n["id"])] = nodes.size()
 			nodes.append(n)
-			_map_state.append([n["id"], n["type"], n["x_m"], n["enemy"], Array(n["links"] as PackedStringArray)])
+			_map_state.append([n["id"], n["type"], n["x_m"], n["enemy"], Array(n["links"] as PackedStringArray),
+					(n["survey"] as Dictionary).values()])
 	visited.resize(nodes.size())
 	overtaken.resize(nodes.size())
 	_current = 0
@@ -141,6 +151,11 @@ func _build_map(sim: Sim) -> void:
 
 func get_res(res: String) -> int:
 	return int(resources.get(res, 0))
+
+
+## The product of a gear multiplier over the fitted gear (1.0 without gear). Keys: Gear.MULTIPLIERS.
+func gear_x(key: String) -> float:
+	return float(gear_mult.get(key, 1.0))
 
 
 func node(id: String) -> Dictionary:
@@ -276,7 +291,7 @@ func choose_node(sim: Sim, id: String) -> bool:
 	var rows: int = int(to["row"]) - int(from["row"])
 	var ok: bool = sim.drill.begin_segment(sim, "%s-%s" % [from["id"], to["id"]],
 			float(layer.get("row_depth_m", 36.0)) * float(rows), float(to["x_m"]) - float(from["x_m"]),
-			str(layer.get("rock", DrillSim.DEFAULT_ROCK)))
+			str(layer.get("rock", DrillSim.DEFAULT_ROCK)), to.get("survey", {}) as Dictionary)
 	if not ok:
 		return false
 	_target = int(to["index"])
@@ -456,6 +471,7 @@ func summary(sim: Sim) -> Dictionary:
 		"nodes_visited": n_visited,
 		"nodes_overtaken": n_overtaken,
 		"strikes": strikes,
+		"gear": Array(gear),
 		"seed": sim.run_seed,
 		"ship": sim.ship_id,
 		"layer": layer_id,
@@ -468,7 +484,7 @@ func state() -> Array:
 		res.append(int(resources[r]))
 	return [mode, phase, res, depth_m, Array(known_codex), Array(learned), end_cause, pursuer_row, reveal_bonus,
 		layer_id, _map_state, _current, _target, visited, overtaken, scanner_rows, caught, strikes,
-		_last_noise, _overtaken_row, _strike_ticks]
+		_last_noise, _overtaken_row, _strike_ticks, Array(gear), gear_mult.values()]
 
 
 ## Checks the layer tables and the run tuning (run_lint.gd).

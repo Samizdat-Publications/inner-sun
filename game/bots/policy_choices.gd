@@ -6,7 +6,7 @@ extends RefCounted
 ## store lines are handled without code changes.
 
 ## Rough worth of one unit of each resource, in gems.
-const RES_VALUE: Dictionary = {"ore": 0.5, "gems": 1.0, "coolant": 1.2, "cells": 6.0, "bits": 8.0, "charges": 3.0}
+const RES_VALUE: Dictionary = {"ore": 0.3, "gems": 1.0, "coolant": 1.2, "cells": 6.0, "bits": 8.0, "charges": 3.0}
 const LOOKAHEAD: float = 0.5  ## Share of the best next node's score added to a node's own.
 
 
@@ -51,6 +51,15 @@ static func _node_score(sim: Sim, bot: PolicyBot, n: Dictionary) -> float:
 	elif kind == "fight":
 		if hull < bot.fight_ok_frac:
 			score -= 3.0
+	var sv: Dictionary = n.get("survey", {})
+	if not sv.is_empty():
+		score += bot.survey_weight * (float(sv.get("richness", 1.0)) - 1.0)
+		if not (sv.get("gems", []) as Array).is_empty():
+			score += bot.gem_bonus
+		if bool(sv.get("gas", false)):
+			score -= bot.gas_fear
+		if bool(sv.get("water", false)):
+			score -= bot.water_fear
 	return score
 
 
@@ -162,8 +171,8 @@ static func _res_value(bot: PolicyBot, res: String, amount: float) -> float:
 # Store -----------------------------------------------------------------------------------------
 
 ## The next purchase as [stock line, quantity], or [] to leave. Order: hull repairs, then stocking
-## resources up to the policy's levels (cells cover the rows left), then extras in policy order while
-## gems stay above the reserve.
+## resources up to the policy's levels (cells cover the rows left), then extras (gear, upgrades,
+## weapons) in policy order while the currency stays above the policy's gem or ore reserve.
 static func next_purchase(sim: Sim, bot: PolicyBot) -> Array:
 	var enc: Encounter = sim.encounter
 	var run: RunState = sim.run
@@ -208,7 +217,7 @@ static func next_purchase(sim: Sim, bot: PolicyBot) -> Array:
 			var units: int = _units_worth_buying(sim, d)
 			var cost: int = int(d.get("price", 0)) * units
 			var cur: String = str(d.get("currency", "gems"))
-			if run.get_res(cur) - cost < (bot.gem_reserve if cur == "gems" else 0):
+			if run.get_res(cur) - cost < (bot.gem_reserve if cur == "gems" else bot.ore_reserve if cur == "ore" else 0):
 				continue
 			if want == "weapon" and not _can_power_weapon(sim, d):
 				continue
@@ -236,6 +245,8 @@ static func _matches(d: Dictionary, want: String) -> bool:
 	var item: String = str(d.get("item", ""))
 	if want.begins_with("system:"):
 		return item == "upgrade" and str(d.get("system", "")) == want.substr(7)
+	if want.begins_with("gear:"):
+		return item == "gear" and str(d.get("gear", "")) == want.substr(5)
 	return item == want
 
 

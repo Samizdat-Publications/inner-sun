@@ -93,11 +93,9 @@ func test_store_and_fight_guarantees() -> void:
 	var fights: int = 0
 	for s: int in range(1, SEEDS + 1):
 		var m: Array = _gen(layer, s)
-		var store_in_rows: bool = false
-		for r: int in range(3, 6):
-			for n: Dictionary in (m[r] as Array):
-				store_in_rows = store_in_rows or str(n["type"]) == "store"
-		check(store_in_rows, "seed %d: a store in rows 3 to 5" % s)
+		check(MapGen.min_on_paths(m, "store", 2, 4) >= 1, "seed %d: every path meets a store in rows 2 to 4" % s)
+		check(MapGen.min_on_paths(m, "store", 6, 8) >= 1, "seed %d: every path meets a store in rows 6 to 8" % s)
+		check(not MapGen.has_store_pair(m), "seed %d: never two stores in a row (helper)" % s)
 		var type_of: Dictionary = {}
 		for row: Array in m:
 			for n: Dictionary in row:
@@ -110,11 +108,29 @@ func test_store_and_fight_guarantees() -> void:
 					continue
 				for to: String in (n["links"] as PackedStringArray):
 					check(str(type_of[to]) != "store", "seed %d: %s and %s are two stores in a row" % [s, n["id"], to])
-		check(MapGen.min_fights(m) >= 2, "seed %d: every path has at least two fights" % s)
+		check(MapGen.min_fights(m) >= 1, "seed %d: every path has at least one fight (plus the gate)" % s)
 		if failures.size() > 20:
 			return
-	check_gt(float(stores) / SEEDS, 1.0, "stores are not only the guaranteed one")
-	check_lt(float(fights) / SEEDS, 9.0, "fights stay a minority of the about 20 middle nodes")
+	check_gt(float(stores) / SEEDS, 2.0, "stores are not only the guaranteed ones")
+	check_lt(float(fights) / SEEDS, 6.0, "fights are occasional: few of the about 20 middle nodes")
+
+
+func test_mining_first_node_mix() -> void:
+	var layer: Dictionary = _layer()
+	var count: Dictionary = {}
+	var total: int = 0
+	for t: String in MapGen.NODE_TYPES:
+		count[t] = 0
+	for s: int in range(1, SEEDS + 1):
+		for row: Variant in _gen(layer, s):
+			for n: Dictionary in (row as Array):
+				var t: String = str(n["type"])
+				if count.has(t):
+					count[t] = int(count[t]) + 1
+					total += 1
+	print("MAP node mix over %d seeds: %s" % [SEEDS, str(count)])
+	check_gt(float(count["deposit"]) / total, 0.15, "deposits are a big share of the nodes")
+	check_gt(float(count["deposit"]), float(count["fight"]), "more deposits than fights")
 
 
 func test_same_seed_same_map_and_run_uses_map_stream() -> void:
@@ -125,7 +141,9 @@ func test_same_seed_same_map_and_run_uses_map_stream() -> void:
 		differs = differs or var_to_str(_gen(layer, s)) != var_to_str(_gen(layer, 5))
 	check(differs, "other seeds give other maps")
 	var sim := Sim.new(db(), 5, "light_drill", {"mode": "run"})
-	check_eq(var_to_str(sim.run.map), var_to_str(_gen(layer, 5)), "the run's map comes from the \"map\" stream alone")
+	var want: Array = _gen(layer, 5)
+	Survey.add_to_map(want, layer, db().table("rock")["crust"], RngStreams.new(5).get_stream("survey"))
+	check_eq(var_to_str(sim.run.map), var_to_str(want), "the run's map comes from the \"map\" stream, its surveys from \"survey\"")
 	check_eq(sim.run.current_node, "r0c0", "the run starts at the start node")
 	check(sim.run.is_visited(sim.run.node("r0c0")), "the start node is visited")
 	check_eq(sim.run.nodes.size(), sim.run.visited.size(), "one visited flag per node")
@@ -154,13 +172,15 @@ func test_lint_catches_a_broken_layer() -> void:
 	bad["rock"] = "cheese"
 	bad["enemies"] = ["rival_light", "pirate_zeppelin"]
 	bad["node_weights"] = {"event": 40, "picnic": 5}
-	bad["store_rows"] = [0, 12]
+	bad["store_windows"] = [[2, 4], [0, 12]]
+	(bad["survey"] as Dictionary)["gas_chance"] = 1.5
 	d.table("layers")["broken"] = bad
 	var all: String = "\n".join(d.lint())
 	check(all.contains("\"cheese\" does not exist"), "a missing rock table is caught")
 	check(all.contains("pirate_zeppelin"), "an unknown enemy ship is caught")
 	check(not all.contains("\"rival_light\" does not exist"), "pending ships are accepted")
 	check(all.contains("picnic"), "an unknown node type is caught")
-	check(all.contains("store_rows"), "store rows outside the middle rows are caught")
+	check(all.contains("store_windows"), "store windows outside the middle rows are caught")
+	check(all.contains("gas_chance"), "a survey chance above 1 is caught")
 	d.tuning.erase("run.strike_every_s")
 	check("\n".join(d.lint()).contains("run.strike_every_s"), "missing run tuning is caught")

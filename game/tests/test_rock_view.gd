@@ -40,6 +40,7 @@ func test_incremental_repaint_matches_fresh_paint() -> void:
 		s.step()
 		if i % 3 == 0:
 			v._process(0.016)
+	v._process(0.016)  # A frame after the last step: cuts in the last ticks are noticed only in _process.
 	var guard: int = 0
 	while v.pending() > 0 and guard < 10000:
 		v._process(0.016)

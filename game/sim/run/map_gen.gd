@@ -6,22 +6,25 @@ extends RefCounted
 ##
 ## The map is an Array of rows; each row is an Array of node Dictionaries, sorted by x:
 ##   {"id": "r<row>c<col>", "index": flat index, "row": int, "col": int, "x_m": float,
-##    "type": "start" | "event" | "cavern" | "hazard" | "store" | "fight" | "gate",
+##    "type": "start" | "event" | "cavern" | "hazard" | "store" | "fight" | "deposit" | "gate",
 ##    "links": PackedStringArray of next-row node ids (empty for the gate),
 ##    "enemy": ship id for "fight" and "gate" nodes, else ""}
-## Node dictionaries are fixed once generated; visited and overtaken live in RunState.
+## RunState adds "survey" (Survey.add_to_map) before the map is used. Node dictionaries are fixed
+## from then on; visited and overtaken live in RunState.
 ##
 ## Guarantees (tests in test_map.gd): every node has a way in and a way out, so every node is reached
-## from the start and reaches the gate; edges never cross; at least one store in the store rows; never
-## two stores in a row on one path; at least min_fights_per_path fights on every path.
+## from the start and reaches the gate; edges never cross; every path meets a store in each of the
+## layer's store_windows ([first row, last row] pairs); never two stores in a row on one path; at
+## least min_fights_per_path fights on every path (the gate not counted).
 ##
 ## Edges between two rows are a monotone staircase: start with the leftmost pair, then step right in
 ## the upper row, the lower row or both, picking the step whose new edge is shortest in x (plus a
 ## random jitter). That is "connect to the nearest, then fill the gaps" with the guarantees built in:
 ## every node of both rows is touched and two edges of a staircase can never cross.
 
-const NODE_TYPES: Array[String] = ["event", "fight", "cavern", "hazard", "store"]  ## Fixed draw order.
-const ALL_TYPES: Array[String] = ["start", "event", "fight", "cavern", "hazard", "store", "gate"]
+const NODE_TYPES: Array[String] = ["event", "fight", "cavern", "hazard", "store", "deposit"]  ## Fixed draw order.
+const ALL_TYPES: Array[String] = ["start", "event", "fight", "cavern", "hazard", "store", "deposit", "gate"]
+const PLAIN: Array[String] = ["event", "cavern", "hazard", "deposit"]  ## Types the guarantees may overwrite.
 const STEPS: Array[Vector2i] = [Vector2i(1, 1), Vector2i(1, 0), Vector2i(0, 1)]
 
 
@@ -75,7 +78,9 @@ static func generate(layer: Dictionary, rng: RandomNumberGenerator) -> Array:
 				if types[r - 1][p] == "store":
 					no_store = true
 			types[r][i] = _pick(weights, no_store, rng)
-	_ensure_store(layer, types, links, parents, rng)
+	for w: Variant in layer.get("store_windows", []):
+		var wa: Array = w
+		_ensure_store(types, links, parents, rng, clampi(int(wa[0]), 1, n_rows - 2), clampi(int(wa[1]), 1, n_rows - 2))
 	_ensure_fights(int(layer.get("min_fights_per_path", 2)), types, parents, rng)
 	# Build the node dictionaries.
 	var enemies: Array = layer.get("enemies", [])
@@ -155,31 +160,43 @@ static func _pick(weights: PackedFloat64Array, no_store: bool, rng: RandomNumber
 	return "event"
 
 
-## At least one store in the store rows, never next to another store on a path.
-static func _ensure_store(layer: Dictionary, types: Array[Array], links: Array[Array], parents: Array[Array], rng: RandomNumberGenerator) -> void:
-	var sr: Array = layer.get("store_rows", [3, 5])
-	var last_mid: int = types.size() - 2
-	var r0: int = clampi(int(sr[0]) if sr.size() > 0 else 1, 1, last_mid)
-	var r1: int = clampi(int(sr[1]) if sr.size() > 1 else r0, r0, last_mid)
-	var free: Array[Vector2i] = []
-	var all: Array[Vector2i] = []
-	for r: int in range(r0, r1 + 1):
-		for i: int in range(types[r].size()):
-			if types[r][i] == "store":
+## Every path meets a store in rows r0..r1, and no store sits next to another on a path: while the
+## path with the fewest stores in the window has none, turn one of its plain window nodes that does
+## not touch a store into a store (if every one touches a store, any plain or fight node, and its
+## store neighbours become events; the loop then repairs any path that lost its store).
+static func _ensure_store(types: Array[Array], links: Array[Array], parents: Array[Array],
+		rng: RandomNumberGenerator, r0: int, r1: int) -> void:
+	var guard: int = 64
+	while guard > 0:
+		guard -= 1
+		var path: Array[Vector2i] = _fewest_path(types, parents, "store", r0, r1)
+		var free: Array[Vector2i] = []
+		var free_deposits: Array[Vector2i] = []  ## Converted only when no other free node is left (mining first).
+		var any: Array[Vector2i] = []
+		for at: Vector2i in path:
+			if at.x < r0 or at.x > r1:
+				continue
+			var t: String = types[at.x][at.y]
+			if t == "store":
 				return
-			all.append(Vector2i(r, i))
-			if not _next_to_store(r, i, types, links, parents):
-				free.append(Vector2i(r, i))
-	var pool: Array[Vector2i] = free if not free.is_empty() else all
-	var at: Vector2i = pool[rng.randi_range(0, pool.size() - 1)]
-	types[at.x][at.y] = "store"
-	# Only when every candidate touched a store: its store neighbours become events.
-	for p: int in (parents[at.x][at.y] as Array):
-		if types[at.x - 1][p] == "store":
-			types[at.x - 1][p] = "event"
-	for c: int in (links[at.x][at.y] as Array):
-		if types[at.x + 1][c] == "store":
-			types[at.x + 1][c] = "event"
+			if PLAIN.has(t) or t == "fight":
+				any.append(at)
+				if PLAIN.has(t) and not _next_to_store(at.x, at.y, types, links, parents):
+					if t == "deposit":
+						free_deposits.append(at)
+					else:
+						free.append(at)
+		var pool: Array[Vector2i] = free if not free.is_empty() else free_deposits if not free_deposits.is_empty() else any
+		if pool.is_empty():
+			return
+		var pick: Vector2i = pool[rng.randi_range(0, pool.size() - 1)]
+		types[pick.x][pick.y] = "store"
+		for p: int in (parents[pick.x][pick.y] as Array):
+			if types[pick.x - 1][p] == "store":
+				types[pick.x - 1][p] = "event"
+		for c: int in (links[pick.x][pick.y] as Array):
+			if types[pick.x + 1][c] == "store":
+				types[pick.x + 1][c] = "event"
 
 
 static func _next_to_store(r: int, i: int, types: Array[Array], links: Array[Array], parents: Array[Array]) -> bool:
@@ -193,35 +210,40 @@ static func _next_to_store(r: int, i: int, types: Array[Array], links: Array[Arr
 
 
 ## Every path from start to gate meets at least `need` fights: while the path with the fewest fights
-## is short, turn one of its plain nodes (not a store) into a fight.
+## is short, turn one of its plain nodes (never a store) into a fight.
 static func _ensure_fights(need: int, types: Array[Array], parents: Array[Array], rng: RandomNumberGenerator) -> void:
 	var guard: int = 64
 	while guard > 0:
 		guard -= 1
-		var path: Array[Vector2i] = _fewest_fights_path(types, parents)
+		var path: Array[Vector2i] = _fewest_path(types, parents, "fight", 0, types.size())
 		var fights: int = 0
 		var plain: Array[Vector2i] = []
+		var deposits: Array[Vector2i] = []  ## Converted only when nothing else is left (mining first).
 		for at: Vector2i in path:
 			var t: String = types[at.x][at.y]
 			if t == "fight":
 				fights += 1
-			elif t == "event" or t == "cavern" or t == "hazard":
+			elif t == "deposit":
+				deposits.append(at)
+			elif PLAIN.has(t):
 				plain.append(at)
-		if fights >= need or plain.is_empty():
+		var pool: Array[Vector2i] = plain if not plain.is_empty() else deposits
+		if fights >= need or pool.is_empty():
 			return
-		var pick: Vector2i = plain[rng.randi_range(0, plain.size() - 1)]
+		var pick: Vector2i = pool[rng.randi_range(0, pool.size() - 1)]
 		types[pick.x][pick.y] = "fight"
 
 
-## The start-to-gate path with the fewest fights (ties: the lowest parent column), start first.
-static func _fewest_fights_path(types: Array[Array], parents: Array[Array]) -> Array[Vector2i]:
+## The start-to-gate path with the fewest nodes of `kind` in rows r0..r1 (ties: the lowest parent
+## column), start first.
+static func _fewest_path(types: Array[Array], parents: Array[Array], kind: String, r0: int, r1: int) -> Array[Vector2i]:
 	var best: Array[PackedInt32Array] = []
 	var via: Array[PackedInt32Array] = []
 	for r: int in range(types.size()):
 		var b := PackedInt32Array()
 		var v := PackedInt32Array()
 		for i: int in range(types[r].size()):
-			var own: int = 1 if types[r][i] == "fight" else 0
+			var own: int = 1 if types[r][i] == kind and r >= r0 and r <= r1 else 0
 			var m: int = 0
 			var from: int = -1
 			if r > 0:
@@ -246,28 +268,43 @@ static func _fewest_fights_path(types: Array[Array], parents: Array[Array]) -> A
 
 ## Fewest fights on any start-to-gate path of a built map (tests and lint).
 static func min_fights(map: Array) -> int:
-	var prev: Dictionary = {}  ## node id -> fewest fights to reach it (lookup only).
-	var row0: Array = map[0]
-	var start: Dictionary = row0[0]
-	prev[str(start["id"])] = 0
-	var cur: Dictionary = {}
+	return min_on_paths(map, "fight", 0, map.size())
+
+
+## Fewest nodes of `kind` in rows r0..r1 on any start-to-gate path of a built map (tests and lint).
+static func min_on_paths(map: Array, kind: String, r0: int, r1: int) -> int:
+	var prev: Dictionary = {}  ## node id -> fewest so far (lookup only, never iterated).
 	for r: int in range(map.size()):
-		cur = {}
+		var cur: Dictionary = {}
 		var row: Array = map[r]
+		var own_of: Dictionary = {}
 		for n: Dictionary in row:
-			var id: String = str(n["id"])
+			own_of[str(n["id"])] = 1 if str(n["type"]) == kind and r >= r0 and r <= r1 else 0
 			if r == 0:
-				cur[id] = 0
+				cur[str(n["id"])] = int(own_of[str(n["id"])])
 		if r > 0:
 			var above: Array = map[r - 1]
 			for p: Dictionary in above:
 				var base: int = int(prev.get(str(p["id"]), 1 << 30))
 				for to: String in (p["links"] as PackedStringArray):
-					var own: int = 0
-					for n2: Dictionary in row:
-						if str(n2["id"]) == to and str(n2["type"]) == "fight":
-							own = 1
-					cur[to] = mini(int(cur.get(to, 1 << 30)), base + own)
+					cur[to] = mini(int(cur.get(to, 1 << 30)), base + int(own_of.get(to, 0)))
 		prev = cur
 	var last: Array = map[map.size() - 1]
 	return int(prev.get(str((last[0] as Dictionary)["id"]), 0))
+
+
+## True if some edge of a built map joins two stores (a path with two stores in a row).
+static func has_store_pair(map: Array) -> bool:
+	for r: int in range(map.size() - 1):
+		var below: Dictionary = {}
+		for n: Dictionary in (map[r + 1] as Array):
+			below[str(n["id"])] = str(n["type"])
+		for n: Dictionary in (map[r] as Array):
+			if str(n["type"]) != "store":
+				continue
+			for to: String in (n["links"] as PackedStringArray):
+				if str(below.get(to, "")) == "store":
+					return true
+	return false
+
+

@@ -96,6 +96,8 @@ func test_arrival_makes_the_node_current_and_hands_it_on() -> void:
 		check_eq(_count(s, "fight_skipped"), 1, "the fight went to combat (stub until step 4)")
 	elif kind == "store":
 		check(not s.encounter.current_store().is_empty(), "the store is open")
+	elif kind == "deposit":
+		check(not s.encounter.is_busy(), "a deposit holds no encounter: its rock was the reward")
 	else:
 		check(not s.encounter.current_event().is_empty(), "an event page is open")
 

@@ -2,19 +2,21 @@ class_name DrillBot
 extends Bot
 ## Drives drilling segments through commands only (steer, change_bit); it reads the rock grid and
 ## never changes the sim. Five times a second it scores the ship-wide lanes straight below (the next
-## lookahead_m of rock), shifted sideways by up to max_detour_m: ore and gem cells pull (only while
-## the segment's noise is under the budget), hard rock and water pockets push, straying from the
-## corridor to the next node costs.
+## lookahead_m of rock), shifted sideways by up to max_detour_m: ore and gem cells pull by their
+## value (yield units times value_ore or value_gem, only while the segment's noise is under the
+## budget), hard rock, water and gas pockets push, straying from the corridor to the next node and
+## every meter of detour cost.
 ## The best lane wins; with nothing better, it steers for the target. Deterministic, no randomness.
 ## It leaves power and the crew alone (crew keep their own judgement).
 
-var noise_budget: float = 45.0  ## Detours for ore and gems only while noise_segment is below this.
-var lookahead_m: float = 10.0
+var noise_budget: float = 100.0  ## Detours for ore and gems only while noise_segment is below this.
+var lookahead_m: float = 12.0
 var max_detour_m: float = 6.0
-var value_gem: float = 4.0
-var value_ore: float = 1.0
+var value_gem: float = 3.0  ## Per gem unit in the lane.
+var value_ore: float = 1.0  ## Per ore unit in the lane.
 var cost_hard: float = 1.5  ## Per hard rock cell in the lane.
 var cost_water: float = 4.0  ## Per water pocket cell in the lane.
+var cost_gas: float = 5.0  ## Per gas pocket cell in the lane.
 var cost_lateral_per_m: float = 0.6
 var cost_stray_per_m: float = 6.0  ## Per meter beyond stray_free_m from the corridor line.
 var stray_free_m: float = 4.0
@@ -98,7 +100,8 @@ func _choose_heading(d: DrillSim) -> float:
 	return clampf(rad_to_deg(atan2(float(best_off) * cell, lookahead_m * 0.5)), -45.0, 45.0)
 
 
-## Score per material code: value for ore and gems (only while greedy), cost for hazards.
+## Score per material code: value for ore and gems (only while greedy), cost for hazards. Hardness
+## is the effective one (a diamond head makes basalt ordinary rock, so it stops costing).
 func _build_tables(d: DrillSim, greedy: bool) -> void:
 	_greedy = greedy
 	_table_serial = d.grid_serial
@@ -107,9 +110,11 @@ func _build_tables(d: DrillSim, greedy: bool) -> void:
 		var v: float = 0.0
 		var yr: int = d.yield_res_of[m]
 		if yr >= 0 and greedy:
-			v += value_gem if RunState.RESOURCES[yr] == "gems" else value_ore
+			v += float(d.yield_amount_of[m]) * (value_gem if RunState.RESOURCES[yr] == "gems" else value_ore)
 		if d.water_of[m] == 1:
 			v -= cost_water
+		elif d.gas_of[m] == 1:
+			v -= cost_gas
 		elif d.hardness_of[m] >= hard_min:
 			v -= cost_hard
 		_score_of[m] = v

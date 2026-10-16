@@ -148,14 +148,14 @@ func test_segment_length_with_the_drill_bot() -> void:
 		var s2: Sim = _sim(p_seed, 2)
 		_begin(s2, "len", SEG_DEPTH_M, float(p_seed % 7) - 3.0)
 		t2.append(_drive(s2))
-		if t2[t2.size() - 1] >= 20.0 and t2[t2.size() - 1] <= 45.0:
+		if t2[t2.size() - 1] >= 30.0 and t2[t2.size() - 1] <= 65.0:  # M1b (D026): a slower base cut speed.
 			inside += 1
 		var s4: Sim = _sim(p_seed, 4)
 		_begin(s4, "len", SEG_DEPTH_M, float(p_seed % 7) - 3.0)
 		t4.append(_drive(s4))
 	print("DRILL segment seconds at 2 bars: ", t2)
 	print("DRILL segment seconds at 4 bars: ", t4)
-	check(inside >= 19, "at 2 bars at least 19 of 20 segments take 20 to 45 s (got %d)" % inside)
+	check(inside >= 19, "at 2 bars at least 19 of 20 36 m segments take 30 to 65 s (got %d)" % inside)
 	var sum2: float = 0.0
 	var sum4: float = 0.0
 	for i: int in range(20):

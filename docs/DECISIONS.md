@@ -158,3 +158,54 @@ gear upgrades), while FTL-style systems, combat, events and upgrades stay. His f
 planets and gaining resources" loop, where gathering is the focus and hostile forces turn up now and
 then, not encounter after encounter. This reverses the kickoff's "keep drilling segments short so runs
 stay paced like FTL". Plan: `docs/plans/M1b.md`. Revert: the M1b merges.
+
+## D025 (AI): The dig economy: tiered rock, ore for gear, gems for supplies (M1b round 2)
+Rock (`data/rock/crust.json`): coal (ore 1), iron (2), copper (3, from 60 m), silver (6, from 180 m,
+in basalt shells), gold (12, from 360 m, shells); quartz (gems 1, the old "gem" id kept for the view),
+amethyst (2, from 120 m), emerald (5, from 300 m); water and gas pockets. Features take depth windows
+(`from_depth_m`, `to_depth_m`, a segment overlapping a window in part gets the same density per
+meter) and a group ("ore" and "gems" scale with the survey richness; "gems", "gas" and "water" only
+when the survey found them). Deposits sit 3.5 to 11 m off the line to the next node (centres kept in
+the steerable band), so a straight drive collects about 18 ore at 240 m and a greedy weave about
+100 (test_dig_economy). Currency by line: ore buys system upgrades (120 to 200), gear (tungsten head
+180, diamond head 450, plating 200, pumps 120) and hull repair (2 a point, as before); gems buy
+coolant, cells, bits, charges, crew and the lance (prices unchanged). Ore prices are about 6 times
+D021's gem prices because runs now mine about 700 to 1200 ore (D021: about 110): the first try at
+half these prices let the bots buy 4 to 6 items and the greedy and balanced bots win 40 to 65%. Gear is data
+(`data/gear/*.json`, `sim/run/gear.gd`): multipliers (cut speed, bit wear, hard rock hardness, pump
+rate) read through `RunState.gear_x`, one-time adds (max hull, hull); a slot keeps one item and only a
+higher tier replaces it. Revert: the rock, store and gear data and `gear.gd`.
+
+## D026 (AI): Retuned per meter for 60 m segments
+`row_depth_m` 28 -> 60 (10 rows kept, the gate at 540 m). `base_speed_m_s` 1.3 -> 0.85: a 60 m
+segment takes about 60 s at 3 bars on a fresh bit, 65 to 75 s in real runs with worn bits.
+`wear_per_m_hardness` 0.008 -> 0.0055: a bit lasts about 2.7 greedy segments. Noise per meter is
+now times the hardness cut (basalt shells are loud), and gas pockets add `gas_noise` 8. Pursuer
+`rows_per_s` 0.02 -> 0.0100 and `rows_per_noise` 0.0035 -> 0.0028, measured so the pursuer is about
+one row behind the balanced bot at the gate (it was 0.0095 / 0.0026: balanced 46%; 0.0105 / 0.0030:
+cautious 4%); loud play is chased harder than before. `coolant_j_per_unit` 1.0 -> 1.8 MJ: segments
+twice as long doubled the drilling heat per segment and coolant ran out in about 45% of runs (now 0
+in 300). Layer `rock_temp_c_per_m` 0.08 -> 0.04 so the rock at the gate is as hot as before
+(about 62 C). Gas pockets (`drill.gas_fire_level` 0.3) set the drill room on fire once per connected
+pocket. Revert: the numbers in `data/layers/crust.json`, `data/tuning/drill.json`,
+`data/tuning/systems.json`.
+
+## D027 (AI): Policy bots give power by priority; cautious drills at 3 bars
+`PolicyBot._apply_power` treats its wanted list as a priority order over the reactor's output. Before,
+bars held by helm and bracing were never released, so every policy drilled at about 1.6 to 2 bars
+whatever it wanted (the three policies drilled alike), and in a fight the guns got only what the
+drill released. Side effect: the bots now fight with fully powered guns, which made the gate easier
+for them (balanced wins the gate 57%, D022: 29%; see the balance report). With the fix the cautious
+bot at 2 bars and 15 s waits was caught by the pursuer in 80 to 88% of runs, so it now drills at 3
+bars (quieter weaving, 10 s waits) and stays distinct by avoiding gas, water, fights and noise.
+Revert: `game/bots/policy_bot.gd`.
+
+## D028 (AI): Surveys are the rock; deposits; fights now and then; stores on every path
+Each node's survey (tier and richness, ore types, gems, gas, water; `sim/run/survey.gd`, stream
+"survey") is rolled once per run and the segment to that node is generated FROM it, so a reading is
+never wrong. "deposit" nodes (weight 25) roll at least the "rich" tier with more gas and water and
+hold no encounter: the rock on the way is the reward. Node weights mining first (deposit 25, event 25,
+cavern 15, store 12, hazard 8, fight 15), `min_fights_per_path` 2 -> 1 (plus the gate), and the map
+guarantees a store on every path in rows 2 to 4 and again in rows 6 to 8 (`store_windows`); the
+guarantees convert deposits only when no other plain node will do. Revert: `data/layers/crust.json`,
+`sim/run/map_gen.gd`, `sim/run/survey.gd`.

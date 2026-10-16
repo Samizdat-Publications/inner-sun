@@ -9,9 +9,12 @@ extends RefCounted
 ## "currency": optional resource (default "gems"), "limit": optional units per visit (0 = none)}
 ## with, per item: "res" (res, amount), "hull" (amount, never above the ship's maximum),
 ## "weapon" (weapon: appended to ship.weapons), "crew" (pool: hires the member rolled when the store
-## opened), "upgrade" (system, max_bars: +1 bar of capacity per unit).
+## opened), "upgrade" (system, max_bars: +1 bar of capacity per unit), "gear" (gear: a data/gear id,
+## one unit at a time, fitted with Gear.fit; refused when Gear.refusal says so).
+## Currency by line (M1b, D025): ore buys system upgrades, gear and hull repairs; gems buy supplies
+## (coolant, cells, bits, charges), crew and weapons.
 
-const ITEMS: Array[String] = ["res", "hull", "weapon", "crew", "upgrade"]
+const ITEMS: Array[String] = ["res", "hull", "weapon", "crew", "upgrade", "gear"]
 
 
 static func buy(sim: Sim, enc: Encounter, line: int, qty: int) -> void:
@@ -38,6 +41,8 @@ static func buy(sim: Sim, enc: Encounter, line: int, qty: int) -> void:
 		"upgrade":
 			var r: Room = sim.ship.rooms[sim.ship.room_with_system(str(d.get("system", "")))]
 			r.sys_max += qty
+		"gear":
+			Gear.fit(sim, str(d.get("gear", "")))
 	sim.emit("bought", {"store": enc.store_id, "item": line, "qty": qty, "cost": cost, "currency": currency})
 
 
@@ -81,4 +86,8 @@ static func refusal(sim: Sim, enc: Encounter, line: int, qty: int) -> String:
 				return "this ship has no %s" % str(d.get("system", ""))
 			if sim.ship.rooms[ri].sys_max + qty > int(d.get("max_bars", 0)):
 				return "%s is at its maximum" % str(d.get("system", ""))
+		"gear":
+			if qty != 1:
+				return "gear is fitted one at a time"
+			return Gear.refusal(sim, str(d.get("gear", "")))
 	return ""

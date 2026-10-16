@@ -74,6 +74,8 @@ func _type_score(kind: String, hull_frac: float) -> float:
 			return 1.0
 		"cavern":
 			return 1.2
+		"deposit":
+			return 1.5
 		"hazard":
 			return -0.5
 		"gate":
