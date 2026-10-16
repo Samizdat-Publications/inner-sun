@@ -16,10 +16,11 @@ extends Node2D
 ## Normal play saves the profile and a replayable record of every run (game/meta), finished or not.
 
 const PPM: float = 80.0
-const DRILL_ZOOM: float = 0.85
-const CUTAWAY_ZOOM: float = 1.0
-const COMBAT_AREA: Rect2 = Rect2(300.0, 156.0, 1240.0, 728.0)  ## Free area while the combat panels show.
-const ROCK_BELOW_M: float = 4.0  ## Rock visible below the crown while drilling.
+const DRILL_ZOOM: float = 1.0  ## Critic 003: the ship was a postage stamp; the scanner shows what is ahead.
+const CUTAWAY_ZOOM: float = 1.15
+const COMBAT_TOP_PX: float = 90.0  ## The enemy panel at the top of the world area.
+const COMBAT_BOTTOM_PX: float = 124.0  ## The weapon cards at the bottom of the world area.
+const ROCK_BELOW_M: float = 2.5  ## Rock visible below the crown while drilling.
 const STEER_DEG: float = 30.0
 const HUMAN_CAP_S: float = 6.0 * 3600.0  ## A human run never hits the stuck cap.
 
@@ -170,8 +171,8 @@ func _ease_camera(d: DrillSim, delta: float) -> void:
 	var pos: Vector2 = _drill_cam_target(d) if rock_view != null else _framed(view.center_px(), base_zoom)
 	if combat_view.active():
 		var b: Rect2 = combat_view.bounds_px()
-		zoom = minf(base_zoom, minf(COMBAT_AREA.size.x / b.size.x, COMBAT_AREA.size.y / b.size.y))
-		pos = b.get_center() + (Vector2(960.0, 540.0) - COMBAT_AREA.get_center()) / zoom
+		zoom = minf(base_zoom, minf(_combat_area().size.x / b.size.x, _combat_area().size.y / b.size.y))
+		pos = b.get_center() + (Vector2(960.0, 540.0) - _combat_area().get_center()) / zoom
 	var z: float = lerpf(cam.zoom.x, zoom, k)
 	cam.zoom = Vector2(z, z)
 	cam.position = cam.position.lerp(pos, k)
@@ -364,3 +365,9 @@ func _selftest(problems: PackedStringArray) -> void:
 			why = "a full run did not start"
 	print("SELFTEST ok" if why.is_empty() else "SELFTEST FAIL: " + why)
 	get_tree().quit(0 if why.is_empty() else 1)
+
+
+## The free area while the combat panels show: the world rect minus the enemy panel and weapon cards.
+static func _combat_area() -> Rect2:
+	var w: Rect2 = RunScreen.WORLD_RECT
+	return Rect2(w.position.x + 10.0, w.position.y + COMBAT_TOP_PX, w.size.x - 20.0, w.size.y - COMBAT_TOP_PX - COMBAT_BOTTOM_PX)

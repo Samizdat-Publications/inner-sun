@@ -5,7 +5,10 @@ extends RefCounted
 ## red rim, a small label chip in a corner clear of ladders, the ladder art and falling water.
 ## All of it is drawn unshaded so colors are written as they should look.
 
-const HEAT_FROM_C: float = 50.0
+const HEAT_FROM_C: float = 30.0  ## Warmth shows from here (critic 003: 37 C looked like 22 C).
+const LABEL_NAME_PX: int = 15  ## Room chip type (critic 003: labels read about 8 px at 1080p).
+const LABEL_LINE_PX: int = 14
+const TAG_PX: int = 13
 const LADDER_HALF_PX: float = 20.0
 
 
@@ -16,7 +19,7 @@ static func lit_color(c: Color, a: float = 1.0) -> Color:
 
 
 static func heat_k(r: Room) -> float:
-	return clampf((r.temp_c() - HEAT_FROM_C) / 70.0, 0.0, 1.0)
+	return clampf((r.temp_c() - HEAT_FROM_C) / 80.0, 0.0, 1.0)
 
 
 ## Additive warm tint and rising shimmer lines over the whole room when it is hot.
@@ -110,18 +113,18 @@ static func draw_label(n: Node2D, ship: Ship, r: Room, rp: Rect2, ppm: float, fo
 		line += "  FIRE"
 	if r.breach_m2 > 0.0:
 		line += "  BREACH"
-	var w1: float = font.get_string_size(name_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x
-	var w2: float = font.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, 10).x
+	var w1: float = font.get_string_size(name_text, HORIZONTAL_ALIGNMENT_LEFT, -1, LABEL_NAME_PX).x
+	var w2: float = font.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, LABEL_LINE_PX).x
 	var w: float = maxf(w1, w2) + 10.0
 	var right: bool = label_on_right(ship, r, ppm, w)
 	var x: float = rp.end.x - w - 8.0 if right else rp.position.x + 8.0
 	var y: float = rp.position.y + 8.0
 	var hot: bool = r.fire > 0.0 or r.breach_m2 > 0.0
-	n.draw_rect(Rect2(x, y, w, 28.0), Color(0.02, 0.02, 0.03, 0.62))
-	n.draw_rect(Rect2(x, y, 2.0, 28.0), lit_color(Color(1.0, 0.5, 0.15) if hot else Color(0.8, 0.62, 0.3), 1.0))
-	n.draw_string(font, Vector2(x + 6.0, y + 12.0), name_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, lit_color(Color(0.92, 0.9, 0.82)))
+	n.draw_rect(Rect2(x, y, w, 38.0), Color(0.02, 0.02, 0.03, 0.66))
+	n.draw_rect(Rect2(x, y, 3.0, 38.0), lit_color(Color(1.0, 0.5, 0.15) if hot else Color(0.8, 0.62, 0.3), 1.0))
+	n.draw_string(font, Vector2(x + 7.0, y + 16.0), name_text, HORIZONTAL_ALIGNMENT_LEFT, -1, LABEL_NAME_PX, lit_color(Color(0.92, 0.9, 0.82)))
 	var warm: Color = Color(1.0, 0.45, 0.15) if hot else Color(0.95, 0.72, 0.3)
-	n.draw_string(font, Vector2(x + 6.0, y + 24.0), line, HORIZONTAL_ALIGNMENT_LEFT, -1, 10, lit_color(warm))
+	n.draw_string(font, Vector2(x + 7.0, y + 32.0), line, HORIZONTAL_ALIGNMENT_LEFT, -1, LABEL_LINE_PX, lit_color(warm))
 
 
 ## The room outline: thin dark steel so the painted walls meet each other cleanly.
@@ -167,9 +170,9 @@ static func draw_tags(n: Node2D, ship: Ship, sprites: Array[CrewSprite], ppm: fl
 	for i: int in order:
 		var c: CrewMember = ship.crew[i]
 		var spr: CrewSprite = sprites[i]
-		var tw: float = font.get_string_size(c.name, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x + 8.0
-		var tag_w: float = maxf(tw, 34.0)
-		var rect := Rect2(spr.position.x - tag_w * 0.5, spr.position.y + spr.head_top_px() - 24.0, tag_w, 19.0)
+		var tw: float = font.get_string_size(c.name, HORIZONTAL_ALIGNMENT_LEFT, -1, TAG_PX).x + 10.0
+		var tag_w: float = maxf(tw, 40.0)
+		var rect := Rect2(spr.position.x - tag_w * 0.5, spr.position.y + spr.head_top_px() - 28.0, tag_w, 23.0)
 		var guard: int = 0
 		var moved: bool = true
 		while moved and guard < 8:
@@ -181,7 +184,7 @@ static func draw_tags(n: Node2D, ship: Ship, sprites: Array[CrewSprite], ppm: fl
 					moved = true
 		placed.append(rect)
 		n.draw_rect(rect, Color(0.02, 0.02, 0.03, 0.6))
-		n.draw_string(font, rect.position + Vector2(4.0, 10.0), c.name, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, lit_color(Color(0.95, 0.93, 0.85)))
+		n.draw_string(font, rect.position + Vector2(5.0, 13.0), c.name, HORIZONTAL_ALIGNMENT_LEFT, -1, TAG_PX, lit_color(Color(0.95, 0.93, 0.85)))
 		var frac: float = clampf(c.hp / CrewMember.MAX_HP, 0.0, 1.0)
 		var pips: int = 5
 		var lit_n: int = ceili(frac * float(pips) - 0.001)

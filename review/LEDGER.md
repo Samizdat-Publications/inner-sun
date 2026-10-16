@@ -19,3 +19,10 @@ A rejected issue that returns in 2 later critiques becomes FIX or goes to docs/N
 | 12 | 20261015-211550-4e6f253 | claude 002 | HUD type too small at 1080p; the bottom alert strip is a huge empty band | FIX | Larger type for room labels, resources and stats; a slimmer alert strip |
 | 13 | 20261015-211550-4e6f253 | claude 002 | Pink-white blown-out patches on the rock beside the hull | FIX | Tame and warm the hull floodlights on the rock |
 | 14 | 20261015-211550-4e6f253 | claude 002 | The ship reads as a box pasted on the drill tray | DEFER | M2 art pass: pipes and cables joining the cutaway to the crown |
+| 15 | 20261015-231813-930fa47 | claude 003 (opus, gate) | The ship is tiny on screen with dead space around it | FIX | Zoom in: drilling 1.0 (was 0.85), cutaway 1.15 (was 1.0) |
+| 16 | 20261015-231813-930fa47 | claude 003 (opus, gate) | No fire in this capture; 37 C looks like 22 C | FIX | Heat warmth shows from 30 C (was 50 C); fire frequency was raised in D022 (this run's fires were put out between stills) |
+| 17 | 20261015-231813-930fa47 | claude 003 (opus, gate) | Crew read as static | DEFER | M1b: louder reactions (hurrying, flinching at hits, wading); the larger zoom makes the idle life visible |
+| 18 | 20261015-231813-930fa47 | claude 003 (opus, gate) | Combat: the player's ship clipped by the left panel; the rival is a recolor; the backdrop has a hard edge | FIX (framing) / DEFER (rest) | Combat framing follows the new world rect; distinct enemy layouts and a seamless backdrop go to M1b |
+| 19 | 20261015-231813-930fa47 | claude 003 (opus, gate) | Room and crew labels about 8 px | FIX | Room chips 15/14 px, crew tags 13 px |
+| 20 | 20261015-231813-930fa47 | claude 003 (opus, gate) | Weapons sit at 0/3 while drilling; nothing to rebalance between fights | REJECT | By design for now (the drill and coolant need the bars); M1b may add quiet-phase reasons to move power |
+| 21 | 20261015-231813-930fa47 | claude 003 (opus, gate) | The world outside is dark and sparse; depth does not show | DEFER | M1b/M2: strata variety, landmarks (bones, ruins, wrecks), depth cues |
