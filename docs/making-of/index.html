@@ -77,14 +77,14 @@ footer { margin-top: 56px; padding-top: 18px; border-top: 1px solid var(--seam);
     </div>
     <aside class="now" aria-label="Right now">
       <div class="eyebrow">Right now, 16 Oct 2026</div>
-      <h2>M1b: make it a digging game</h2>
+      <h2>Playtest build 3 is ready</h2>
       <ul>
         <li><span class="pill done">done</span>Controls fixed for a real player, checked by hand</li>
-        <li><span class="pill done">done</span>Zoomed-out drilling view, rock with strata, readable crew</li>
         <li><span class="pill done">done</span>Digging economy: 9 ores and gems, gas pockets, surveys, gear</li>
-        <li><span class="pill run">running</span>Longer runs and difficulty tuning</li>
-        <li><span class="pill run">running</span>Pickup pop-ups, map surveys, the new store</li>
-        <li><span class="pill next">next</span>Playtest build 3 and a Gemini review</li>
+        <li><span class="pill done">done</span>Ore you can see, pickups, a dig tally, the new store</li>
+        <li><span class="pill done">done</span>14-row Crust, runs of about 20 minutes</li>
+        <li><span class="pill done">done</span>Gemini review: 6.8, up from 5.6</li>
+        <li><span class="pill next">next</span>Stewart plays; the rock texture gets a rework</li>
       </ul>
     </aside>
   </header>
@@ -92,8 +92,8 @@ footer { margin-top: 56px; padding-top: 18px; border-top: 1px solid var(--seam);
   <section class="scores" aria-label="Critic scores">
     <div>
       <div class="eyebrow">Blind critic, average of 10 categories</div>
-      <h2>3.8 to 6.1, then a reset</h2>
-      <p>Each review comes from a critic that knows nothing about the code and judges a captured run like a player would. The last point is Gemini watching video for the first time: a harsher, new baseline before the digging rework.</p>
+      <h2>3.8 to 6.8</h2>
+      <p>Each review comes from a critic that knows nothing about the code and judges a captured run like a player would. The amber points are Gemini watching video: 5.6 before the digging rework, 6.8 on playtest build 3.</p>
     </div>
     <div class="chart">
       <svg viewBox="0 0 560 230" role="img" aria-label="Scores: 3.8, 5.8, 6.1, then 5.6 from the Gemini video critic">
@@ -103,16 +103,18 @@ footer { margin-top: 56px; padding-top: 18px; border-top: 1px solid var(--seam);
         </g>
         <text x="40" y="34" text-anchor="end">8</text><text x="40" y="84" text-anchor="end">6</text>
         <text x="40" y="134" text-anchor="end">4</text><text x="40" y="184" text-anchor="end">2</text>
-        <polyline points="80,135 220,85 360,77.5" fill="none" stroke="#6fd39a" stroke-width="3"/>
-        <line x1="360" y1="77.5" x2="500" y2="90" stroke="#6fd39a" stroke-width="2" stroke-dasharray="5 5"/>
+        <polyline points="80,135 190,85 300,77.5" fill="none" stroke="#6fd39a" stroke-width="3"/>
+        <polyline points="410,90 520,60" fill="none" stroke="#e0a24a" stroke-width="3"/>
         <g fill="#14110e" stroke="#6fd39a" stroke-width="3">
-          <circle cx="80" cy="135" r="6"/><circle cx="220" cy="85" r="6"/><circle cx="360" cy="77.5" r="6"/>
+          <circle cx="80" cy="135" r="6"/><circle cx="190" cy="85" r="6"/><circle cx="300" cy="77.5" r="6"/>
         </g>
-        <circle cx="500" cy="90" r="7" fill="#e0a24a"/>
-        <text x="80" y="160" text-anchor="middle">3.8</text><text x="220" y="110" text-anchor="middle">5.8</text>
-        <text x="360" y="62" text-anchor="middle">6.1</text><text x="500" y="72" text-anchor="middle" style="fill:#e0a24a">5.6</text>
-        <text x="80" y="214" text-anchor="middle">M0 view</text><text x="220" y="214" text-anchor="middle">M1 run</text>
-        <text x="360" y="214" text-anchor="middle">M1a gate</text><text x="500" y="214" text-anchor="middle" style="fill:#e0a24a">Gemini video</text>
+        <circle cx="410" cy="90" r="7" fill="#e0a24a"/><circle cx="520" cy="60" r="7" fill="#e0a24a"/>
+        <text x="80" y="160" text-anchor="middle">3.8</text><text x="190" y="110" text-anchor="middle">5.8</text>
+        <text x="300" y="62" text-anchor="middle">6.1</text><text x="410" y="115" text-anchor="middle" style="fill:#e0a24a">5.6</text>
+        <text x="520" y="46" text-anchor="middle" style="fill:#e0a24a">6.8</text>
+        <text x="80" y="214" text-anchor="middle">M0 view</text><text x="190" y="214" text-anchor="middle">M1 run</text>
+        <text x="300" y="214" text-anchor="middle">M1a gate</text><text x="410" y="214" text-anchor="middle" style="fill:#e0a24a">M1a video</text>
+        <text x="520" y="214" text-anchor="middle" style="fill:#e0a24a">Build 3</text>
       </svg>
     </div>
   </section>
@@ -211,7 +213,7 @@ footer { margin-top: 56px; padding-top: 18px; border-top: 1px solid var(--seam);
       </div>
     </article>
 
-    <article class="entry live">
+    <article class="entry">
       <div class="when"><b>M1b</b>16 Oct</div>
       <div class="body">
         <h3>See the dig</h3>
@@ -219,7 +221,19 @@ footer { margin-top: 56px; padding-top: 18px; border-top: 1px solid var(--seam);
         <div class="shots">
           <figure><img src="progress/022_m1b-dig-view-rock-crew.jpg" alt="Four frames: the zoomed-out drilling view with strata and the fight in the rock" loading="lazy"><figcaption>The new drilling view and the fight in the rock.</figcaption></figure>
         </div>
-        <p class="tag">In progress: longer runs, pickups you can see, the new store. Playtest build 3 next.</p>
+      </div>
+    </article>
+
+    <article class="entry live">
+      <div class="when"><b>Build 3</b>16 Oct</div>
+      <div class="body">
+        <h3>Playtest build 3: digging is the game</h3>
+        <p>Ore shows in the main view and pops off the crown as you cut it, a tally counts the dig, the scanner colours every ore, and each map node carries a survey of the rock on the way there. The Crust grows to 14 rows: runs of about 20 minutes, three trading posts, two fights, and pressure that builds with depth. Gemini scores it 6.8, up from 5.6. Its one big complaint is still the rock texture, which is next.</p>
+        <p class="quote">"The core FTL-underground loop is incredibly strong." (Gemini, critic 005)</p>
+        <div class="shots">
+          <figure><img src="progress/023_m1b-ore-in-view-tally.jpg" alt="Drilling view with a coal vein visible, a dig tally and coloured scanner deposits" loading="lazy"><figcaption>A coal vein in view, the THIS DIG tally, ore colours on the scanner.</figcaption></figure>
+          <figure><img src="progress/024_m1b-playtest-3-frames.jpg" alt="Grid of frames from a bot run of playtest build 3" loading="lazy"><figcaption>The run Gemini reviewed.</figcaption></figure>
+        </div>
       </div>
     </article>
   </main>
