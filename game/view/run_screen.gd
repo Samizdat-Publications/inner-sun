@@ -23,6 +23,8 @@ var store: StoreView
 var map: MapView
 var codex: CodexView
 var death: DeathScreen
+var help: HelpView
+var _banner: Label
 var _root: Control
 var _layer: Control
 
@@ -52,9 +54,12 @@ func build(p_sim: Sim, p_profile: Profile) -> void:
 	dossier = Dossier.build(_layer, sim)
 	store = StoreView.build(_layer, sim)
 	codex = CodexView.build(_layer, sim, profile)
+	help = HelpView.build(_layer)
 	death = DeathScreen.build(_layer, sim, profile)
 	death.new_run_requested.connect(func() -> void: new_run_requested.emit())
 	top.current_row_getter = func() -> float: return _ship_row()
+	top.help_requested.connect(help.toggle)
+	_build_banner()
 	_bind_rows()
 
 
@@ -76,13 +81,40 @@ func bind(p_sim: Sim, p_profile: Profile) -> void:
 	_bind_rows()
 
 
-func set_paused(p: bool) -> void:
+func set_paused(p: bool, label: String = "PAUSED") -> void:
 	top.paused = p
+	top.pause_text = label
+
+
+## The banner over the world area (the fight pause); an empty text hides it.
+func set_banner(text: String) -> void:
+	_banner.text = text
+	_banner.visible = not text.is_empty()
+
+
+## True while a human has the map or the help page open: the world holds still (main.gd).
+func holds_world() -> bool:
+	return sim != null and (map.is_open() or help.is_open())
+
+
+func hold_label() -> String:
+	return "PAUSED: HELP" if help.is_open() else "PAUSED: MAP"
+
+
+## Whether the sim steps this physics frame. A human's paused or held world still takes one step
+## per frame while commands wait, so an order given on the map or the help page applies at once.
+## Bots and replays are never held (`human` false). Pure: the tests call it.
+static func should_step(s: Sim, paused: bool, human: bool, held: bool) -> bool:
+	if paused:
+		return false
+	if human and held and not s.has_pending():
+		return false
+	return true
 
 
 ## True while a modal overlay takes the player's attention (keys and world clicks go to it).
 func overlay_open() -> bool:
-	return map.is_open() or dossier.is_open() or store.is_open() or codex.is_open() or death.is_open()
+	return map.is_open() or dossier.is_open() or store.is_open() or codex.is_open() or help.is_open() or death.is_open()
 
 
 ## The crew member the player has selected (the first live one if none).
@@ -99,8 +131,10 @@ func selected_crew() -> CrewMember:
 func _process(_delta: float) -> void:
 	if sim == null:
 		return
-	power.keys_enabled = not overlay_open()
+	# Power is the one order that stays open under the map and a dossier (options can need power).
+	power.keys_enabled = not (store.is_open() or codex.is_open() or help.is_open() or death.is_open())
 	weapons.keys_enabled = not overlay_open()
+	scanner.keys_enabled = not overlay_open()
 
 
 func _ship_row() -> float:
@@ -112,3 +146,18 @@ func _ship_row() -> float:
 func _bind_rows() -> void:
 	if sim != null and sim.run.mode == "run" and not sim.run.map.is_empty():
 		top.row_count = sim.run.map.size()
+
+
+func _build_banner() -> void:
+	_banner = Label.new()
+	_banner.position = Vector2(WORLD_RECT.position.x + 90.0, WORLD_RECT.position.y + 250.0)
+	_banner.custom_minimum_size = Vector2(WORLD_RECT.size.x - 180.0, 0)
+	_banner.size = Vector2(WORLD_RECT.size.x - 180.0, 0)
+	_banner.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_banner.add_theme_font_size_override("font_size", 28)
+	_banner.add_theme_color_override("font_color", UiTheme.TEXT)
+	_banner.add_theme_stylebox_override("normal", UiTheme.box(Color(0.30, 0.06, 0.05, 0.92), UiTheme.ALARM, 3, 2, 18))
+	_banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_banner.visible = false
+	_layer.add_child(_banner)

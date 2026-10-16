@@ -34,11 +34,12 @@ is one descent. Dying is normal: what you learn goes into the codex and lifts re
   (it costs one power cell). Icons show what is there: event, cavern (salvage), hazard, store, fight,
   the gate. Nodes past your scanner show as "?". The dark front creeping down from the top is the
   thing that follows your noise: nodes it swallows are lost, and if it reaches you it strikes the hull.
-  Press **M** to open or close the map.
+  Press **M** to open or close the map. Time stands still while the map is open; you can still give
+  orders from it.
 - **Drilling.** Steer with **A** and **D** (or the arrow keys), or click on the seismic scanner (top
   right), which shows the rock ahead: ore veins, gem pockets, hard rock, water pockets. More drill
   power is faster, hotter and louder. Detour for ore and gems, or go straight and stay ahead of the
-  front. A worn bit slows you down.
+  front. A worn bit slows you down: press **B** (or click the button on the scanner) to fit a new one.
 - **Power.** The panel on the left splits the reactor's bars between systems. Click a bar, or press
   **Q W E R T** to add a bar to helm, bracing, weapons, drill, coolant (hold **Shift** to remove
   one). Damaged bars are crossed out; overheated systems stop working. Power comes back by itself
@@ -49,9 +50,12 @@ is one descent. Dying is normal: what you learn goes into the codex and lifts re
 - **Crew.** Press **1**, **2**, **3** (or click a crew card) to select someone, left-click a room to
   send them there, right-click to let them go back to their own judgement. Someone at the bridge makes
   the ship harder to hit and steer faster.
-- **Pause.** **Space** pauses and unpauses. You can give orders while paused.
+- **Pause.** **Space** pauses and unpauses. You can give orders while paused (power changes show as
+  blinking bars until time moves). The game also pauses by itself when a fight starts.
+- **Help.** **H** (or the HELP chip at the top right) opens the help page, which it also does on your
+  very first run. **Esc** or **H** closes it.
 - **Events.** Read the dossier and click an option (or press its number). Greyed options say what
-  they need.
+  they need: the power keys still work while a dossier is open, so you can give it the bars it asks for.
 - **Store.** Buy coolant, power cells, drill bits, charges, hull repairs (paid in ore), upgrades, a
   weapon or a new crew member. **Esc** leaves.
 - **Fights.** When a rival rig attacks, its tower appears beside yours. Put power into weapons

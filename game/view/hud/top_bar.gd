@@ -19,11 +19,15 @@ const PHASE_LABEL: Dictionary = {
 	"scenario": "SCENARIO", "idle": "STANDING BY", "drill": "DRILLING", "dialog": "DOSSIER",
 	"store": "TRADING POST", "combat": "ENGAGED", "dead": "LOST", "won": "BREAKTHROUGH",
 }
+const HELP_CHIP: Rect2 = Rect2(1750, 57, 150, 28)
 const HULL_BAR: Rect2 = Rect2(104, 11, 320, 28)
 const FLASH_S: float = 0.7
 
+signal help_requested
+
 var sim: Sim = null
 var paused: bool = false  ## The pause indicator slot: main sets it.
+var pause_text: String = "PAUSED"  ## "PAUSED: MAP" while the map holds the world.
 var current_row_getter: Callable = Callable()  ## Hook for the pursuer meter, see the header.
 var row_count: int = 12
 
@@ -38,7 +42,7 @@ static func build(parent: Control, p_sim: Sim) -> TopBar:
 	var p := TopBar.new()
 	p.position = Vector2.ZERO
 	p.size = DESIGN_SIZE
-	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	p.mouse_filter = Control.MOUSE_FILTER_STOP  # Only the help chip takes clicks, see _has_point.
 	parent.add_child(p)
 	p.bind(p_sim)
 	return p
@@ -52,6 +56,18 @@ func bind(p_sim: Sim) -> void:
 		_hull_shown = float(sim.run.get_res("hull"))
 		_hull_last = sim.run.get_res("hull")
 	queue_redraw()
+
+
+## Only the HELP chip is clickable: the rest of the bar lets the mouse through.
+func _has_point(point: Vector2) -> bool:
+	return HELP_CHIP.has_point(point)
+
+
+func _gui_input(event: InputEvent) -> void:
+	var mb: InputEventMouseButton = event as InputEventMouseButton
+	if mb != null and mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT and HELP_CHIP.has_point(mb.position):
+		help_requested.emit()
+		accept_event()
 
 
 ## Jump every eased value to its target (the gallery and tests use this).
@@ -197,4 +213,7 @@ func _draw_status(run: RunState) -> void:
 		var on: float = 0.65 + 0.35 * UiTheme.pulse(_t, 1.0)
 		draw_rect(Rect2(slot.position.x + 10, slot.position.y + 6, 5, 16), Color(UiTheme.AMBER, on), true)
 		draw_rect(Rect2(slot.position.x + 20, slot.position.y + 6, 5, 16), Color(UiTheme.AMBER, on), true)
-		UiTheme.bold_text(self, Vector2(slot.position.x + 36, 78), "PAUSED", 20, Color(UiTheme.AMBER, on))
+		UiTheme.bold_text(self, Vector2(slot.position.x + 36, 78), pause_text, 18, Color(UiTheme.AMBER, on))
+	draw_rect(HELP_CHIP, UiTheme.STEEL_DEEP, true)
+	draw_rect(HELP_CHIP, UiTheme.BRASS, false, 1.5)
+	UiTheme.bold_text(self, Vector2(HELP_CHIP.position.x, 78), "HELP [H]", 18, UiTheme.BRASS_LIGHT, null, HORIZONTAL_ALIGNMENT_CENTER, HELP_CHIP.size.x)

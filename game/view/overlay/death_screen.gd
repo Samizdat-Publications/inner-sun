@@ -133,6 +133,8 @@ func stamp_for(s: Sim) -> String:
 func cause_text(s: Sim) -> String:
 	var cause: String = s.run.end_cause
 	var base: String = str(CAUSE_TEXT.get(cause, "Contact lost. Cause not recorded."))
+	if cause == "hull":
+		base = hull_text(s)
 	if s.run.phase != "won" and not cause.begins_with("crew_"):
 		var alive: int = 0
 		for c: CrewMember in s.ship.crew:
@@ -141,6 +143,18 @@ func cause_text(s: Sim) -> String:
 		if alive > 0:
 			base += " %d of the crew got out." % alive
 	return base
+
+
+## A hull death names what was hitting the ship: the gate machine or a rival rig in a fight, the
+## front when it had caught the ship, the rock otherwise.
+static func hull_text(s: Sim) -> String:
+	if s.combat.active and s.enemy != null:
+		if s.combat.boss:
+			return "Hull breached. The gate machine took the tower apart one plate at a time."
+		return "Hull breached. The rival rig took the tower apart one plate at a time."
+	if s.run.caught or s.run.strikes > 0:
+		return "Hull breached. The front caught the tower and struck it until the plates gave."
+	return str(CAUSE_TEXT["hull"])
 
 
 func _on_new() -> void:
