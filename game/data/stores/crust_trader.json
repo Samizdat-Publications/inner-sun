@@ -11,7 +11,7 @@
     {"item": "weapon", "weapon": "thermal_lance", "price": 70, "limit": 1, "text": "A thermal lance off a rig that did not need it any more."},
     {"item": "crew", "pool": "survivors", "price": 45, "limit": 1, "text": "Passage for a survivor who wants to go deeper."},
     {"item": "upgrade", "system": "helm", "price": 20, "limit": 1, "max_bars": 3, "text": "Scanner coils for the helm."},
-    {"item": "upgrade", "system": "bracing", "price": 40, "limit": 1, "max_bars": 4, "text": "Another bracing layer."},
+    {"item": "upgrade", "system": "bracing", "price": 20, "limit": 2, "max_bars": 4, "text": "Bracing struts. Two make another layer."},
     {"item": "upgrade", "system": "reactor", "price": 30, "limit": 1, "max_bars": 12, "text": "A reactor bar, hot from the bench."},
     {"item": "upgrade", "system": "weapons", "price": 30, "limit": 1, "max_bars": 4, "text": "Heavier weapon mounts."},
     {"item": "upgrade", "system": "drill", "price": 25, "limit": 1, "max_bars": 5, "text": "A harder crown for the drill."},

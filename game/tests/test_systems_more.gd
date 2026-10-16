@@ -50,7 +50,7 @@ func test_run_mode_bills_coolant_exactly() -> void:
 	var per: int = 40_000
 	var s: Sim = _sim("run", 4, {"systems.coolant_j_per_unit": per})
 	var start: int = s.run.get_res("coolant")
-	check_eq(start, 20, "light_drill starts with 20 coolant units")
+	check_eq(start, int((s.ship.source_def["start_resources"] as Dictionary)["coolant"]), "the run starts with the ship's coolant units")
 	for id: String in ["bridge", "bracing", "reactor", "weapons", "drill", "coolant"]:
 		_set_temp(s, id, 45.0)
 	var sy: Systems = s.systems

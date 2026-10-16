@@ -105,3 +105,26 @@ more than they say) and gives the story spine a question to pay off in later lay
 Rows are 28 m (segments about 25 to 30 s at 2 bars instead of about 45 s), ore veins are sparser
 and sit 5.5 to 10 m off the straight line (runs mined 300 to 570 ore against store prices in the
 tens), rock heat rises 0.08 C per meter (the layer owns it). The balance step tunes further with bots.
+
+## D021 (AI): First balance pass
+Measured with the policy bots (`game/bots/policy_bot.gd`: cautious, greedy, balanced) over whole runs
+(`python tools/balance.py --full`). Before: every bot reached the gate and about 90% died there; the
+pursuer never struck; coolant and bits never ran short; upgrades were almost never bought. Changes,
+each with its reason (revert by restoring the old value):
+- `weapons/thermal_lance.json` heat_kj 350 -> 200: crew dying of heat at the gate was the top single
+  cause of losing it (the beam cooks every room it crosses, through bracing).
+- `ships/rival_heavy.json` hull 16 -> 13: the gate still won 85%+ of the time against every policy.
+- `layers/crust.json` pursuer rows_per_s 0.0143 -> 0.02, rows_per_noise 0.0045 -> 0.0035: the pursuer
+  never reached anyone. Time now matters more than noise, so slow, careful play gets caught late.
+- `tuning/run.json` strike_every_s 8 -> 10: once caught during a fight, strikes on top of enemy fire
+  killed in seconds; still lethal, a little more time to dig out.
+- `stores/crust_trader.json` bracing upgrade 40 gems for one bar -> 20 gems, limit 2 per visit: one
+  bar never made a layer (2 bars per layer), so the line was a trap.
+- `tuning/combat.json` loot gems 4-10 -> 5-12: gems were the binding limit; stores went unused.
+- `ships/light_drill.json` start coolant 20 -> 14, bits 3 -> 2; `tuning/systems.json`
+  coolant_j_per_unit 1.5 MJ -> 1.0 MJ: runs ended with most of the coolant and bits unused, so the
+  supply side of the store never mattered.
+Result (1,002 runs from a frozen pack, harness/out/balance/full_report.md): balanced wins 25%,
+cautious 21% (its losses are all late: the gate, or the pursuer catching a slow ship), greedy 13% but
+richest when it wins (103 gems gained against 92 to 93); the top killer is the gate at 38 to 44%;
+every event fires; most runs fight 3 times (2 to 4 in 93% of runs). The tests that hard-coded the old numbers now read them from the data.

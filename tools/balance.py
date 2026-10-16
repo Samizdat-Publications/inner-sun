@@ -1,6 +1,7 @@
 """Parallel headless balance runs.
 
     python tools/balance.py --runs 2000 --procs 6 --bots auto,idle,random --seed-base 1000
+    python tools/balance.py --full --runs 1000 --procs 6 --pack   (whole runs by the policy bots: balance_full.py)
 
 For each bot the seeds seed_base .. seed_base+runs-1 are split into contiguous chunks, one per
 process. At most --procs Godot processes run at once (below-normal priority, each in its own job).
@@ -54,6 +55,16 @@ def wait_for_ram(min_gb=2.0):
 
 def game_target(pack):
     return ["--main-pack", os.path.abspath(pack)] if pack else ["--path", paths.GAME]
+
+
+def make_pack():
+    """A fresh frozen pack (tools/snapshot.py); returns its path or None."""
+    import glob
+    import snapshot
+    if snapshot.main([]) != 0:
+        return None
+    packs = sorted(glob.glob(os.path.join(snapshot.SNAP, "*.pck")))
+    return packs[-1] if packs else None
 
 
 def chunks(n, k):
@@ -127,11 +138,13 @@ def main(argv=None):
     ap.add_argument("--m1-tick-factor", type=float, default=4.0)
     ap.add_argument("--m1-ticks-per-run", type=int, default=30000)
     ap.add_argument("--timeout", type=int, default=7200, help="per process, seconds")
-    ap.add_argument("--pack", default=None, help="run the runner from a frozen .pck (--main-pack) instead of --path game")
+    ap.add_argument("--pack", nargs="?", const="auto", default=None,
+                    help="run from a frozen .pck (--main-pack) instead of --path game; no path = make one now (snapshot.py)")
+    ap.add_argument("--full", action="store_true", help="whole runs by the policy bots (--runs is the total over all bots)")
     ap.add_argument("--bench", action="store_true", help="one NORMAL-priority process: balance_runner.gd --bench")
     a = ap.parse_args(argv)
     try:
-        if a.pack:
+        if a.pack and a.pack != "auto":
             if not os.path.exists(a.pack):
                 raise proc.ToolError(f"pack not found: {a.pack}")
         else:
@@ -139,8 +152,16 @@ def main(argv=None):
     except proc.ToolError as e:
         print("balance: FAIL (" + str(e) + ")")
         return 1
+    if a.pack == "auto" and not a.full:
+        a.pack = make_pack()
+        if not a.pack:
+            print("balance: FAIL (snapshot failed)")
+            return 1
     if a.bench:
         return bench(a)
+    if a.full:
+        import balance_full
+        return balance_full.run_full(a, game_target, make_pack)
     bots = [b for b in a.bots.split(",") if b]
     stamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
     base = os.path.join(paths.OUT, "balance", stamp)

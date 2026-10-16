@@ -1,6 +1,6 @@
 {
   "run": {
-    "strike_every_s": 8.0,
+    "strike_every_s": 10.0,
     "strike_hull_pts": 2,
     "strike_breach_m2": 0.015,
     "strike_fire_chance": 0.25,

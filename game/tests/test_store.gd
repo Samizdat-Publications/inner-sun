@@ -34,7 +34,7 @@ func test_stock_lines_match_the_spec() -> void:
 	var st: Dictionary = db().table("stores")["crust_trader"]
 	var stock: Array = st["stock"]
 	var want: Array = [["res", 6], ["res", 8], ["res", 10], ["res", 8], ["hull", 2], ["weapon", 70], ["crew", 45],
-		["upgrade", 20], ["upgrade", 40], ["upgrade", 30], ["upgrade", 30], ["upgrade", 25], ["upgrade", 25]]
+		["upgrade", 20], ["upgrade", 20], ["upgrade", 30], ["upgrade", 30], ["upgrade", 25], ["upgrade", 25]]
 	check_eq(stock.size(), want.size(), "thirteen stock lines")
 	for i: int in range(mini(stock.size(), want.size())):
 		var line: Dictionary = stock[i]
@@ -44,15 +44,16 @@ func test_stock_lines_match_the_spec() -> void:
 
 func test_resource_packs_spend_gems_exactly() -> void:
 	var s: Sim = _store()
+	var start: Dictionary = s.ship.source_def["start_resources"]
 	_buy(s, COOLANT, 2)
 	check_eq(s.run.get_res("gems"), 500 - 12, "two coolant packs cost 12 gems")
-	check_eq(s.run.get_res("coolant"), 20 + 10, "and give 10 coolant")
+	check_eq(s.run.get_res("coolant"), int(start["coolant"]) + 10, "and give 10 coolant")
 	_buy(s, CELLS, 3)
 	_buy(s, BITS)
 	_buy(s, CHARGES, 2)
-	check_eq(s.run.get_res("cells"), 8 + 3, "three cells")
-	check_eq(s.run.get_res("bits"), 3 + 1, "one bit")
-	check_eq(s.run.get_res("charges"), 4 + 4, "four charges")
+	check_eq(s.run.get_res("cells"), int(start["cells"]) + 3, "three cells")
+	check_eq(s.run.get_res("bits"), int(start["bits"]) + 1, "one bit")
+	check_eq(s.run.get_res("charges"), int(start["charges"]) + 4, "four charges")
 	var spent: int = 0
 	for e: Dictionary in s.events:
 		if str(e["kind"]) == "bought":

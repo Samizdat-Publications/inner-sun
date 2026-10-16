@@ -21,6 +21,8 @@ static func make(bot_name: String) -> Bot:
 			return DrillBot.new()
 		"run":
 			return RunBot.new()
+		"cautious", "greedy", "balanced":
+			return PolicyBot.make_policy(bot_name)
 	return Bot.new()
 
 
