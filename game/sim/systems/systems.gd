@@ -21,7 +21,11 @@ extends SimModule
 ##      recharges after bracing_recharge_s, one at a time.
 ## The coolant bill itself runs every tick (it only does work when hazards.cooled_j moved), so at any
 ## tick: units billed * coolant_j_per_unit + carried remainder == joules cooled up to the last tick.
-## Commands (power), damage_room and absorb_hit act at once.
+## Commands (power, douse), damage_room and absorb_hit act at once.
+## Douse (SystemsDouse): {"type": "douse", "room": id} vents one coolant unit into a burning room of
+## the player's ship: fire down by douse_fire_level, up to douse_j of its heat removed (never below
+## the room's design temperature), then douse_cooldown_s before the next. douse_ready(sim) says why
+## not ("" when it may).
 ##
 ## Effects other modules read (all take the ShipWorld):
 ##   reactor_output, allocated, free_bars: reactor bars made, allocated, still free.
@@ -29,19 +33,22 @@ extends SimModule
 ##     none, path finished).
 ##   evasion: helm effective bars * evasion_per_bar when the helm is manned, else 0.
 ##   steer_rate_scale: 1 + steer_per_helm_bar * helm effective bars when manned, else 1.
+##   side_cut_scale: side_cut_base + side_cut_per_helm_bar * helm effective bars when manned, else the
+##     base (the drill's sideways motion is multiplied by it).
 ##   drill_bars, weapon_bars: effective bars. drill_bonus, weapon_bonus: a MULTIPLIER, 1 + manned_bonus
 ##     when the station is manned, else 1.
 ##   bracing_layers, max_layers; absorb_hit(sim, world) spends a layer ("bracing_absorbed").
 ##   damage_room(sim, world, room, bars): hit damage from combat ("system_damaged").
 ##   set_power(sim, world, room, bars): what the "power" command does, for enemy AI use.
 
-const COMMANDS: Array[String] = ["power"]
+const COMMANDS: Array[String] = ["power", "douse"]
 const SIDES: Array[String] = ["player", "enemy"]
 const NEVER_J: int = 1 << 62  ## A heat threshold no room reaches (systems without a definition).
 const TUNING_KEYS: Array[String] = [
 	"systems.fire_damage_bars_per_s", "systems.coolant_bars_full", "systems.coolant_j_per_unit",
 	"systems.evasion_per_bar", "systems.steer_per_helm_bar", "systems.bracing_recharge_s",
-	"systems.bracing_bars_per_layer",
+	"systems.bracing_bars_per_layer", "systems.side_cut_base", "systems.side_cut_per_helm_bar",
+	"systems.douse_cooldown_s", "systems.douse_fire_level", "systems.douse_j",
 ]
 
 var _defs: Dictionary = {}  ## system id -> definition (from the systems table)
@@ -55,6 +62,13 @@ var _evasion: float = 0.0
 var _steer: float = 0.0
 var _recharge_ticks: int = 1
 var _bars_per_layer: int = 2
+var _side_base: float = 1.0
+var _side_per_bar: float = 0.0
+# Douse (the player's ship only; SystemsDouse has the rule).
+var douse_cooldown_ticks: int = 0  ## Ticks before the next douse is allowed (read-only for the view).
+var douse_cooldown_full: int = 1
+var douse_fire: float = 0.0
+var douse_j: int = 0
 
 
 func _init(db: DataDB) -> void:
@@ -66,14 +80,23 @@ func _init(db: DataDB) -> void:
 	_steer = db.tune("systems.steer_per_helm_bar")
 	_recharge_ticks = maxi(1, roundi(db.tune("systems.bracing_recharge_s") * Sim.TICK_HZ))
 	_bars_per_layer = maxi(1, roundi(db.tune("systems.bracing_bars_per_layer")))
+	_side_base = db.tune("systems.side_cut_base")
+	_side_per_bar = db.tune("systems.side_cut_per_helm_bar")
+	douse_cooldown_full = maxi(1, roundi(db.tune("systems.douse_cooldown_s") * Sim.TICK_HZ))
+	douse_fire = db.tune("systems.douse_fire_level")
+	douse_j = maxi(0, roundi(db.tune("systems.douse_j")))
 
 
 func commands() -> PackedStringArray:
 	return PackedStringArray(COMMANDS)
 
 
-## {"type": "power", "room": "<room id>", "bars": n}: always the player's ship.
+## {"type": "power", "room": "<room id>", "bars": n} | {"type": "douse", "room": "<room id>"}: always
+## the player's ship.
 func apply(sim: Sim, cmd: Dictionary) -> void:
+	if str(cmd.get("type", "")) == "douse":
+		SystemsDouse.douse(sim, self, str(cmd.get("room", "")))
+		return
 	var ri: int = sim.ship.room_index(str(cmd.get("room", "")))
 	if ri < 0:
 		sim.emit("bad_command", {"type": "power", "why": "no such room"})
@@ -87,6 +110,8 @@ func step(sim: Sim) -> void:
 		_enemy = null
 	if not sim.run.world_running():
 		return
+	if douse_cooldown_ticks > 0:
+		douse_cooldown_ticks -= 1
 	var pl: SystemsSide = _player if _player != null else side(sim.player)  # The player's world never changes.
 	if sim.player.hazards.cooled_j != pl.charged_j and sim.run.mode == "run":
 		_bill(sim, pl, sim.player.hazards.cooled_j)
@@ -102,6 +127,7 @@ func state() -> Array:
 	for s: String in SIDES:
 		var sd: SystemsSide = _sides.get(s, null)
 		out.append(sd.state() if sd != null else [])
+	out.append(douse_cooldown_ticks)
 	return out
 
 
@@ -191,6 +217,22 @@ func steer_rate_scale(world: ShipWorld) -> float:
 	if hi < 0 or not _crewed(world, hi):
 		return 1.0
 	return 1.0 + _steer * float(world.ship.rooms[hi].effective_bars())
+
+
+func side_cut_scale(world: ShipWorld) -> float:
+	var hi: int = side(world).helm
+	if hi < 0 or not _crewed(world, hi):
+		return _side_base
+	return _side_base + _side_per_bar * float(world.ship.rooms[hi].effective_bars())
+
+
+## Why a douse cannot be ordered now ("" when it can). With a room id, also that room's own reasons.
+func douse_ready(sim: Sim, room_id: String = "") -> String:
+	return SystemsDouse.why_not(sim, self, room_id)
+
+
+func coolant_bars(world: ShipWorld) -> int:
+	return _bars(world, side(world).coolant)
 
 
 func drill_bars(world: ShipWorld) -> int:

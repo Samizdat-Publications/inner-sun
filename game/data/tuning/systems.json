@@ -4,8 +4,13 @@
     "coolant_bars_full": 2.0,
     "coolant_j_per_unit": 1800000,
     "evasion_per_bar": 0.06,
-    "steer_per_helm_bar": 0.25,
+    "steer_per_helm_bar": 0.6,
+    "side_cut_base": 0.35,
+    "side_cut_per_helm_bar": 0.3,
     "bracing_recharge_s": 6.0,
-    "bracing_bars_per_layer": 2
+    "bracing_bars_per_layer": 2,
+    "douse_cooldown_s": 3.0,
+    "douse_fire_level": 0.6,
+    "douse_j": 300000
   }
 }

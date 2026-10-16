@@ -97,7 +97,10 @@ def _bot_section(b, rs):
     out.append(f"- gate reached {len(gate)} times, won {gw} ({_pct(gw, len(gate)):.0f}%)")
     for k, label in [("strikes_overtaken", "pursuer strikes on overtaken nodes"), ("strikes_caught", "pursuer strikes while caught"),
                      ("catches", "pursuer catches"), ("bit_breaks", "bit breaks"), ("coolant_outs", "coolant outs"),
-                     ("crew_lost", "crew lost"), ("fires", "fires started"), ("nodes_overtaken", "nodes overtaken")]:
+                     ("crew_lost", "crew lost"), ("fires", "fires started"), ("nodes_overtaken", "nodes overtaken"),
+                     ("rockfalls_hit", "rockfalls hit"), ("rockfalls_absorbed", "rockfalls absorbed"),
+                     ("rockfall_hull", "hull lost to rockfalls"), ("blasts", "blasts"), ("blast_ore", "ore from blasts"),
+                     ("blast_gems", "gems from blasts"), ("douses", "douses"), ("steep_s", "drilling s past 60 degrees")]:
         xs = [r.get(k, 0) for r in rs]
         out.append(f"- {label}: mean {statistics.fmean(xs):.2f}, runs with any {_pct(sum(1 for x in xs if x), n):.0f}%")
     deaths = collections.Counter(c for r in rs for c in r.get("crew_deaths", []))
@@ -229,6 +232,15 @@ def run_full(a, game_target, make_pack):
         out.append(f"| {b} | {n} | {_pct(won, n):.1f} | {stuck} | {_med([r['rows_reached'] for r in rs]):.0f} | "
                    f"{_med([r['time_s'] for r in rs]):.0f} | {statistics.fmean([len(r.get('fights', [])) for r in rs]):.2f} | "
                    f"{_pct(gw, len(gate)):.0f} | {top[0][0] + ' ' + format(_pct(top[0][1], n), '.0f') + '%' if top else '-'} |")
+    out += ["", "Dig verbs, means per run:", "",
+            "| bot | rockfalls hit | absorbed | hull lost to them | blasts | blast ore | blast gems | douses | s past 60 deg |",
+            "|---|---|---|---|---|---|---|---|---|"]
+    for b in bots:
+        rs = rows[b]
+        if rs:
+            m = [statistics.fmean([r.get(k, 0) for r in rs]) for k in
+                 ("rockfalls_hit", "rockfalls_absorbed", "rockfall_hull", "blasts", "blast_ore", "blast_gems", "douses", "steep_s")]
+            out.append(f"| {b} | " + " | ".join(f"{x:.2f}" for x in m[:7]) + f" | {m[7]:.0f} |")
     out.append("")
     for b in bots:
         out += _bot_section(b, rows[b])
@@ -242,7 +254,7 @@ def run_full(a, game_target, make_pack):
         f.write("\n".join(out) + "\n")
     shutil.copyfile(report, os.path.join(paths.OUT, "balance", "full_report.md"))
     failed = [r for r in results if r["exit"] != 0 or r["timed_out"] or r["lines"] < r["count"] or not r["done"]]
-    print("\n".join(out[:4 + 4 + len(bots)]))
+    print("\n".join(out[:4 + 4 + len(bots) + 4 + len(bots)]))
     print("report:", report)
     for r in failed:
         print(f"balance --full: part {os.path.basename(r['path'])} FAILED (exit {r['exit']}, timeout={r['timed_out']}, "

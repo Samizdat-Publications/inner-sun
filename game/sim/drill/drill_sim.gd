@@ -7,21 +7,30 @@ extends SimModule
 ## overlapped cell. Cut cells are counted exactly (mined per material); ore and gems go to run
 ## resources (one "mined" event per material per footprint step), water pockets pour into the drill
 ## room, gas pockets set it on fire, cutting heats the drill room, wears the bit and makes noise.
-## Arrival is depth only: the ship's bottom edge reaching target_y. Steering is for detours.
+## Arrival is depth only: the ship's bottom edge reaching target_y. Steering is for detours: the
+## heading goes to +-max_heading_deg (90 = "hold depth", cutting straight sideways). The turn rate is
+## turn_deg_s * Systems.steer_rate_scale and the sideways part of the motion is multiplied by
+## Systems.side_cut_scale (both helm bars, when manned): per second (v sin h * side, v cos h), with v
+## from power, gear, the bit and the leading band (side cells weighted |sin h| * side, bottom cells
+## cos h). at_wall: pressed against the segment wall at a heading past at_wall_heading_deg.
+## Pocket hazards, fault rock strain and rockfalls, and blasts by the charge launcher live in
+## DrillVerbs (verbs); the "blast" command goes there.
 ## Gear (RunState.gear_x) scales cut speed, bit wear and the hardness of hard rock, read when the
 ## segment begins. Segment space: meters, +x right, +y down, like ship space. See ARCHITECTURE.md.
 ##
-## Events: "segment_begin", "mined" {"material", "res", "amount", "x_m", "y_m"} (crown position),
-## "pocket_burst" {"room", "cells"}, "gas_burst" {"room", "cells", "x_m", "y_m"}, "bit_broken",
+## Events: "segment_begin", "mined" {"material", "res", "amount", "x_m", "y_m"} (crown position, or
+## the blast point), DrillVerbs' events (pockets, rockfalls, blasts), "bit_broken",
 ## "segment_done" {"segment", "time_s", "distance_m", "mined" (cells by material id), "yield"
-## (resource units by material id), "ore", "gems", "noise", "lost_water_ml", "gas_bursts"}.
+## (resource units by material id), "ore", "gems", "noise", "lost_water_ml", "gas_bursts", "rockfalls",
+## "blasts"}.
 
-const COMMANDS: Array[String] = ["steer", "change_bit", "begin_segment"]
+const COMMANDS: Array[String] = ["steer", "change_bit", "begin_segment", "blast"]
 const CHUNK_CELLS: int = 16  ## The view redraws the rock in chunks of 16 x 16 cells.
 const DEFAULT_ROCK: String = "crust"
 const MAX_CODES: int = 256
 const MAX_POWER_BAR: int = 4  ## Highest bar with its own power factor; more bars use this one.
 const EPS: float = 0.000001
+const STEEP_DEG: float = 60.0  ## steep_ticks counts drilling ticks at headings past this (balance stats).
 const TUNING_KEYS: Array[String] = [
 	"drill.cell_m", "drill.width_m", "drill.top_air_m", "drill.shaft_margin_m", "drill.bottom_margin_m",
 	"drill.max_lateral_m", "drill.band_cells", "drill.base_speed_m_s", "drill.max_speed_m_s",
@@ -31,7 +40,9 @@ const TUNING_KEYS: Array[String] = [
 	"drill.heat_kw_per_bar", "drill.wear_per_m_hardness", "drill.bit_slow_at_full_wear",
 	"drill.broken_bit_factor", "drill.bit_change_s", "drill.noise_per_m", "drill.pocket_breach_m2",
 	"drill.rock_temp_base_c", "drill.rock_temp_c_per_m", "drill.gas_fire_level", "drill.gas_noise",
-	"drill.hard_rock_min_hardness",
+	"drill.hard_rock_min_hardness", "drill.at_wall_heading_deg", "drill.rockfall_strain_cells",
+	"drill.rockfall_warn_s", "drill.rockfall_hull_pts", "drill.rockfall_sys_bars", "drill.blast_cooldown_s",
+	"drill.blast_range_m", "drill.blast_fuse_s", "drill.blast_radius_m", "drill.blast_fire_m", "drill.blast_noise",
 ]
 
 # Read by the view (never written outside this class and DrillMaterials).
@@ -48,6 +59,9 @@ var ship_size: Vector2 = Vector2.ZERO
 var ship_pos: Vector2 = Vector2.ZERO  ## Top-left of the ship footprint, segment meters.
 var heading_deg: float = 0.0  ## 0 = straight down, positive = toward +x.
 var target_heading_deg: float = 0.0
+var side_scale: float = 1.0  ## Systems.side_cut_scale this tick: the share of the sideways motion kept.
+var at_wall: bool = false  ## Pressed against the segment wall at a heading past at_wall_heading_deg.
+var steep_ticks: int = 0  ## Whole run: drilling ticks with |heading| past STEEP_DEG.
 var speed_m_s: float = 0.0
 var speed_scale: float = 1.0  ## Set by the run per segment (reserve power: below 1). Multiplies the speed.
 var bit_wear: float = 0.0  ## 0 (new) to 1 (broken).
@@ -73,6 +87,7 @@ var lost_water_ml: int = 0  ## Pocket water that did not fit (lost to the rock).
 var water_cell_ml: int = 0
 var heat_added_j: int = 0
 var pockets_burst: int = 0
+var verbs: DrillVerbs  ## Pockets, fault rock and rockfalls, blasts (read its fields for the view).
 var gas_bursts: int = 0
 var chunk_cols: int = 0
 var chunk_rows: int = 0
@@ -83,11 +98,13 @@ var yield_res_of: PackedInt32Array = PackedInt32Array()  ## By code: RunState.RE
 var yield_amount_of: PackedInt32Array = PackedInt32Array()
 var water_of: PackedByteArray = PackedByteArray()  ## By code: 1 for water pockets.
 var gas_of: PackedByteArray = PackedByteArray()  ## By code: 1 for gas pockets.
+var unstable_of: PackedByteArray = PackedByteArray()  ## By code: 1 for fault rock (strain, rockfalls).
+var burst_marks: PackedByteArray = PackedByteArray()  ## By cell: 1 once its pocket burst, drained or burned.
+var drill_room: int = -1  ## The player's drill room index (-1 without one).
 
 var _db: DataDB
 var _px: float = 0.0
 var _py: float = 0.0
-var _burst: PackedByteArray = PackedByteArray()
 var _c0: int = 0
 var _c1: int = -1
 var _r0: int = 0
@@ -105,7 +122,6 @@ var _pend_n: int = 0
 var _bit_change_ticks: int = 0
 var _bit_broken_said: bool = false
 var _return_phase: String = "idle"
-var _drill_room: int = -1
 var _power: PackedFloat64Array = PackedFloat64Array()
 var _cut_x: float = 1.0  ## Gear multipliers, read when the segment begins.
 var _wear_x: float = 1.0
@@ -115,7 +131,8 @@ var _base_speed: float = 1.0
 var _max_speed: float = 3.0
 var _air_floor: float = 0.3
 var _turn_per_tick: float = 0.0
-var _max_heading: float = 45.0
+var _max_heading: float = 90.0
+var _wall_deg: float = 80.0
 var _band: int = 2
 var _heat_kw_per_bar: float = 0.0
 var _wear_k: float = 0.0
@@ -124,8 +141,6 @@ var _broken_factor: float = 0.2
 var _noise_k: float = 0.0
 var _rock_base_c: float = 40.0
 var _rock_c_per_m: float = 0.0
-var _gas_fire: float = 0.3
-var _gas_noise: float = 0.0
 var _hard_min: float = 3.0
 
 
@@ -139,6 +154,7 @@ func _init(db: DataDB) -> void:
 	_air_floor = maxf(0.01, db.tune("drill.air_hardness_floor"))
 	_turn_per_tick = db.tune("drill.turn_deg_s") * Sim.DT
 	_max_heading = db.tune("drill.max_heading_deg")
+	_wall_deg = db.tune("drill.at_wall_heading_deg")
 	_band = maxi(1, roundi(db.tune("drill.band_cells")))
 	_heat_kw_per_bar = db.tune("drill.heat_kw_per_bar")
 	_wear_k = db.tune("drill.wear_per_m_hardness")
@@ -147,20 +163,19 @@ func _init(db: DataDB) -> void:
 	_noise_k = db.tune("drill.noise_per_m")
 	_rock_base_c = db.tune("drill.rock_temp_base_c")
 	_rock_c_per_m = db.tune("drill.rock_temp_c_per_m")
-	_gas_fire = db.tune("drill.gas_fire_level")
-	_gas_noise = db.tune("drill.gas_noise")
 	_hard_min = db.tune("drill.hard_rock_min_hardness")
 	yielded.resize(RunState.RESOURCES.size())
 	yield_mat.resize(MAX_CODES)
 	_pend_amt.resize(MAX_CODES)
 	_pend_codes.resize(MAX_CODES)
+	verbs = DrillVerbs.new(db)
 
 
 func commands() -> PackedStringArray:
 	return PackedStringArray(COMMANDS)
 
 
-## {"type": "steer", "angle": deg} | {"type": "change_bit"} |
+## {"type": "steer", "angle": deg} | {"type": "change_bit"} | {"type": "blast", "x_m", "y_m"} (DrillVerbs) |
 ## {"type": "begin_segment", "segment": id, "depth_m": d, "lateral_m": x, "rock": table id (optional),
 ##  "survey": a node survey (optional, see RockGen.options_of)}
 func apply(sim: Sim, cmd: Dictionary) -> void:
@@ -169,6 +184,8 @@ func apply(sim: Sim, cmd: Dictionary) -> void:
 			target_heading_deg = clampf(float(cmd.get("angle", 0.0)), -_max_heading, _max_heading)
 		"change_bit":
 			change_bit(sim)
+		"blast":
+			verbs.fire_blast(sim, self, Vector2(float(cmd.get("x_m", -1.0)), float(cmd.get("y_m", -1.0))))
 		"begin_segment":
 			var sv: Variant = cmd.get("survey", {})
 			begin_segment(sim, str(cmd.get("segment", "")), float(cmd.get("depth_m", 36.0)),
@@ -221,8 +238,8 @@ func begin_segment(sim: Sim, p_segment_id: String, p_depth_m: float, lateral_m: 
 	yield_mat.fill(0)
 	_pend_amt.fill(0)
 	_pend_n = 0
-	_burst = PackedByteArray()
-	_burst.resize(grid.size())
+	burst_marks = PackedByteArray()
+	burst_marks.resize(grid.size())
 	chunk_cols = ceili(float(cols) / CHUNK_CELLS)
 	chunk_rows = ceili(float(rows) / CHUNK_CELLS)
 	chunk_changes = PackedInt32Array()
@@ -234,6 +251,8 @@ func begin_segment(sim: Sim, p_segment_id: String, p_depth_m: float, lateral_m: 
 	target_heading_deg = 0.0
 	speed_m_s = 0.0
 	cutting = false
+	at_wall = false
+	verbs.begin_segment()
 	distance_m = 0.0
 	segment_ticks = 0
 	noise_segment = 0.0
@@ -244,10 +263,10 @@ func begin_segment(sim: Sim, p_segment_id: String, p_depth_m: float, lateral_m: 
 	gas_bursts = 0
 	start_depth_m = sim.run.depth_m
 	_return_phase = phase
-	_drill_room = sim.ship.room_with_system("drill")
+	drill_room = sim.ship.room_with_system("drill")
 	water_cell_ml = 0
-	if _drill_room >= 0:
-		water_cell_ml = roundi(cell_m * cell_m * sim.ship.rooms[_drill_room].depth_m * Room.ML_PER_M3)
+	if drill_room >= 0:
+		water_cell_ml = roundi(cell_m * cell_m * sim.ship.rooms[drill_room].depth_m * Room.ML_PER_M3)
 	_set_footprint()
 	_band_dirty = true
 	active = true
@@ -280,6 +299,11 @@ func power_factor(bars: int) -> float:
 	return _power[clampi(bars, 0, MAX_POWER_BAR)]
 
 
+## "" when a blast may be fired now, else why not (DrillVerbs.blast_ready).
+func blast_ready(sim: Sim) -> String:
+	return verbs.blast_ready(sim, self)
+
+
 ## Material lookup by code for the view and bots: {"id", "name", "hardness", "color", "res", "amount"} or {}.
 func material(code: int) -> Dictionary:
 	if code < 0 or code >= materials.size():
@@ -296,17 +320,27 @@ func step(sim: Sim) -> void:
 			bit_broken = false
 			_bit_broken_said = false
 			sim.emit("bit_changed", {})
+	if sim.run.world_running():
+		verbs.tick_cooldown()
 	if not active or sim.run.phase != "drill":
 		return
 	segment_ticks += 1
-	# Systems: a manned helm turns faster; a manned drill room cuts faster (drill_bonus is a multiplier).
+	# Systems: a manned helm turns faster and cuts sideways faster; a manned drill room cuts faster
+	# (drill_bonus is a multiplier).
 	heading_deg = move_toward(heading_deg, target_heading_deg, _turn_per_tick * sim.systems.steer_rate_scale(sim.player))
+	if absf(heading_deg) > STEEP_DEG:
+		steep_ticks += 1
+	side_scale = sim.systems.side_cut_scale(sim.player)
 	var bars: int = sim.systems.drill_bars(sim.player)
 	var pf: float = power_factor(bars) * sim.systems.drill_bonus(sim.player)
 	speed_m_s = 0.0
 	cutting = false
+	at_wall = false
 	if pf > 0.0 and _bit_change_ticks == 0:
 		_drive(sim, bars, pf)
+	verbs.step(sim, self)
+	if sim.run.is_over():
+		return
 	sim.run.depth_m = start_depth_m + (_py - start_y)
 	var base_c: float = _rock_base_c
 	var per_m: float = _rock_c_per_m
@@ -324,7 +358,7 @@ func _drive(sim: Sim, bars: int, pf: float) -> void:
 	var rad: float = deg_to_rad(heading_deg)
 	var s: float = sin(rad)
 	var co: float = cos(rad)
-	var a: float = absf(s)
+	var a: float = absf(s) * side_scale
 	# Leading band: bottom cells weighted by the downward share of the motion, side cells by the
 	# sideways share (cells entered per second). Air counts as hardness 0.
 	var num: float = _bb_sum * co
@@ -335,12 +369,13 @@ func _drive(sim: Sim, bars: int, pf: float) -> void:
 	elif s < -EPS and _bl_n > 0:
 		num += _bl_sum * a
 		den += float(_bl_n) * a
-	var h_cut: float = num / den if den > 0.0 else 0.0
+	var h_cut: float = num / den if den > EPS else 0.0
 	var bit_factor: float = _broken_factor if bit_broken else 1.0 - _bit_slow * bit_wear
 	speed_m_s = minf(_max_speed, _base_speed * _cut_x * pf * bit_factor / maxf(h_cut, _air_floor)) * speed_scale
 	var width: float = float(cols) * cell_m
-	var nx: float = clampf(_px + speed_m_s * s * Sim.DT, 0.0, width - ship_size.x)
+	var nx: float = clampf(_px + speed_m_s * s * side_scale * Sim.DT, 0.0, width - ship_size.x)
 	var ny: float = _py + speed_m_s * co * Sim.DT
+	at_wall = absf(heading_deg) > _wall_deg and ((s > 0.0 and nx >= width - ship_size.x - EPS) or (s < 0.0 and nx <= EPS))
 	var moved: float = sqrt((nx - _px) * (nx - _px) + (ny - _py) * (ny - _py))
 	_px = nx
 	_py = ny
@@ -351,8 +386,8 @@ func _drive(sim: Sim, bars: int, pf: float) -> void:
 	if not cutting:
 		return
 	var joules: int = roundi(_heat_kw_per_bar * float(bars) * h_cut * 1000.0 * Sim.DT)
-	if joules > 0 and _drill_room >= 0:
-		sim.hazards.add_heat(sim.ship.rooms[_drill_room], joules)
+	if joules > 0 and drill_room >= 0:
+		sim.hazards.add_heat(sim.ship.rooms[drill_room], joules)
 		heat_added_j += joules
 	var noise: float = _noise_k * moved * pf * pf * h_cut  # Grinding through hard rock is louder.
 	noise_segment += noise
@@ -367,6 +402,7 @@ func _drive(sim: Sim, bars: int, pf: float) -> void:
 
 
 func _arrive(sim: Sim) -> void:
+	verbs.end_segment(sim, self)
 	var counts: Dictionary = {}
 	var yields: Dictionary = {}
 	for code: int in range(1, materials.size()):
@@ -386,6 +422,8 @@ func _arrive(sim: Sim) -> void:
 		"noise": snappedf(noise_segment, 0.01),
 		"lost_water_ml": lost_water_ml,
 		"gas_bursts": gas_bursts,
+		"rockfalls": verbs.rockfalls,
+		"blasts": verbs.blasts,
 	})
 	active = false
 	speed_m_s = 0.0
@@ -423,69 +461,50 @@ func _advance_footprint(sim: Sim) -> void:
 			if in_old_row and c >= oc0 and c <= oc1:
 				continue
 			if grid[row + c] != 0:
-				_cut(sim, row + c, r, c)
-	_flush_yields(sim)
+				_cut(sim, row + c)
+	flush_yields(sim, snappedf(_px + ship_size.x * 0.5, 0.01), snappedf(_py + ship_size.y, 0.01))
 	_band_dirty = true
 
 
-func _cut(sim: Sim, i: int, r: int, c: int) -> void:
+func _cut(sim: Sim, i: int) -> void:
+	var m: int = take_cell(i)
+	if unstable_of[m] == 1:
+		verbs.strain += 1
+	if water_of[m] == 1:
+		if burst_marks[i] == 0:
+			verbs.burst_pocket(sim, self, i, drill_room)
+		if drill_room >= 0:
+			var put: int = sim.hazards.add_water(sim.ship.rooms[drill_room], water_cell_ml)
+			water_in_ml += put
+			lost_water_ml += water_cell_ml - put
+		else:
+			lost_water_ml += water_cell_ml
+	elif gas_of[m] == 1 and burst_marks[i] == 0:
+		verbs.burst_gas(sim, self, i, drill_room, Vector2(_px + ship_size.x * 0.5, _py + ship_size.y))
+
+
+## Turn cell i into air and book it: mined, its chunk's change counter, and its yield (pending until
+## the next flush_yields). Returns the material code it had. Pocket and strain effects are the
+## caller's (the drill's cut, or a blast).
+func take_cell(i: int) -> int:
 	var m: int = grid[i]
 	grid[i] = 0
 	mined[m] += 1
-	chunk_changes[(r / CHUNK_CELLS) * chunk_cols + c / CHUNK_CELLS] += 1
+	chunk_changes[((i / cols) / CHUNK_CELLS) * chunk_cols + (i % cols) / CHUNK_CELLS] += 1
 	if yield_res_of[m] >= 0:
 		if _pend_amt[m] == 0:
 			_pend_codes[_pend_n] = m
 			_pend_n += 1
 		_pend_amt[m] += yield_amount_of[m]
-	if water_of[m] == 1:
-		if _burst[i] == 0:
-			_burst_pocket(sim, i)
-		if _drill_room >= 0:
-			var put: int = sim.hazards.add_water(sim.ship.rooms[_drill_room], water_cell_ml)
-			water_in_ml += put
-			lost_water_ml += water_cell_ml - put
-		else:
-			lost_water_ml += water_cell_ml
-	elif gas_of[m] == 1 and _burst[i] == 0:
-		_burst_gas(sim, i)
+	_band_dirty = true
+	return m
 
 
-## The first cut cell of a water pocket bursts it: a small breach in the drill room, and the whole
-## connected pocket is marked so it bursts only once.
-func _burst_pocket(sim: Sim, start: int) -> void:
-	var cells: int = DrillMaterials.flood(grid, cols, rows, start, water_of, _burst)
-	pockets_burst += 1
-	var room_id: String = ""
-	if _drill_room >= 0:
-		var room: Room = sim.ship.rooms[_drill_room]
-		room.breach_m2 += _db.tune("drill.pocket_breach_m2")
-		room_id = room.id
-	sim.emit("pocket_burst", {"room": room_id, "cells": cells})
-
-
-## The first cut cell of a gas pocket ignites it: a fire in the drill room (or a hotter one), a burst
-## of noise, and the whole connected pocket is marked so it ignites only once.
-func _burst_gas(sim: Sim, start: int) -> void:
-	var cells: int = DrillMaterials.flood(grid, cols, rows, start, gas_of, _burst)
-	gas_bursts += 1
-	noise_segment += _gas_noise
-	noise_total += _gas_noise
-	var room_id: String = ""
-	if _drill_room >= 0:
-		var room: Room = sim.ship.rooms[_drill_room]
-		sim.hazards.ignite(sim, sim.player, room, _gas_fire)
-		room_id = room.id
-	sim.emit("gas_burst", {"room": room_id, "cells": cells, "x_m": snappedf(_px + ship_size.x * 0.5, 0.01),
-			"y_m": snappedf(_py + ship_size.y, 0.01)})
-
-
-## Pay what the last footprint step cut: one exact run.add and one "mined" event per material.
-func _flush_yields(sim: Sim) -> void:
+## Pay what was cut since the last flush: one exact run.add and one "mined" event per material, at
+## (x, y) in segment meters (the crown, or a blast point).
+func flush_yields(sim: Sim, x: float, y: float) -> void:
 	if _pend_n == 0:
 		return
-	var x: float = snappedf(_px + ship_size.x * 0.5, 0.01)
-	var y: float = snappedf(_py + ship_size.y, 0.01)
 	for k: int in range(_pend_n):
 		var m: int = _pend_codes[k]
 		var ri: int = yield_res_of[m]
@@ -535,7 +554,8 @@ func state() -> Array:
 		target_heading_deg, speed_m_s, bit_wear, bit_broken, _bit_broken_said, _bit_change_ticks, cutting,
 		start_center_x, start_y, target_x, target_y, depth_m, start_depth_m, distance_m, segment_ticks,
 		noise_segment, noise_total, mined, yielded, yield_mat, water_in_ml, lost_water_ml, heat_added_j,
-		pockets_burst, gas_bursts, _return_phase, grid, _burst, speed_scale, survey.values(), _cut_x, _wear_x, _hard_x]
+		pockets_burst, gas_bursts, _return_phase, grid, burst_marks, speed_scale, survey.values(), _cut_x, _wear_x, _hard_x,
+		side_scale, at_wall, steep_ticks, verbs.state()]
 
 
 static func lint(db: DataDB, errs: PackedStringArray) -> void:

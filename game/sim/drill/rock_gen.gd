@@ -9,7 +9,9 @@ extends RefCounted
 ##
 ## Features (all optional fields):
 ## - "group": "ore" or "gems" (counts scale with the survey richness; "gems" only when the survey
-##   found gems), "gas" or "water" (only when the survey found gas or water), or none (always).
+##   found gems), "gas", "water" or "faults" (only when the survey found them), or none (always).
+## - A "lens" may have "angle_deg" (a slanted lens, rotated about its centre; drawn only when given,
+##   so lenses without it use the stream exactly as before).
 ## - "from_depth_m", "to_depth_m": the run depths (meters below the layer top) where the feature can
 ##   occur. A segment that overlaps the window only in part places it only there, with its count
 ##   scaled by the share of the "at" range inside the window (the same density per meter).
@@ -17,7 +19,7 @@ extends RefCounted
 ##   up with the fractional chance, so the expected count is exactly k times the mean.
 ## Pure function of its inputs: no other randomness, no engine noise.
 
-const GROUPS: Array[String] = ["", "ore", "gems", "gas", "water"]
+const GROUPS: Array[String] = ["", "ore", "gems", "gas", "water", "faults"]
 
 
 ## Material id -> code for one rock table.
@@ -30,15 +32,16 @@ static func codes_of(table: Dictionary) -> Dictionary:
 
 
 ## The canonical options a segment is generated with, from a survey reading (keys in this order):
-## richness (ore and gem count scale), gems, gas, water (groups switched on). A missing survey
-## (scenarios, tests) means richness 1, gems and water on, gas off.
+## richness (ore and gem count scale), gems, gas, water, faults (groups switched on). A missing
+## survey (scenarios, tests) means richness 1, gems and water on, gas and faults off.
 static func options_of(survey: Dictionary) -> Dictionary:
 	var gems: bool = true
 	if survey.has("gems"):
 		var g: Variant = survey["gems"]
 		gems = (not (g as Array).is_empty()) if g is Array else bool(g)
 	return {"richness": maxf(0.0, float(survey.get("richness", 1.0))), "gems": gems,
-		"gas": bool(survey.get("gas", false)), "water": bool(survey.get("water", true))}
+		"gas": bool(survey.get("gas", false)), "water": bool(survey.get("water", true)),
+		"faults": bool(survey.get("faults", false))}
 
 
 ## start: the ship's footprint at the start (meters, cell aligned). target_cx_m: the corridor's end
@@ -59,7 +62,7 @@ static func generate(table: Dictionary, rng: RandomNumberGenerator, cols: int, r
 		var fd: Dictionary = f
 		var group: String = str(fd.get("group", ""))
 		if (group == "gems" and not bool(o["gems"])) or (group == "gas" and not bool(o["gas"])) \
-				or (group == "water" and not bool(o["water"])):
+				or (group == "water" and not bool(o["water"])) or (group == "faults" and not bool(o.get("faults", false))):
 			continue
 		var k: float = float(o["richness"]) if group == "ore" or group == "gems" else 1.0
 		_feature(fd, codes, rng, grid, cols, rows, cell_m, sx, target_cx_m, y0, depth_m, run_depth_m, k, band)
@@ -165,7 +168,11 @@ static func _feature(fd: Dictionary, codes: Dictionary, rng: RandomNumberGenerat
 			"lens":
 				var w: float = _range(fd, "width_m", rng, 6.0)
 				var h: float = _range(fd, "height_m", rng, 1.5)
-				_ellipse(grid, cols, rows, cell_m, cx, cy, w * 0.5, h * 0.5, code)
+				if fd.has("angle_deg"):
+					var la: float = deg_to_rad(_range(fd, "angle_deg", rng, 0.0))
+					_rotated_ellipse(grid, cols, rows, cell_m, cx, cy, w * 0.5, h * 0.5, la, code)
+				else:
+					_ellipse(grid, cols, rows, cell_m, cx, cy, w * 0.5, h * 0.5, code)
 			"pocket":
 				var r: float = _range(fd, "radius_m", rng, 0.6)
 				var shell: float = float(fd.get("shell_m", 0.5))
@@ -192,6 +199,29 @@ static func _ellipse(grid: PackedByteArray, cols: int, rows: int, cell_m: float,
 		for c: int in range(c0, c1 + 1):
 			var dx: float = ((float(c) + 0.5) * cell_m - cx) / rx
 			if dx * dx + dy * dy <= 1.0:
+				grid[r * cols + c] = code
+
+
+## An ellipse with half axes rx (along the angle) and ry, turned by ang radians (positive: the +x end
+## goes down, +y being down).
+static func _rotated_ellipse(grid: PackedByteArray, cols: int, rows: int, cell_m: float, cx: float, cy: float,
+		rx: float, ry: float, ang: float, code: int) -> void:
+	if rx <= 0.0 or ry <= 0.0:
+		return
+	var ca: float = cos(ang)
+	var sa: float = sin(ang)
+	var ext: float = maxf(rx, ry)
+	var c0: int = maxi(0, floori((cx - ext) / cell_m))
+	var c1: int = mini(cols - 1, floori((cx + ext) / cell_m))
+	var r0: int = maxi(0, floori((cy - ext) / cell_m))
+	var r1: int = mini(rows - 1, floori((cy + ext) / cell_m))
+	for r: int in range(r0, r1 + 1):
+		var py: float = (float(r) + 0.5) * cell_m - cy
+		for c: int in range(c0, c1 + 1):
+			var px: float = (float(c) + 0.5) * cell_m - cx
+			var u: float = (px * ca + py * sa) / rx
+			var v: float = (-px * sa + py * ca) / ry
+			if u * u + v * v <= 1.0:
 				grid[r * cols + c] = code
 
 
