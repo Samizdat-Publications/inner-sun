@@ -7,6 +7,8 @@ extends Node2D
 ##   (none)                      normal play: a new run from the profile (user://, or --profile-dir)
 ##   --mode=run [--bot=<name>]   a whole run, optionally bot-driven (captures, demos)
 ##   --scenario=<id>             one situation (tests, captures, the M0 drills)
+##   --fight=<ship id>           with --scenario: start a fight at once, weapons and bracing powered
+##                               and aimed (to look at combat; dev only); --arm=<slot> shows aiming
 ## Also: --seed=<n> --bot=<name> --duration=<s> --run-ticks=<n> --loop --debug-hud
 ##   --shots=<a,b> --out=<dir> | --capture=<dir> --stills=<n> --sheets=<m> | --perf=<file> | --selftest
 ## Every bot-driven run ends by printing `FINAL tick=<n> hash=<h>` so tools can compare runs.
@@ -15,6 +17,7 @@ extends Node2D
 const PPM: float = 80.0
 const DRILL_ZOOM: float = 0.85
 const CUTAWAY_ZOOM: float = 1.0
+const COMBAT_AREA: Rect2 = Rect2(300.0, 156.0, 1240.0, 728.0)  ## Free area while the combat panels show.
 const ROCK_BELOW_M: float = 4.0  ## Rock visible below the crown while drilling.
 const STEER_DEG: float = 30.0
 const HUMAN_CAP_S: float = 6.0 * 3600.0  ## A human run never hits the stuck cap.
@@ -30,6 +33,7 @@ var screen: RunScreen
 var audio: AudioDirector
 var cam: Camera2D
 var rock_view: RockView
+var combat_view: CombatView
 var paused: bool = false
 var bot_driven: bool = false
 var run_ticks: int = -1
@@ -83,13 +87,31 @@ func _start_run() -> bool:
 		run = ScenarioRun.from_scenario(db, scenario, args.get_int("seed", 1234), args.get_str("bot", ""))
 		if args.has("duration"):
 			run.duration_ticks = roundi(args.get_float("duration") * Sim.TICK_HZ)
+	if args.has("fight") and not run_mode:
+		_fight_demo(args.get_str("fight", "rival_light"))
 	if view != null:
 		_clear_rock()
 		view.rebind(run.sim, run.sim.player)
+		combat_view.rebind(run.sim)
 		screen.bind(run.sim, profile)
 		if hud != null:
 			hud.bind(run)
 	return true
+
+
+## Dev only: a fight against `enemy_id` from tick 0, with power on the weapons and bracing, and both
+## weapons aimed at the enemy's first rooms, so a capture shows rounds, blocks and bars at once.
+func _fight_demo(enemy_id: String) -> void:
+	var sim: Sim = run.sim
+	sim.combat.start_fight(sim, enemy_id, false)
+	if sim.enemy == null:
+		return
+	sim.push({"type": "power", "room": "drill", "bars": 0})
+	sim.push({"type": "power", "room": "weapons", "bars": 3})
+	sim.push({"type": "power", "room": "bracing", "bars": 2})
+	for slot: int in range(sim.combat.player_side.size()):
+		var rooms: Array[Room] = sim.enemy.ship.rooms
+		sim.push({"type": "target", "weapon": slot, "room": rooms[mini(slot + 1, rooms.size() - 1)].id})
 
 
 func _clear_rock() -> void:
@@ -123,9 +145,26 @@ func _process(delta: float) -> void:
 	# A new segment builds its rock; after arrival the rock stays around the ship until the next one.
 	if d.active and (rock_view == null or rock_view.serial != d.grid_serial):
 		_begin_drill_view(d)
-	if rock_view != null:
-		cam.position = cam.position.lerp(_drill_cam_target(d), 1.0 - exp(-5.0 * delta))
+	_ease_camera(d, delta)
+	combat_view.armed = screen.weapons.armed
+	combat_view.cam_zoom = cam.zoom.x
 	screen.set_paused(paused)
+
+
+## The camera eases to its framing: the drill rock while there is one, the cutaway otherwise, and in a
+## fight both towers with the rock between them.
+func _ease_camera(d: DrillSim, delta: float) -> void:
+	var k: float = 1.0 - exp(-5.0 * delta)
+	var base_zoom: float = DRILL_ZOOM if rock_view != null else CUTAWAY_ZOOM
+	var zoom: float = base_zoom
+	var pos: Vector2 = _drill_cam_target(d) if rock_view != null else _framed(view.center_px(), base_zoom)
+	if combat_view.active():
+		var b: Rect2 = combat_view.bounds_px()
+		zoom = minf(base_zoom, minf(COMBAT_AREA.size.x / b.size.x, COMBAT_AREA.size.y / b.size.y))
+		pos = b.get_center() + (Vector2(960.0, 540.0) - COMBAT_AREA.get_center()) / zoom
+	var z: float = lerpf(cam.zoom.x, zoom, k)
+	cam.zoom = Vector2(z, z)
+	cam.position = cam.position.lerp(pos, k)
 
 
 ## A drilling segment began: build its rock, hand the ship to the sim's position and frame it.
@@ -197,6 +236,15 @@ func _unhandled_input(event: InputEvent) -> void:
 	var mb: InputEventMouseButton = event as InputEventMouseButton
 	if mb == null or not mb.pressed or screen.overlay_open():
 		return
+	# In a fight, a left click on an enemy room with a weapon armed aims it (a command, like all orders).
+	var wc: WeaponCards = screen.weapons
+	if mb.button_index == MOUSE_BUTTON_LEFT and wc.armed >= 0 and combat_view.active():
+		var er: int = combat_view.enemy_room_at_mouse()
+		if er >= 0:
+			run.sim.push({"type": "target", "weapon": wc.armed, "room": run.sim.enemy.ship.rooms[er].id})
+			wc.disarm()
+			get_viewport().set_input_as_handled()
+			return
 	# The player's click goes through the same command chain the bots use: left sends the selected
 	# crew member to the room, right releases them back to their own judgement.
 	var c: CrewMember = screen.selected_crew()
@@ -262,6 +310,9 @@ func _build_world() -> void:
 	view = ShipView.new()
 	view.setup(run.sim, run.sim.player, PPM)
 	add_child(view)
+	combat_view = CombatView.new()
+	combat_view.setup(run.sim, view, PPM, func() -> bool: return rock_view != null)
+	add_child(combat_view)
 	cam = Camera2D.new()
 	cam.zoom = Vector2(CUTAWAY_ZOOM, CUTAWAY_ZOOM)
 	cam.position = _framed(view.center_px(), CUTAWAY_ZOOM)
@@ -271,6 +322,8 @@ func _build_world() -> void:
 	add_child(screen)
 	screen.build(run.sim, profile)
 	screen.new_run_requested.connect(_start_run)
+	if args.has("arm"):
+		screen.weapons.armed = args.get_int("arm", -1)  # Dev only: look at the aiming highlights.
 	if args.has("debug-hud"):
 		hud = Hud.new()
 		add_child(hud)
