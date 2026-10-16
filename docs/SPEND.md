@@ -92,3 +92,4 @@ unless Stewart says otherwise; going over needs a line in `docs/NEEDS_STEWART.md
 | 2026-10-16 | Gemini gemini-3-pro-image | reconciliation (qa-auditor): the logged art-pass rows total 9.24 USD (66 images), the art-pass agent reported about 87 images and 12.9 USD; about 21 images from its duplicate background batch were never logged one by one | 3.00 (est) |
 
 Session total (2026-10-15 to 16, M1a): about 15 USD (logged 11.96 plus the 3.00 reconciliation), under the 40 USD soft cap.
+| 2026-10-16 | Gemini (gemini-3.1-pro-preview) | video critic -> 004_gemini.md | 0.13 (est, 44088 in / 3483 out tokens) |

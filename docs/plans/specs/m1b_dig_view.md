@@ -35,6 +35,17 @@ already, tests under game/tests for view helpers, README "How to play". Nothing 
 6. **Store shows currencies and gear.** Each line shows its price with an ore or gem icon; gear lines
    (drill heads, plating, pumps) say what they do in one line; greyed lines say why.
 
+7. **The rock must feel like rock (Gemini baseline critique 004, world 3/10: "an elevator riding past
+   scrolling wallpaper").** Visible strata bands, hardness reading in the texture, ore and gems that
+   glint, sparks, dust and debris at the crown while cutting, cut shaft walls rougher than solid rock.
+8. **Water reads as water (004, "a bright blue placeholder box").** Murky groundwater colour, a surface
+   line that sloshes with the tower's motion, darker with depth, foam where a breach pours in.
+9. **Crew readability (004).** Crew pop out of the room art: rim light or outline, a brighter uniform
+   accent, a selected-crew ring.
+10. **Bug from the lead's hands-on test:** with the charge launcher aimed at the enemy weapons room,
+    F1 then a click on that same room did not aim the borer turret (a click on the bridge did). Find
+    and fix (both weapons may target the same room).
+
 ## Proof
 - `python tools/check.py` prints `check: ok`; `python tools/determinism.py` matches.
 - One batched windowed shot run (`python tools/shots.py --mode run --bot balanced ...`) showing:

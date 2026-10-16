@@ -1,8 +1,21 @@
 # Progress
 
-Updated: 2026-10-16, end of the M1a build session.
+Updated: 2026-10-16, M1b in progress (Stewart's first playtest, D024 "digging is the game").
 
-## Milestone: M1a built and handed to Stewart for the playtest. Next: M1b (iterate on his notes).
+## M1b status
+- **Round 1, controls for a human: merged and pushed (970e5d1).** Hands-on check by the lead in a real
+  window with real keys and mouse: help opens on a fresh profile, the map holds the world ("PAUSED:
+  MAP"), power works inside dossiers (option requirements light up), scanner click-to-steer holds a
+  course, HOSTILE AHEAD warns, the fight pauses with a banner, and a prepared fight was won. Open bug:
+  the borer would not aim at the room the charge launcher already targets (in the round 3 spec).
+- **Round 2, the digging economy (`docs/plans/specs/m1b_dig_sim.md`): a builder-opus agent is on it.**
+- **Round 3, see the dig (`docs/plans/specs/m1b_dig_view.md`): starts when round 2 merges.**
+- **Gemini baseline critic works again:** `review/critiques/004_gemini.md`, average 5.6 (world outside
+  the hull 3, hazards 4: water looks like a placeholder box). Folded into the round 3 spec.
+- Hands-on testing tool: `python tools/play.py [--exe] -- <game args>` (a normal focusable window in a
+  job object, its own profile folder).
+
+## M1a (built, playtested by Stewart 2026-10-16)
 
 Exit criteria met, with one exception: the Gemini video critic could not run at the gate (Gemini
 spend cap). Perf meets the 60 fps floor after D023 (whole run: p99 12.7 ms, 1% low 78.5 fps), measured
