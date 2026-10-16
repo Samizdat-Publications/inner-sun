@@ -3,6 +3,22 @@
 His words outrank everything except CLAUDE.md's hard rules. Newest first. Playtest notes go at the
 top under a dated heading.
 
+## 2026-10-16: first playtest (build 2, one run of about 2.5 minutes, abandoned at row 3)
+Verbatim:
+- "Played for a min, was able to steeer left or right to hit the diamonds. Everything looks good with
+  the initial rooms and the bots, howevevr I don't see anything I can do, it's mostly watching the
+  bots just die of flooded water etc so I need you to do whatever you need to do to test this with
+  keyboard and mouse and to verify all the existing built pieces are working as expected."
+- "Explain what the player should be doing, what clicking on things does, what I'm supposed ot do
+  except steer left and right, how do I deal with flooding and damage etc."
+- "And each level is like 30 seconds and you get like one piece of coal, each run should be way
+  longer imo unless ther eis some other thinking behind it"
+
+What his run record shows (`%APPDATA%\InnerSun\runs\20261016-101616_160021.json`): 154 s, 4 nodes,
+45 steer commands, 6 event choices, 5 crew orders, zero power changes, zero pauses; gained 36 ore and
+17 gems, spent nothing. He found steering and the dossiers; nothing told him the power panel, the
+crew orders or the store were the game.
+
 ## 2026-10-15: first M1 session
 - **The making of:** "As with all my projects, keep copies of relevant milestones etc and label them
   so that we can build a 'The making of' page afterwards that shows our progression from start to

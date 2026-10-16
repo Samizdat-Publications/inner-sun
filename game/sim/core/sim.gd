@@ -79,6 +79,11 @@ func push(cmd: Dictionary) -> void:
 	_pending.append(cmd)
 
 
+## True while commands wait for the next step (the view holds the world but still applies orders).
+func has_pending() -> bool:
+	return not _pending.is_empty()
+
+
 func step() -> void:
 	var batch: Array[Dictionary] = _pending
 	_pending = []
