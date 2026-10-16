@@ -2,7 +2,7 @@
 
 Updated: 2026-10-15, M1 session (continued after the restart).
 
-## Milestone: M1a (find the fun). All sim steps merged (0 to 6); views, art and balance in flight.
+## Milestone: M1a (find the fun). Everything built and merged; now the critic loop, perf, audit and the playtest build.
 
 ## M1 so far
 - **Step 0 done.** Blind critic installed and live-tested (`docs/research/m1-evidence/critic_live_test.txt`);
@@ -34,6 +34,18 @@ Updated: 2026-10-15, M1 session (continued after the restart).
 - **Sound:** 29 ElevenLabs placeholder sounds and the audio director (not mounted yet).
 - **Run screen pieces merged:** HUD (top bar, power panel, crew cards, alerts, seismic scanner),
   dossier, store, fonts, UI gallery (`python tools/gallery.py`). Not yet mounted in main.gd.
+- **The run screen is playable** (`game/view/main.gd`, `run_screen.gd`): no arguments starts a real run
+  from the profile with the HUD, node map, dossier, store, codex, death screen, audio; Space pauses;
+  every run (finished or not) is saved as a replayable record (`tools/replay.py`, `--replay=<file>`).
+- **Painted art in the game:** six painted rooms with props, hull, crown, puppet and frame-animated
+  crew, readable hazards (filled water, red rims, flames), painted rock tiles
+  (`docs/progress/011`, `012`).
+- **Combat view:** enemy tower, tracers, lance beam, BLOCKED and MISS pops, weapon cards (F1, F2),
+  enemy panel, flee (`docs/progress/010`).
+- **Bots and balance** (step 7): cautious, greedy, balanced policy bots; `python tools/balance.py
+  --full --runs 1000 --procs 6 --pack` in about 12 minutes; first tuning pass D021: balanced wins
+  25%, cautious 21%, greedy 13%, no killer above 44%, every event seen
+  (`docs/research/m1-evidence/balance_full_report_1000_runs.md`). 184 tests pass; determinism holds.
 - **Art bake-off done: painted pulp chosen, provisional** (D017, `docs/progress/005_m1-art-bakeoff.jpg`,
   sent to Stewart); pixel art not tried (no PixelLab key).
 - **Making-of record** started (`docs/making-of/README.md`, tag `m0-loop-proven`), at Stewart's request.
@@ -62,14 +74,7 @@ Updated: 2026-10-15, M1 session (continued after the restart).
   alone.
 
 ## In flight
-Background agents in worktrees (`git worktree list`); if the session stops, merge what passes and
-re-dispatch the rest:
-- drilling view: rock chunks, crown, camera (builder; `docs/plans/specs/drill_view.md`),
-- map overlay, death screen, codex browser (builder),
-- the painted art pass: five rooms and props, fittings, crew puppets, rock tiles (asset-smith),
-- step 7: cautious, greedy and balanced bots, `balance.py --full`, first tuning pass (builder-opus).
-Next for the lead: the combat view (enemy tower, shots, weapon cards, targeting), then wire the run
-screen in main.gd (HUD, overlays, audio, input), the critic loop, export.
+Nothing in worktrees. A review capture of a balanced-bot run may be filling `review/inbox`.
 
 ## Known issues
 - **Capture windows flash on screen for about one second** at the start of each windowed run (shots,
@@ -88,9 +93,11 @@ screen in main.gd (HUD, overlays, audio, input), the critic loop, export.
 - Everything you see is placeholder art.
 
 ## Exactly what is next
-1. Merge each finished agent branch after reading its diff; run `python tools/check.py`.
-2. Then step 3 (`docs/plans/specs/step3_run.md`), the drill view and run screen
-   (`docs/plans/specs/view_m1.md`), combat (`docs/plans/specs/step4_combat.md`), the writer, sound,
-   bots and balance, and the playtest build (`docs/plans/M1.md`).
-3. Pick the art style when the bake-off is complete, write the Look section of the style guide, and
-   show Stewart the comparison.
+1. Critic loop on the balanced-bot capture (`python tools/critic.py`; the Gemini critic may be blocked
+   by the Gemini spend cap), triage in `review/LEDGER.md`, fix the FIX items.
+2. Perf in run mode (`python tools/perf.py --mode run --seconds 30`), `python tools/determinism.py`.
+3. `python tools/export.py --playtest --label m1a-playtest`, qa-auditor on PROGRESS and HANDOFF,
+   tag `m1a-playtest`, making-of row, then STOP for Stewart's playtest (notes go at the top of
+   `docs/STEWART_FEEDBACK.md`).
+4. M1b ideas already known from the balance report: the middle rows rarely kill, rivals feel scripted,
+   gems pile up unspent, ore is too cheap, the lance is never bought, bits never break.

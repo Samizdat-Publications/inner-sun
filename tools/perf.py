@@ -63,9 +63,10 @@ def idle_gpu_util():
     return best
 
 
-def _one_run(scenario, seed, seconds, tmp_json, timeout):
+def _one_run(scenario, seed, seconds, tmp_json, timeout, extra=None):
     args = ["--path", paths.GAME, "--resolution", "1920x1080", "--position", "-32000,-32000", "--disable-vsync",
             "--", f"--scenario={scenario}", f"--seed={seed}", f"--perf={tmp_json}", f"--perf-seconds={seconds}"]
+    args += list(extra or [])
     others = proc.other_godot_processes()
     idle = idle_gpu_util()
     stop, lines, own = threading.Event(), [], set()
@@ -86,7 +87,7 @@ def _one_run(scenario, seed, seconds, tmp_json, timeout):
     return res, n, names, others
 
 
-def measure(scenario="fire_drill", seed=1, seconds=10, runs=3):
+def measure(scenario="fire_drill", seed=1, seconds=10, runs=3, extra=None):
     try:
         proc.require_game()
     except proc.ToolError as e:
@@ -99,7 +100,7 @@ def measure(scenario="fire_drill", seed=1, seconds=10, runs=3):
         tmp = os.path.join(d, f"run{k}.json")
         if os.path.exists(tmp):
             os.remove(tmp)
-        res, n, names, others = _one_run(scenario, seed, seconds, tmp, seconds + 60)
+        res, n, names, others = _one_run(scenario, seed, seconds, tmp, seconds + 60, extra=extra)
         if not os.path.exists(tmp):
             last_err = (f"run {k + 1} wrote no perf json (exit {res.returncode}, timed_out={res.timed_out}) "
                         + "; ".join(proc.bad_lines(res.out)[:3]))
@@ -134,8 +135,13 @@ def main(argv=None):
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--seconds", type=float, default=10)
     ap.add_argument("--runs", type=int, default=3)
+    ap.add_argument("--mode", default="", help="run: measure a whole run (drilling, fights) played by --bot")
+    ap.add_argument("--bot", default="balanced")
     a = ap.parse_args(argv)
-    r = measure(a.scenario, a.seed, a.seconds, a.runs)
+    extra = []
+    if a.mode:
+        extra = [f"--mode={a.mode}", f"--bot={a.bot}", f"--profile-dir={os.path.join(paths.OUT, 'profile_perf')}"]
+    r = measure(a.scenario, a.seed, a.seconds, a.runs, extra=extra)
     d = os.path.join(paths.OUT, "perf")
     os.makedirs(d, exist_ok=True)
     with open(os.path.join(d, "last.json"), "w", encoding="utf-8", newline="\n") as f:
