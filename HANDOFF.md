@@ -32,7 +32,7 @@ cd "C:\Users\stewa\Documents\Claude\Inner Sun"; claude --model claude-opus-5-5 -
 ```
 Then paste this as the first message:
 ```
-Continue Inner Sun: M1b. Read CLAUDE.md, PROGRESS.md and HANDOFF.md, then docs/STEWART_FEEDBACK.md (my playtest notes are at the top), docs/plans/M1.md (M1b) and docs/BACKLOG.md. Replay any runs I mention from %APPDATA%\InnerSun\runs\. Triage my notes into docs/plans/M1b.md (with the balance report's known weak spots), then iterate on the core loop autonomously per CLAUDE.md, delegating as HANDOFF.md describes. Send me progress pictures, and stop with a new playtest build when the changes are ready for me to try. Stop earlier only for "checkpoint", a usage limit, or a decision that is genuinely mine.
+Continue Inner Sun: M1b. Read CLAUDE.md, PROGRESS.md and HANDOFF.md, then docs/STEWART_FEEDBACK.md (my playtest notes are at the top), docs/plans/M1.md (M1b) and docs/BACKLOG.md. First re-measure trusted perf on an idle machine and run the Gemini gate critic if its cap has lifted (PROGRESS, Known issues). Replay any runs I mention from %APPDATA%\InnerSun\runs\. Triage my notes into docs/plans/M1b.md (with the balance report's known weak spots), then iterate on the core loop autonomously per CLAUDE.md, delegating as HANDOFF.md describes. Send me progress pictures, and stop with a new playtest build when the changes are ready for me to try. Stop earlier only for "checkpoint", a usage limit, or a decision that is genuinely mine.
 ```
 
 ## Delegation (what worked in M1a)
