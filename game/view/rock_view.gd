@@ -448,7 +448,7 @@ func _paint_run(c0: int, c1: int, r: int) -> void:
 				h = top + (bot - top) * ty
 			var X: int = c0 * CELL_PX + x
 			var na: float = tile[row_n | (X & 255)]
-			var v: float = h + (na - 0.5) * 0.3
+			var v: float = h + (na - 0.5) * 0.4  # Ragged cut edges: the shaft wall is torn, not smooth.
 			var cover: float = clampf((v - 0.5) * 10.0 + 0.5, 0.0, 1.0)
 			if cover <= 0.004:
 				continue
@@ -477,13 +477,16 @@ func _paint_run(c0: int, c1: int, r: int) -> void:
 			var shade: float = tex * pv[cell] * (1.0 + band) * (1.0 - 0.28 * ydepth)
 			var depth_in: float = clampf((v - 0.5) * 3.2, 0.0, 1.0)
 			shade *= 0.32 + 0.68 * depth_in
-			var bump: float = 1.0
+			# A cut wall is rougher than solid rock: bit rings and gouges, and stronger bumps for the lights.
+			var edge: float = 1.0 - depth_in
+			shade *= 1.0 + edge * 0.2 * sin(float(Y) * 0.8 + nb * 6.0) + edge * 0.1 * (na - 0.5)
+			var bump: float = 1.0 + 2.2 * edge
 			if kind == 2:
-				bump = 1.3
+				bump *= 1.3
 			elif kind == 3:
 				var sheen: float = smoothstep(0.78, 0.95, 0.5 + 0.5 * sin(float(Y) * 0.4 + na * 5.0))
 				shade = shade * 0.8 + sheen * 0.25
-				bump = 0.25
+				bump *= 0.25
 			var p: int = y * wpx + x
 			var o: int = p * 4
 			var sh8: int = clampi(roundi(shade * 255.0), 0, 255)
@@ -557,10 +560,7 @@ func _paint_glint(idx: int, cx: int, cy: int) -> void:
 		g.position = Vector2(float(idx % drill.chunk_cols), float(idx / drill.chunk_cols)) * float(CHUNK_PX) * _scale
 		g.z_index = -19
 		g.light_mask = 0
-		var mat := CanvasItemMaterial.new()
-		mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
-		mat.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
-		g.material = mat
+		g.material = RockTiles.glint_material()
 		# Unshaded items are not touched by the CanvasModulate, so this is the on-screen brightness.
 		g.modulate = Color(1.15, 1.15, 1.15, 1.0)
 		add_child(g)

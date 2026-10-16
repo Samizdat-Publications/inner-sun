@@ -255,4 +255,33 @@ func _scenario_fight() -> void:
 	await _frames(1)
 	check(not m.paused, "Space starts the fight")
 	check(not m.screen._banner.visible, "the banner goes away")
+	_key(KEY_SPACE)
+	await _frames(1)
+	await _aim_every_room(m)
 	await _drop()
+
+
+## Aim each weapon at each enemy room by a real F-key and a real click, including a room another
+## weapon already targets (M1b: the second weapon must aim there too).
+func _aim_every_room(m: Main) -> void:
+	var s: Sim = m.run.sim
+	var n: int = s.combat.player_side.size()
+	_tree().root.size = Vector2i(1920, 1080)  # the real window shape (headless defaults to a square)
+	await _frames(1)
+	for i: int in range(4):
+		m._ease_camera(s.drill, 10.0)  # the camera settles on the framing of both rigs
+	for ri: int in range(s.enemy.ship.rooms.size()):
+		for slot: int in range(mini(n, 2)):
+			var other: int = 1 - slot
+			if other < n:
+				s.push({"type": "target", "weapon": other, "room": s.enemy.ship.rooms[ri].id})
+			_key(KEY_F1 + slot)
+			await _frames(1)
+			check_eq(m.screen.weapons.armed, slot, "F%d arms slot %d" % [slot + 1, slot])
+			var local: Vector2 = s.enemy.ship.rooms[ri].rect.get_center() * m.PPM + m.combat_view._origin_px()
+			s._pending.clear()
+			var at: Vector2 = m.combat_view.get_global_transform_with_canvas() * local
+			_click(at)
+			check_eq(str(_queued(s, "target").get("room", "")), s.enemy.ship.rooms[ri].id, "slot %d aims at enemy room %d (clicked %s)" % [slot, ri, str(at)])
+			check_eq(int(_queued(s, "target").get("weapon", -1)), slot, "the order names slot %d" % slot)
+			await _frames(1)

@@ -1,7 +1,7 @@
 class_name RoomFx
 extends RefCounted
 ## Draw callbacks for a room's hazards and readouts, so hazards read at a glance in a screenshot:
-## a filled translucent water body with a moving surface, a warm shimmer above about 50 C, a pulsing
+## (the water body lives in RoomWater), a warm shimmer above about 50 C, a pulsing
 ## red rim, a small label chip in a corner clear of ladders, the ladder art and falling water.
 ## All of it is drawn unshaded so colors are written as they should look.
 
@@ -46,50 +46,6 @@ static func draw_alarm_rim(n: Node2D, r: Room, rp: Rect2, t: float) -> void:
 		return
 	var pulse: float = 0.5 + 0.5 * sin(t * 6.0 + float(r.index))
 	n.draw_rect(rp.grow(-3.0), lit_color(Color(1.0, 0.15, 0.08), 0.35 + 0.45 * pulse), false, 3.0)
-
-
-## Any water at all reads at once: a blue wash over the whole room (stronger as it fills), a darker
-## floor, then a filled translucent water body (never under 16 px tall) with two moving surface
-## waves, a bright crest and bubbles.
-static func draw_water(n: Node2D, r: Room, rp: Rect2, ppm: float, t: float) -> void:
-	if r.water_ml <= 0:
-		return
-	var fill: float = clampf(float(r.water_ml) / maxf(float(r.capacity_ml), 1.0), 0.0, 1.0)
-	var wash: float = 0.1 + 0.3 * sqrt(fill)
-	n.draw_rect(rp, lit_color(Color(0.04, 0.3, 0.5), wash))
-	var floor_h: float = minf(rp.size.y * 0.35, 46.0 + rp.size.y * 0.2)
-	for i: int in range(4):
-		var hh: float = floor_h * float(4 - i) / 4.0
-		n.draw_rect(Rect2(rp.position.x, rp.end.y - hh, rp.size.x, hh), Color(0.0, 0.01, 0.03, 0.09 + 0.12 * fill))
-	var lvl: float = clampf(maxf(r.level_m() * ppm, 16.0), 0.0, rp.size.y)
-	var top: float = rp.end.y - lvl
-	var pts := PackedVector2Array()
-	var crest := PackedVector2Array()
-	var steps: int = 32
-	for k: int in range(steps + 1):
-		var x: float = rp.position.x + rp.size.x * float(k) / float(steps)
-		var wave: float = 2.4 * sin(t * 2.3 + x * 0.05) + 1.4 * sin(t * 3.7 - x * 0.11)
-		crest.append(Vector2(x, top + wave))
-	pts.append_array(crest)
-	pts.append(Vector2(rp.end.x, rp.end.y))
-	pts.append(Vector2(rp.position.x, rp.end.y))
-	n.draw_colored_polygon(pts, lit_color(Color(0.1, 0.45, 0.62), 0.62))
-	# Deeper half darker.
-	var mid: float = top + lvl * 0.45
-	if lvl > 14.0:
-		var deep := PackedVector2Array([Vector2(rp.position.x, mid), Vector2(rp.end.x, mid), Vector2(rp.end.x, rp.end.y), Vector2(rp.position.x, rp.end.y)])
-		n.draw_colored_polygon(deep, lit_color(Color(0.02, 0.14, 0.26), 0.3))
-	n.draw_polyline(crest, lit_color(Color(0.55, 0.82, 0.9), 0.95), 3.5)
-	var under := PackedVector2Array()
-	for p: Vector2 in crest:
-		under.append(Vector2(p.x, p.y + 7.0 + 1.5 * sin(t * 1.9 + p.x * 0.08)))
-	n.draw_polyline(under, lit_color(Color(0.3, 0.6, 0.72), 0.35), 2.0)
-	if lvl > 18.0:
-		for i: int in range(6):
-			var f: float = fposmod(t * 0.35 + float(i) * 0.173 + float(r.index) * 0.31, 1.0)
-			var bx: float = rp.position.x + rp.size.x * fposmod(float(i) * 0.37 + 0.11 * float(r.index), 1.0)
-			var by: float = rp.end.y - f * (lvl - 8.0)
-			n.draw_arc(Vector2(bx + 3.0 * sin(t * 2.0 + float(i)), by), 2.5, 0.0, TAU, 10, lit_color(Color(0.5, 0.75, 0.8), 0.6 * (1.0 - f)), 1.0)
 
 
 ## The corner for a room's label chip: left unless a ladder from above comes down there, then right.
@@ -142,21 +98,21 @@ static func draw_ladder_flow(n: Node2D, ship: Ship, world: ShipWorld, li: int, p
 	var top_y: float = ship.rooms[l.a].floor_y() * ppm
 	var bottom_y: float = lower.floor_y() * ppm - minf(lower.level_m() * ppm, lower.rect.size.y * ppm)
 	var w: float = clampf(flow * 40.0, 5.0, 22.0)
-	n.draw_rect(Rect2(l.x * ppm - w * 0.5, top_y, w, bottom_y - top_y), lit_color(Color(0.14, 0.42, 0.56), 0.62))
+	n.draw_rect(Rect2(l.x * ppm - w * 0.5, top_y, w, bottom_y - top_y), lit_color(Color(0.3, 0.29, 0.15), 0.7))
 	# Ripples spreading from where the stream hits the water below, and a few splash drops.
 	var cx: float = l.x * ppm
 	for k: int in range(3):
 		var f2: float = fposmod(t * 1.1 + float(k) / 3.0, 1.0)
 		var rw: float = w * 0.6 + f2 * (28.0 + w)
-		n.draw_arc(Vector2(cx, bottom_y + 1.0), rw, PI, TAU, 18, lit_color(Color(0.65, 0.88, 0.95), 0.8 * (1.0 - f2)), 2.0)
+		n.draw_arc(Vector2(cx, bottom_y + 1.0), rw, PI, TAU, 18, lit_color(Color(0.85, 0.84, 0.68), 0.8 * (1.0 - f2)), 2.0)
 	for k: int in range(5):
 		var f3: float = fposmod(t * 2.3 + float(k) * 0.2, 1.0)
 		var dx: float = (float(k) - 2.0) * (6.0 + w * 0.5) * f3
 		var dy: float = -22.0 * sin(f3 * PI)
-		n.draw_circle(Vector2(cx + dx, bottom_y + dy), 2.0, lit_color(Color(0.75, 0.92, 1.0), 0.8 * (1.0 - f3)))
+		n.draw_circle(Vector2(cx + dx, bottom_y + dy), 2.0, lit_color(Color(0.9, 0.9, 0.76), 0.8 * (1.0 - f3)))
 	for i: int in range(3):
 		var f: float = fposmod(t * 1.6 + float(i) * 0.33, 1.0)
-		n.draw_line(Vector2(l.x * ppm + (float(i) - 1.0) * w * 0.25, top_y), Vector2(l.x * ppm + (float(i) - 1.0) * w * 0.25, top_y + (bottom_y - top_y) * f), lit_color(Color(0.45, 0.7, 0.78), 0.7), 1.5)
+		n.draw_line(Vector2(l.x * ppm + (float(i) - 1.0) * w * 0.25, top_y), Vector2(l.x * ppm + (float(i) - 1.0) * w * 0.25, top_y + (bottom_y - top_y) * f), lit_color(Color(0.62, 0.6, 0.4), 0.7), 1.5)
 
 
 ## Name tags and HP pips for every living crew member, stacked so no two tags overlap.

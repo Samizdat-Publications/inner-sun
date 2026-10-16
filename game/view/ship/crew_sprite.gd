@@ -17,6 +17,7 @@ const CLIMB_M: float = 0.55
 const SHUFFLE_S: float = 0.9  ## How long one idle shuffle takes.
 const SHUFFLE_M: float = 0.2  ## How far a shuffle moves the figure from its station.
 const GLANCE_S: float = 1.5
+const BODY_GAIN: float = 1.15  ## A little brighter than the room art, so the figure reads (critic 004).
 
 ## Puppet joints in part pixels (second manifest run, the art in game/assets/crew).
 ## part: [pivot, child]; torso: [pivot, neck, shoulder]; head: [pivot]
@@ -69,6 +70,8 @@ var _manned: bool = false
 var _spray: CPUParticles2D
 var _sparks: CPUParticles2D
 var _weld: Sprite2D
+var selected: bool = false  ## Set by the ShipView: the crew member the player's orders go to.
+var _marks: CrewMarks
 
 
 ## Which painted figure and tint a crew member gets. Enemies use the rivals; recruits borrow a
@@ -95,6 +98,9 @@ func setup(c: CrewMember, p_ppm: float, enemy: bool) -> void:
 	_last_hp = c.hp
 	_next_ev = 1.0 + float(c.index) * 0.85
 	z_index = 6
+	_marks = CrewMarks.new()
+	_marks.setup(FIGURE_H_ART * _k, c.index, enemy)
+	add_child(_marks)
 	_body = Node2D.new()
 	add_child(_body)
 	puppet = PUPPETS.has(art_id)
@@ -194,7 +200,8 @@ func update(delta: float, t: float) -> void:
 	_last_hp = c.hp
 	_flash = maxf(0.0, _flash - delta)
 	var flash_c: Color = Color.WHITE.lerp(Color(2.0, 0.3, 0.25), clampf(_flash / 0.5, 0.0, 1.0))
-	_body.modulate = tint * flash_c
+	_body.modulate = tint * flash_c * BODY_GAIN
+	_marks.update(delta, selected, c.alive, _face)
 	if not c.alive:
 		_work_fx(false, t)
 		_lie_down()
