@@ -24,3 +24,4 @@ A visual record of Inner Sun, oldest first.
 | 018 | 2026-10-15 23:34 | [018_m1a-gate-frames.jpg](018_m1a-gate-frames.jpg) | review frames, build 20261015-231813-930fa47, seed 33 | 3679a0b |
 | 019 | 2026-10-16 00:46 | [019_m1a-final-drilling.jpg](019_m1a-final-drilling.jpg) | Final M1a build after critic 003: the ship zoomed in (drilling zoom 1.0), readable room labels, the scanner showing the rock ahead | e51d43a |
 | 020 | 2026-10-16 00:46 | [020_m1a-final-combat.jpg](020_m1a-final-combat.jpg) | Final M1a build after critic 003: combat framed inside the world area (no tower behind the panels), the hostile rig plate, weapon cards and enemy panel | e51d43a |
+| 021 | 2026-10-16 11:10 | [021_m1b-baseline-frames.jpg](021_m1b-baseline-frames.jpg) | M1a playtest build 2 (baseline before M1b); review frames, build 20261016-105131-2eca28a, seed 7 | 0e885c4 |
