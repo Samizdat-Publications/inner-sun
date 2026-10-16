@@ -14,6 +14,15 @@ Verbatim:
 - "And each level is like 30 seconds and you get like one piece of coal, each run should be way
   longer imo unless ther eis some other thinking behind it"
 
+- **Direction for M1b (he picked "Digging is the game" over "FTL pace, richer loot" and "mining
+  stops"):** drilling becomes the main course: longer segments, rock packed with ore and gems that get
+  richer deeper down, a view that shows the rock ahead, ore buys gear upgrades.
+- Then, verbatim: "Also re: the last quesiton, I still want the FTL style combat and upgrades and
+  encounters etc, just more mining focused and not focused on just combat. Think of it as the
+  "scanning planets and gaining resources" loop from these style of games, where we are focused on
+  resource gathering but then occasionally run into hostile forces rather than it just being
+  encounter after encounter like FTL if that makes sense."
+
 What his run record shows (`%APPDATA%\InnerSun\runs\20261016-101616_160021.json`): 154 s, 4 nodes,
 45 steer commands, 6 event choices, 5 crew orders, zero power changes, zero pauses; gained 36 ore and
 17 gems, spent nothing. He found steering and the dossiers; nothing told him the power panel, the

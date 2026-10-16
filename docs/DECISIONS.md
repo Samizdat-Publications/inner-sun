@@ -149,3 +149,12 @@ every 3 frames; the scanner patches its image instead of rebuilding it; HUD pane
 paint. Result: whole-run p99 12.7 ms, 1% low 78.5 fps, average 196 fps
 (`docs/research/m1-evidence/perf_run_mode_after_fix.json`, measured with headless Chrome and Claude
 on the GPU, so the tool's strict "trusted" flag stays off). Revert: the merge of the perf fix.
+
+## D024 (Stewart): Digging is the game (M1b direction)
+His first playtest: nothing to do but steer, segments of about 25 s that yield "one piece of coal",
+runs too short. He picked "Digging is the game": drilling becomes the main activity (longer segments,
+rock packed with ore and gems that get richer with depth, a view that shows the rock ahead, ore buys
+gear upgrades), while FTL-style systems, combat, events and upgrades stay. His framing: the "scanning
+planets and gaining resources" loop, where gathering is the focus and hostile forces turn up now and
+then, not encounter after encounter. This reverses the kickoff's "keep drilling segments short so runs
+stay paced like FTL". Plan: `docs/plans/M1b.md`. Revert: the M1b merges.
