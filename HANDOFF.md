@@ -1,8 +1,22 @@
 # Handoff
 
-From the M1a build session (2026-10-15) to M1b, which starts after Stewart's playtest.
+From the M1b session (2026-10-16) to the next round, which starts after Stewart plays build 3.
 
-## State in one paragraph
+## M1b in one paragraph (newest)
+Stewart's first playtest (2.5 minutes, steering only) said there was nothing to do and runs were
+too short with too little loot. The lead then played it by hand with real keys and mouse and found
+eight control defects, all fixed and re-tested by hand. Stewart chose "digging is the game" (D024):
+mining first, FTL systems, events, upgrades and occasional fights around it ("scanning planets and
+gaining resources"). Built since: a nine-material ore and gem economy by depth, gas pockets, surveys
+on map nodes, ore-bought gear, a zoomed-out drilling view with visible ore, pickups and a dig tally,
+a 14-row Crust with about 20-minute runs. Playtest build 3 is exported. A live making-of page tracks
+progress (https://claude.ai/artifact/UJjDA4PJkSXMKjpg2zxQpc); republish it when something visible
+lands. Hands-on testing: `python tools/play.py`, then computer-use `request_access` with the window's
+exe basename (`InnerSun.exe` for `--exe` builds, `Godot_v4.7.2-stable_win64.exe` for the project).
+For the next session, use the prompt below but say "build 3" and effort high (Stewart's quota is
+tight; delegate implementation to Sonnet builders, Opus builders only for sim-heavy work).
+
+## State in one paragraph (M1a)
 M1a is built: a whole run plays from the first node to death or the layer gate. A painted drill
 tower bores down a node map through layered rock (steering, power, heat, bit wear, noise, ore, gems,
 water pockets). FTL-style systems and power, fire, water and heat spread room to room, and the crew

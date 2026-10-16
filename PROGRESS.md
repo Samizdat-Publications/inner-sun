@@ -1,19 +1,42 @@
 # Progress
 
-Updated: 2026-10-16, M1b in progress (Stewart's first playtest, D024 "digging is the game").
+Updated: 2026-10-16, M1b playtest build 3 ready (D024 "digging is the game").
 
-## M1b status
-- **Round 1, controls for a human: merged and pushed (970e5d1).** Hands-on check by the lead in a real
-  window with real keys and mouse: help opens on a fresh profile, the map holds the world ("PAUSED:
-  MAP"), power works inside dossiers (option requirements light up), scanner click-to-steer holds a
-  course, HOSTILE AHEAD warns, the fight pauses with a banner, and a prepared fight was won. Open bug:
-  the borer would not aim at the room the charge launcher already targets (in the round 3 spec).
-- **Round 2, the digging economy (`docs/plans/specs/m1b_dig_sim.md`): a builder-opus agent is on it.**
-- **Round 3, see the dig (`docs/plans/specs/m1b_dig_view.md`): starts when round 2 merges.**
-- **Gemini baseline critic works again:** `review/critiques/004_gemini.md`, average 5.6 (world outside
-  the hull 3, hazards 4: water looks like a placeholder box). Folded into the round 3 spec.
-- Hands-on testing tool: `python tools/play.py [--exe] -- <game args>` (a normal focusable window in a
-  job object, its own profile folder).
+## M1b status: playtest build 3 ready for Stewart
+- **Build:** `builds\InnerSun.exe` (exported from 88d916d, launched by `Play Inner Sun.bat`), milestone
+  zip `builds\milestones\m1b-playtest-3\`, tag `m1b-playtest-3`.
+- **Round 1, controls for a human (970e5d1):** hand-tested in a real window: help on the first run (H),
+  the map holds the world, power works in dossiers, scanner click-to-steer holds a course, B fits a
+  new bit, HOSTILE AHEAD, the fight pauses with a banner, death text names the killer, flood hint.
+- **Round 2, the digging economy (a8965a2):** longer segments, coal, iron, copper, silver, gold,
+  quartz, amethyst, emerald by depth, gas pockets (fire), surveys on every map node, `deposit` nodes,
+  ore buys gear (tungsten and diamond heads, plating, pumps) and upgrades, gems buy supplies and crew,
+  value-seeking bots.
+- **Round 3, see the dig (50a1c78, 5742da5):** zoomed-out drilling camera with wheel zoom, rock with
+  strata, ore visible in the main view, murky water, crew with bright harnesses, pickup text, the THIS
+  DIG tally, ore colours on the scanner, survey marks on the map, gear lines in the store.
+- **Tuning (d5f60a4, D029 to D033):** 14 rows, three trading posts and two fights per path, depth
+  pressure (pursuer, gas, water, rival_raider from row 7), segments about 80 s. 300 runs per bot:
+  wins cautious 10%, greedy 12%, balanced 23%; median runs 17 to 21 minutes; deaths over rows 7 to 13
+  (`docs/research/m1-evidence/balance_m1b_tuned.md`).
+- **Checks:** `check: ok` (231 tests), determinism ok, perf 1% low about 85 to 100 fps (contended).
+- **Critics:** Gemini baseline before M1b 5.6 (`review/critiques/004_gemini.md`); build 3 review in
+  `review/critiques/` (see `review/scores.csv`).
+- **Making-of page:** https://claude.ai/artifact/UJjDA4PJkSXMKjpg2zxQpc (source `docs/making-of/index.html`).
+- **Hands-on tool:** `python tools/play.py [--exe] -- <game args>` (a normal focusable window in a job
+  object, its own profile folder).
+
+## Known gaps (M1b)
+- Only two hazard events exist, so hazard nodes are often empty; the gate boss is still the top killer
+  for the balanced bot (a bracing-piercing gate weapon is one option).
+- Wheel zoom and the brightened pickup text were never seen in a still. `ship_view.gd`, `main.gd`,
+  `scanner_panel.gd`, `drill_sim.gd`, `run_state.gd` are over 400 lines.
+- One "triangulation failed" polygon error at startup in windowed runs (probably older).
+
+## Exactly what is next
+1. Stewart plays build 3 and writes notes at the top of `docs/STEWART_FEEDBACK.md`.
+2. Next session: replay his runs, triage, iterate (HANDOFF.md has the prompt). Later: Agartha-style
+   break-through hollows and different layer worlds (`docs/plans/M1b.md`, "Later").
 
 ## M1a (built, playtested by Stewart 2026-10-16)
 
