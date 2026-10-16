@@ -174,7 +174,7 @@ func test_state_lists_weapons_shots_and_geometry() -> void:
 	var st: Array = s.combat.state()
 	check_eq(st[0], true, "active")
 	check_eq(st[1], "rival_heavy", "enemy id")
-	check_eq(st[3], 16, "enemy hull")
+	check_eq(st[3], int((s.db.ships["rival_heavy"] as Dictionary)["hull"]), "enemy hull from the ship data")
 	var ps: Array = st[12]
 	check_eq(ps[1], ["borer_turret", "charge_launcher"], "player weapons listed in slot order")
 	var es: Array = st[13]

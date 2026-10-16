@@ -17,6 +17,6 @@
   "rock_temp_c_per_m": 0.08,
   "enemies": ["rival_light"],
   "gate_enemy": "rival_heavy",
-  "pursuer": {"start_row": -1.5, "rows_per_s": 0.0143, "rows_per_noise": 0.0045},
+  "pursuer": {"start_row": -1.5, "rows_per_s": 0.02, "rows_per_noise": 0.0035},
   "scanner_base_rows": 1
 }

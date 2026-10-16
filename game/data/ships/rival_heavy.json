@@ -5,7 +5,7 @@
   "rock_temp_c": 42.0,
   "water_head_m": 25.0,
   "room_depth_m": 3.0,
-  "hull": 16,
+  "hull": 13,
   "weapon_slots": 3,
   "weapons": ["borer_turret", "thermal_lance"],
   "rooms": [
