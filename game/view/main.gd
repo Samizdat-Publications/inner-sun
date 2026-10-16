@@ -7,6 +7,7 @@ extends Node2D
 ##   (none)                      normal play: a new run from the profile (user://, or --profile-dir)
 ##   --mode=run [--bot=<name>]   a whole run, optionally bot-driven (captures, demos)
 ##   --scenario=<id>             one situation (tests, captures, the M0 drills)
+##   --replay=<record.json>      watch a saved run play back exactly (input off; Space pauses)
 ##   --fight=<ship id>           with --scenario: start a fight at once, weapons and bracing powered
 ##                               and aimed (to look at combat; dev only); --arm=<slot> shows aiming
 ## Also: --seed=<n> --bot=<name> --duration=<s> --run-ticks=<n> --loop --debug-hud
@@ -36,6 +37,7 @@ var rock_view: RockView
 var combat_view: CombatView
 var paused: bool = false
 var bot_driven: bool = false
+var replaying: bool = false
 var run_ticks: int = -1
 var _held: Dictionary = {}
 var _steer_sent: float = 0.0
@@ -53,7 +55,8 @@ func _ready() -> void:
 		_selftest(problems)
 		return
 	bot_driven = args.has("shots") or args.has("capture") or args.has("perf") or args.has("run-ticks")
-	run_mode = args.get_str("mode", "") == "run" or (not args.has("scenario") and not bot_driven)
+	replaying = args.has("replay")
+	run_mode = not replaying and (args.get_str("mode", "") == "run" or (not args.has("scenario") and not bot_driven))
 	if run_mode:
 		profile = Profile.load_from(Profile.dir_from_args(args))
 	if not _start_run():
@@ -74,7 +77,14 @@ func _ready() -> void:
 
 func _start_run() -> bool:
 	_saved = false
-	if run_mode:
+	if replaying:
+		var rec: Dictionary = RunRecord.load_record(args.get_str("replay", ""))
+		if rec.is_empty():
+			push_error("cannot read the run record %s" % args.get_str("replay", ""))
+			get_tree().quit(1)
+			return false
+		run = ReplayDriver.from_record(db, rec)
+	elif run_mode:
 		var run_seed: int = args.get_int("seed", int(Time.get_unix_time_from_system()) % 1000000)
 		var cap_s: float = args.get_float("duration", HUMAN_CAP_S) if bot_driven else HUMAN_CAP_S
 		run = FullRun.start(db, run_seed, args.get_str("bot", ""), profile.run_options(), "light_drill", cap_s)
@@ -226,6 +236,11 @@ func finish(code: int = 0) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if replaying and run != null:
+		var k: InputEventKey = event as InputEventKey
+		if k != null and k.pressed and not k.echo and k.keycode == KEY_SPACE:
+			paused = not paused
+		return
 	if bot_driven or run == null or view == null:
 		return
 	var key: InputEventKey = event as InputEventKey

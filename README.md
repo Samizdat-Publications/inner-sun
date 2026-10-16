@@ -9,13 +9,12 @@ This repository is built mostly by Claude, autonomously. Stewart owns it and pla
 
 ## Where things stand
 
-Milestone 0 is done. It proved that the build loop works without anyone at the keyboard: the game runs
-headless and with a window, a bot plays it, frames come from the game camera, tests catch planted
-bugs, thousands of runs play out for balance, and the exported game gives the same results as the
-editor. What you can see today is a test scene: a fire drill on the starting ship, with placeholder
-art. Milestone 1 builds the first playable slice. See `PROGRESS.md` for details.
+Milestone 1a, "find the fun", builds the first playable slice: one layer (the Crust), a node map, the
+drilling between nodes, power and heat, fires and floods, a rival drill crew to fight, events, a
+store, and a full run from the first node to death (or the layer gate) and the codex. See
+`PROGRESS.md` for details.
 
-## Play the M0 test scene
+## Play it
 
 Double-click `Play Inner Sun.bat` in this folder, or paste this into Windows PowerShell:
 
@@ -23,8 +22,49 @@ Double-click `Play Inner Sun.bat` in this folder, or paste this into Windows Pow
 cd "C:\Users\stewa\Documents\Claude\Inner Sun"; & "C:\Users\stewa\Documents\Claude\Inner Sun\Play Inner Sun.bat"
 ```
 
-A fire breaks out in the drill room and the hull breaches on the middle deck; a scripted bot sends
-the crew. Click a room to send the first crew member there yourself. Close the window to quit.
+It starts a new run. Close the window to quit (an unfinished run is saved too).
+
+### How to play (one page)
+
+You command the drill tower **Auger**, boring down through the Crust toward the layer gate. Each run
+is one descent. Dying is normal: what you learn goes into the codex and lifts redactions next time.
+
+- **The map.** Between stops the node map opens. Click one of the lit nodes below you to drill there
+  (it costs one power cell). Icons show what is there: event, cavern (salvage), hazard, store, fight,
+  the gate. Nodes past your scanner show as "?". The dark front creeping down from the top is the
+  thing that follows your noise: nodes it swallows are lost, and if it reaches you it strikes the hull.
+  Press **M** to open or close the map.
+- **Drilling.** Steer with **A** and **D** (or the arrow keys), or click on the seismic scanner (top
+  right), which shows the rock ahead: ore veins, gem pockets, hard rock, water pockets. More drill
+  power is faster, hotter and louder. Detour for ore and gems, or go straight and stay ahead of the
+  front. A worn bit slows you down.
+- **Power.** The panel on the left splits the reactor's bars between systems. Click a bar, or press
+  **Q W E R T** to add a bar to helm, bracing, weapons, drill, coolant (hold **Shift** to remove
+  one). Damaged bars are crossed out; overheated systems stop working. Power comes back by itself
+  after a repair.
+- **Heat, fire, water.** Deeper rock is hotter. Coolant keeps rooms survivable and is used up as it
+  works (buy more in stores). Fires spread and water pools in the bottom deck: the crew handle
+  emergencies on their own when idle.
+- **Crew.** Press **1**, **2**, **3** (or click a crew card) to select someone, left-click a room to
+  send them there, right-click to let them go back to their own judgement. Someone at the bridge makes
+  the ship harder to hit and steer faster.
+- **Pause.** **Space** pauses and unpauses. You can give orders while paused.
+- **Events.** Read the dossier and click an option (or press its number). Greyed options say what
+  they need.
+- **Store.** Buy coolant, power cells, drill bits, charges, hull repairs (paid in ore), upgrades, a
+  weapon or a new crew member. **Esc** leaves.
+- **Fights.** When a rival rig attacks, its tower appears beside yours. Put power into weapons
+  (**E**) and bracing (**W**), take some from the drill (**Shift+R**). Press **F1** or **F2** (or click a
+  weapon card at the bottom) to arm a weapon, then click an enemy room to aim it: it fires by itself
+  whenever it is charged. Bracing stops borer rounds; mining charges ignore bracing but use ammo.
+  Right-click a card to stop firing. **FLEE** digs you out (it needs 2 drill bars and someone at the
+  bridge).
+- **The end.** The report shows how deep you got, what killed you and what you learned. **New run**
+  starts again.
+
+Every run you play is saved for bug hunting in `%APPDATA%\InnerSun\runs\` (paste that into the
+Windows Explorer address bar to open it). If something goes wrong, note the time: Claude can replay
+that exact run.
 
 ## Start the next build session
 
