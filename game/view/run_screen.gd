@@ -16,6 +16,8 @@ var power: PowerPanel
 var cards: CrewCards
 var alerts: AlertsStrip
 var scanner: ScannerPanel
+var weapons: WeaponCards
+var enemy: EnemyPanel
 var dossier: Dossier
 var store: StoreView
 var map: MapView
@@ -43,6 +45,8 @@ func build(p_sim: Sim, p_profile: Profile) -> void:
 	cards = CrewCards.build(_layer, sim)
 	alerts = AlertsStrip.build(_layer, sim)
 	scanner = ScannerPanel.build(_layer, sim)
+	weapons = WeaponCards.build(_layer, sim)
+	enemy = EnemyPanel.build(_layer, sim)
 	# Overlays last, in stacking order: map, dossier and store, codex, death (on top).
 	map = MapView.build(_layer, sim)
 	dossier = Dossier.build(_layer, sim)
@@ -62,6 +66,8 @@ func bind(p_sim: Sim, p_profile: Profile) -> void:
 	cards.bind(sim)
 	alerts.bind(sim)
 	scanner.bind(sim)
+	weapons.bind(sim)
+	enemy.bind(sim)
 	map.bind(sim)
 	dossier.bind(sim)
 	store.bind(sim)
@@ -94,6 +100,7 @@ func _process(_delta: float) -> void:
 	if sim == null:
 		return
 	power.keys_enabled = not overlay_open()
+	weapons.keys_enabled = not overlay_open()
 
 
 func _ship_row() -> float:

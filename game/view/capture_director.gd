@@ -13,7 +13,8 @@ extends Node
 
 const MOMENT_DELAY_S: Dictionary = {"fire": 4.0, "flood": 8.0, "arrive": 0.6, "fire_out": 0.6,
 	"drill_start": 2.5, "ore": 0.35, "burst": 0.35, "segment_done": 0.4,
-	"event": 0.0, "store": 0.0, "map": 0.0, "fight": 5.0, "death": 0.5}
+	"event": 0.0, "store": 0.0, "map": 0.0, "fight": 5.0, "death": 0.5,
+	"volley": 0.7, "impact": 0.12, "block": 0.15, "miss": 0.2}
 const HOLD_MOMENTS: Array[String] = ["event", "store", "map", "death"]
 const HOLD_FRAMES: int = 150  ## About 2.5 s at 60 fps.
 const HOLD_SHOT_AT: int = 45  ## Frames into a hold when its shot is taken (overlays fade in first).
@@ -127,6 +128,14 @@ func _watch_events(sim: Sim) -> void:
 				moment = "map"
 		elif kind == "fight_start":
 			moment = "fight"
+		elif kind == "weapon_fired" and not e.has("side"):
+			moment = "volley"
+		elif kind == "room_hit":
+			moment = "impact"
+		elif kind == "bracing_absorbed" or kind == "beam_blocked":
+			moment = "block"
+		elif kind == "shot_missed":
+			moment = "miss"
 		elif kind == "run_over":
 			moment = "death"
 		if moment.is_empty():
