@@ -15,6 +15,11 @@ that record. Keep it current as you go; never prune it.
 | Decisions and turns | `docs/DECISIONS.md`, `docs/STEWART_FEEDBACK.md` | The why behind each change of direction. |
 | Timeline | this file, below | One row per milestone or memorable moment, with links to the above. |
 
+## The live page
+Published as a private artifact: https://claude.ai/artifact/UJjDA4PJkSXMKjpg2zxQpc (source `docs/making-of/index.html`).
+Republish it after each milestone or big visual moment: add an entry, update the "Right now" box and
+the score chart, and map any new pictures in the publish `files`.
+
 ## Timeline
 | When | Moment | Picture / clip | Commit or tag | The story in one line |
 |---|---|---|---|---|
@@ -29,3 +34,4 @@ that record. Keep it current as you go; never prune it.
 | 2026-10-15 | First fight on screen | `stills/005`, `docs/progress/010` | combat view merge | Two drill towers trade fire through the rock: tracers, a BLOCKED pop, weapon cards. |
 | 2026-10-16 | M1a playtest build | `clips/002` (drilling), `stills/006` (combat in the rock, before the final framing fix), `docs/progress/018` to `020` | `m1a-playtest` | A whole run, painted, with fights in the rock, events, a store and a death report; the blind critic's score climbs 3.8, 5.8, 6.1; the bots win 12 to 19 percent. Handed to Stewart to play. |
 | 2026-10-16 | Playtest build 2 | `docs/research/m1-evidence/perf_run_mode_after_fix.json` | `m1a-playtest-2` | The last audit catches stutter while drilling (frames up to 44 ms); repainting only the cut cells under a frame budget brings the 1% low from 31 to 78 fps. This is the build Stewart plays. |
+| 2026-10-16 | M1b: digging is the game | `docs/progress/021`, `022` | `50a1c78`, `a8965a2` | Stewart's playtest: nothing to do but steer. Controls fixed and hand-tested, a zoomed-out drilling view, and a new economy of nine ores and gems. Gemini watches video for the first time: 5.6. |

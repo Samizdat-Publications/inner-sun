@@ -1,0 +1,228 @@
+<title>The Making of Inner Sun</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@600;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a borehole log. One depth rail runs down the left; each entry is a core sample logged at
+   its date, with pictures to the right. Single dark look on purpose (the game's own shaft at night). */
+:root {
+  --rock: #14110e;        /* page ground: the shaft */
+  --stratum: #1f1a15;     /* raised panels */
+  --seam: #3a3027;        /* rules, rail */
+  --paper: #e9dfcc;       /* body text */
+  --dim: #a79a85;         /* secondary text */
+  --brass: #e0a24a;       /* the accent: crown glow and brass fittings */
+  --scan: #6fd39a;        /* scanner green, used only for scores */
+  --alarm: #e0604a;       /* "now running" state */
+  --display: "Big Shoulders Stencil Display", "Impact", "Arial Narrow", sans-serif;
+  --body: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --mono: "JetBrains Mono", Consolas, "Courier New", monospace;
+  color-scheme: dark;
+}
+body { background: var(--rock); color: var(--paper); font-family: var(--body); font-size: 17px; line-height: 1.6; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 40px 80px; }
+h1, h2, h3 { font-family: var(--display); font-weight: 800; letter-spacing: 0.02em; text-wrap: balance; margin: 0; line-height: 1.02; }
+a { color: var(--brass); }
+a:focus-visible, video:focus-visible { outline: 2px solid var(--brass); outline-offset: 3px; }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--brass); }
+header.hero { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 32px; align-items: end; padding-bottom: 28px; border-bottom: 1px solid var(--seam); }
+header.hero h1 { font-size: clamp(48px, 9vw, 104px); color: var(--paper); }
+header.hero h1 span { color: var(--brass); display: block; }
+.lede { max-width: 62ch; color: var(--dim); margin: 14px 0 0; }
+.now { background: var(--stratum); border: 1px solid var(--seam); padding: 18px 20px; display: grid; gap: 10px; min-width: 0; }
+.now h2 { font-size: 26px; }
+.now ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: 15px; }
+.pill { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; padding: 2px 7px; border: 1px solid currentColor; margin-right: 6px; white-space: nowrap; }
+.pill.done { color: var(--scan); } .pill.run { color: var(--alarm); } .pill.next { color: var(--dim); }
+.scores { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); gap: 32px; padding-block: 36px; border-bottom: 1px solid var(--seam); align-items: center; }
+.scores h2 { font-size: 40px; }
+.scores p { color: var(--dim); max-width: 48ch; margin: 10px 0 0; font-size: 15px; }
+.chart { overflow-x: auto; }
+.chart svg { width: 100%; min-width: 420px; height: auto; display: block; }
+.chart text { font-family: var(--mono); font-size: 12px; fill: var(--dim); }
+.log { position: relative; padding-top: 36px; display: grid; gap: 44px; }
+.log::before { content: ""; position: absolute; left: 112px; top: 36px; bottom: 0; width: 2px; background: repeating-linear-gradient(var(--seam) 0 10px, transparent 10px 16px); }
+.entry { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 32px; position: relative; }
+.entry::before { content: ""; position: absolute; left: 106px; top: 8px; width: 14px; height: 14px; background: var(--rock); border: 2px solid var(--brass); transform: rotate(45deg); }
+.entry.live::before { border-color: var(--alarm); background: var(--alarm); }
+.when { font-family: var(--mono); font-size: 13px; color: var(--dim); text-align: right; padding-top: 2px; font-variant-numeric: tabular-nums; }
+.when b { display: block; color: var(--brass); font-weight: 600; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+.body { min-width: 0; padding-left: 8px; display: grid; gap: 12px; }
+.body h3 { font-size: 34px; }
+.body p { margin: 0; max-width: 66ch; }
+.body .quote { font-style: italic; color: var(--dim); border-left: 2px solid var(--seam); padding-left: 14px; }
+.tag { font-family: var(--mono); font-size: 12px; color: var(--dim); }
+.shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+figure { margin: 0; display: grid; gap: 6px; min-width: 0; }
+figure img, figure video { width: 100%; max-width: 100%; height: auto; display: block; border: 1px solid var(--seam); background: #000; }
+figcaption { font-family: var(--mono); font-size: 12px; color: var(--dim); line-height: 1.45; }
+footer { margin-top: 56px; padding-top: 18px; border-top: 1px solid var(--seam); font-family: var(--mono); font-size: 12px; color: var(--dim); }
+@media (max-width: 760px) {
+  header.hero, .scores { grid-template-columns: minmax(0, 1fr); }
+  .log::before { left: 7px; }
+  .entry { grid-template-columns: minmax(0, 1fr); gap: 8px; padding-left: 28px; }
+  .entry::before { left: 1px; }
+  .when { text-align: left; }
+  .body { padding-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+</style>
+
+<div class="wrap">
+  <header class="hero">
+    <div>
+      <div class="eyebrow">Samizdat Publications / drill log</div>
+      <h1>The Making of <span>Inner Sun</span></h1>
+      <p class="lede">A drill tower bores down through a hollow Earth toward the place where the UAPs are built. This is the build history from the first grey box, logged like a borehole: one core sample per moment, newest at the bottom. It updates as work lands.</p>
+    </div>
+    <aside class="now" aria-label="Right now">
+      <div class="eyebrow">Right now, 16 Oct 2026</div>
+      <h2>M1b: make it a digging game</h2>
+      <ul>
+        <li><span class="pill done">done</span>Controls fixed for a real player, checked by hand</li>
+        <li><span class="pill done">done</span>Zoomed-out drilling view, rock with strata, readable crew</li>
+        <li><span class="pill done">done</span>Digging economy: 9 ores and gems, gas pockets, surveys, gear</li>
+        <li><span class="pill run">running</span>Longer runs and difficulty tuning</li>
+        <li><span class="pill run">running</span>Pickup pop-ups, map surveys, the new store</li>
+        <li><span class="pill next">next</span>Playtest build 3 and a Gemini review</li>
+      </ul>
+    </aside>
+  </header>
+
+  <section class="scores" aria-label="Critic scores">
+    <div>
+      <div class="eyebrow">Blind critic, average of 10 categories</div>
+      <h2>3.8 to 6.1, then a reset</h2>
+      <p>Each review comes from a critic that knows nothing about the code and judges a captured run like a player would. The last point is Gemini watching video for the first time: a harsher, new baseline before the digging rework.</p>
+    </div>
+    <div class="chart">
+      <svg viewBox="0 0 560 230" role="img" aria-label="Scores: 3.8, 5.8, 6.1, then 5.6 from the Gemini video critic">
+        <g stroke="#3a3027" stroke-width="1">
+          <line x1="50" y1="30" x2="540" y2="30"/><line x1="50" y1="80" x2="540" y2="80"/>
+          <line x1="50" y1="130" x2="540" y2="130"/><line x1="50" y1="180" x2="540" y2="180"/>
+        </g>
+        <text x="40" y="34" text-anchor="end">8</text><text x="40" y="84" text-anchor="end">6</text>
+        <text x="40" y="134" text-anchor="end">4</text><text x="40" y="184" text-anchor="end">2</text>
+        <polyline points="80,135 220,85 360,77.5" fill="none" stroke="#6fd39a" stroke-width="3"/>
+        <line x1="360" y1="77.5" x2="500" y2="90" stroke="#6fd39a" stroke-width="2" stroke-dasharray="5 5"/>
+        <g fill="#14110e" stroke="#6fd39a" stroke-width="3">
+          <circle cx="80" cy="135" r="6"/><circle cx="220" cy="85" r="6"/><circle cx="360" cy="77.5" r="6"/>
+        </g>
+        <circle cx="500" cy="90" r="7" fill="#e0a24a"/>
+        <text x="80" y="160" text-anchor="middle">3.8</text><text x="220" y="110" text-anchor="middle">5.8</text>
+        <text x="360" y="62" text-anchor="middle">6.1</text><text x="500" y="72" text-anchor="middle" style="fill:#e0a24a">5.6</text>
+        <text x="80" y="214" text-anchor="middle">M0 view</text><text x="220" y="214" text-anchor="middle">M1 run</text>
+        <text x="360" y="214" text-anchor="middle">M1a gate</text><text x="500" y="214" text-anchor="middle" style="fill:#e0a24a">Gemini video</text>
+      </svg>
+    </div>
+  </section>
+
+  <main class="log">
+    <article class="entry">
+      <div class="when"><b>Kickoff</b>15 Oct</div>
+      <div class="body">
+        <h3>A drill ship into a hollow Earth</h3>
+        <p>Stewart pitches an FTL-style roguelite: a black-budget drill ship, crew and power to manage, a node map, events, fights, and something following your noise. The tall tower is chosen over a horizontal mole, so depth is the whole picture.</p>
+        <p class="quote">"My favorite games are digging games where you collect ore and gems and upgrade your gear."</p>
+      </div>
+    </article>
+
+    <article class="entry">
+      <div class="when"><b>M0</b>15 Oct</div>
+      <div class="body">
+        <h3>The loop proven</h3>
+        <p>Before any art: a fire drill in placeholder rooms, a bot playing it, frames captured off-screen, and the same result hash headless and on camera. Proof that Claude can build, play and look at the game on its own.</p>
+        <div class="shots">
+          <figure><img src="progress/002_m0-fire-drill-crew-arrives.jpg" alt="Placeholder cutaway with a drill-room fire and a crew member arriving" loading="lazy"><figcaption>A crew member climbs down to a drill-room fire.</figcaption></figure>
+          <figure><img src="progress/003_m0-fire-drill-flood.jpg" alt="Water pooling in the bottom deck of the placeholder ship" loading="lazy"><figcaption>Water from a breach pours down the hatch.</figcaption></figure>
+        </div>
+      </div>
+    </article>
+
+    <article class="entry">
+      <div class="when"><b>M1 begins</b>15 Oct</div>
+      <div class="body">
+        <h3>The critic sees 3.8 out of 10</h3>
+        <p>A blind reviewer is installed. Its first verdict: a debug view, not a game yet. The exposure is lifted so it can see anything at all.</p>
+        <div class="shots">
+          <figure><video src="clips/001_m0-fire-drill.mp4" controls muted playsinline preload="metadata"></video><figcaption>Clip 001: the M0 fire drill.</figcaption></figure>
+          <figure><img src="progress/004_m0-exposure-lift-frames.jpg" alt="Grid of review frames after the exposure lift" loading="lazy"><figcaption>The first frames the critic reviewed.</figcaption></figure>
+        </div>
+      </div>
+    </article>
+
+    <article class="entry">
+      <div class="when"><b>Art</b>15 Oct</div>
+      <div class="body">
+        <h3>The bake-off picks a style</h3>
+        <p>Painted pulp against Blender pre-renders, the same reactor room lit the same way in Godot. The painted rooms win; HDR glow finally blooms.</p>
+        <div class="shots">
+          <figure><img src="stills/002_bakeoff-painted-vs-blender.jpg" alt="Side by side reactor rooms in two art styles" loading="lazy"><figcaption>Painted versus pre-rendered.</figcaption></figure>
+          <figure><img src="progress/008_drill-greybox.jpg" alt="Greybox drill tower in a shaft with an ore vein and a gem geode" loading="lazy"><figcaption>The drill bites: the first shaft, an ore vein, a geode in basalt.</figcaption></figure>
+        </div>
+      </div>
+    </article>
+
+    <article class="entry">
+      <div class="when"><b>Screens</b>15 Oct</div>
+      <div class="body">
+        <h3>A HUD, a dossier, a map</h3>
+        <p>The power panel, the seismic scanner, crew cards, the typewritten dossier with redaction bars and TOPSIDE's radio strip, and the node map with the pursuit front creeping down.</p>
+        <div class="shots">
+          <figure><img src="progress/007_m1-dossier.jpg" alt="Typewritten dossier page with redactions" loading="lazy"><figcaption>An event dossier with redactions that lift as the codex grows.</figcaption></figure>
+          <figure><img src="progress/009_m1-node-map.jpg" alt="Green seismic chart node map" loading="lazy"><figcaption>The node map as a seismic survey.</figcaption></figure>
+        </div>
+      </div>
+    </article>
+
+    <article class="entry">
+      <div class="when"><b>Alive</b>15 Oct</div>
+      <div class="body">
+        <h3>The ship comes alive, then fights</h3>
+        <p>Painted rooms, props and crew replace the grey boxes. Then two drill towers trade fire through the rock.</p>
+        <div class="shots">
+          <figure><img src="progress/011_m1-painted-fire-drill.jpg" alt="Painted six-room cutaway with a fire in the drill room" loading="lazy"><figcaption>The painted cutaway during a fire.</figcaption></figure>
+          <figure><img src="progress/010_m1-combat.jpg" alt="Two drill towers in combat with tracers between them" loading="lazy"><figcaption>The first fight on screen.</figcaption></figure>
+        </div>
+      </div>
+    </article>
+
+    <article class="entry">
+      <div class="when"><b>M1a</b>16 Oct</div>
+      <div class="body">
+        <h3>A whole run, handed to Stewart</h3>
+        <p>Map, drilling, events, a store, fights, death and the codex, all playable. The critic climbs to 6.1. A last audit catches stutter while drilling; repainting only the cut rock brings the worst frames from 31 to 78 fps.</p>
+        <div class="shots">
+          <figure><video src="clips/002_m1a-playtest-run.mp4" controls muted playsinline preload="metadata"></video><figcaption>Clip 002: the M1a playtest run.</figcaption></figure>
+          <figure><img src="progress/020_m1a-final-combat.jpg" alt="Combat framed inside the world area with weapon cards" loading="lazy"><figcaption>The final M1a combat framing.</figcaption></figure>
+        </div>
+      </div>
+    </article>
+
+    <article class="entry">
+      <div class="when"><b>Playtest</b>16 Oct</div>
+      <div class="body">
+        <h3>Stewart plays: "I don't see anything I can do"</h3>
+        <p>Two and a half minutes, steering only. Claude then plays it with real keyboard and mouse and finds why: the map clock kills you while you choose, power is locked during events, the first fight is unwinnable unprepared, and nothing explains the controls. Stewart picks a new direction: digging is the game, with fights now and then, the way space games mix scanning planets for resources with the occasional hostile.</p>
+        <p class="quote">"Each level is like 30 seconds and you get like one piece of coal, each run should be way longer."</p>
+        <div class="shots">
+          <figure><img src="progress/021_m1b-baseline-frames.jpg" alt="Grid of frames from a bot run of the playtest build" loading="lazy"><figcaption>The baseline Gemini watched (5.6): "an elevator riding past scrolling wallpaper".</figcaption></figure>
+        </div>
+      </div>
+    </article>
+
+    <article class="entry live">
+      <div class="when"><b>M1b</b>16 Oct</div>
+      <div class="body">
+        <h3>See the dig</h3>
+        <p>Controls fixed and checked by hand: help on the first run, the map holds time, power works in dossiers, the fight pauses and says what to do. The camera pulls back so you see the rock you steer for; the rock gets strata, the water gets murky, the crew get bright harnesses. Underneath, a new economy: coal, iron, copper, silver and gold, quartz, amethyst and emerald, richer with depth, gas pockets that start fires, surveys on every map node, and ore that buys drill heads, plating and pumps.</p>
+        <div class="shots">
+          <figure><img src="progress/022_m1b-dig-view-rock-crew.jpg" alt="Four frames: the zoomed-out drilling view with strata and the fight in the rock" loading="lazy"><figcaption>The new drilling view and the fight in the rock.</figcaption></figure>
+        </div>
+        <p class="tag">In progress: longer runs, pickups you can see, the new store. Playtest build 3 next.</p>
+      </div>
+    </article>
+  </main>
+
+  <footer>Built by Claude for Stewart Gregerson. Source: the Inner Sun repository, docs/making-of and docs/progress.</footer>
+</div>
