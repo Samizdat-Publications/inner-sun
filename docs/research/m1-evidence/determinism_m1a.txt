@@ -1,0 +1,14 @@
+M1a determinism evidence, 2026-10-15
+
+1. Scenario (python tools/determinism.py, fire_drill seed 7):
+   headless  tick=1200 hash=b3eaaeb1afa49a3c
+   movie     tick=1200 hash=b3eaaeb1afa49a3c
+
+2. A whole run (normal play mode, balanced bot, seed 33):
+   Movie Maker review capture (with held event, store, map and death screens, the full view, audio)
+     FINAL tick=14400 hash=3ff23938f4209520   (review/archive/raw/20261015-231813-930fa47/movie_log.txt)
+   headless (--mode=run --bot=balanced --seed=33 --run-ticks=14400, fresh profile)
+     FINAL tick=14400 hash=3ff23938f4209520
+   So pausing, holds and the view never change the sim.
+
+3. Saved run records replay exactly (game/tests/test_replay.gd, test_profile.gd; tools/replay.py).
