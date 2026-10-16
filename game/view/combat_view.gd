@@ -116,9 +116,16 @@ func bounds_px() -> Rect2:
 
 
 func enemy_room_at_mouse() -> int:
+	return enemy_room_at(get_viewport().get_mouse_position())
+
+
+## The enemy room under a screen (viewport) position, or -1. A click uses its own event position, so
+## the answer never depends on when the polled mouse position was last updated.
+func enemy_room_at(screen_pos: Vector2) -> int:
 	if not active():
 		return -1
-	var p: Vector2 = (get_local_mouse_position() - _origin_px()) / ppm
+	var local: Vector2 = get_global_transform_with_canvas().affine_inverse() * screen_pos
+	var p: Vector2 = (local - _origin_px()) / ppm
 	return sim.enemy.ship.room_at(p + Vector2(0, 0.06), -1)
 
 

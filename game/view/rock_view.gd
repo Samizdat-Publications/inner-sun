@@ -42,7 +42,7 @@ const WALL_CHUNK_PX: int = 512  ## Back wall and apron sprites, so each meets on
 const ROCK_SHADOWS: bool = false
 const AMBIENT: Color = Color(0.30, 0.30, 0.34)
 ## Albedo gain for rock sprites (HDR modulate): the ambient is so dark that plain rock colors read black.
-const ROCK_GAIN: float = 1.45
+const ROCK_GAIN: float = 2.1
 
 ## The whole rock as ONE canvas item (a mosaic of the painted chunks). Measured in captures: Godot lit
 ## a rock item only with the lights that sit inside its rectangle, so separate chunk sprites came out
@@ -448,7 +448,7 @@ func _paint_run(c0: int, c1: int, r: int) -> void:
 				h = top + (bot - top) * ty
 			var X: int = c0 * CELL_PX + x
 			var na: float = tile[row_n | (X & 255)]
-			var v: float = h + (na - 0.5) * 0.3
+			var v: float = h + (na - 0.5) * 0.4  # Ragged cut edges: the shaft wall is torn, not smooth.
 			var cover: float = clampf((v - 0.5) * 10.0 + 0.5, 0.0, 1.0)
 			if cover <= 0.004:
 				continue
@@ -477,13 +477,16 @@ func _paint_run(c0: int, c1: int, r: int) -> void:
 			var shade: float = tex * pv[cell] * (1.0 + band) * (1.0 - 0.28 * ydepth)
 			var depth_in: float = clampf((v - 0.5) * 3.2, 0.0, 1.0)
 			shade *= 0.32 + 0.68 * depth_in
-			var bump: float = 1.0
+			# A cut wall is rougher than solid rock: bit rings and gouges, and stronger bumps for the lights.
+			var edge: float = 1.0 - depth_in
+			shade *= 1.0 + edge * 0.2 * sin(float(Y) * 0.8 + nb * 6.0) + edge * 0.1 * (na - 0.5)
+			var bump: float = 1.0 + 2.2 * edge
 			if kind == 2:
-				bump = 1.3
+				bump *= 1.3
 			elif kind == 3:
 				var sheen: float = smoothstep(0.78, 0.95, 0.5 + 0.5 * sin(float(Y) * 0.4 + na * 5.0))
 				shade = shade * 0.8 + sheen * 0.25
-				bump = 0.25
+				bump *= 0.25
 			var p: int = y * wpx + x
 			var o: int = p * 4
 			var sh8: int = clampi(roundi(shade * 255.0), 0, 255)
@@ -535,6 +538,7 @@ func _paint_glint(idx: int, cx: int, cy: int) -> void:
 				px.resize(CHUNK_PX * CHUNK_PX * 4)
 				any = true
 			var gem: bool = kind == 2
+			_ore_fill(px, code, lc, lr, gem)
 			if gem:
 				_gem_glow(px, c, r, lc, lr)
 			else:
@@ -557,10 +561,7 @@ func _paint_glint(idx: int, cx: int, cy: int) -> void:
 		g.position = Vector2(float(idx % drill.chunk_cols), float(idx / drill.chunk_cols)) * float(CHUNK_PX) * _scale
 		g.z_index = -19
 		g.light_mask = 0
-		var mat := CanvasItemMaterial.new()
-		mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
-		mat.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
-		g.material = mat
+		g.material = RockTiles.glint_material()
 		# Unshaded items are not touched by the CanvasModulate, so this is the on-screen brightness.
 		g.modulate = Color(1.15, 1.15, 1.15, 1.0)
 		add_child(g)
@@ -570,6 +571,17 @@ func _paint_glint(idx: int, cx: int, cy: int) -> void:
 	else:
 		_gtex[idx].update(img)
 	g.visible = true
+
+
+## A soft wash of the material's own colour over an ore or gem cell (additive, unshaded), so veins and
+## pockets read plainly from across the shaft and not only when a glint twinkles.
+func _ore_fill(px: PackedByteArray, code: int, lc: int, lr: int, gem: bool) -> void:
+	var col: Color = Color.html(str(drill.material(code).get("color", "#808080")))
+	var k: float = 0.5 if gem else 0.62
+	for yy: int in range(CELL_PX):
+		for xx: int in range(CELL_PX):
+			var edge: float = minf(minf(float(xx), float(CELL_PX - 1 - xx)), minf(float(yy), float(CELL_PX - 1 - yy)))
+			_put(px, lc * CELL_PX + xx, lr * CELL_PX + yy, col.r, col.g, col.b, k * (0.55 + 0.15 * minf(edge, 3.0)))
 
 
 ## Gem cells glow from the painted emission tile (the same warped world position as the tile).

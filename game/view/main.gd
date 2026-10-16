@@ -17,11 +17,9 @@ extends Node2D
 ## Normal play saves the profile and a replayable record of every run (game/meta), finished or not.
 
 const PPM: float = 80.0
-const DRILL_ZOOM: float = 1.0  ## Critic 003: the ship was a postage stamp; the scanner shows what is ahead.
 const CUTAWAY_ZOOM: float = 1.15
 const COMBAT_TOP_PX: float = 90.0  ## The enemy panel at the top of the world area.
 const COMBAT_BOTTOM_PX: float = 124.0  ## The weapon cards at the bottom of the world area.
-const ROCK_BELOW_M: float = 2.5  ## Rock visible below the crown while drilling.
 const STEER_DEG: float = 30.0
 const HUMAN_CAP_S: float = 6.0 * 3600.0  ## A human run never hits the stuck cap.
 const FIGHT_BANNER: String = "HOSTILE CONTACT. Paused. Power weapons (E) and bracing (W), arm a gun (F1, F2) and click an enemy room. Space to fight."
@@ -39,6 +37,7 @@ var cam: Camera2D
 var rock_view: RockView
 var combat_view: CombatView
 var paused: bool = false
+var drill_zoom: float = 0.74  ## The mouse wheel sets it while drilling; kept for the run (DigCamera).
 var bot_driven: bool = false
 var replaying: bool = false
 var run_ticks: int = -1
@@ -88,6 +87,7 @@ func _ready() -> void:
 
 
 func _start_run() -> bool:
+	drill_zoom = DigCamera.default_zoom(RunScreen.WORLD_RECT.size.x, PPM)
 	_saved = false
 	_in_fight = false
 	_fight_banner = false
@@ -156,10 +156,10 @@ func _framed(p: Vector2, zoom: float) -> Vector2:
 
 
 func _drill_cam_target(d: DrillSim) -> Vector2:
-	var center_x: float = (d.ship_pos.x + d.ship_size.x * 0.5) * PPM
-	var top_y: float = d.ship_pos.y * PPM
-	var bottom_y: float = (d.ship_pos.y + d.ship_size.y + ROCK_BELOW_M) * PPM
-	return _framed(Vector2(center_x, (top_y + bottom_y) * 0.5), DRILL_ZOOM)
+	var crown_x: float = (d.ship_pos.x + d.ship_size.x * 0.5) * PPM
+	var crown_y: float = (d.ship_pos.y + d.ship_size.y) * PPM
+	var c: Vector2 = DigCamera.center_for(crown_x, crown_y, d.ship_size.y * PPM, RunScreen.WORLD_RECT.size.y, drill_zoom)
+	return _framed(c, drill_zoom)
 
 
 func _process(delta: float) -> void:
@@ -172,6 +172,7 @@ func _process(delta: float) -> void:
 		_begin_drill_view(d)
 	_ease_camera(d, delta)
 	combat_view.armed = screen.weapons.armed
+	view.selected_crew_id = screen.cards.selected_id
 	combat_view.cam_zoom = cam.zoom.x
 	var held: bool = _world_held()
 	screen.set_paused(paused or held, screen.hold_label() if held and not paused else "PAUSED")
@@ -184,7 +185,7 @@ func _process(delta: float) -> void:
 ## fight both towers with the rock between them.
 func _ease_camera(d: DrillSim, delta: float) -> void:
 	var k: float = 1.0 - exp(-5.0 * delta)
-	var base_zoom: float = DRILL_ZOOM if rock_view != null else CUTAWAY_ZOOM
+	var base_zoom: float = drill_zoom if rock_view != null else CUTAWAY_ZOOM
 	var zoom: float = base_zoom
 	var pos: Vector2 = _drill_cam_target(d) if rock_view != null else _framed(view.center_px(), base_zoom)
 	if combat_view.active():
@@ -206,7 +207,7 @@ func _begin_drill_view(d: DrillSim) -> void:
 	move_child(rock_view, 0)
 	view.set_drilling(d)
 	view.position = d.ship_pos * PPM
-	cam.zoom = Vector2(DRILL_ZOOM, DRILL_ZOOM)
+	cam.zoom = Vector2(drill_zoom, drill_zoom)
 	cam.position = _drill_cam_target(d)
 
 
@@ -293,10 +294,17 @@ func _unhandled_input(event: InputEvent) -> void:
 	var mb: InputEventMouseButton = event as InputEventMouseButton
 	if mb == null or not mb.pressed or screen.overlay_open():
 		return
+	# The wheel over the world area zooms the drilling camera (the choice lasts for the run).
+	var wheel: int = 1 if mb.button_index == MOUSE_BUTTON_WHEEL_UP else (-1 if mb.button_index == MOUSE_BUTTON_WHEEL_DOWN else 0)
+	if wheel != 0:
+		if rock_view != null and RunScreen.WORLD_RECT.has_point(mb.position):
+			drill_zoom = DigCamera.stepped(drill_zoom, wheel)
+			get_viewport().set_input_as_handled()
+		return
 	# In a fight, a left click on an enemy room with a weapon armed aims it (a command, like all orders).
 	var wc: WeaponCards = screen.weapons
 	if mb.button_index == MOUSE_BUTTON_LEFT and wc.armed >= 0 and combat_view.active():
-		var er: int = combat_view.enemy_room_at_mouse()
+		var er: int = combat_view.enemy_room_at(mb.position)
 		if er >= 0:
 			run.sim.push({"type": "target", "weapon": wc.armed, "room": run.sim.enemy.ship.rooms[er].id})
 			wc.disarm()

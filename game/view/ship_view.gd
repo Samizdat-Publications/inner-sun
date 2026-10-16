@@ -52,6 +52,16 @@ var _crown_light: PointLight2D
 var _crown_fill: PointLight2D
 var _sparks: CPUParticles2D
 var _dust: CPUParticles2D
+var _chips: CPUParticles2D
+var _streaks: CPUParticles2D
+## Water sloshing with the tower's motion: a damped spring (see _update_slosh) and how agitated it is.
+var _slosh: float = 0.0
+var _slosh_v: float = 0.0
+var _agit: float = 0.0
+var _last_px: float = 0.0
+var _last_vx: float = 0.0
+var _last_heading: float = 0.0
+var selected_crew_id: String = ""  ## Set by Main: that crew member gets the selection ring.
 
 
 func setup(p_sim: Sim, p_world: ShipWorld, p_ppm: float) -> void:
@@ -192,7 +202,8 @@ func _build_rooms() -> void:
 		var ri: int = r.index
 		_fn(0, func(n: Node2D) -> void: RoomFx.draw_heat(n, world.ship.rooms[ri], room_rect_px(world.ship.rooms[ri]), _time), 2, 2.0)
 		_fn(3, func(n: Node2D) -> void: RoomFx.draw_frame(n, room_rect_px(world.ship.rooms[ri])))
-		_fn(10, func(n: Node2D) -> void: RoomFx.draw_water(n, world.ship.rooms[ri], room_rect_px(world.ship.rooms[ri]), ppm, _time), 1, 1.8)
+		var left: bool = r.rect.get_center().x < ship_size_m().x * 0.5
+		_fn(10, func(n: Node2D) -> void: RoomWater.draw(n, world.ship.rooms[ri], room_rect_px(world.ship.rooms[ri]), ppm, _time, _slosh, _agit, left), 1, 1.8)
 		_fn(11, func(n: Node2D) -> void: RoomFx.draw_alarm_rim(n, world.ship.rooms[ri], room_rect_px(world.ship.rooms[ri]), _time), 2, 2.0)
 		_fn(12, func(n: Node2D) -> void: RoomFx.draw_label(n, world.ship, world.ship.rooms[ri], room_rect_px(world.ship.rooms[ri]), ppm, _font, _time), 1)
 
@@ -366,9 +377,9 @@ func _build_flames() -> void:
 func _build_sprays() -> void:
 	var dot: GradientTexture2D = ShipView.radial_texture(16)
 	var ramp := Gradient.new()
-	ramp.set_color(0, Color(1.7, 2.1, 2.4, 0.95))
-	ramp.set_color(1, Color(0.35, 0.7, 1.0, 0.0))
-	ramp.add_point(0.5, Color(0.9, 1.5, 1.9, 0.7))
+	ramp.set_color(0, Color(2.0, 1.95, 1.6, 0.95))
+	ramp.set_color(1, Color(0.55, 0.5, 0.3, 0.0))
+	ramp.add_point(0.5, Color(1.3, 1.25, 0.95, 0.7))
 	var mid_x: float = ship_size_m().x * 0.5
 	for r: Room in world.ship.rooms:
 		var rp: Rect2 = room_rect_px(r)
@@ -417,6 +428,8 @@ func set_drilling(d: DrillSim) -> void:
 	if not on:
 		_sparks.emitting = false
 		_dust.emitting = false
+		_chips.emitting = false
+		_streaks.emitting = false
 		position = Vector2.ZERO
 		_set_crown_glow(0.5)
 
@@ -503,6 +516,14 @@ func _build_crown() -> void:
 		fl.range_item_cull_mask = 2
 		fl.enabled = false
 		_floods.append(fl)
+	if not _enemy:
+		# One wide, faint warm fill over the shaft so the rock around the tower is never pitch black.
+		var fill: PointLight2D = _light(Vector2(size.x * 0.5, size.y * 0.8), Color(0.95, 0.82, 0.68), 1.1, ppm * 20.0, false, 220.0)
+		fill.texture = wide
+		fill.texture_scale = ppm * 20.0 * 2.0 / 128.0 / 0.4
+		fill.range_item_cull_mask = 2
+		fill.enabled = false
+		_floods.append(fill)
 	var hot := Gradient.new()
 	hot.set_color(0, Color(1.7, 1.45, 0.8, 1.0))
 	hot.set_color(1, Color(0.8, 0.18, 0.04, 0.0))
@@ -533,7 +554,7 @@ func _build_crown() -> void:
 	_dust = CPUParticles2D.new()
 	_dust.texture = ShipView.radial_texture(48)
 	_dust.material = ArtLib.unshaded()
-	_dust.amount = 36
+	_dust.amount = 56
 	_dust.lifetime = 2.2
 	_dust.emitting = false
 	_dust.position = Vector2(size.x * 0.5, tip_y - 6.0)
@@ -544,11 +565,15 @@ func _build_crown() -> void:
 	_dust.gravity = Vector2(0, -14)
 	_dust.initial_velocity_min = 25.0
 	_dust.initial_velocity_max = 90.0
-	_dust.scale_amount_min = 2.0
-	_dust.scale_amount_max = 4.5
+	_dust.scale_amount_min = 3.0
+	_dust.scale_amount_max = 7.0
 	_dust.color_ramp = puff
 	_dust.z_index = -7
 	add_child(_dust)
+	_chips = CrownDebris.make_chips(size, tip_y)
+	add_child(_chips)
+	_streaks = CrownDebris.make_streaks(size, tip_y)
+	add_child(_streaks)
 
 
 ## Oxide-red wash over the blue hull plating (a multiply tint alone cannot turn blue paint red).
@@ -604,6 +629,10 @@ func _process_drilling() -> void:
 	_sparks.emitting = cut
 	_sparks.speed_scale = 0.7 + 0.5 * load_k
 	_dust.emitting = cut
+	_chips.emitting = cut
+	_chips.speed_scale = 0.7 + 0.5 * load_k
+	_streaks.emitting = cut
+	_streaks.speed_scale = 0.7 + 0.4 * load_k
 
 
 func _build_crew() -> void:
@@ -617,7 +646,7 @@ func _add_crew(c: CrewMember, enemy: bool) -> void:
 	spr.setup(c, ppm, enemy)
 	add_child(spr)
 	_crew.append(spr)
-	_crew_lights.append(_light(Vector2.ZERO, Color(0.9, 0.93, 1.0), 0.5, ppm * 1.7, false, 120.0))
+	_crew_lights.append(_light(Vector2.ZERO, Color(0.9, 0.93, 1.0), 0.8, ppm * 1.7, false, 120.0))
 
 
 func _rebuild_crew() -> void:
@@ -634,6 +663,28 @@ func _build_tags() -> void:
 	_fn(14, func(n: Node2D) -> void: RoomFx.draw_tags(n, world.ship, _crew, ppm, _font), 1)
 
 
+## The tower's motion sets its water sloshing: a damped spring pushed by the hull's sideways
+## acceleration and by the drill turning, with a slow swell of its own so a flooded room never sits
+## still. The chop grows while the drill shakes the hull. View-side only; the sim never reads it.
+func _update_slosh(delta: float) -> void:
+	var d: float = maxf(delta, 0.0001)
+	var vx: float = (position.x - _last_px) / d
+	var ax: float = clampf((vx - _last_vx) / d, -4000.0, 4000.0)
+	_last_px = position.x
+	_last_vx = vx
+	var turn: float = 0.0
+	var shake: float = 0.0
+	if _drill != null:
+		turn = clampf((_drill.heading_deg - _last_heading) / d, -60.0, 60.0)
+		_last_heading = _drill.heading_deg
+		if _drill.cutting and _drill.speed_m_s > 0.02:
+			shake = clampf(0.45 + 0.4 * _drill.speed_m_s, 0.0, 1.0)
+	var push: float = -turn * 0.25 - ax * 0.003
+	_slosh_v += (14.0 * (0.12 * sin(_time * 0.8) - _slosh) - 2.4 * _slosh_v + push) * d
+	_slosh = clampf(_slosh + _slosh_v * d, -1.0, 1.0)
+	_agit = move_toward(_agit, clampf(shake + absf(_slosh_v) * 0.3, 0.0, 1.0), d * 2.5)
+
+
 func _process(delta: float) -> void:
 	var t0: int = Time.get_ticks_usec()
 	_update(delta)
@@ -642,6 +693,7 @@ func _process(delta: float) -> void:
 
 func _update(delta: float) -> void:
 	_time += delta
+	_update_slosh(delta)
 	var ship: Ship = world.ship
 	if ship.crew.size() < _crew.size():
 		_rebuild_crew()
@@ -665,6 +717,7 @@ func _update(delta: float) -> void:
 	for c: CrewMember in ship.crew:
 		var spr: CrewSprite = _crew[c.index]
 		spr.crew = c
+		spr.selected = c.alive and c.id == selected_crew_id
 		spr.station_system = ship.rooms[c.room].system if c.room >= 0 and c.room < ship.rooms.size() else "none"
 		spr.position = c.pos * ppm + Vector2(0.0, -_foot_lift)
 		spr.update(delta, _time)
