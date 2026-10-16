@@ -8,7 +8,7 @@ extends Control
 ##   var enemy: EnemyPanel = EnemyPanel.build(layer, sim)
 ##   enemy.bind(new_sim)
 
-const DESIGN_RECT: Rect2 = Rect2(300.0, 90.0, 1240.0, 62.0)
+const DESIGN_RECT: Rect2 = Rect2(340.0, 98.0, 1180.0, 80.0)
 
 var sim: Sim = null
 var _t: float = 0.0
@@ -62,35 +62,35 @@ func _draw() -> void:
 	var c: CombatSim = sim.combat
 	var info: Dictionary = sim.db.ships.get(c.enemy_id, {})
 	var name_text: String = str(info.get("name", c.enemy_id)).to_upper()
-	UiTheme.text(self, Vector2(18, 26), "HOSTILE" if not c.boss else "HOSTILE: BOSS", 14, UiTheme.ALARM)
-	UiTheme.glow_text(self, Vector2(18, 48), name_text, 20, UiTheme.AMBER)
+	UiTheme.bold_text(self, Vector2(18, 28), "HOSTILE" if not c.boss else "HOSTILE: BOSS", 17, UiTheme.ALARM)
+	UiTheme.glow_text(self, Vector2(18, 62), name_text, 28, UiTheme.AMBER)
 	# Hull.
-	var hull_x: float = 250.0
-	UiTheme.icon(self, "hull", Vector2(hull_x + 10.0, 22.0), 18.0)
-	UiTheme.text(self, Vector2(hull_x + 28.0, 27.0), "HULL %d / %d" % [c.enemy_hull, c.enemy_hull_max], 15, UiTheme.TEXT)
-	var bar := Rect2(hull_x, 36.0, 260.0, 14.0)
+	var hull_x: float = 290.0
+	UiTheme.icon(self, "hull", Vector2(hull_x + 12.0, 24.0), 22.0)
+	UiTheme.bold_text(self, Vector2(hull_x + 32.0, 30.0), "HULL %d / %d" % [c.enemy_hull, c.enemy_hull_max], 19, UiTheme.TEXT)
+	var bar := Rect2(hull_x, 42.0, 230.0, 22.0)
 	draw_rect(bar, UiTheme.STEEL_DEEP, true)
 	var frac: float = clampf(_hull_shown / float(maxi(1, c.enemy_hull_max)), 0.0, 1.0)
 	var low: bool = frac < 0.34
 	draw_rect(Rect2(bar.position, Vector2(bar.size.x * frac, bar.size.y)), UiTheme.ALARM if low else UiTheme.AMBER, true)
 	draw_rect(bar, UiTheme.BRASS_DARK, false, 1.0)
 	# Bracing layers and evasion.
-	var br_x: float = 540.0
+	var br_x: float = 560.0
 	var layers: int = sim.systems.bracing_layers(sim.enemy)
 	var layers_max: int = sim.systems.max_layers(sim.enemy)
-	UiTheme.icon(self, "shield", Vector2(br_x + 10.0, 22.0), 18.0)
-	UiTheme.text(self, Vector2(br_x + 28.0, 27.0), "BRACING", 15, UiTheme.TEXT)
+	UiTheme.icon(self, "shield", Vector2(br_x + 12.0, 24.0), 22.0)
+	UiTheme.bold_text(self, Vector2(br_x + 32.0, 30.0), "BRACING", 19, UiTheme.TEXT)
 	if layers_max <= 0:
-		UiTheme.text(self, Vector2(br_x, 49.0), "NONE", 15, UiTheme.TEXT_DIM)
+		UiTheme.text(self, Vector2(br_x, 62.0), "NONE", 18, UiTheme.TEXT_DIM)
 	for i: int in range(layers_max):
-		var pip := Rect2(br_x + float(i) * 22.0, 36.0, 18.0, 14.0)
+		var pip := Rect2(br_x + float(i) * 26.0, 42.0, 22.0, 22.0)
 		draw_rect(pip, Color(0.35, 0.75, 1.0) if i < layers else UiTheme.STEEL_DEEP, true)
 		draw_rect(pip, UiTheme.BRASS_DARK, false, 1.0)
 	var eva: int = roundi(sim.systems.evasion(sim.enemy) * 100.0)
-	UiTheme.text(self, Vector2(br_x + 130.0, 49.0), "EVADE %d%%" % eva, 14, UiTheme.TEXT if eva > 0 else UiTheme.TEXT_DIM)
+	UiTheme.text(self, Vector2(br_x + 120.0, 62.0), "EVADE %d%%" % eva, 19, UiTheme.TEXT if eva > 0 else UiTheme.TEXT_DIM)
 	# Weapons, charging.
 	var wv: Array[Dictionary] = c.weapons_view(sim, true)
-	var wx: float = 800.0
+	var wx: float = 780.0
 	var avail: float = size.x - wx - 14.0
 	var ww: float = minf(250.0, avail / float(maxi(1, wv.size())) - 10.0)
 	for i: int in range(wv.size()):
@@ -99,11 +99,11 @@ func _draw() -> void:
 		var cmax: float = maxf(0.01, float(w["charge_max_s"]))
 		var f: float = clampf(_charge_shown[i] / cmax, 0.0, 1.0) if i < _charge_shown.size() else 0.0
 		var powered: bool = bool(w["powered"])
-		UiTheme.text(self, Vector2(x, 27.0), str(w["name"]).to_upper(), 14, UiTheme.TEXT if powered else UiTheme.TEXT_DIM)
-		var wb := Rect2(x, 36.0, ww, 14.0)
+		UiTheme.bold_text(self, Vector2(x, 30.0), str(w["name"]).to_upper(), 16, UiTheme.TEXT if powered else UiTheme.TEXT_DIM)
+		var wb := Rect2(x, 42.0, ww, 22.0)
 		draw_rect(wb, UiTheme.STEEL_DEEP, true)
 		var col: Color = UiTheme.ALARM.lerp(Color(1.0, 0.6, 0.4), UiTheme.pulse(_t, 4.0)) if f >= 0.999 and powered else (UiTheme.FIRE if powered else Color(0.35, 0.34, 0.33))
 		draw_rect(Rect2(wb.position, Vector2(wb.size.x * f, wb.size.y)), col, true)
 		draw_rect(wb, UiTheme.BRASS_DARK, false, 1.0)
 		var state: String = ("FIRING" if f >= 0.999 else "%.0f s" % maxf(0.0, cmax - _charge_shown[i])) if powered else "NO POWER"
-		UiTheme.text(self, wb.position + Vector2(0, 12), state, 12, UiTheme.TEXT, null, HORIZONTAL_ALIGNMENT_CENTER, wb.size.x)
+		UiTheme.text(self, wb.position + Vector2(0, 17), state, 15, UiTheme.TEXT, null, HORIZONTAL_ALIGNMENT_CENTER, wb.size.x)

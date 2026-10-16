@@ -382,3 +382,27 @@ func test_overlay_scripts_have_no_untyped_or_em_dash() -> void:
 	for f: String in ["map_view", "death_screen", "codex_view"]:
 		var text: String = FileAccess.get_file_as_string("res://view/overlay/%s.gd" % f)
 		check(not text.contains(dash), "%s has no em dash" % f)
+
+
+func test_layout_gives_the_world_the_free_area() -> void:
+	var w: Rect2 = RunScreen.WORLD_RECT
+	check_eq(w.position.x, float(PowerPanel.WIDTH), "the world starts where the power panel ends")
+	check_eq(w.end.x, 1920.0 - CrewCards.WIDTH, "the world ends where the crew and scanner column starts")
+	check_eq(w.position.y, TopBar.DESIGN_SIZE.y, "the world starts under the top bar")
+	check_eq(w.end.y, AlertsStrip.DESIGN_RECT.position.y, "the world ends at the alert strip")
+	check(AlertsStrip.DESIGN_RECT.size.y <= 56.0, "the alert strip is slim")
+	check_eq(ScannerPanel.SIZE.x, CrewCards.WIDTH, "scanner and crew share the right column")
+	var wc: Rect2 = WeaponCards.DESIGN_RECT
+	check(w.encloses(wc), "the weapon cards sit inside the world area")
+	check(wc.end.y <= AlertsStrip.DESIGN_RECT.position.y, "the weapon cards sit above the alert strip")
+	check(w.encloses(EnemyPanel.DESIGN_RECT), "the enemy panel sits inside the world area")
+
+
+func test_crew_column_fits_four_cards_above_the_strip() -> void:
+	var c := CrewCards.new()
+	c.bind(_sim())
+	var bottom: float = CrewCards.TOP + CrewCards.HEAD_H + 4.0 * (CrewCards.CARD_H + CrewCards.GAP) + 4.0
+	check(bottom <= AlertsStrip.DESIGN_RECT.position.y, "four crew cards clear the alert strip")
+	check(ScannerPanel.SIZE.y + TopBar.DESIGN_SIZE.y <= CrewCards.TOP, "the scanner ends above the crew cards")
+	c.free()
+

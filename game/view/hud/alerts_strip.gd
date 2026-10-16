@@ -1,6 +1,6 @@
 class_name AlertsStrip
 extends Control
-## The strip along the bottom: every current problem as a chip, worst first, pulsing. Fires, breaches,
+## The slim strip along the bottom (52 px): every current problem as a large chip, worst first, pulsing. Fires, breaches,
 ## flooding, rooms running hot, systems failed or damaged, a worn or broken bit, coolant low or empty,
 ## a low hull. Each alert that belongs to a room names it. Nothing wrong shows a calm line instead.
 ##
@@ -9,7 +9,7 @@ extends Control
 ##   alerts.bind(new_sim)
 ## `AlertsStrip.compute(sim)` is the pure part (tests and bots can read it).
 
-const DESIGN_RECT: Rect2 = Rect2(0, 984, 1920, 96)
+const DESIGN_RECT: Rect2 = Rect2(0, 1028, 1920, 52)
 const CRITICAL: int = 70
 const HEAT_MARGIN_C: float = 15.0
 const DEFAULT_HEAT_C: float = 85.0
@@ -17,7 +17,8 @@ const FLOOD_MIN: float = 0.03
 const BIT_WORN: float = 0.7
 const COOLANT_LOW: int = 4
 const HULL_LOW: float = 0.34
-const CHIP_H: float = 34.0
+const CHIP_H: float = 38.0
+const ALERT_FONT: int = 24
 
 var sim: Sim = null
 var alerts: Array[Dictionary] = []
@@ -117,7 +118,7 @@ func _draw() -> void:
 	UiTheme.draw_panel(self, rect, "", false)
 	var worst: int = int(alerts[0]["sev"]) if not alerts.is_empty() else 0
 	# The lamp on the left.
-	var lamp := Vector2(46, size.y * 0.5)
+	var lamp := Vector2(36, size.y * 0.5)
 	var lamp_col: Color = UiTheme.CRT_DIM
 	if worst >= CRITICAL:
 		lamp_col = UiTheme.ALARM.lerp(Color(1, 0.7, 0.6), UiTheme.pulse(_t, 2.2))
@@ -125,31 +126,26 @@ func _draw() -> void:
 		lamp_col = UiTheme.AMBER
 	else:
 		lamp_col = UiTheme.CRT
-	draw_circle(lamp, 17.0, UiTheme.STEEL_DEEP)
-	draw_circle(lamp, 13.0, lamp_col)
-	draw_circle(lamp + Vector2(-4, -4), 4.0, Color(1, 1, 1, 0.45))
-	UiTheme.text(self, Vector2(76, size.y * 0.5 - 4.0), "ALERTS", 17, UiTheme.AMBER)
-	UiTheme.text(self, Vector2(76, size.y * 0.5 + 16.0), "%d ACTIVE" % alerts.size(), 14, UiTheme.TEXT_DIM)
+	draw_circle(lamp, 15.0, UiTheme.STEEL_DEEP)
+	draw_circle(lamp, 11.0, lamp_col)
+	draw_circle(lamp + Vector2(-3, -3), 3.5, Color(1, 1, 1, 0.45))
 	if alerts.is_empty():
-		UiTheme.glow_text(self, Vector2(220, size.y * 0.5 + 7.0), "ALL SYSTEMS NOMINAL", 22, UiTheme.CRT_DIM.lerp(UiTheme.CRT, 0.55))
+		UiTheme.glow_text(self, Vector2(66, size.y * 0.5 + 7.0), "ALL SYSTEMS NOMINAL", 20, UiTheme.CRT_DIM.lerp(UiTheme.CRT, 0.55))
 		return
-	var x0: float = 220.0
+	UiTheme.bold_text(self, Vector2(64, size.y * 0.5 + 7.0), "ALERTS %d" % alerts.size(), 20, UiTheme.AMBER)
+	var x0: float = 200.0
 	var x: float = x0
-	var row: int = 0
 	var shown: int = 0
 	for a: Dictionary in alerts:
 		var label: String = str(a["text"])
-		var w: float = UiTheme.text_width(label, 19) + 58.0
-		if x + w > size.x - 40.0:
-			if row == 1:
-				break
-			row += 1
-			x = x0
-		_draw_chip(Rect2(x, 12.0 + float(row) * (CHIP_H + 8.0), w, CHIP_H), a)
+		var w: float = UiTheme.text_width(label, ALERT_FONT) + 66.0
+		if x + w > size.x - 150.0 and shown > 0:
+			break
+		_draw_chip(Rect2(x, (size.y - CHIP_H) * 0.5, w, CHIP_H), a)
 		x += w + 12.0
 		shown += 1
 	if shown < alerts.size():
-		UiTheme.text(self, Vector2(size.x - 160.0, size.y - 14.0), "+%d MORE" % (alerts.size() - shown), 17, UiTheme.AMBER)
+		UiTheme.bold_text(self, Vector2(size.x - 140.0, size.y * 0.5 + 8.0), "+%d MORE" % (alerts.size() - shown), 22, UiTheme.AMBER)
 
 
 func _draw_chip(rect: Rect2, a: Dictionary) -> void:
@@ -162,5 +158,5 @@ func _draw_chip(rect: Rect2, a: Dictionary) -> void:
 	if crit:
 		UiTheme.hazard_stripes(self, Rect2(rect.position.x, rect.position.y, 12.0, rect.size.y))
 	draw_rect(rect, edge.lerp(Color(1, 1, 1), 0.25 * p) if crit else edge, false, 2.0)
-	UiTheme.icon(self, icon_for(str(a["kind"])), rect.position + Vector2(30, rect.size.y * 0.5), 20.0)
-	UiTheme.text(self, Vector2(rect.position.x + 48.0, rect.position.y + 24.0), str(a["text"]), 19, UiTheme.TEXT if crit else UiTheme.BRASS_LIGHT)
+	UiTheme.icon(self, icon_for(str(a["kind"])), rect.position + Vector2(32, rect.size.y * 0.5), 24.0)
+	UiTheme.bold_text(self, Vector2(rect.position.x + 54.0, rect.position.y + 28.0), str(a["text"]), ALERT_FONT, UiTheme.TEXT if crit else UiTheme.BRASS_LIGHT)

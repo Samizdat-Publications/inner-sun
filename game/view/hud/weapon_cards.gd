@@ -13,9 +13,9 @@ extends Control
 ##   weapons.bind(new_sim)
 ## `WeaponCards.flee_status(sim)` is the pure part (tests and bots can read it).
 
-const DESIGN_RECT: Rect2 = Rect2(300.0, 888.0, 1240.0, 92.0)
+const DESIGN_RECT: Rect2 = Rect2(340.0, 906.0, 1180.0, 114.0)
 const MARGIN: float = 8.0
-const FLEE_W: float = 340.0
+const FLEE_W: float = 300.0
 const KEYS: Array[Key] = [KEY_F1, KEY_F2, KEY_F3]
 const SLOT_COLORS: Array[Color] = [Color(1.0, 0.70, 0.28), Color(0.45, 0.85, 1.0), Color(0.75, 0.95, 0.45)]
 
@@ -199,16 +199,16 @@ func _draw_card(i: int, n: int, w: Dictionary, table: Dictionary) -> void:
 	draw_rect(Rect2(r.position, Vector2(6.0, r.size.y)), slot_col if powered else UiTheme.AMBER_DIM, true)
 	# Header: key badge, name, power chip.
 	var x0: float = r.position.x + 16.0
-	var badge := Rect2(x0, r.position.y + 7.0, 30.0, 20.0)
+	var badge := Rect2(x0, r.position.y + 8.0, 34.0, 24.0)
 	draw_rect(badge, UiTheme.STEEL_DEEP, true)
 	draw_rect(badge, UiTheme.BRASS_DARK, false, 1.0)
-	UiTheme.text(self, badge.position + Vector2(0, 16), "F%d" % (i + 1), 14, UiTheme.BRASS_LIGHT, null, HORIZONTAL_ALIGNMENT_CENTER, badge.size.x)
-	UiTheme.text(self, Vector2(x0 + 38.0, r.position.y + 24.0), str(w["name"]).to_upper(), 17, UiTheme.AMBER if powered else UiTheme.AMBER_DIM)
+	UiTheme.text(self, badge.position + Vector2(0, 18), "F%d" % (i + 1), 16, UiTheme.BRASS_LIGHT, null, HORIZONTAL_ALIGNMENT_CENTER, badge.size.x)
+	UiTheme.bold_text(self, Vector2(x0 + 42.0, r.position.y + 28.0), str(w["name"]).to_upper(), 18, UiTheme.AMBER if powered else UiTheme.AMBER_DIM)
 	var need: int = int(def.get("power", 1))
 	var chip: String = "PWR %d" % need if powered else "NEEDS %d" % need
-	UiTheme.text(self, Vector2(r.end.x - 90.0, r.position.y + 24.0), chip, 15, UiTheme.CRT if powered else UiTheme.ALARM, null, HORIZONTAL_ALIGNMENT_RIGHT, 80.0)
+	UiTheme.text(self, Vector2(r.end.x - 80.0, r.position.y + 28.0), chip, 16, UiTheme.CRT if powered else UiTheme.ALARM, null, HORIZONTAL_ALIGNMENT_RIGHT, 68.0)
 	# Charge bar.
-	var bar := Rect2(x0, r.position.y + 34.0, r.size.x - 30.0, 14.0)
+	var bar := Rect2(x0, r.position.y + 40.0, r.size.x - 26.0, 20.0)
 	draw_rect(bar, UiTheme.STEEL_DEEP, true)
 	var frac: float = clampf(_charge_shown[i] / cmax, 0.0, 1.0) if i < _charge_shown.size() else 0.0
 	var bar_col: Color = UiTheme.AMBER if powered else Color(0.35, 0.34, 0.33)
@@ -217,25 +217,25 @@ func _draw_card(i: int, n: int, w: Dictionary, table: Dictionary) -> void:
 	draw_rect(Rect2(bar.position, Vector2(bar.size.x * frac, bar.size.y)), bar_col, true)
 	draw_rect(bar, UiTheme.BRASS_DARK, false, 1.0)
 	var bar_text: String = "NO CHARGES" if dry else "READY" if ready else ("%.0f / %.0f s" % [charge, cmax] if powered else "NO POWER")
-	UiTheme.text(self, bar.position + Vector2(0, 12), bar_text, 12, UiTheme.STEEL_DEEP if frac > 0.5 else UiTheme.TEXT, null, HORIZONTAL_ALIGNMENT_CENTER, bar.size.x)
+	UiTheme.text(self, bar.position + Vector2(0, 16), bar_text, 16, UiTheme.STEEL_DEEP if frac > 0.5 else UiTheme.TEXT, null, HORIZONTAL_ALIGNMENT_CENTER, bar.size.x)
 	# Target line and ammo.
-	var base_y: float = r.position.y + 70.0
+	var base_y: float = r.position.y + 86.0
 	var target_id: String = str(w["target"])
 	if is_armed and target_id.is_empty():
-		UiTheme.text(self, Vector2(x0, base_y), "CLICK AN ENEMY ROOM", 14, UiTheme.AMBER.lerp(Color(1, 1, 1), 0.3 * p))
+		UiTheme.text(self, Vector2(x0, base_y), "CLICK AN ENEMY ROOM", 17, UiTheme.AMBER.lerp(Color(1, 1, 1), 0.3 * p))
 	elif is_armed:
-		UiTheme.text(self, Vector2(x0, base_y), "AIMING...  CLICK A ROOM", 14, UiTheme.AMBER.lerp(Color(1, 1, 1), 0.3 * p))
+		UiTheme.text(self, Vector2(x0, base_y), "AIMING...  CLICK A ROOM", 17, UiTheme.AMBER.lerp(Color(1, 1, 1), 0.3 * p))
 	elif target_id.is_empty():
-		UiTheme.text(self, Vector2(x0, base_y), "NO TARGET", 14, UiTheme.TEXT_DIM)
+		UiTheme.text(self, Vector2(x0, base_y), "NO TARGET", 17, UiTheme.TEXT_DIM)
 	else:
 		var ri: int = sim.enemy.ship.room_index(target_id)
 		var rn: String = sim.enemy.ship.rooms[ri].name.to_upper() if ri >= 0 else target_id.to_upper()
-		UiTheme.text(self, Vector2(x0, base_y), "TARGET", 12, UiTheme.TEXT_DIM)
-		UiTheme.text(self, Vector2(x0 + 58.0, base_y), rn, 15, slot_col)
+		UiTheme.text(self, Vector2(x0, base_y), "TARGET", 14, UiTheme.TEXT_DIM)
+		UiTheme.bold_text(self, Vector2(x0 + 70.0, base_y), rn, 18, slot_col)
 	if not ammo_res.is_empty():
-		var ax: float = r.end.x - 58.0
-		UiTheme.icon(self, "charges", Vector2(ax, base_y - 5.0), 18.0, Color(1, 1, 1) if not dry else Color(0.5, 0.3, 0.3))
-		UiTheme.text(self, Vector2(ax + 14.0, base_y), "x%d" % ammo_have, 16, UiTheme.ALARM if dry else UiTheme.TEXT)
+		var ax: float = r.end.x - 62.0
+		UiTheme.icon(self, "charges", Vector2(ax, base_y - 6.0), 22.0, Color(1, 1, 1) if not dry else Color(0.5, 0.3, 0.3))
+		UiTheme.bold_text(self, Vector2(ax + 16.0, base_y), "x%d" % ammo_have, 22, UiTheme.ALARM if dry else UiTheme.TEXT)
 
 
 func _draw_flee() -> void:
@@ -256,18 +256,18 @@ func _draw_flee() -> void:
 	var x0: float = r.position.x + 28.0
 	var title: String = "DIGGING OUT" if fleeing else "FLEE"
 	var col: Color = UiTheme.AMBER if (allowed or fleeing) else UiTheme.AMBER_DIM
-	UiTheme.text(self, Vector2(x0, r.position.y + 28.0), title, 22, col)
+	UiTheme.bold_text(self, Vector2(x0, r.position.y + 34.0), title, 28, col)
 	if fleeing:
-		var bar := Rect2(x0, r.position.y + 40.0, r.size.x - 44.0, 14.0)
+		var bar := Rect2(x0, r.position.y + 46.0, r.size.x - 44.0, 20.0)
 		var frac: float = clampf(float(st["done_s"]) / maxf(0.01, float(st["total_s"])), 0.0, 1.0)
 		draw_rect(bar, UiTheme.STEEL_DEEP, true)
 		draw_rect(Rect2(bar.position, Vector2(bar.size.x * frac, bar.size.y)), UiTheme.CRT if allowed else UiTheme.ALARM, true)
 		draw_rect(bar, UiTheme.BRASS_DARK, false, 1.0)
 		var line: String = "%.0f / %.0f s" % [float(st["done_s"]), float(st["total_s"])]
-		UiTheme.text(self, Vector2(x0, r.position.y + 72.0), line if allowed else "STALLED: " + str(st["why"]), 14, UiTheme.TEXT if allowed else UiTheme.ALARM)
+		UiTheme.text(self, Vector2(x0, r.position.y + 90.0), line if allowed else "STALLED: " + str(st["why"]), 17, UiTheme.TEXT if allowed else UiTheme.ALARM)
 	elif allowed:
-		UiTheme.text(self, Vector2(x0, r.position.y + 50.0), "CLICK TO DIG OUT", 15, UiTheme.CRT)
-		UiTheme.text(self, Vector2(x0, r.position.y + 70.0), "TAKES %.0f s, DRILL AND HELM MANNED" % float(st["total_s"]), 12, UiTheme.TEXT_DIM)
+		UiTheme.text(self, Vector2(x0, r.position.y + 62.0), "CLICK TO DIG OUT", 19, UiTheme.CRT)
+		UiTheme.text(self, Vector2(x0, r.position.y + 88.0), "TAKES %.0f s, DRILL AND HELM MANNED" % float(st["total_s"]), 14, UiTheme.TEXT)
 	else:
-		UiTheme.text(self, Vector2(x0, r.position.y + 50.0), "NOT ALLOWED", 15, UiTheme.ALARM)
-		UiTheme.text(self, Vector2(x0, r.position.y + 70.0), str(st["why"]), 13, UiTheme.TEXT_DIM)
+		UiTheme.text(self, Vector2(x0, r.position.y + 62.0), "NOT ALLOWED", 19, UiTheme.ALARM)
+		UiTheme.text(self, Vector2(x0, r.position.y + 88.0), str(st["why"]), 15, UiTheme.TEXT)

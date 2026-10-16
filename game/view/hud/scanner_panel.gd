@@ -12,8 +12,8 @@ extends Control
 ##   var scanner: ScannerPanel = ScannerPanel.build(layer, sim)
 ##   scanner.bind(new_sim)
 
-const SIZE: Vector2 = Vector2(380, 400)
-const SCREEN: Rect2 = Rect2(30, 40, 320, 300)
+const SIZE: Vector2 = Vector2(400, 420)
+const SCREEN: Rect2 = Rect2(20, 44, 360, 300)
 const LOOK_AHEAD_M: float = 30.0
 const UPDATE_S: float = 0.1
 const MAX_GLINTS: int = 90
@@ -46,7 +46,7 @@ const K_WATER: int = 5
 
 static func build(parent: Control, p_sim: Sim) -> ScannerPanel:
 	var p := ScannerPanel.new()
-	p.position = Vector2(1540, 84)
+	p.position = Vector2(1520, 90)
 	p.size = SIZE
 	parent.add_child(p)
 	p.bind(p_sim)
@@ -210,7 +210,7 @@ func _draw_no_signal() -> void:
 		var w: float = 20.0 + float((h >> 5) % 100)
 		draw_line(Vector2(x, y), Vector2(minf(x + w, SCREEN.end.x - 1.0), y), Color(UiTheme.CRT, 0.05 + 0.07 * float(h % 3)), 1.0)
 	var blink: float = 0.55 + 0.45 * UiTheme.pulse(_t, 0.7)
-	UiTheme.glow_text(self, Vector2(SCREEN.position.x, SCREEN.get_center().y + 8.0), "NO SIGNAL", 30, Color(UiTheme.CRT, blink), null, HORIZONTAL_ALIGNMENT_CENTER, SCREEN.size.x)
+	UiTheme.glow_text(self, Vector2(SCREEN.position.x, SCREEN.get_center().y + 10.0), "NO SIGNAL", 36, Color(UiTheme.CRT, blink), null, HORIZONTAL_ALIGNMENT_CENTER, SCREEN.size.x)
 
 
 func _draw_rock() -> void:
@@ -233,7 +233,7 @@ func _draw_rock() -> void:
 	for m: int in range(5, int(LOOK_AHEAD_M) + 1, 5):
 		var y: float = SCREEN.position.y + float(m) * m_px
 		draw_line(Vector2(SCREEN.position.x, y), Vector2(SCREEN.position.x + 8.0, y), Color(UiTheme.CRT, 0.7), 1.0)
-		UiTheme.text(self, Vector2(SCREEN.position.x + 11.0, y + 4.0), "%d" % m, 12, Color(UiTheme.CRT, 0.75))
+		UiTheme.text(self, Vector2(SCREEN.position.x + 11.0, y + 5.0), "%d" % m, 14, Color(UiTheme.CRT, 0.9))
 	# The ship's footprint and heading.
 	var cx: float = _crown_x_px()
 	var half: float = d.ship_size.x * 0.5 / (float(d.cols) * d.cell_m) * SCREEN.size.x
@@ -254,7 +254,7 @@ func _draw_rock() -> void:
 		draw_dashed_line(Vector2(SCREEN.position.x, ny), Vector2(SCREEN.end.x, ny), UiTheme.AMBER, 2.0, 8.0)
 		var tx: float = SCREEN.position.x + d.target_x / (float(d.cols) * d.cell_m) * SCREEN.size.x
 		draw_colored_polygon(PackedVector2Array([Vector2(tx, ny - 9), Vector2(tx + 9, ny), Vector2(tx, ny + 9), Vector2(tx - 9, ny)]), UiTheme.AMBER)
-		UiTheme.text(self, Vector2(SCREEN.end.x - 86.0, ny - 6.0), "NODE", 13, UiTheme.AMBER, null, HORIZONTAL_ALIGNMENT_RIGHT, 80.0)
+		UiTheme.text(self, Vector2(SCREEN.end.x - 86.0, ny - 8.0), "NODE", 15, UiTheme.AMBER, null, HORIZONTAL_ALIGNMENT_RIGHT, 80.0)
 	# The sweep.
 	var sy: float = SCREEN.position.y + fposmod(_t * SWEEP_HZ, 1.0) * SCREEN.size.y
 	for i: int in range(14):
@@ -284,20 +284,20 @@ func _draw_glass() -> void:
 
 func _draw_readout() -> void:
 	var d: DrillSim = sim.drill
-	var y: float = SCREEN.end.y + 26.0
+	var y: float = SCREEN.end.y + 32.0
 	if not is_live():
-		UiTheme.text(self, Vector2(30, y), "STANDBY", 16, UiTheme.TEXT_DIM)
-		UiTheme.text(self, Vector2(30, y + 24.0), "DRILL IDLE", 14, UiTheme.TEXT_DIM)
+		UiTheme.bold_text(self, Vector2(22, y), "STANDBY", 20, UiTheme.TEXT)
+		UiTheme.text(self, Vector2(22, y + 28.0), "DRILL IDLE", 18, UiTheme.TEXT_DIM)
 		return
 	var crown: float = d.ship_pos.y + d.ship_size.y
 	var remain: float = maxf(0.0, d.target_y - crown)
-	UiTheme.text(self, Vector2(30, y), "HDG %+d  TGT %+d" % [roundi(d.heading_deg), roundi(d.target_heading_deg)], 16, UiTheme.CRT)
-	UiTheme.text(self, Vector2(size.x - 30.0 - 160.0, y), "NODE IN %d M" % roundi(remain), 16, UiTheme.AMBER, null, HORIZONTAL_ALIGNMENT_RIGHT, 160.0)
+	UiTheme.bold_text(self, Vector2(22, y), "HDG %+d  TGT %+d" % [roundi(d.heading_deg), roundi(d.target_heading_deg)], 20, UiTheme.CRT)
+	UiTheme.bold_text(self, Vector2(size.x - 22.0 - 190.0, y), "NODE IN %d M" % roundi(remain), 20, UiTheme.AMBER, null, HORIZONTAL_ALIGNMENT_RIGHT, 190.0)
 	var wear: int = roundi(d.bit_wear * 100.0)
 	var bit_col: Color = UiTheme.ALARM if d.bit_broken else (UiTheme.AMBER if wear >= 70 else UiTheme.CRT)
-	UiTheme.text(self, Vector2(30, y + 24.0), "SPEED %.1f M/S" % d.speed_m_s, 14, UiTheme.TEXT)
+	UiTheme.text(self, Vector2(22, y + 28.0), "SPEED %.1f M/S" % d.speed_m_s, 18, UiTheme.TEXT)
 	var bit_text: String = "BIT BROKEN" if d.bit_broken else "BIT WEAR %d%%" % wear
 	if d.bit_change_left_s > 0.0:
 		bit_text = "FITTING BIT %.0f S" % d.bit_change_left_s
 		bit_col = UiTheme.AMBER
-	UiTheme.text(self, Vector2(size.x - 30.0 - 200.0, y + 24.0), bit_text, 14, bit_col, null, HORIZONTAL_ALIGNMENT_RIGHT, 200.0)
+	UiTheme.text(self, Vector2(size.x - 22.0 - 210.0, y + 28.0), bit_text, 18, bit_col, null, HORIZONTAL_ALIGNMENT_RIGHT, 210.0)
