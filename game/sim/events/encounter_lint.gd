@@ -14,6 +14,9 @@ const CODEX_CATEGORIES: Array[String] = ["history", "place", "creature", "tech",
 const RADIO_TRIGGERS: Array[String] = [
 	"run_start", "first_segment", "fire", "flood", "low_hull", "fight_start", "fight_won",
 	"crew_died", "codex", "pursuer_close", "gate", "store", "structure",
+	"hint_power", "hint_steer", "hint_hold_depth", "hint_miner", "hint_blast", "hint_bracing",
+	"hint_douse", "hint_bit", "hint_crew", "hint_weapons", "hint_requisitions", "hint_map",
+	"hint_pause", "hint_structure",
 ]
 const HAZARD_KINDS: Array[String] = ["fire", "breach", "heat"]
 const CREW_TARGETS: Array[String] = ["picked", "random", "all"]

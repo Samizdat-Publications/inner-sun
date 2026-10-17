@@ -32,6 +32,7 @@ var requisitions: RequisitionsView  ## The death screen's own (above it); here f
 var help: HelpView
 var tally: DigTally  ## The dig tally and the arrival toast; owns the DigLog.
 var structure_banner: StructureBanner  ## The break-in plaque for a buried structure.
+var hints: HintDirector  ## One-time TOPSIDE hints that teach a verb (off in bot, capture and replay runs).
 var _banner: Label
 var _notice: Label  ## The line at the top of the world when the drill is stopped and why.
 var _req_toast: Label  ## "TOPSIDE REQUISITIONS LOADED" with what each owned requisition put aboard.
@@ -78,6 +79,7 @@ func build(p_sim: Sim, p_profile: Profile) -> void:
 	callouts = DigCallouts.build(_layer, sim)
 	structure_banner = StructureBanner.build(_layer, sim)
 	structure_banner.hide_when = func() -> bool: return overlay_open()
+	hints = HintDirector.build(_layer, self)
 	tally.hide_tally = func() -> bool: return overlay_open() or (sim.combat.active and sim.enemy != null)
 	tally.hide_toast = func() -> bool: return death.is_open() or store.is_open() or dossier.is_open() or codex.is_open() or help.is_open()
 	top.current_row_getter = func() -> float: return _ship_row()
@@ -108,6 +110,7 @@ func bind(p_sim: Sim, p_profile: Profile) -> void:
 	tally.bind(sim)
 	callouts.bind(sim)
 	structure_banner.bind(sim)
+	hints.bind(sim, profile)
 	_bind_rows()
 	_arm_req_toast()
 

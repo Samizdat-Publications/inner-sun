@@ -13,6 +13,7 @@ extends Control
 
 const DESIGN_RECT: Rect2 = Rect2(780.0, 916.0, 430.0, 104.0)
 const FLASH_S: float = 2.2
+const READY_LINE: String = "G, THEN CLICK THE ROCK. THE DRILL PARKS ITSELF."
 const SLOT_COLOR: Color = Color(0.55, 1.0, 0.55)
 const PHASE_WORD: Dictionary = {
 	"board": "GEARING UP", "exit": "CLIMBING OUT", "dig": "DIGGING", "vein": "AT THE VEIN",
@@ -282,7 +283,7 @@ func _draw() -> void:
 	UiTheme.text(self, badge.position + Vector2(0, 18), "G", 16, UiTheme.BRASS_LIGHT, null, HORIZONTAL_ALIGNMENT_CENTER, badge.size.x)
 	var title_col: Color = UiTheme.AMBER if (ready or out) else UiTheme.AMBER_DIM
 	UiTheme.bold_text(self, Vector2(x0 + 44.0, body.position.y + 28.0), str(st["title"]), 18, title_col)
-	var sub: String = "DIGS A VEIN BY HAND. THE DRILL PARKS"
+	var sub: String = "DIGS A VEIN OR A CRATE BY HAND"
 	if out:
 		var haul: String = haul_text(m.haul)
 		sub = "HAUL %s" % haul if not haul.is_empty() else "HAUL: NOTHING YET"
@@ -305,7 +306,7 @@ func _draw() -> void:
 		line = str(st["text"])
 		col = UiTheme.ALARM
 	else:
-		line = "READY. PRESS G OR CLICK HERE"
+		line = READY_LINE
 		col = UiTheme.CRT
 	var bar := Rect2(x0, body.position.y + 62.0, body.size.x - 32.0, 22.0)
 	draw_rect(bar, UiTheme.STEEL_DEEP, true)
@@ -315,4 +316,7 @@ func _draw() -> void:
 		var hp_col: Color = UiTheme.CRT_DIM if frac > 0.6 else (UiTheme.AMBER_DIM if frac > 0.3 else Color(0.6, 0.15, 0.1))
 		draw_rect(Rect2(bar.position, Vector2(bar.size.x * frac, bar.size.y)), hp_col, true)
 	draw_rect(bar, UiTheme.BRASS_DARK, false, 1.0)
-	UiTheme.text(self, bar.position + Vector2(8, 17), line, 16, col)
+	var line_size: int = 16
+	while line_size > 11 and UiTheme.text_width(line, line_size) > bar.size.x - 14.0:
+		line_size -= 1
+	UiTheme.text(self, bar.position + Vector2(8, 17), line, line_size, col)

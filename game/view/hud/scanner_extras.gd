@@ -154,14 +154,26 @@ static func draw_structure(ci: CanvasItem, s: Sim, screen: Rect2, look_m: float,
 	ci.draw_dashed_line(Vector2(g.end.x, g.position.y), g.end, edge, 1.5, 5.0)
 	for corner: Vector2 in [g.position, Vector2(g.end.x, g.position.y), Vector2(g.position.x, g.end.y), g.end]:
 		ci.draw_rect(Rect2(corner - Vector2(2.5, 2.5), Vector2(5.0, 5.0)), Color(col, 0.95), true)
-	var text: String = st.label + (" (OPEN)" if st.entered else "")
-	var w: float = UiTheme.text_width(text, 12)
+	var lines: PackedStringArray = structure_lines(st)
+	var w: float = 0.0
+	for ln: String in lines:
+		w = maxf(w, UiTheme.text_width(ln, 12))
 	var x: float = clampf(g.position.x, screen.position.x + 3.0, screen.end.x - w - 3.0)
-	var y: float = g.position.y - 4.0
+	var y: float = g.position.y - 4.0 - 13.0 * float(lines.size() - 1)
 	if y < screen.position.y + 36.0:
 		y = g.end.y + 13.0  # No room above the box (it is under the ship): put the label below it.
-	ci.draw_rect(Rect2(x - 2.0, y - 11.0, w + 4.0, 14.0), Color(0.0, 0.03, 0.02, 0.8), true)
-	UiTheme.text(ci, Vector2(x, y), text, 12, col)
+	ci.draw_rect(Rect2(x - 2.0, y - 11.0, w + 4.0, 14.0 * float(lines.size())), Color(0.0, 0.03, 0.02, 0.8), true)
+	for ln: String in lines:
+		UiTheme.text(ci, Vector2(x, y), ln, 12, col)
+		y += 13.0
+
+
+## The structure's label on the glass: its name, and "CUT IN FOR CRATES" until it is broken into
+## (Stewart's build 5c run: he sat at an old mine shaft and did not know to dig into it).
+static func structure_lines(st: DrillStructures) -> PackedStringArray:
+	if st.entered:
+		return PackedStringArray([st.label + " (OPEN)"])
+	return PackedStringArray([st.label, "CUT IN FOR CRATES"])
 
 
 ## HOLD DEPTH and AT THE WALL on the glass, and the blast word in the top right corner.
