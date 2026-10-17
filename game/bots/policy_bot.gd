@@ -15,7 +15,9 @@ extends Bot
 ##   vein or pocket in range whose blast circle is worth blast_min_value, keeping blast_keep charges.
 ##   A buried structure's crates and interior pull the lanes (DrillBot value_crate, value_interior;
 ##   cautious only a little) and its unopened crates count for loot blasts (blast_crate_value).
-##   A mid-segment store or event (a structure's break-in) is handled like any other.
+##   A mid-segment store or event (a structure's break-in) is handled like any other. The away miner
+##   (MinerPlanner.decide) goes out for a rich vein off the lane while the pursuer is far enough behind
+##   (miner_rows; cautious 3, greedy 1.5) and comes back early when it closes in or the miner is hurt.
 ## - any world phase: douse the worst fire above douse_at while coolant is above low_coolant.
 ## - dialog: the event option the policy scores best (PolicyChoices.choose_option).
 ## - store: one purchase per decision (PolicyChoices.next_purchase), then leave.
@@ -40,6 +42,16 @@ var blast_min_value: float = 50.0  ## Ore-equivalent value a loot blast must rea
 var blast_keep: int = 3  ## Charges never spent on blasts (kept for fights and the gate).
 var blast_crate_value: float = 12.0  ## Loot blasts: value per unopened crate cell (a blast pays the crate in full).
 var douse_at: float = 0.4  ## Douse a fire above this level.
+# The away miner (read by MinerPlanner.decide).
+var miner_on: bool = true
+var miner_rows: float = 2.0  ## Send only with the pursuer's front at least this many rows behind.
+var miner_recall_rows: float = 1.2  ## Recall when the front comes within this many rows.
+var miner_recall_hp: float = 40.0  ## Recall when the miner drops below this hp.
+var miner_min_value: float = 20.0  ## Ore-equivalent value a vein must reach (ore x 1, gems x value_gem).
+var miner_value_ore: float = 1.0
+var miner_value_gem: float = 3.0
+var miner_off_line_m: float = 3.0  ## The vein must lie at least this far sideways of the ship's centre line.
+var miner_next_tick: int = 0  ## The next tick a send is considered (once a second).
 # Idle.
 var wait_s: float = 8.0  ## Longest wait in idle for the crew to clear fires, breaches and damage.
 # Combat.
@@ -133,6 +145,8 @@ static func make_policy(p_policy: String) -> PolicyBot:
 			b.brace_always = true
 			b.blast_loot = false
 			b.blast_keep = 3
+			b.miner_rows = 3.0
+			b.miner_min_value = 30.0
 		"greedy":
 			b.drill_bars = 4
 			b.low_coolant = 4
@@ -172,6 +186,8 @@ static func make_policy(p_policy: String) -> PolicyBot:
 			b.structure_bonus = 1.2
 			b.blast_keep = 3
 			b.blast_min_value = 40.0
+			b.miner_rows = 2.0
+			b.miner_min_value = 14.0
 	return b
 
 
@@ -190,6 +206,9 @@ func act(sim: Sim) -> void:
 	_was_combat = in_combat
 	if run.phase == "drill":
 		_dig_verbs(sim)
+		var mc: Dictionary = MinerPlanner.decide(sim, self)
+		if not mc.is_empty():
+			sim.push(mc)
 	else:
 		_fault_ahead = false
 		_blast = {}

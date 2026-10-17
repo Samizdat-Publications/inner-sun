@@ -52,7 +52,7 @@ func state() -> Array:
 		rooms.append([r.energy_j, r.water_ml, r.fire, r.breach_m2, r.flooded_s, r.sys_max, r.sys_damage, r.sys_power, r.sys_want, r.sys_failed])
 	var crew: Array = []
 	for c: CrewMember in ship.crew:
-		crew.append([c.pos.x, c.pos.y, c.hp, c.alive, c.room, c.order_room, c.auto, c.job_kind, c.job_room, c.path_i])
+		crew.append([c.pos.x, c.pos.y, c.hp, c.alive, c.room, c.order_room, c.auto, c.job_kind, c.job_room, c.path_i, c.away])
 	var links: Array = []
 	for l: Link in ship.links:
 		links.append(l.open)

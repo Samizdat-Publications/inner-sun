@@ -111,6 +111,31 @@ per segment (`survey.structure`, layer `structure_chance`, stream `survey/struct
 - `"structure_placed" {"structure", "x_m", "y_m", "w_m", "h_m", "mirror"}` at segment begin;
   `segment_done` carries `structure`, `entered`, `crates`.
 
+### The away miner (M1c round E, D046)
+DrillMiner (`game/sim/drill/drill_miner.gd`, `drill.miner`; where it may go and its tunnel:
+MinerRoute, `miner_route.gd`). Tuning `miner.*` in `game/data/tuning/miner.json`.
+- `{"type": "send_miner", "crew": id, "x_m", "y_m"}` (segment meters) while a segment is drilling
+  (run phase `drill`): refused with `"bad_command" {"type": "send_miner", "why"}`, why one of
+  `"no_segment"`, `"miner_out"`, `"no_crew"`, `"outside"` (off the grid, above the ship's top edge, in
+  its footprint), `"range"` (beyond `miner.range_m` of the drill head). `{"type": "recall_miner"}`
+  turns the miner back (`"bad_command"` why `"no_miner"` when none is out). The view's aim check:
+  `DrillMiner.target_ok(drill, sim, crew_id, point) -> String` ("" or the why); `DrillMiner.head(d)`.
+- Phases (`miner.phase`): `board` (crew job `"sortie"`, the drill keeps going), `exit` (the drill
+  parks: `drill.parked`; the crew member is `away`), `dig`, `vein`, `return`, `enter`. Read
+  `miner.active`, `crew_id`, `pos` (feet, segment meters), `target`, `haul` (PackedInt32Array by
+  `RunState.RESOURCES`), `cells_dug`, `strain`, `rockfall_ticks`, `range_m`, `next_cell`,
+  `action_ticks` / `action_total` (progress of the current walk, dig or hatch), `is_out()`.
+- Cells the miner digs go through `drill.cut(sim, i, DrillMiner.CUT_MINER)`, the drill's own cut
+  path (`take_cell`): mined, chunk changes, structures and crates stay consistent; their yield goes to
+  `miner.haul` (a crate's roll too) and is paid with `run.add` only on return.
+- Events: `"miner_out" {"crew", "x_m", "y_m"}` (the target, as they climb out), `"miner_hurt"
+  {"crew", "cause", "hp" (damage), "left"}`, `"miner_rockfall_warn" {"in_s"}`, `"miner_back" {"crew",
+  "haul": {res: n}}` (plus `"called_off": true` when they never left), `"miner_lost" {"crew", "cause",
+  "haul"}` with `"crew_died"`. Causes: `miner_gas`, `miner_water`, `miner_rockfall`, `miner_strike`.
+  `"loot"` carries `"miner": true` for a crate the miner opened.
+- Away crew (`CrewMember.away`): CrewAI skips them, `Systems.is_manned` and HazardSim room harm ignore
+  them, `room` stays the drill room. A fight starting while one is out pulls them aboard at once.
+
 ### Conservation APIs
 Anything that adds or removes heat or water goes through HazardSim so the books balance:
 `hazards.add_heat(room, joules)` (positive in, negative out; counted in `energy_in_j` or

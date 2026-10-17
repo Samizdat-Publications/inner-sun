@@ -17,7 +17,8 @@ var auto: bool = true  ## Handle emergencies on their own when not ordered.
 var order_room: int = -1  ## Player order: stay in this room and work there (-1 = none).
 var skill_fire: float = 1.0
 var skill_repair: float = 1.0
-var job_kind: String = ""  ## "", "extinguish", "patch", "repair" or "go".
+var job_kind: String = ""  ## "", "extinguish", "patch", "repair", "go" or "sortie" (boarding for the away miner).
+var away: bool = false  ## Outside the ship as the away miner (DrillMiner): mans nothing, takes no job or room harm; room stays valid.
 var job_room: int = -1
 var path: PackedVector2Array = PackedVector2Array()
 var path_i: int = 0

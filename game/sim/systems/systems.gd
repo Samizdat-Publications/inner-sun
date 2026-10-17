@@ -200,7 +200,7 @@ func is_manned(world: ShipWorld, ri: int) -> bool:
 	if ri < 0:
 		return false
 	for c: CrewMember in world.ship.crew:
-		if c.alive and c.room == ri and not c.climbing and (c.job_kind == "go" or c.job_kind == "") and c.path_i >= c.path.size():
+		if c.alive and not c.away and c.room == ri and not c.climbing and (c.job_kind == "go" or c.job_kind == "") and c.path_i >= c.path.size():
 			return true
 	return false
 

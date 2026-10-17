@@ -1,0 +1,15 @@
+{
+  "id": "miner_demo",
+  "name": "Away miner: Okafor climbs out at 2 s, tunnels to a vein beside the path, mines it out and carries the haul home (stills for the view; seed 1)",
+  "ship": "light_drill",
+  "duration_s": 60,
+  "bot": "idle",
+  "timeline": [
+    {"at_s": 0.05, "cmd": {"type": "power", "room": "bracing", "bars": 0}},
+    {"at_s": 0.05, "cmd": {"type": "power", "room": "bridge", "bars": 2}},
+    {"at_s": 0.05, "cmd": {"type": "power", "room": "drill", "bars": 3}},
+    {"at_s": 0.05, "cmd": {"type": "power", "room": "coolant", "bars": 1}},
+    {"at_s": 0.1, "cmd": {"type": "begin_segment", "segment": "miner", "depth_m": 36.0, "lateral_m": 0.0, "survey": {"richness": 2.5}}},
+    {"at_s": 2.0, "cmd": {"type": "send_miner", "crew": "okafor", "x_m": 23.0, "y_m": 14.15}}
+  ]
+}

@@ -442,6 +442,7 @@ func _strike(sim: Sim, why: String) -> void:
 	sim.emit("breach", {"room": r.id})
 	if fire:
 		sim.hazards.ignite(sim, sim.player, r, _strike_fire_level)
+	sim.drill.miner.strike(sim, sim.drill)  # A miner outside is hit too (miner.strike_hp).
 
 
 # Summary and state -------------------------------------------------------------------------------
@@ -451,7 +452,9 @@ func _strike(sim: Sim, why: String) -> void:
 ## counters (M1c): rockfalls_hit, rockfalls_absorbed, rockfall_hull (hull lost to them), blasts,
 ## blast_ore and blast_gems (paid by blasts), douses, steep_s (drilling seconds past 60 degrees).
 ## Structure counters (M1c round C): structures_placed (segments that held one), structures_entered,
-## crates_opened, loot_units (resource units paid by crates), traders_met, structure_events.
+## crates_opened, loot_units (resource units paid by crates into the run), traders_met, structure_events.
+## Away miner counters (M1c round E): sorties (miners out), miner_backs (came back aboard),
+## miner_deaths, haul_ore and haul_gems (paid on return), haul_lost (units lost with dead miners).
 func summary(sim: Sim) -> Dictionary:
 	var gained: Dictionary = {}
 	var spent: Dictionary = {}
@@ -461,7 +464,8 @@ func summary(sim: Sim) -> Dictionary:
 	var fights_won: int = 0
 	var verbs: Dictionary = {"rockfalls_hit": 0, "rockfalls_absorbed": 0, "rockfall_hull": 0, "blasts": 0,
 		"blast_ore": 0, "blast_gems": 0, "douses": 0, "structures_placed": 0, "structures_entered": 0,
-		"crates_opened": 0, "loot_units": 0, "traders_met": 0, "structure_events": 0}
+		"crates_opened": 0, "loot_units": 0, "traders_met": 0, "structure_events": 0, "sorties": 0, "miner_backs": 0,
+		"miner_deaths": 0, "haul_ore": 0, "haul_gems": 0, "haul_lost": 0}
 	for e: Dictionary in sim.events:
 		var kind: String = str(e["kind"])
 		if kind == "resource":
@@ -491,12 +495,26 @@ func summary(sim: Sim) -> Dictionary:
 			verbs["structures_entered"] += 1
 		elif kind == "loot":
 			verbs["crates_opened"] += 1
-			verbs["loot_units"] += int(e["amount"])
+			if not bool(e.get("miner", false)):
+				verbs["loot_units"] += int(e["amount"])
 		elif kind == "structure_outcome":
 			if str(e["outcome"]) == "trader":
 				verbs["traders_met"] += 1
 			elif str(e["outcome"]) == "event":
 				verbs["structure_events"] += 1
+		elif kind == "miner_out":
+			verbs["sorties"] += 1
+		elif kind == "miner_back":
+			var paid: Dictionary = e["haul"]
+			if not bool(e.get("called_off", false)):
+				verbs["miner_backs"] += 1
+			verbs["haul_ore"] += int(paid.get("ore", 0))
+			verbs["haul_gems"] += int(paid.get("gems", 0))
+		elif kind == "miner_lost":
+			verbs["miner_deaths"] += 1
+			var lost: Dictionary = e["haul"]
+			for n: Variant in lost.values():
+				verbs["haul_lost"] += int(n)
 	var crew_lost: int = 0
 	for c: CrewMember in sim.ship.crew:
 		if not c.alive:
