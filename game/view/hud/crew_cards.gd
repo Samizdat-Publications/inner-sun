@@ -17,8 +17,8 @@ const HEAD_H: float = 42.0
 const CARD_H: float = 112.0
 const GAP: float = 5.0
 const TOP: float = 512.0
-const JOB_LABEL: Dictionary = {"": "IDLE", "extinguish": "EXTINGUISH", "patch": "PATCH", "repair": "REPAIR", "go": "GO TO"}
-const JOB_ICON: Dictionary = {"": "", "extinguish": "flame", "patch": "hammer", "repair": "hammer", "go": ""}
+const JOB_LABEL: Dictionary = {"": "IDLE", "extinguish": "EXTINGUISH", "patch": "PATCH", "repair": "REPAIR", "go": "GO TO", "sortie": "TO HATCH"}
+const JOB_ICON: Dictionary = {"": "", "extinguish": "flame", "patch": "hammer", "repair": "hammer", "go": "", "sortie": ""}
 const FLASH_S: float = 0.8
 
 var sim: Sim = null
@@ -104,6 +104,14 @@ static func cause_text(cause: String) -> String:
 			return "HEAT"
 		"event":
 			return "LOST IN THE DARK"
+		"miner_gas":
+			return "OUTSIDE: GAS BURST"
+		"miner_water":
+			return "OUTSIDE: WATER BURST"
+		"miner_rockfall":
+			return "OUTSIDE: ROCKFALL"
+		"miner_strike":
+			return "OUTSIDE: STRUCK"
 	return cause.to_upper() if not cause.is_empty() else "UNKNOWN"
 
 
@@ -178,7 +186,7 @@ func _draw_card(i: int, c: CrewMember) -> void:
 		draw_line(rect.position + Vector2(6, 6), rect.end - Vector2(6, 6), Color(0.5, 0.15, 0.12, 0.45), 2.0)
 		return
 	# Job chip and place.
-	var job: String = c.job_kind
+	var job: String = "away" if c.away else c.job_kind
 	var label: String = job_text_for(c)
 	var jw: float = UiTheme.text_width(label, 17) + 34.0
 	var chip := Rect2(rect.end.x - jw - 10.0, rect.position.y + 8.0, jw, 28.0)
@@ -192,7 +200,9 @@ func _draw_card(i: int, c: CrewMember) -> void:
 		draw_colored_polygon(PackedVector2Array([chip.position + Vector2(7, 7), chip.position + Vector2(20, 14), chip.position + Vector2(7, 21)]), UiTheme.AMBER)
 	UiTheme.text(self, Vector2(chip.position.x + 28.0, chip.position.y + 21.0), label, 17, UiTheme.AMBER if busy else UiTheme.TEXT_DIM)
 	var place: String = sim.ship.rooms[c.room].name.to_upper() if c.room >= 0 and c.room < sim.ship.rooms.size() else ""
-	if c.order_room >= 0 and c.order_room < sim.ship.rooms.size():
+	if c.away:
+		place = outside_line(sim)
+	elif c.order_room >= 0 and c.order_room < sim.ship.rooms.size():
 		place += "  > STATION %s" % sim.ship.rooms[c.order_room].name.to_upper()
 	elif c.job_room >= 0 and c.job_room != c.room and c.job_room < sim.ship.rooms.size():
 		place += "  > %s" % sim.ship.rooms[c.job_room].name.to_upper()
@@ -204,7 +214,16 @@ func _draw_card(i: int, c: CrewMember) -> void:
 	_draw_skill_bar(Vector2(left + 270.0, rect.position.y + 96.0), c.skill_repair)
 
 
+## The place line of the away miner: "DIGGING +12 ORE +2 GEMS".
+static func outside_line(s: Sim) -> String:
+	var m: DrillMiner = s.drill.miner
+	var haul: String = MinerCard.haul_text(m.haul)
+	return MinerCard.phase_word(m.phase) + ("  " + haul if not haul.is_empty() else "")
+
+
 func job_text_for(c: CrewMember) -> String:
+	if c.away:
+		return "OUTSIDE"
 	if c.job_kind == "go" and c.job_room >= 0 and c.job_room < sim.ship.rooms.size() and c.job_room != c.room:
 		return "GO TO"
 	return job_text(c.job_kind)

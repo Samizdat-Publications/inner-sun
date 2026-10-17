@@ -34,6 +34,10 @@ const CAUSE_TEXT: Dictionary = {
 	"crew_drowned": "Crew lost to flooding. The water found every room, and then it found them.",
 	"crew_heat": "Crew lost to heat. The gauges topped out before anyone did.",
 	"crew_event": "Crew lost to whatever was found down there. The report on this one is short.",
+	"crew_miner_gas": "Crew lost outside: a gas burst in the tunnel. The haul stayed in the rock.",
+	"crew_miner_water": "Crew lost outside: a water burst in the tunnel. The haul stayed in the rock.",
+	"crew_miner_rockfall": "Crew lost outside: a rockfall in the tunnel. The haul stayed in the rock.",
+	"crew_miner_strike": "Crew lost outside: the front struck while they dug. The haul stayed in the rock.",
 	"flooded": "Drill room flooded. The bit drowned, the shaft filled, and the drill went quiet.",
 	"gate": "Gate guardian down. The way below is open. TOPSIDE requests a full written account.",
 }

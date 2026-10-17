@@ -29,6 +29,7 @@ var sim: Sim = null
 var steer_by_mouse: bool = true
 var keys_enabled: bool = true  ## B fits a new bit; main turns this off while an overlay is open.
 var blast: BlastCard = null  ## Set by RunScreen: a click fires a blast while it is armed.
+var miner: MinerCard = null  ## Set by RunScreen: a click sends the miner while it is armed.
 
 var _t: float = 0.0
 var _pacer: RedrawPacer = RedrawPacer.new()  ## Redraws at most 60 times a second.
@@ -298,6 +299,10 @@ func _gui_input(event: InputEvent) -> void:
 		blast.aim(point_m(mb.position))
 		accept_event()
 		return
+	if mb != null and mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT and miner != null and miner.armed and SCREEN.has_point(mb.position):
+		miner.aim(point_m(mb.position))
+		accept_event()
+		return
 	if not steer_by_mouse:
 		return
 	if mb != null and mb.button_index == MOUSE_BUTTON_LEFT:
@@ -417,6 +422,7 @@ func _draw_rock() -> void:
 	draw_line(origin, ScannerExtras.heading_end(origin, d.heading_deg, ppm_xy, SCREEN), Color(0.9, 1.0, 0.9), 2.5)
 	if blast != null and blast.armed:
 		ScannerExtras.draw_blast(self, sim, SCREEN, look_m(), _hover, _t)
+	ScannerExtras.draw_miner(self, sim, SCREEN, look_m(), _hover, _t, miner != null and miner.armed, miner.crew_id() if miner != null else "")
 	ScannerExtras.draw_notes(self, sim, SCREEN, _t, tgt_deg, ScannerExtras.blast_word(sim, blast != null and blast.armed))
 	# The next node: a line across the screen with a diamond where it sits.
 	var crown: float = d.ship_pos.y + d.ship_size.y
