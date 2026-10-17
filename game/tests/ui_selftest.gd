@@ -282,6 +282,19 @@ func _scenario_dig_verbs() -> void:
 	_click(m.douse.get_global_transform_with_canvas() * btn.get_center())
 	check_eq(str(_queued(s, "douse").get("room", "")), "drill", "a click on the DOUSE button does too")
 	check(_queued(s, "assign").is_empty(), "and is not also a crew order")
+	# A top-deck fire (Stewart's build 5c run: the bracing room burned and douse did nothing).
+	s.push({"type": "ignite", "room": "bracing", "level": 0.9})
+	await _frames(3)
+	check_eq(DouseLayer.worst(s), "bracing", "the bracing room burns worst")
+	s._pending.clear()
+	_key(KEY_F)
+	check_eq(str(_queued(s, "douse").get("room", "")), "bracing", "F douses the top-deck fire")
+	s._pending.clear()
+	var k2: float = 1.0 / m.get_viewport().get_canvas_transform().get_scale().x
+	var btn2: Rect2 = DouseLayer.button_rect(m.view.room_rect_px(s.ship.rooms[s.ship.room_index("bracing")]), k2)
+	var at2: Vector2 = m.douse.get_global_transform_with_canvas() * btn2.get_center()
+	_click(at2)
+	check_eq(str(_queued(s, "douse").get("room", "")), "bracing", "a click on the top-deck DOUSE button at %s does too" % str(at2))
 	await _drop()
 
 

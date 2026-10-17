@@ -24,9 +24,22 @@ static func why_not(d: DrillSim, sim: Sim, p_crew_id: String, point: Vector2) ->
 	return ""
 
 
-## The drill head: the ship's bottom centre, segment meters.
+## The drill head: the ship's bottom centre, segment meters (range is measured from here).
 static func head(d: DrillSim) -> Vector2:
 	return Vector2(d.ship_pos.x + d.ship_size.x * 0.5, d.ship_pos.y + d.ship_size.y)
+
+
+## Which side hatch the miner uses for a target: -1 left, +1 right (the side the target lies on; a
+## target straight below goes out the left). Stewart, build 5c: "he should fully exit first", not dig
+## the cell under the drill head as if chewing the tower's floor.
+static func side_of(d: DrillSim, p: Vector2) -> int:
+	return 1 if p.x > head(d).x else -1
+
+
+## Where the miner stands on climbing out: beside the hull on the target's side, at the bottom deck.
+static func hatch(d: DrillSim, p: Vector2) -> Vector2:
+	var x: float = d.ship_pos.x - d.cell_m * 0.5 if side_of(d, p) < 0 else d.ship_pos.x + d.ship_size.x + d.cell_m * 0.5
+	return Vector2(x, d.ship_pos.y + d.ship_size.y)
 
 
 ## [c0, c1, r0, r1] of the cells the ship footprint overlaps (DrillSim's own rule).
@@ -52,27 +65,26 @@ static func geometry_ok(d: DrillSim, p: Vector2) -> bool:
 	return not (c >= fp[0] and c <= fp[1] and r >= fp[2] and r <= fp[3])
 
 
-## The tunnel to point p from where the ship stands now: a 4-connected line of cells from the cell
-## under the head to p's cell. Ties step down first. A target level with the hull goes along the row
-## under the ship, then straight up beside it.
+## The tunnel to point p from where the ship stands now: a 4-connected line of cells that starts in
+## the cell beside the hull at its bottom row, on the target's side (the side hatch), and runs to p's
+## cell. A target below the ship goes one row down first, so the tunnel never enters the footprint.
+## Ties step down first. Off the grid's edge (no room beside the hull), it starts under the head.
 static func plan(d: DrillSim, p: Vector2) -> PackedInt32Array:
 	var fp: PackedInt32Array = footprint(d)
-	var hp: Vector2 = head(d)
-	var c: int = clampi(floori(hp.x / d.cell_m), 0, d.cols - 1)
-	var r: int = mini(fp[3] + 1, d.rows - 1)
+	var side: int = side_of(d, p)
+	var c: int = fp[0] - 1 if side < 0 else fp[1] + 1
+	var r: int = fp[3]
+	if c < 0 or c >= d.cols:
+		c = clampi(floori(head(d).x / d.cell_m), 0, d.cols - 1)
+		r = mini(fp[3] + 1, d.rows - 1)
 	var tc: int = clampi(floori(p.x / d.cell_m), 0, d.cols - 1)
 	var tr: int = clampi(floori(p.y / d.cell_m), 0, d.rows - 1)
 	var route := PackedInt32Array([r * d.cols + c])
+	if tr > fp[3] and r <= fp[3] and r + 1 < d.rows:
+		r += 1
+		route.append(r * d.cols + c)
 	var sx: int = signi(tc - c)
 	var sy: int = signi(tr - r)
-	if tr <= fp[3]:
-		while c != tc:
-			c += sx
-			route.append(r * d.cols + c)
-		while r != tr:
-			r += sy
-			route.append(r * d.cols + c)
-		return route
 	var dc: int = absi(tc - c)
 	var dr: int = absi(tr - r)
 	var ix: int = 0

@@ -55,6 +55,11 @@ var _finished: bool = false
 var _in_fight: bool = false
 var _fight_banner: bool = false
 var _stop_s: float = 0.0  ## How long the drill-stop notice has been due (real seconds).
+## Playtest input diary (view only, never part of the sim or the replay): raw left clicks and F presses
+## as they arrive, with the UI control under the mouse, so a click a control swallowed shows up in the
+## run record ("ui" in the summary). Stewart's build 5c run had no douse at all although he tried.
+var _diary: Array[Dictionary] = []
+const DIARY_MAX: int = 300
 var _saved: bool = false
 
 
@@ -295,6 +300,8 @@ func _on_run_over() -> void:
 	var summary: Dictionary = run.sim.run.summary(run.sim)
 	if not run.sim.run.is_over():
 		summary["result"] = "abandoned"
+	if not _diary.is_empty():
+		summary["ui"] = _diary.duplicate()
 	profile.merge_run(summary, run.sim.run.learned)
 	profile.save()
 	RunRecord.save(profile.dir, run.sim, summary, Time.get_datetime_string_from_system(false).replace(":", "").replace("-", "").replace("T", "-"))
@@ -312,6 +319,20 @@ func finish(code: int = 0) -> void:
 	_finished = true
 	print("FINAL tick=%d hash=%s" % [run.sim.tick, run.sim.state_hash()])
 	get_tree().quit(code)
+
+
+## Before any control sees it: note raw left clicks and F presses (what was under the mouse, the tick).
+func _input(event: InputEvent) -> void:
+	if run == null or bot_driven or replaying or not run_mode or _diary.size() >= DIARY_MAX:
+		return
+	var mb: InputEventMouseButton = event as InputEventMouseButton
+	var k: InputEventKey = event as InputEventKey
+	if mb != null and mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
+		var hc: Control = get_viewport().gui_get_hovered_control()
+		_diary.append({"t": run.sim.tick, "in": "click", "x": roundi(mb.position.x), "y": roundi(mb.position.y),
+				"over": str(hc.get_path()) if hc != null else "", "douse": douse.room_at(mb.position) if douse != null else ""})
+	elif k != null and k.pressed and not k.echo and k.physical_keycode == KEY_F:
+		_diary.append({"t": run.sim.tick, "in": "F", "worst": DouseLayer.worst(run.sim), "overlay": screen.overlay_open()})
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -403,7 +424,7 @@ func _douse_worst() -> void:
 
 func _key(key: InputEventKey) -> void:
 	var code: Key = key.keycode
-	if key.pressed and code == KEY_F and not screen.overlay_open() and not key.shift_pressed:
+	if key.pressed and (code == KEY_F or key.physical_keycode == KEY_F) and not screen.overlay_open() and not key.shift_pressed:
 		_douse_worst()
 		return
 	if key.pressed and code == KEY_H and screen.help.is_open():

@@ -223,7 +223,7 @@ func step(sim: Sim, d: DrillSim) -> void:
 				_next_vein(d)
 		"return":
 			_at = _par[_at]
-			pos = _feet(d, _cells[_at]) if _at >= 0 else head(d)
+			pos = _feet(d, _cells[_at]) if _at >= 0 else MinerRoute.hatch(d, target)
 			_next_back(d)
 		"enter":
 			_aboard(sim, d)
@@ -233,7 +233,7 @@ func _start_exit(sim: Sim, d: DrillSim, c: CrewMember) -> void:
 	c.away = true
 	c.path = PackedVector2Array()
 	c.path_i = 0
-	pos = head(d)
+	pos = MinerRoute.hatch(d, target)
 	if not MinerRoute.geometry_ok(d, target):  # The drill moved on while they boarded: the target is cut or behind.
 		_call_off(sim, d)
 		return
@@ -338,7 +338,7 @@ func _next_back(d: DrillSim) -> void:
 
 func _start_enter(d: DrillSim, ticks: int) -> void:
 	next_cell = -1
-	pos = head(d)
+	pos = MinerRoute.hatch(d, target)
 	_set_phase(d, "enter")
 	_set_action(ticks)
 

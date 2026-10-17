@@ -75,6 +75,14 @@ def report(path: str) -> list:
     gaps.sort(reverse=True)
     if gaps:
         out.append("  quiet stretches: " + ", ".join("%s from %s" % (fmt_s(g / TICK_HZ), fmt_s(at / TICK_HZ)) for g, at in gaps[:4]))
+    ui = s.get("ui", [])
+    if isinstance(ui, list) and ui:
+        fs = [u for u in ui if u.get("in") == "F"]
+        dc = [u for u in ui if u.get("in") == "click" and u.get("douse")]
+        blocked = [u for u in dc if u.get("over")]
+        out.append("  input diary: %d clicks, %d F presses (%d with a fire), %d clicks on a DOUSE button (%d under a UI control: %s)" % (
+            len([u for u in ui if u.get("in") == "click"]), len(fs), len([u for u in fs if u.get("worst")]),
+            len(dc), len(blocked), ", ".join(sorted(set(str(u.get("over")) for u in blocked)))[:160]))
     verbs = s.get("verbs", {})
     if isinstance(verbs, dict) and verbs:
         keep = ["blasts", "douses", "rockfalls", "structures_entered", "crates_opened", "sorties",

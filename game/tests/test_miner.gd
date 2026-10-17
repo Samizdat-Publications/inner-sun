@@ -229,8 +229,14 @@ func test_tunnel_is_walkable_and_level_targets_go_round_the_hull() -> void:
 			var r: int = i / d.cols
 			var c: int = i % d.cols
 			check(not (c >= fp[0] and c <= fp[1] and r >= fp[2] and r <= fp[3]), "no dug cell inside the footprint")
-	check_gt(float(dug.size()), 10.0, "a tunnel was dug")
-	# 4-connected: every dug cell touches another dug cell (or is the cell under the head).
+	check_gt(float(dug.size()), 3.0, "a tunnel was dug")
+	# Out of the side hatch (Stewart, build 5c: not the cell under the drill head): the first cell is
+	# beside the hull at its bottom row, and a target level with the hull never goes under the ship.
+	var first: int = (fp[3]) * d.cols + fp[1] + 1
+	check(dug.has(first), "the tunnel starts beside the hull, at the right-hand hatch")
+	for i2: int in dug:
+		check(not (i2 / d.cols > fp[3] and i2 % d.cols >= fp[0] and i2 % d.cols <= fp[1]), "nothing dug under the ship")
+	# 4-connected: every dug cell touches another dug cell.
 	for i: int in dug:
 		var touching: bool = false
 		for j: int in dug:
@@ -403,7 +409,7 @@ func test_death_loses_the_haul_and_records_the_cause() -> void:
 	var s: Sim = _sim(0, {"miner.gas_hp": 150.0})
 	var d: DrillSim = s.drill
 	var iron: int = _code(s, "iron_ore")
-	_box(s, 32, 37, 20, 20, iron)  # Ore along the way out.
+	_box(s, 38, 40, 19, 21, iron)  # Ore along the way out of the right-hand hatch.
 	_box(s, 35, 37, 22, 23, _code(s, "gas_pocket"))
 	var ore0: int = s.run.get_res("ore")
 	_send(s, "okafor", Vector2(18.25, 11.75))
@@ -557,7 +563,7 @@ func test_planner_finds_a_vein_off_the_lane_and_avoids_pockets() -> void:
 		check(c >= 44 and c <= 47 and r >= 22 and r <= 24, "in the copper vein")
 		check_eq(float(t["value"]), 36.0, "valued at its ore")
 	check_eq(MinerPlanner.target(s, d, 1.0, 3.0, 40.0, 3.0), {}, "nothing worth 40")
-	_box(s, 38, 39, 20, 24, _code(s, "gas_pocket"))  # Across the way there.
+	_box(s, 41, 42, 18, 24, _code(s, "gas_pocket"))  # Across the way there from the right-hand hatch.
 	check_eq(MinerPlanner.target(s, d, 1.0, 3.0, 20.0, 3.0), {}, "a tunnel through gas is refused")
 	check_eq(MinerPlanner.crew(s, d), "okafor", "the reactor hand goes, not the helm pilot")
 

@@ -490,3 +490,16 @@ spread to 16 m either side and appear in 80% of 13 m slots (a debug draw on top 
 dust was 32 bright specks that read as static, now 22 soft dim motes. Known: the hollow's dark room
 (StructureLayer, z -25) still covers the far layers inside a structure. Revert: the constants at the
 top of `depth_layers.gd`, or drop DepthLayers from main.gd and restore RockView._build_backdrop.
+
+## D051 (AI): The miner climbs out a side hatch; a playtest input diary
+Stewart (build 5c): "The miner mines the floor of the craft, he should fully exit first." The tunnel
+started in the cell under the drill head, so the figure stood on the crown and dug beneath the tower.
+Now the miner climbs out a hatch on the side of the hull facing the target and digs from the cell
+beside the hull at its bottom row; a target below the ship goes one row down first, so the tunnel
+never enters the footprint. Range is still measured from the drill head. Revert: `MinerRoute.plan`,
+`MinerRoute.hatch` and the three `pos =` lines in `DrillMiner`.
+Douse: his 15-minute run logged no douse command although he tried, yet the real-input self-test
+(now also covering a top-deck fire, F and the button) passes. So the game now keeps a view-only
+input diary in the run record (`summary.ui`: each raw left click with the UI control under the mouse
+and whether it hit a DOUSE button, each F press with the worst fire), and `tools/run_report.py`
+prints it, so the next run shows where the input died. F also accepts the physical key.
