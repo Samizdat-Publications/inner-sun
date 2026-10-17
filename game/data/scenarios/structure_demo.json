@@ -1,0 +1,17 @@
+{
+  "id": "structure_demo",
+  "name": "Buried structures: three short segments, each with a structure (mine works, rig module, crystal hollow) the drill breaks into (stills for the view; use seed 5 and --look=structure)",
+  "ship": "light_drill",
+  "duration_s": 52,
+  "bot": "idle",
+  "timeline": [
+    {"at_s": 0.05, "cmd": {"type": "power", "room": "bracing", "bars": 0}},
+    {"at_s": 0.05, "cmd": {"type": "power", "room": "bridge", "bars": 2}},
+    {"at_s": 0.05, "cmd": {"type": "power", "room": "weapons", "bars": 1}},
+    {"at_s": 0.05, "cmd": {"type": "power", "room": "drill", "bars": 4}},
+    {"at_s": 0.05, "cmd": {"type": "power", "room": "coolant", "bars": 1}},
+    {"at_s": 0.1, "cmd": {"type": "begin_segment", "segment": "sm", "depth_m": 14.0, "lateral_m": 0.0, "survey": {"richness": 2.0, "structure": "mine_works"}}},
+    {"at_s": 16.0, "cmd": {"type": "begin_segment", "segment": "ss", "depth_m": 14.0, "lateral_m": 0.0, "survey": {"richness": 2.0, "structure": "soviet_rig"}}},
+    {"at_s": 40.0, "cmd": {"type": "begin_segment", "segment": "sc", "depth_m": 14.0, "lateral_m": 0.0, "survey": {"richness": 2.0, "structure": "crystal_hollow"}}}
+  ]
+}

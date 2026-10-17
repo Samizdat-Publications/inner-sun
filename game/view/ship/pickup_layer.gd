@@ -42,9 +42,10 @@ func _draw() -> void:
 		var alpha: float = 1.0 - smoothstep(0.55, 1.0, t)
 		var size_px: int = DigLog.pickup_size(p)
 		var text: String = DigLog.pickup_text(p)
-		var fan: float = float((str(p["mat"]).hash() & 7)) / 7.0 - 0.5
-		var base: Vector2 = Vector2(float(p["x_m"]), float(p["y_m"]) + TIP_M) * ppm
-		var off: Vector2 = Vector2(fan * SPREAD_PX * 3.0, 10.0 - RISE_PX * (1.0 - pow(1.0 - t, 2.0))) * k
+		var fan: float = 0.0 if bool(p.get("abs", false)) else float((str(p["mat"]).hash() & 7)) / 7.0 - 0.5
+		var tip: float = 0.0 if bool(p.get("abs", false)) else TIP_M  # A crate's text starts on the crate.
+		var base: Vector2 = Vector2(float(p["x_m"]), float(p["y_m"]) + tip) * ppm
+		var off: Vector2 = Vector2(fan * SPREAD_PX * 3.0, 10.0 - RISE_PX * (1.0 - pow(1.0 - t, 2.0)) - 36.0 * float(p.get("slot", 0))) * k
 		var pop: float = 1.0 + 0.25 * float(p["pop"])
 		var fs: int = maxi(8, roundi(float(size_px) * k * pop))
 		var w: float = font.get_string_size(text, HORIZONTAL_ALIGNMENT_CENTER, -1, fs).x

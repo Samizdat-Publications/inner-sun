@@ -4,19 +4,24 @@ extends RefCounted
 ##  - `pickups`: the floating "+2 IRON" texts at the crown, one per "mined" event, merged when the same
 ##    material is cut again within MERGE_S, aged by real time (the PickupLayer draws them);
 ##  - `totals`: this segment's yield by material id, and `ore` / `gems` (the tally line);
-##  - `toast`: the arrival summary built from "segment_done" (the panel shows it for TOAST_S).
+##  - `toast`: the arrival summary built from "segment_done" (the panel shows it for TOAST_S);
+##  - a buried structure's crates: each "loot" event is a floating text where the crate stood
+##    ("CRATE: +4 COOLANT"), `crates` counts them and `loot` totals what they paid by resource.
 ## Read only: it follows `sim.events` by index (like the audio director), never writes the sim.
 
 const MERGE_S: float = 0.5
 const LIFE_S: float = 1.7
 const TOAST_S: float = 5.0
 const MAX_PICKUPS: int = 24
+const LOOT_COLOR: Color = Color(1.0, 0.82, 0.42)
 
 var pickups: Array[Dictionary] = []  ## {mat, res, amount, x_m, y_m, age, pop, text, color}
 var totals: Dictionary = {}  ## material id -> resource units this segment (first mined first)
 var ore: int = 0
 var gems: int = 0
 var toast: Dictionary = {}  ## {} or the arrival summary, see _summary
+var crates: int = 0  ## Crates opened this segment.
+var loot: Dictionary = {}  ## Resource id -> units the crates paid this segment.
 var toast_age: float = 0.0
 var _seen: int = 0
 var _colors: Dictionary = {}
@@ -28,6 +33,8 @@ func bind(sim: Sim) -> void:
 	totals = {}
 	ore = 0
 	gems = 0
+	crates = 0
+	loot = {}
 	toast = {}
 	toast_age = 0.0
 	_colors = {}
@@ -64,13 +71,20 @@ func _on_event(sim: Sim, e: Dictionary) -> void:
 			totals = {}
 			ore = 0
 			gems = 0
+			crates = 0
+			loot = {}
 			toast = {}
+		"loot":
+			_on_loot(e)
 		"mined":
 			_on_mined(sim, e)
 		"gas_burst":
 			_add_pickup(str(e.get("room", "gas")), "gas", 0, float(e.get("x_m", 0.0)), float(e.get("y_m", 0.0)), "GAS BURST", Color(0.82, 0.9, 0.3))
 		"segment_done":
 			toast = summary(e)
+			toast["loot"] = loot.duplicate()
+			toast["label"] = sim.drill.structures.label
+			toast["crates_total"] = sim.drill.structures.crates_total
 			toast_age = 0.0
 
 
@@ -88,7 +102,17 @@ func _on_mined(sim: Sim, e: Dictionary) -> void:
 	_add_pickup(mat, res, amount, float(e.get("x_m", 0.0)), float(e.get("y_m", 0.0)), "", color_of(sim, mat))
 
 
-func _add_pickup(mat: String, res: String, amount: int, x_m: float, y_m: float, text: String, col: Color) -> void:
+## A crate paid: a floating text where it stood (absolute, not at the crown), counted in the tally.
+func _on_loot(e: Dictionary) -> void:
+	var res: String = str(e.get("res", ""))
+	var amount: int = int(e.get("amount", 0))
+	crates += 1
+	if amount > 0:
+		loot[res] = int(loot.get(res, 0)) + amount
+	_add_pickup("crate", res, amount, float(e.get("x_m", 0.0)), float(e.get("y_m", 0.0)), loot_text(res, amount), LOOT_COLOR, true)
+
+
+func _add_pickup(mat: String, res: String, amount: int, x_m: float, y_m: float, text: String, col: Color, absolute: bool = false) -> void:
 	for p: Dictionary in pickups:
 		if str(p["mat"]) == mat and float(p["age"]) < MERGE_S and str(p["text"]) == text:
 			p["amount"] = int(p["amount"]) + amount
@@ -96,8 +120,15 @@ func _add_pickup(mat: String, res: String, amount: int, x_m: float, y_m: float, 
 			return
 	if pickups.size() >= MAX_PICKUPS:
 		pickups.remove_at(0)
+	# Crate texts that are up together are stacked (slot 0, 1, 2) so neighbouring crates do not overprint.
+	var slot: int = 0
+	if absolute:
+		for p: Dictionary in pickups:
+			if bool(p.get("abs", false)):
+				slot += 1
+		slot = slot % 3
 	pickups.append({"mat": mat, "res": res, "amount": amount, "x_m": x_m, "y_m": y_m, "age": 0.0,
-			"pop": 1.0, "text": text, "color": col})
+			"pop": 1.0, "text": text, "color": col, "abs": absolute, "slot": slot})
 
 
 ## The material's colour hint from the segment's rock table (cached per material id).
@@ -128,6 +159,13 @@ static func pickup_text(p: Dictionary) -> String:
 	return "+%d %s" % [int(p["amount"]), short_name(str(p["mat"]))]
 
 
+## The text a crate's loot makes: "CRATE: +4 COOLANT", or "CRATE: EMPTY" when it paid nothing.
+static func loot_text(res: String, amount: int) -> String:
+	if amount <= 0 or res.is_empty():
+		return "CRATE: EMPTY"
+	return "CRATE: +%d %s" % [amount, short_name(res)]
+
+
 ## Text colour that reads on dark rock: a dark material colour (coal) is lifted toward white.
 static func readable(col: Color) -> Color:
 	var lum: float = col.r * 0.3 + col.g * 0.59 + col.b * 0.11
@@ -140,7 +178,9 @@ static func readable(col: Color) -> Color:
 static func pickup_size(p: Dictionary) -> int:
 	var base: int = 26
 	var mat: String = str(p.get("mat", ""))
-	if str(p.get("res", "")) == "gems":
+	if mat == "crate":
+		base = 30
+	elif str(p.get("res", "")) == "gems":
 		base = 34 if mat != "emerald" else 38
 	elif mat == "gold_ore":
 		base = 32
@@ -162,7 +202,8 @@ func tally_text() -> String:
 static func summary(e: Dictionary) -> Dictionary:
 	return {"time_s": float(e.get("time_s", 0.0)), "distance_m": float(e.get("distance_m", 0.0)),
 			"ore": int(e.get("ore", 0)), "gems": int(e.get("gems", 0)), "yield": (e.get("yield", {}) as Dictionary).duplicate(),
-			"gas_bursts": int(e.get("gas_bursts", 0))}
+			"gas_bursts": int(e.get("gas_bursts", 0)), "structure": str(e.get("structure", "")),
+			"entered": bool(e.get("entered", false)), "crates": int(e.get("crates", 0))}
 
 
 ## The newest arrival summary in the event log ({} before the first), for the map's last-dig block.

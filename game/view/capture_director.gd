@@ -3,7 +3,8 @@ extends Node
 ## Saves frames from the game camera while a bot plays.
 ##   --shots=<a,b> --out=<dir>: named shots at story moments (start, fire, flood, arrive, fire_out, end;
 ##     drilling: drill_start, ore, burst, segment_done; whole runs: event, store, map, fight, death)
-##     dig verbs: rockwarn, rockfall, blast_fired, blast, douse; and tN (N whole seconds) for a still at a
+##     dig verbs: rockwarn, rockfall, blast_fired, blast, douse; buried structures: structure (the
+##     break-in banner), crate (a crate opening; store holds the mid-segment trader); and tN (N whole seconds) for a still at a
 ##     fixed time, e.g. t12, for a scenario timeline that shows a state rather than an event; hN is the
 ##     same but opens the help page first
 ##   --capture=<dir> --stills=<n> --sheets=<m>: evenly spaced stills, plus m bursts of 9 frames
@@ -18,7 +19,8 @@ const MOMENT_DELAY_S: Dictionary = {"fire": 4.0, "flood": 8.0, "arrive": 0.6, "f
 	"drill_start": 2.5, "ore": 0.35, "burst": 0.35, "segment_done": 0.4,
 	"event": 0.0, "store": 0.0, "map": 0.0, "fight": 5.0, "death": 0.5,
 	"volley": 0.7, "impact": 0.12, "block": 0.15, "miss": 0.2,
-	"rockwarn": 0.5, "rockfall": 0.2, "blast_fired": 0.3, "blast": 0.1, "douse": 0.35}
+	"rockwarn": 0.5, "rockfall": 0.2, "blast_fired": 0.3, "blast": 0.1, "douse": 0.35,
+	"structure": 0.45, "crate": 0.3}
 const HOLD_MOMENTS: Array[String] = ["event", "store", "map", "death"]
 const HOLD_FRAMES: int = 150  ## About 2.5 s at 60 fps.
 const HOLD_SHOT_AT: int = 45  ## Frames into a hold when its shot is taken (overlays fade in first).
@@ -158,6 +160,10 @@ func _watch_events(sim: Sim) -> void:
 			moment = "blast"
 		elif kind == "doused":
 			moment = "douse"
+		elif kind == "structure_entered":
+			moment = "structure"
+		elif kind == "loot":
+			moment = "crate"
 		if moment.is_empty():
 			continue
 		var hold: bool = HOLD_MOMENTS.has(moment)

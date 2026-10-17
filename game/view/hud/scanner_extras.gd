@@ -117,6 +117,51 @@ static func draw_blast(ci: CanvasItem, s: Sim, screen: Rect2, look_m: float, hov
 	ci.draw_line(hover - Vector2(0, 6), hover + Vector2(0, 6), col, 1.5)
 
 
+## The buried structure's box on the glass, clipped to the screen: an empty Rect2 when the segment has
+## none or it is not in range yet (nothing of it within the `look_m` the screen shows below the crown).
+static func structure_box(s: Sim, screen: Rect2, look_m: float) -> Rect2:
+	var d: DrillSim = s.drill
+	var st: DrillStructures = d.structures
+	if not d.active or not st.has_structure():
+		return Rect2()
+	var width_m: float = float(d.cols) * d.cell_m
+	var crown: float = d.ship_pos.y + d.ship_size.y
+	var a: Vector2 = m_to_screen(st.rect.position, screen, width_m, crown, look_m)
+	var b: Vector2 = m_to_screen(st.rect.end, screen, width_m, crown, look_m)
+	var box := Rect2(a, b - a)
+	if not box.intersects(screen):
+		return Rect2()
+	return box.intersection(screen)
+
+
+## Draw the structure's outline (a brass dashed frame with corner ticks, green once broken into) and
+## its small label once any of it is within range. The cells inside already show as the scanner's
+## colours (void for the old air, hatching for timber, amber for crates).
+static func draw_structure(ci: CanvasItem, s: Sim, screen: Rect2, look_m: float, t: float) -> void:
+	var box: Rect2 = structure_box(s, screen, look_m)
+	if box.size.x <= 0.0 or box.size.y <= 0.0:
+		return
+	var st: DrillStructures = s.drill.structures
+	var col: Color = UiTheme.CRT if st.entered else UiTheme.AMBER
+	var pulse: float = 0.75 + 0.25 * sin(t * 3.0)
+	var edge := Color(col, 0.9 * pulse)
+	var g: Rect2 = box.grow(2.0)
+	ci.draw_dashed_line(g.position, Vector2(g.end.x, g.position.y), edge, 1.5, 5.0)
+	ci.draw_dashed_line(Vector2(g.position.x, g.end.y), g.end, edge, 1.5, 5.0)
+	ci.draw_dashed_line(g.position, Vector2(g.position.x, g.end.y), edge, 1.5, 5.0)
+	ci.draw_dashed_line(Vector2(g.end.x, g.position.y), g.end, edge, 1.5, 5.0)
+	for corner: Vector2 in [g.position, Vector2(g.end.x, g.position.y), Vector2(g.position.x, g.end.y), g.end]:
+		ci.draw_rect(Rect2(corner - Vector2(2.5, 2.5), Vector2(5.0, 5.0)), Color(col, 0.95), true)
+	var text: String = st.label + (" (OPEN)" if st.entered else "")
+	var w: float = UiTheme.text_width(text, 12)
+	var x: float = clampf(g.position.x, screen.position.x + 3.0, screen.end.x - w - 3.0)
+	var y: float = g.position.y - 4.0
+	if y < screen.position.y + 36.0:
+		y = g.end.y + 13.0  # No room above the box (it is under the ship): put the label below it.
+	ci.draw_rect(Rect2(x - 2.0, y - 11.0, w + 4.0, 14.0), Color(0.0, 0.03, 0.02, 0.8), true)
+	UiTheme.text(ci, Vector2(x, y), text, 12, col)
+
+
 ## HOLD DEPTH and AT THE WALL on the glass, and the blast word in the top right corner.
 static func draw_notes(ci: CanvasItem, s: Sim, screen: Rect2, t: float, target_deg: float, blast_word_text: String) -> void:
 	var d: DrillSim = s.drill

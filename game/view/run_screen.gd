@@ -28,6 +28,7 @@ var death: DeathScreen
 var requisitions: RequisitionsView  ## The death screen's own (above it); here for the tests and main.
 var help: HelpView
 var tally: DigTally  ## The dig tally and the arrival toast; owns the DigLog.
+var structure_banner: StructureBanner  ## The break-in plaque for a buried structure.
 var _banner: Label
 var _notice: Label  ## The loud line low over the world (the drill is stopped and why).
 var _root: Control
@@ -67,6 +68,8 @@ func build(p_sim: Sim, p_profile: Profile) -> void:
 	death.new_run_requested.connect(func() -> void: new_run_requested.emit())
 	tally = DigTally.build(_layer, sim)
 	callouts = DigCallouts.build(_layer, sim)
+	structure_banner = StructureBanner.build(_layer, sim)
+	structure_banner.hide_when = func() -> bool: return overlay_open()
 	tally.hide_tally = func() -> bool: return overlay_open() or (sim.combat.active and sim.enemy != null)
 	tally.hide_toast = func() -> bool: return death.is_open() or store.is_open() or dossier.is_open() or codex.is_open() or help.is_open()
 	top.current_row_getter = func() -> float: return _ship_row()
@@ -94,6 +97,7 @@ func bind(p_sim: Sim, p_profile: Profile) -> void:
 	requisitions = death.requisitions
 	tally.bind(sim)
 	callouts.bind(sim)
+	structure_banner.bind(sim)
 	_bind_rows()
 
 
