@@ -19,8 +19,8 @@ const F_FAR: float = 0.45
 const F_MID: float = 0.7
 const F_DUST: float = 1.25
 const SLOT_M: float = 13.0
-const SLOT_ODDS: float = 0.62
-const DUST_COUNT: int = 32
+const SLOT_ODDS: float = 0.8
+const DUST_COUNT: int = 22
 const WALL_HALF: Vector2 = Vector2(4600.0, 2700.0)  ## Covers a camera zoom down to about 0.3.
 const Z_FAR: int = -30
 const Z_GLOW: int = -29
@@ -61,8 +61,8 @@ void fragment() {
 	vec2 m = ((wpos - cam) + cam * f) / ppm;
 	float a = dot(texture(tex, m / 3.4).rgb, vec3(0.33));
 	float b = dot(texture(tex, vec2(m.y, -m.x) / 8.7 + vec2(0.37, 0.71)).rgb, vec3(0.33));
-	float g = mix(a, b, 0.55);
-	g = 0.5 + (g - 0.5) * 1.0;
+	float g = mix(a, b, 0.35);
+	g = clamp(0.2 + (g - 0.2) * 2.4, 0.0, 1.0);  // Averaged samples go flat: push the contrast back around the tile's mean.
 	vec2 dd = (wpos - pool) / (ppm * vec2(15.0, 11.0));
 	float lit = 0.55 + 0.85 * exp(-dot(dd, dd));
 	COLOR = vec4(vec3(g) * gain * lit * 3.8, 1.0);
@@ -195,7 +195,7 @@ static func shape_for(seed_i: int, slot: int) -> Dictionary:
 		w = 7.0 + 3.0 * unit(seed_i, slot, 4)
 		h = 5.0 + 3.0 * unit(seed_i, slot, 5)
 	return {
-		"has": u0 < SLOT_ODDS, "kind": kind, "depth_m": d, "dx_m": (unit(seed_i, slot, 6) - 0.5) * 12.0,
+		"has": u0 < SLOT_ODDS, "kind": kind, "depth_m": d, "dx_m": (unit(seed_i, slot, 6) - 0.5) * 32.0,
 		"w_m": w, "h_m": h, "rim": hash_i(seed_i, slot, 7) % 2,
 		"glow": unit(seed_i, slot, 8) < 0.42, "glow_kind": 1 if unit(seed_i, slot, 9) < 0.4 else 0,
 		"glow_depth_m": (float(slot) + unit(seed_i, slot, 10)) * SLOT_M, "glow_dx_m": (unit(seed_i, slot, 11) - 0.5) * 16.0,
@@ -356,7 +356,8 @@ func _build_dust() -> void:
 		m.texture = tex
 		m.material = mat
 		m.light_mask = RockView.LIGHT_MASK
-		m.self_modulate = Color(2.0, 1.85, 1.6, 0.75)
+		m.self_modulate = Color(1.25, 1.15, 1.0, 0.4)  # Soft and dim: brighter specks read as static.
+		m.scale = Vector2.ONE * (1.1 + 1.3 * unit(_seed, i, 44))
 		_dust.append(m)
 		_dust_root.add_child(m)
 		_dust_base.append(Vector2(unit(_seed, i, 40), unit(_seed, i, 41)))

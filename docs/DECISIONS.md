@@ -476,3 +476,17 @@ dark teal-green murk, matching the HUD's blue water icons. The scorch stays dark
 dark floors (known gap). `game/data/scenarios/hazard_demo.json` (crew automation off, a reactor fire
 and a deep flood) gives repeatable stills. Revert: the colour constants in `room_water.gd` and the
 haze colours in `room_fire.gd`.
+
+## D050 (AI): World depth through the openings, and beds you pass through
+Four critic reviews scored the world outside the hull lowest ("a treadmill"). The rock is the cut
+plane and fills the view, so depth comes from three places (a Sonnet builder, `game/view/
+depth_layers.gd`, then the lead's fixes from stills): a far wall behind every opening at 0.45 of the
+camera's scroll and silhouettes of a cavern in between at 0.7 (seen in blast craters, side tunnels,
+the miner's tunnel, caverns), dim dust motes in front at 1.25, and colour beds in the rock 25 to 59 m
+thick (iron red, limestone, shale, basalt, ochre, green-grey; ore and gems keep their colours). The
+lead's fixes: the far wall's averaged texture went flat, so its contrast is pushed back around the
+tile's own mean; silhouettes sat within 6 m of the ship's own column, mostly behind the tower, so they
+spread to 16 m either side and appear in 80% of 13 m slots (a debug draw on top proved they render);
+dust was 32 bright specks that read as static, now 22 soft dim motes. Known: the hollow's dark room
+(StructureLayer, z -25) still covers the far layers inside a structure. Revert: the constants at the
+top of `depth_layers.gd`, or drop DepthLayers from main.gd and restore RockView._build_backdrop.
