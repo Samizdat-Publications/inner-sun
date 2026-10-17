@@ -20,6 +20,7 @@ var unlocks: PackedStringArray = PackedStringArray()
 var history: Array[Dictionary] = []
 var research: int = 0  ## The balance: earned by runs (Research), spent on requisitions.
 var requisitions: PackedStringArray = PackedStringArray()  ## Owned requisition ids (sorted), loaded on every run.
+var hints_seen: PackedStringArray = PackedStringArray()  ## Onboarding hints already given (HintDirector), once ever per profile.
 var last_research: int = 0  ## What the latest merged run earned (not saved; the death screen shows it).
 
 
@@ -63,6 +64,10 @@ static func load_from(p_dir: String) -> Profile:
 		if not p.requisitions.has(str(r)):
 			p.requisitions.append(str(r))
 	p.requisitions.sort()
+	for h2: Variant in d.get("hints_seen", []):
+		if not p.hints_seen.has(str(h2)):
+			p.hints_seen.append(str(h2))
+	p.hints_seen.sort()
 	return p
 
 
@@ -132,7 +137,7 @@ func save() -> bool:
 	var data: Dictionary = {
 		"version": VERSION, "known_codex": Array(known_codex), "runs": runs, "wins": wins,
 		"best_depth_m": best_depth_m, "deaths": deaths, "unlocks": Array(unlocks), "history": history,
-			"research": research, "requisitions": Array(requisitions),
+			"research": research, "requisitions": Array(requisitions), "hints_seen": Array(hints_seen),
 	}
 	f.store_string(JSON.stringify(data, "  ", true, true))
 	f.close()

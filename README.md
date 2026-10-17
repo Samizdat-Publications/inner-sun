@@ -82,6 +82,8 @@ is one descent. Dying is normal: what you learn goes into the codex and lifts re
   blinking bars until time moves). The game also pauses by itself when a fight starts.
 - **Help.** **H** (or the HELP chip at the top right) opens the help page, which it also does on your
   very first run. **Esc** or **H** closes it.
+- **Hints.** The first time a verb would pay off (power, steering, blast, the miner, douse, pause and
+  so on) TOPSIDE says so on the radio strip and the control glows; each hint shows once ever.
 - **Events.** Read the dossier and click an option (or press its number). Greyed options say what
   they need: the power keys still work while a dossier is open, so you can give it the bars it asks for.
 - **Store.** Every line shows its price with the ore or gem icon it is paid in (red when you are short).

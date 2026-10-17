@@ -14,6 +14,8 @@ extends Node2D
 ## Also: --seed=<n> --bot=<name> --duration=<s> --run-ticks=<n> --loop --debug-hud
 ##   --shots=<a,b> --out=<dir> | --capture=<dir> --stills=<n> --sheets=<m> | --perf=<file> | --selftest
 ##   --look=structure            (dev) the drilling camera frames the segment's buried structure
+##   --hints-reset               (dev) forget which onboarding hints the profile has seen
+##   --hint=<name>               (dev) show one onboarding hint about 2 s in (stills; not recorded)
 ## Every bot-driven run ends by printing `FINAL tick=<n> hash=<h>` so tools can compare runs.
 ## Normal play saves the profile and a replayable record of every run (game/meta), finished or not.
 
@@ -82,6 +84,8 @@ func _ready() -> void:
 	run_mode = not replaying and (args.get_str("mode", "") == "run" or (not args.has("scenario") and not bot_driven))
 	if run_mode:
 		profile = Profile.load_from(Profile.dir_from_args(args))
+		if args.has("hints-reset"):
+			profile.hints_seen.clear()
 	if not _start_run():
 		return
 	run_ticks = args.get_int("run-ticks", -1)
@@ -134,9 +138,31 @@ func _start_run() -> bool:
 		structures.bind(run.sim)
 		miner_layer.bind(run.sim, screen.miner)
 		douse.bind(run.sim)
+		_arm_hints()
 		if hud != null:
 			hud.bind(run)
 	return true
+
+
+## The onboarding hints (HintDirector) are for a person playing a full run: never in a bot, capture or
+## replay run. The dev flag --hint=<name> forces one regardless (stills).
+func _arm_hints() -> void:
+	screen.hints.enabled = run_mode and _is_human() and profile != null
+	screen.hints.force = args.get_str("hint", "")
+	screen.hints.douse_rect = _douse_button_rect
+
+
+## The screen rectangle of the worst burning room's DOUSE button (Rect2() when nothing burns).
+func _douse_button_rect() -> Rect2:
+	var id: String = DouseLayer.worst(run.sim)
+	var ri: int = run.sim.ship.room_index(id)
+	if ri < 0:
+		return Rect2()
+	var k: float = 1.0 / maxf(0.2, get_viewport().get_canvas_transform().get_scale().x)
+	var local: Rect2 = DouseLayer.button_rect(view.room_rect_px(run.sim.ship.rooms[ri]), k)
+	var xf: Transform2D = douse.get_global_transform_with_canvas()
+	var a: Vector2 = xf * local.position
+	return Rect2(a, xf * local.end - a)
 
 
 ## Dev only: a fight against `enemy_id` from tick 0, with power on the weapons and bracing, and both
@@ -510,6 +536,7 @@ func _build_world() -> void:
 	add_child(pickups)
 	if run_mode and _is_human() and profile != null and profile.runs == 0:
 		screen.help.open()  # A fresh profile sees the help page first (never in bot captures).
+	_arm_hints()
 	if args.has("arm-miner"):
 		screen.miner.dev_arm = true  # Dev only: look at the miner's aim ring.
 	if args.has("arm"):
