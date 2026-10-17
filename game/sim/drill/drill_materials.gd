@@ -2,13 +2,13 @@ class_name DrillMaterials
 extends RefCounted
 ## The per-code lookup tables a DrillSim reads in its hot loop, built from a rock table when a
 ## segment begins: material info, effective hardness (gear can make hard rock cheaper), yields,
-## water, gas and unstable (fault rock) flags. Also the flood fills over a connected pocket. Static
-## helpers only.
+## water, gas, unstable (fault rock), loot (crates) and interior (a structure's old air) flags. Also
+## the flood fills over a connected pocket or crate. Static helpers only.
 
 
-## Fill d.materials, d.hardness_of, d.yield_res_of, d.yield_amount_of, d.water_of, d.gas_of and
-## d.unstable_of from
-## a rock table. Hardness at or above hard_min is multiplied by hard_x (a diamond head: 0.5).
+## Fill d.materials, d.hardness_of, d.yield_res_of, d.yield_amount_of, d.water_of, d.gas_of,
+## d.unstable_of, d.loot_of and d.interior_of from a rock table. Hardness at or above hard_min is
+## multiplied by hard_x (a diamond head: 0.5).
 static func load_into(d: DrillSim, table: Dictionary, hard_x: float, hard_min: float) -> void:
 	var n: int = DrillSim.MAX_CODES
 	d.materials = []
@@ -26,6 +26,10 @@ static func load_into(d: DrillSim, table: Dictionary, hard_x: float, hard_min: f
 	d.gas_of.resize(n)
 	d.unstable_of = PackedByteArray()
 	d.unstable_of.resize(n)
+	d.loot_of = PackedByteArray()
+	d.loot_of.resize(n)
+	d.interior_of = PackedByteArray()
+	d.interior_of.resize(n)
 	for i: int in range(n):
 		d.materials[i] = {}
 	for m: Variant in table.get("materials", []):
@@ -38,6 +42,8 @@ static func load_into(d: DrillSim, table: Dictionary, hard_x: float, hard_min: f
 		d.water_of[code] = 1 if bool(md.get("water", false)) else 0
 		d.gas_of[code] = 1 if bool(md.get("gas", false)) else 0
 		d.unstable_of[code] = 1 if bool(md.get("unstable", false)) else 0
+		d.loot_of[code] = 1 if bool(md.get("loot", false)) else 0
+		d.interior_of[code] = 1 if bool(md.get("interior", false)) else 0
 		var y: Variant = md.get("yield", null)
 		if y is Dictionary:
 			var yd: Dictionary = y

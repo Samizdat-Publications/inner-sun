@@ -1,0 +1,25 @@
+{
+  "id": "crystal_hollow",
+  "name": "Crystal hollow",
+  "label": "CRYSTAL HOLLOW",
+  "codex": "the_hollows",
+  "blurb": "Placeholder: an oval cavern lined with crystal, a still pool at the bottom, and sometimes a light.",
+  "legend": {"q": "gem", "a": "amethyst", "e": {"material": "emerald", "from_depth_m": 450.0, "else": "amethyst"}, "w": "water_pocket", ".": "relic_air"},
+  "stamp": [
+    "     qa  aq     ",
+    "   q........q   ",
+    "  a..........   ",
+    " q............q ",
+    " ...............",
+    "...............a",
+    " q............q ",
+    "  ewwwwwwwwwwe  ",
+    "     wwwwww     ",
+    "      e  e      "
+  ],
+  "mirror": true,
+  "loot": [],
+  "event_chance": 0.5,
+  "trader": "hollow_trader",
+  "trader_chance": 0.35
+}

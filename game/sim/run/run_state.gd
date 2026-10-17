@@ -129,7 +129,7 @@ func begin(sim: Sim) -> void:
 func _build_map(sim: Sim) -> void:
 	map = MapGen.generate(layer, sim.rng.get_stream("map"))
 	var rock: Dictionary = sim.db.table("rock").get(str(layer.get("rock", DrillSim.DEFAULT_ROCK)), {})
-	Survey.add_to_map(map, layer, rock, sim.rng.get_stream("survey"))
+	Survey.add_to_map(map, layer, rock, sim.rng.get_stream("survey"), sim.rng.get_stream("survey/structure"))
 	for row: Array in map:
 		for n: Dictionary in row:
 			_index_of[str(n["id"])] = nodes.size()
@@ -175,10 +175,11 @@ func links_from_current() -> PackedStringArray:
 	return nodes[_current]["links"] if _current >= 0 else PackedStringArray()
 
 
-## The ship's position on the map as a float row: the current node's row plus drilling progress.
+## The ship's position on the map as a float row: the current node's row plus drilling progress
+## (also while a structure's store or event is open mid-segment: the segment is still under way).
 func ship_row_f(sim: Sim) -> float:
 	var r: float = float(current_row())
-	if _target >= 0 and phase == "drill":
+	if _target >= 0 and sim.drill.active:
 		r += sim.drill.progress() * float(int(nodes[_target]["row"]) - current_row())
 	return r
 
@@ -449,6 +450,8 @@ func _strike(sim: Sim, why: String) -> void:
 ## depth_m). gained and spent sum the positive and negative resource events per resource. Dig verb
 ## counters (M1c): rockfalls_hit, rockfalls_absorbed, rockfall_hull (hull lost to them), blasts,
 ## blast_ore and blast_gems (paid by blasts), douses, steep_s (drilling seconds past 60 degrees).
+## Structure counters (M1c round C): structures_placed (segments that held one), structures_entered,
+## crates_opened, loot_units (resource units paid by crates), traders_met, structure_events.
 func summary(sim: Sim) -> Dictionary:
 	var gained: Dictionary = {}
 	var spent: Dictionary = {}
@@ -457,7 +460,8 @@ func summary(sim: Sim) -> Dictionary:
 		spent[r] = 0
 	var fights_won: int = 0
 	var verbs: Dictionary = {"rockfalls_hit": 0, "rockfalls_absorbed": 0, "rockfall_hull": 0, "blasts": 0,
-		"blast_ore": 0, "blast_gems": 0, "douses": 0}
+		"blast_ore": 0, "blast_gems": 0, "douses": 0, "structures_placed": 0, "structures_entered": 0,
+		"crates_opened": 0, "loot_units": 0, "traders_met": 0, "structure_events": 0}
 	for e: Dictionary in sim.events:
 		var kind: String = str(e["kind"])
 		if kind == "resource":
@@ -481,6 +485,18 @@ func summary(sim: Sim) -> Dictionary:
 			verbs["blast_gems"] += int(e["gems"])
 		elif kind == "doused":
 			verbs["douses"] += 1
+		elif kind == "structure_placed":
+			verbs["structures_placed"] += 1
+		elif kind == "structure_entered":
+			verbs["structures_entered"] += 1
+		elif kind == "loot":
+			verbs["crates_opened"] += 1
+			verbs["loot_units"] += int(e["amount"])
+		elif kind == "structure_outcome":
+			if str(e["outcome"]) == "trader":
+				verbs["traders_met"] += 1
+			elif str(e["outcome"]) == "event":
+				verbs["structure_events"] += 1
 	var crew_lost: int = 0
 	for c: CrewMember in sim.ship.crew:
 		if not c.alive:

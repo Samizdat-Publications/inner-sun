@@ -13,6 +13,9 @@ extends Bot
 ##   within fault_look_m (cautious: always). The charge launcher (weapons to 1 bar for the shot)
 ##   blasts an unburst gas pocket on the lane before the drill reaches it, and (greedy, balanced) a
 ##   vein or pocket in range whose blast circle is worth blast_min_value, keeping blast_keep charges.
+##   A buried structure's crates and interior pull the lanes (DrillBot value_crate, value_interior;
+##   cautious only a little) and its unopened crates count for loot blasts (blast_crate_value).
+##   A mid-segment store or event (a structure's break-in) is handled like any other.
 ## - any world phase: douse the worst fire above douse_at while coolant is above low_coolant.
 ## - dialog: the event option the policy scores best (PolicyChoices.choose_option).
 ## - store: one purchase per decision (PolicyChoices.next_purchase), then leave.
@@ -35,6 +38,7 @@ var blast_loot: bool = true  ## Blast veins and pockets in range for their ore a
 var blast_gas: bool = true  ## Blast gas pockets on the lane before the drill bursts them.
 var blast_min_value: float = 50.0  ## Ore-equivalent value a loot blast must reach.
 var blast_keep: int = 3  ## Charges never spent on blasts (kept for fights and the gate).
+var blast_crate_value: float = 12.0  ## Loot blasts: value per unopened crate cell (a blast pays the crate in full).
 var douse_at: float = 0.4  ## Douse a fire above this level.
 # Idle.
 var wait_s: float = 8.0  ## Longest wait in idle for the crew to clear fires, breaches and damage.
@@ -64,6 +68,7 @@ var survey_weight: float = 2.0  ## Node score per unit of survey richness above 
 var gem_bonus: float = 0.5  ## Node score when the survey found gems.
 var gas_fear: float = 0.8  ## Node score lost when the survey found gas.
 var water_fear: float = 0.5  ## Node score lost when the survey found water.
+var structure_bonus: float = 0.8  ## Node score when the survey found a buried structure.
 
 var _drill_bot: DrillBot = DrillBot.new()
 var _next: int = 0
@@ -122,6 +127,9 @@ static func make_policy(p_policy: String) -> PolicyBot:
 			b._drill_bot.cost_gas = 12.0
 			b._drill_bot.cost_water = 8.0
 			b._drill_bot.cost_fault = 1.5
+			b._drill_bot.value_crate = 2.0
+			b._drill_bot.value_interior = 0.1
+			b.structure_bonus = 0.3
 			b.brace_always = true
 			b.blast_loot = false
 			b.blast_keep = 3
@@ -159,6 +167,9 @@ static func make_policy(p_policy: String) -> PolicyBot:
 			b._drill_bot.cost_gas = 1.0
 			b._drill_bot.cost_water = 1.5
 			b._drill_bot.cost_fault = 0.0
+			b._drill_bot.value_crate = 6.0
+			b._drill_bot.value_interior = 0.5
+			b.structure_bonus = 1.2
 			b.blast_keep = 3
 			b.blast_min_value = 40.0
 	return b
@@ -225,7 +236,8 @@ func _dig_verbs(sim: Sim) -> void:
 	if blast_gas:
 		_blast = BlastPlanner.gas_target(sim, d, _drill_bot.lookahead_m)
 	if _blast.is_empty() and blast_loot:
-		_blast = BlastPlanner.loot_target(sim, d, _drill_bot.value_ore, _drill_bot.value_gem, blast_min_value)
+		_blast = BlastPlanner.loot_target(sim, d, _drill_bot.value_ore, _drill_bot.value_gem, blast_min_value,
+				blast_crate_value)
 	if not _blast.is_empty() and why.is_empty():
 		sim.push({"type": "blast", "x_m": float(_blast["x_m"]), "y_m": float(_blast["y_m"])})
 		_blast = {}

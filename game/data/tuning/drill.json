@@ -40,6 +40,10 @@
     "blast_radius_m": 1.75,
     "blast_fire_m": 3.0,
     "blast_noise": 4.0,
-    "blast_yield_pct": 50
+    "blast_yield_pct": 50,
+    "structure_at_min_frac": 0.25,
+    "structure_at_max_frac": 0.75,
+    "structure_offset_min_m": 3.0,
+    "structure_offset_max_m": 9.0
   }
 }

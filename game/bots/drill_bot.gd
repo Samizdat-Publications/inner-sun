@@ -4,8 +4,9 @@ extends Bot
 ## never changes the sim. Five times a second it scores the ship-wide lanes straight below (the next
 ## lookahead_m of rock, and side_look_m above the crown, level with it), shifted sideways by up to
 ## max_detour_m: ore and gem cells pull by their value (yield units times value_ore or value_gem,
-## only while the segment's noise is under the budget), hard rock, water and gas pockets and fault
-## rock push, straying from the corridor to the next node and every meter of detour cost.
+## only while the segment's noise is under the budget; a buried structure's unopened crates by
+## value_crate and its interior, until entered, by value_interior, both per cell), hard rock, water
+## and gas pockets and fault rock push, straying from the corridor to the next node and every meter of detour cost.
 ## The best lane wins; with nothing better, it steers for the target. With level_steer on, the
 ## heading toward a lane uses how far below the crown its value lies (a vein level with the crown
 ## means cutting sideways, up to max_steer_deg); off (the plain bot) it aims at the lane half the
@@ -26,6 +27,8 @@ var cost_hard: float = 1.5  ## Per hard rock cell in the lane.
 var cost_water: float = 4.0  ## Per water pocket cell in the lane.
 var cost_gas: float = 5.0  ## Per gas pocket cell in the lane.
 var cost_fault: float = 0.0  ## Per fault rock cell in the lane.
+var value_crate: float = 4.0  ## Per crate cell while the structure still has unopened crates.
+var value_interior: float = 0.3  ## Per structure interior cell until the structure is entered.
 var cost_lateral_per_m: float = 0.6
 var cost_stray_per_m: float = 6.0  ## Per meter beyond stray_free_m from the corridor line.
 var stray_free_m: float = 4.0
@@ -40,6 +43,7 @@ var _coly := PackedFloat64Array()  ## Positive value times meters below the crow
 var _score_of := PackedFloat64Array()
 var _greedy: bool = false
 var _table_serial: int = -1
+var _table_struct: int = -1  ## Structure state the table was built for (entered, crates opened).
 
 
 func act(sim: Sim) -> void:
@@ -90,7 +94,7 @@ func _choose_heading(d: DrillSim) -> float:
 	var r0: int = clampi(floori((bottom - side_look_m) / cell), 0, d.rows - 1)
 	var r1: int = clampi(crown_r + roundi(lookahead_m / cell), 0, d.rows - 1)
 	var greedy: bool = d.noise_segment < noise_budget
-	if greedy != _greedy or d.grid_serial != _table_serial:
+	if greedy != _greedy or d.grid_serial != _table_serial or _struct_key(d) != _table_struct:
 		_build_tables(d, greedy)
 	# Per column score over the look-ahead rows (every other row: features are wider than a meter),
 	# only for columns a lane can reach, then a sliding lane of the ship's width.
@@ -164,6 +168,10 @@ func _choose_heading(d: DrillSim) -> float:
 func _build_tables(d: DrillSim, greedy: bool) -> void:
 	_greedy = greedy
 	_table_serial = d.grid_serial
+	_table_struct = _struct_key(d)
+	var st: DrillStructures = d.structures
+	var crate_v: float = value_crate if greedy and st.has_structure() and st.crates_opened < st.crates_total else 0.0
+	var inside_v: float = value_interior if greedy and st.has_structure() and not st.entered else 0.0
 	_score_of.resize(DrillSim.MAX_CODES)
 	for m: int in range(DrillSim.MAX_CODES):
 		var v: float = 0.0
@@ -178,4 +186,13 @@ func _build_tables(d: DrillSim, greedy: bool) -> void:
 			v -= cost_hard
 		if d.unstable_of[m] == 1:
 			v -= cost_fault
+		if d.loot_of[m] == 1:
+			v += crate_v
+		elif d.interior_of[m] == 1:
+			v += inside_v
 		_score_of[m] = v
+
+
+## Changes whenever the structure is entered or a crate opens (the lane values change then).
+static func _struct_key(d: DrillSim) -> int:
+	return (d.structures.crates_opened * 2 + (1 if d.structures.entered else 0)) if d.structures.has_structure() else -2

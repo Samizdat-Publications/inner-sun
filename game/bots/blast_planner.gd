@@ -6,7 +6,8 @@ extends RefCounted
 ##   that lies beyond blast_fire_m of the ship (so burning it off lights nothing aboard) and within
 ##   range. Blasting it early means the drill never bursts it.
 ## - loot_target: the aim point (a valuable cell's centre, off the drill's own path) whose blast
-##   circle holds the most ore and gems by value (ore units x value_ore, gem units x value_gem),
+##   circle holds the most ore and gems by value (ore units x value_ore, gem units x value_gem,
+##   plus value_crate per unopened crate cell of a buried structure: a blast pays a crate in full),
 ##   if that is at least min_value. A circle that would burn gas within blast_fire_m of the ship
 ##   is skipped.
 ## Both return {"x_m", "y_m", "value"} or {} when there is nothing worth a charge.
@@ -34,7 +35,8 @@ static func gas_target(sim: Sim, d: DrillSim, lookahead_m: float) -> Dictionary:
 	return {}
 
 
-static func loot_target(sim: Sim, d: DrillSim, value_ore: float, value_gem: float, min_value: float) -> Dictionary:
+static func loot_target(sim: Sim, d: DrillSim, value_ore: float, value_gem: float, min_value: float,
+		value_crate: float = 0.0) -> Dictionary:
 	var cell: float = d.cell_m
 	var range_m: float = sim.db.tune("drill.blast_range_m") - cell
 	var radius: float = sim.db.tune("drill.blast_radius_m")
@@ -51,6 +53,8 @@ static func loot_target(sim: Sim, d: DrillSim, value_ore: float, value_gem: floa
 		var yr: int = d.yield_res_of[m]
 		if yr >= 0:
 			value_of[m] = float(d.yield_amount_of[m]) * (value_ore if yr == ore_i else value_gem)
+		elif d.loot_of[m] == 1 and d.structures.crates_opened < d.structures.crates_total:
+			value_of[m] = value_crate
 	var c_lo: int = maxi(0, floori((centre.x - range_m) / cell))
 	var c_hi: int = mini(d.cols - 1, floori((centre.x + range_m) / cell))
 	var r_lo: int = maxi(0, floori((centre.y - range_m) / cell))
@@ -78,7 +82,8 @@ static func loot_target(sim: Sim, d: DrillSim, value_ore: float, value_gem: floa
 					var dx: float = (float(cc) + 0.5) * cell - p.x
 					if dx * dx + dy * dy <= r2:
 						var m: int = d.grid[row2 + cc]
-						v += value_of[m]
+						if d.loot_of[m] == 0 or d.burst_marks[row2 + cc] == 0:  # An opened crate pays nothing more.
+							v += value_of[m]
 						if d.gas_of[m] == 1:
 							gas = true
 			if gas and _rect_distance(ship, p) <= fire_m + radius:

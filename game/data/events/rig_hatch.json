@@ -1,0 +1,40 @@
+{
+  "id": "rig_hatch",
+  "kind": "structure",
+  "structures": ["soviet_rig"],
+  "layer": "crust",
+  "weight": 1.0,
+  "once_per_run": true,
+  "title": "Placeholder: The Sealed Hatch",
+  "file": "FIELD REPORT // RIG MODULE",
+  "start": "intro",
+  "pages": {
+    "intro": {
+      "text": "Placeholder: inside the module a second hatch is welded shut from the inside. Stencilled on it in Cyrillic: DO NOT OPEN. The air on this side smells of machine oil.",
+      "options": [
+        {
+          "text": "Placeholder: cut the hatch open with the torch.",
+          "outcomes": [
+            {"weight": 2, "page": "stores", "effects": [{"type": "res", "res": "cells", "amount": 2}, {"type": "res", "res": "coolant", "amount": 4}]},
+            {"weight": 1, "page": "gas", "effects": [{"type": "hazard", "kind": "fire", "room": "system:drill", "level": 0.4}, {"type": "res", "res": "cells", "amount": 1}]}
+          ]
+        },
+        {
+          "text": "Placeholder: copy the stencils and leave it sealed.",
+          "outcomes": [
+            {"weight": 1, "page": "leave", "effects": [{"type": "reveal", "rows": 1}]}
+          ]
+        }
+      ]
+    },
+    "stores": {
+      "text": "Placeholder: behind the hatch, a storeroom: sealed power cells in racks and coolant in drums. Nobody is inside."
+    },
+    "gas": {
+      "text": "Placeholder: the torch touches something the hatch was holding in. Flame rolls back down the access tube into the drill room."
+    },
+    "leave": {
+      "text": "Placeholder: the stencils include a depth chart. {crew} copies it onto your map."
+    }
+  }
+}

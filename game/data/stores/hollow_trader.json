@@ -1,0 +1,11 @@
+{
+  "id": "hollow_trader",
+  "name": "The Hollow Lamp",
+  "blurb": "Placeholder: a lamp on a ledge above the pool, and someone beside it with a pack of salvage. The prices are steep this far down.",
+  "stock": [
+    {"item": "res", "res": "coolant", "amount": 5, "price": 8, "text": "Placeholder: coolant, five drums."},
+    {"item": "res", "res": "bits", "amount": 1, "price": 13, "text": "Placeholder: a drill bit."},
+    {"item": "res", "res": "charges", "amount": 2, "price": 10, "text": "Placeholder: two shaped charges."},
+    {"item": "crew", "pool": "survivors", "price": 55, "limit": 1, "text": "Placeholder: passage for someone who has been down here too long."}
+  ]
+}

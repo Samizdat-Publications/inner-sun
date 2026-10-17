@@ -32,8 +32,9 @@ static func codes_of(table: Dictionary) -> Dictionary:
 
 
 ## The canonical options a segment is generated with, from a survey reading (keys in this order):
-## richness (ore and gem count scale), gems, gas, water, faults (groups switched on). A missing
-## survey (scenarios, tests) means richness 1, gems and water on, gas and faults off.
+## richness (ore and gem count scale), gems, gas, water, faults (groups switched on), structure (the
+## buried structure's id, "" for none; DrillStructures places it). A missing survey (scenarios,
+## tests) means richness 1, gems and water on, gas and faults off, no structure.
 static func options_of(survey: Dictionary) -> Dictionary:
 	var gems: bool = true
 	if survey.has("gems"):
@@ -41,7 +42,7 @@ static func options_of(survey: Dictionary) -> Dictionary:
 		gems = (not (g as Array).is_empty()) if g is Array else bool(g)
 	return {"richness": maxf(0.0, float(survey.get("richness", 1.0))), "gems": gems,
 		"gas": bool(survey.get("gas", false)), "water": bool(survey.get("water", true)),
-		"faults": bool(survey.get("faults", false))}
+		"faults": bool(survey.get("faults", false)), "structure": str(survey.get("structure", ""))}
 
 
 ## start: the ship's footprint at the start (meters, cell aligned). target_cx_m: the corridor's end

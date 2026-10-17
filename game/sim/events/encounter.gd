@@ -6,7 +6,10 @@ extends SimModule
 ## EventEffects, the store rules in EncounterStore, the data checks in EncounterLint.
 ## Randomness only from the "events" and "store" streams. Holds no reference to the Sim.
 ##
-## API the run module calls: start_node, pick_event, start_event, open_store.
+## API the run module calls: start_node, pick_event, start_event, open_store. A buried structure's
+## break-in (DrillStructures) calls pick_structure_event, start_event and open_store mid-segment:
+## when that store is left or that event ends the run goes back to "drill", not "idle" (the drill is
+## still active), and the segment carries on where it was.
 ## Commands: {"type": "choose", "option": i}, {"type": "buy", "item": i, "qty": n}, {"type": "leave"}.
 
 const COMMANDS: Array[String] = ["choose", "buy", "leave"]
@@ -82,6 +85,39 @@ func pick_event(sim: Sim, kind: String, row: int, layer: String = "crust") -> St
 	if cands.is_empty():
 		return ""
 	var roll: float = sim.rng.get_stream("events").randf() * total
+	for i: int in range(cands.size()):
+		roll -= weights[i]
+		if roll < 0.0:
+			return cands[i]
+	return cands[cands.size() - 1]
+
+
+## A weighted pick (from `rng`, the structure's own stream) among events of kind "structure" whose
+## "structures" list holds this structure id, each at most once per run. Empty if none fits.
+func pick_structure_event(sim: Sim, structure_id: String, rng: RandomNumberGenerator) -> String:
+	var table: Dictionary = db.table("events")
+	var ids := PackedStringArray()
+	for k: Variant in table.keys():
+		ids.append(str(k))
+	ids.sort()  # Plain Strings: a stable order whatever order the table was filled in.
+	var cands := PackedStringArray()
+	var weights := PackedFloat64Array()
+	var total: float = 0.0
+	for id: String in ids:
+		var ev: Dictionary = table[id]
+		if str(ev.get("kind", "")) != "structure" or used.has(id):
+			continue
+		if not (ev.get("structures", []) as Array).has(structure_id):
+			continue
+		var w: float = float(ev.get("weight", 1.0))
+		if w <= 0.0:
+			continue
+		cands.append(id)
+		weights.append(w)
+		total += w
+	if cands.is_empty() or sim.run.is_over():
+		return ""
+	var roll: float = rng.randf() * total
 	for i: int in range(cands.size()):
 		roll -= weights[i]
 		if roll < 0.0:
@@ -228,9 +264,10 @@ func _end_event(sim: Sim) -> void:
 		_to_idle(sim)
 
 
+## Back to "idle", or to "drill" when a structure opened this mid-segment (the drill is still active).
 func _to_idle(sim: Sim) -> void:
 	if not sim.run.is_over():
-		sim.run.set_phase(sim, "idle")
+		sim.run.set_phase(sim, "drill" if sim.drill.active else "idle")
 
 
 func _bad(sim: Sim, kind: String, why: String) -> void:
