@@ -44,29 +44,45 @@ static func draw(n: Node2D, r: Room, rp: Rect2, ppm: float, t: float, slosh: flo
 	body.append(Vector2(rp.position.x, rp.end.y))
 	# A faint wash over the room so even a puddle reads, then the murky body.
 	n.draw_rect(rp, color(Color(0.1, 0.11, 0.05), 0.05 + 0.12 * sqrt(fill)))
-	n.draw_colored_polygon(body, color(SILT, 0.74))
+	var depth_k: float = clampf(lvl / maxf(rp.size.y, 1.0), 0.0, 1.0)
+	# Murky: shallow water shows what is under it, deep water hides the machinery.
+	n.draw_colored_polygon(body, color(SILT, 0.5 + 0.42 * sqrt(depth_k)))
 	# Darker with depth: bands stacked from the floor up, each a little more opaque than the last.
-	for i: int in range(4):
-		var f: float = float(i + 1) / 4.0
+	for i: int in range(8):
+		var f: float = float(i + 1) / 8.0
 		var hh: float = lvl * f
 		var band := PackedVector2Array()
 		band.append(Vector2(rp.position.x, rp.end.y - hh))
 		band.append(Vector2(rp.end.x, rp.end.y - hh))
 		band.append(Vector2(rp.end.x, rp.end.y))
 		band.append(Vector2(rp.position.x, rp.end.y))
-		n.draw_colored_polygon(band, color(DEEP, 0.12 + 0.04 * (1.0 - f) * 4.0 * fill))
+		n.draw_colored_polygon(band, color(DEEP, 0.04 + (0.06 + 0.1 * depth_k) * (1.0 - f)))
 	_surface(n, crest)
+	_ripples(n, rp, crest, t, r.index)
 	_silt(n, rp, lvl, t, r.index)
 	if r.breach_m2 > 0.0:
 		_foam(n, rp, crest, t, left, clampf(r.breach_m2 * 30.0, 0.35, 1.0))
 
 
 static func _surface(n: Node2D, crest: PackedVector2Array) -> void:
-	n.draw_polyline(crest, color(CREST, 0.9), 3.0)
+	n.draw_polyline(crest, color(Color(0.7, 0.68, 0.45), 0.28), 6.0)
+	n.draw_polyline(crest, color(Color(0.62, 0.6, 0.4), 0.95), 2.5)
 	var under := PackedVector2Array()
 	for p: Vector2 in crest:
 		under.append(Vector2(p.x, p.y + 6.0))
 	n.draw_polyline(under, color(Color(0.45, 0.43, 0.25), 0.4), 2.0)
+
+
+## Small bright ripples running along the surface line.
+static func _ripples(n: Node2D, rp: Rect2, crest: PackedVector2Array, t: float, index: int) -> void:
+	var cols: int = crest.size() - 1
+	for i: int in range(7):
+		var f: float = fposmod(t * 0.11 * (1.0 + 0.3 * float(i % 3)) + float(i) * 0.143 + float(index) * 0.17, 1.0)
+		var k: int = clampi(roundi(f * float(cols)), 1, cols - 1)
+		var p: Vector2 = crest[k]
+		var half: float = 5.0 + 4.0 * float(i % 3)
+		var a: float = 0.55 * sin(f * PI)
+		n.draw_line(Vector2(p.x - half, p.y + 3.0), Vector2(p.x + half, p.y + 3.0), color(Color(0.95, 0.93, 0.7), a), 2.0)
 
 
 ## Silt drifting in the water and a few slow bubbles.
