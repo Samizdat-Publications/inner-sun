@@ -2,7 +2,21 @@
 
 From the M1c session (2026-10-16) to the next round, which starts after Stewart plays build 5.
 
-## Build 5 in one paragraph (newest, 2026-10-17)
+## Next session: M1d (prepared, start here)
+Stewart plays build 5b (or 5c), writes notes at the top of `docs/STEWART_FEEDBACK.md`, then starts a
+session at effort **high** (his choice) with his weekly quota at about 80%, to spend up to 90%. The
+plan is ready in `docs/plans/M1d.md`: the start protocol (`python tools/run_report.py --since
+2026-10-17` first), a triage table to fill, the questions build 5b asked him with the levers behind
+each answer, a decision tree for the likely notes, work that needs no notes, the bridge to M2, and
+budget pacing. Specs ready to dispatch: `specs/m1d_onboarding_hints.md`, `specs/m2_burrowers.md`.
+
+Paste this into a new session (folder `C:\Users\stewa\Documents\Claude\Inner Sun`, Opus 5.5, effort
+high, Auto):
+```
+Continue Inner Sun: M1d. Read CLAUDE.md, PROGRESS.md, HANDOFF.md (the "Next session" section) and docs/plans/M1d.md, then my notes at the top of docs/STEWART_FEEDBACK.md. Run python tools/run_report.py --since 2026-10-17, fill the triage table in M1d.md, then work autonomously per CLAUDE.md: specs to builders, verify every still yourself, keep what is fun. I will approve computer use if I am here, so play it by hand. Republish the making-of page (https://claude.ai/artifact/UJjDA4PJkSXMKjpg2zxQpc) when something visible lands. Stop with a new playtest build when my weekly usage reaches about 90%, or earlier for "checkpoint" or a decision that is genuinely mine.
+```
+
+## Build 5 in one paragraph (2026-10-17)
 Stewart had not played build 4 yet and asked for the outstanding list, on high effort, to about 80%
 of his weekly quota. Done: the M1c polish (requisitions toast at the first dive, the rock tile repeat
 broken, structure "light" blocks with a blue-lit crystal hollow, the blast ring clipped to the world
@@ -85,12 +99,13 @@ boring or confusing, what he wanted to do and could not. His runs are saved in
 In the Claude app, open the Code tab and start a new session with these settings:
 - **Folder:** `C:\Users\stewa\Documents\Claude\Inner Sun`
 - **Model:** Opus 5.5
-- **Effort:** xhigh (triaging playtest notes is judgment about fun)
+- **Effort:** high (Stewart's choice for M1d, 2026-10-17; the triage thinking was done ahead in
+  `docs/plans/M1d.md`)
 - **Permission mode:** Auto
 
 Or paste this into Windows PowerShell:
 ```powershell
-cd "C:\Users\stewa\Documents\Claude\Inner Sun"; claude --model claude-opus-5-5 --effort xhigh --permission-mode auto
+cd "C:\Users\stewa\Documents\Claude\Inner Sun"; claude --model claude-opus-5-5 --effort high --permission-mode auto
 ```
 Then paste the prompt from "M1c in one paragraph (newest)" at the top of this file.
 

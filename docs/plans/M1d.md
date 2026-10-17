@@ -47,7 +47,8 @@ Written by the lead at extra effort so the M1d session (effort high, Stewart's w
   card. Conditions: a vein within 12 m off the path and the front 2+ rows back ("G: send a miner"),
   fault rock ahead and bracing at 0 ("W: bracing soaks rockfalls"), a rich cluster beyond the hull
   and charges in stock ("F2: blast it"), a fire and coolant in stock ("F: douse"). Hints shown are
-  remembered in the profile, so each fires once ever. A builder spec, about one round.
+  remembered in the profile, so each fires once ever. Spec ready: `specs/m1d_onboarding_hints.md`
+  (one Sonnet round plus about 12 radio lines).
 - **"The miner is tedious."** G twice sends to the best vein in range (the bots' MinerPlanner
   already scores targets: reuse `game/bots/miner_planner.gd` scoring through a pure helper the view
   can call); shorter hatch_s; faster walk.
@@ -59,7 +60,8 @@ Written by the lead at extra effort so the M1d session (effort high, Stewart's w
 - **"The dig is still samey."** The PLAN's M2 burrowers answer it best: creatures that latch onto
   the hull while drilling and chew a room until crew repel them (assign) or the weapons shake them
   off; they come in fault rock and near hollows. That is "more to manage" during the dig, uses crew
-  and weapons, and is already in the approved plan. Next after onboarding.
+  and weapons, and is already in the approved plan. Next after onboarding. Design and spec ready:
+  `specs/m2_burrowers.md` (builder-opus for the sim, then a view round with a painted sprite).
 - **"Too easy."** First the gate boss and charge prices; then structure loot. Re-run 300 per bot
   after each change and keep balanced inside 15 to 30%.
 - **"Too hard" or "the front is unfair."** Pursuer speed and noise weights; the HUD's pursuit
