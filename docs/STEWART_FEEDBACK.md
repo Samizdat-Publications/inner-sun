@@ -3,6 +3,25 @@
 His words outrank everything except CLAUDE.md's hard rules. Newest first. Playtest notes go at the
 top under a dated heading.
 
+## 2026-10-17: playtest build 5c (live notes while playing)
+Verbatim, with two screenshots (row 1, 13 m, T+00:59; Vasquez sent out with the drill at 0 bars and
+the heading at -90, an old mine works on the scanner below and to the left):
+- "The miner mines the floor of the craft, he should fully exit first." The figure stands on the
+  crown tray and digs the cell under the drill head, so it reads as chewing the tower's floor.
+  Cause: MinerRoute starts the tunnel from the cell under the drill head. Fix: climb out a side
+  hatch onto the rock beside the hull, on the side toward the target, and dig from there.
+- "Do I have to turn off power to stop the drill and deploy the miner? That's what I'm doing right
+  now." (No: sending parks the drill by itself. He did not know: onboarding, and the card should say
+  it.)
+- "I'm at an old mine shaft, how do I exploit it. Do I send the miner out into it?" (The way into a
+  structure is not obvious: onboarding and the structure's scanner label should say "cut in for
+  crates".)
+- "Also is there a pause button I need to pause real quick." (Space; he did not know: onboarding.)
+
+Answers given in chat: Space pauses; sending the miner parks the drill on its own; break in by
+drilling or blasting into the structure, crates pay at once (the miner's crate loot pays on return,
+range 12 m).
+
 ## 2026-10-16: playtest build 3 (reached row 8)
 Verbatim:
 - (Mid-run, screenshot) "my bit broke and can't move, how do I fix that?" The drill had 0 of 4 power
