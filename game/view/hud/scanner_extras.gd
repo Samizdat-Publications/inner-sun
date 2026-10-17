@@ -87,7 +87,9 @@ static func blast_word(s: Sim, armed: bool) -> String:
 		return "BLAST READY"
 	if why == "reloading":
 		return "BLAST %.1f S" % s.drill.verbs.blast_cooldown_left_s
-	return "BLAST: " + BlastCard.reason_text(s, why)
+	# Short on the glass (it clipped as "BLAST: POWER WEAPO"); the blast card has the full reason.
+	var r: String = BlastCard.reason_text(s, why)
+	return "BLAST: " + r if r.length() <= 12 else "BLAST NOT READY"
 
 
 ## The blast range ring (centred on the footprint, which sits above the screen) and, when `hover` is a

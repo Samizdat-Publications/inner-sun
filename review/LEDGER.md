@@ -37,3 +37,9 @@ A rejected issue that returns in 2 later critiques becomes FIX or goes to docs/N
 | 30 | 20261016-222207-e1ffb36 | gemini 007 | Dense small text; the store reads like a spreadsheet | DEFER | M2 UI pass (with 24) |
 | 31 | 20261016-222207-e1ffb36 | gemini 007 | Rooms visually noisy; crew blend in | DEFER | M2 art pass (with 26, 27) |
 | 32 | 20261016-222207-e1ffb36 | gemini 007 | The rock still reads as a repeating tile (world 6, up from 3) | FIX | 1be191c: a second sample of the tile, larger by the golden ratio and turned 90 degrees, blended in by slow noise |
+| 33 | 20261017-020702-14c963f | gemini 008 | Hazards look cheap: the fire is a flat overlay, no light, no smoke (also 25) | DEFER | M1d candidate, top visual item: fire that lights its room, smoke in the upper decks, water that hides machinery (second review in a row) |
+| 34 | 20261017-020702-14c963f | gemini 008 | The world outside is a treadmill: one flat rock layer scrolling up (also 005 to 007) | DEFER | M1d candidate: parallax layers behind the rock (far caverns, strata silhouettes), structures already help when they pass |
+| 35 | 20261017-020702-14c963f | gemini 008 | Art styles fight: painted UI, rendered crew, chunky pixel sparks | DEFER | M2 art pass: soft round particles instead of square chips |
+| 36 | 20261017-020702-14c963f | gemini 008 | Clicking veins to mine feels like a mobile minigame, not ship management | REJECT | Digging is the game by Stewart's choice (D024); the miner and blasts are deliberate verbs. Watch for it in his notes |
+| 37 | 20261017-020702-14c963f | gemini 008 | Crew stand mid-room with a selection ring instead of working consoles | DEFER | M2 with 26 (work poses at stations) |
+| 38 | 20261017-020702-14c963f | gemini 008 | Typewriter font in the scanner and store is tiny | DEFER | M2 UI pass with 24 and 30 |

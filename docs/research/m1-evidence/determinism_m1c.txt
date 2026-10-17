@@ -4,3 +4,11 @@ M1c determinism check, 2026-10-16, commit 1b4b202 (python tools/determinism.py)
 determinism: ok (hash e56bb4f3272aeb65 at tick 1200)
 
 Exported build m1c-playtest-4b (1b4b202): export check hash e56bb4f3272aeb65 at tick 1200 (harness/out/export_4b.log).
+
+M1c build 5 determinism check, 2026-10-17, commit bc3c571 (python tools/determinism.py)
+  headless: exit 0, 22s, tick=1200 hash=e4c82e3d6d55a625
+  movie: exit 0, 76s, tick=1200 hash=e4c82e3d6d55a625
+determinism: ok (hash e4c82e3d6d55a625 at tick 1200)
+
+Exported build m1c-playtest-5 (bc3c571): export check hash e4c82e3d6d55a625 at tick 1200; the
+playtest bot run in the exported game ended at FINAL tick=36000 hash=fab7ad14f1e5eb9c.

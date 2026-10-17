@@ -27,6 +27,12 @@ Updated: 2026-10-17, M1c playtest build 5 ready (the away miner, D046), Stewart 
 - **Balance with the miner (300 runs per bot, `docs/research/m1-evidence/balance_m1c_miner.md`):**
   balanced 38.3% wins, cautious 27.0%, greedy 13.7%; balanced sends 1.2 miners a run (62% of runs);
   no miner deaths; the haul is about 2% of all ore.
+- **Critic:** Gemini 008 on build 5 (seed 41, a 4-minute bot run; the critique never mentions the miner): 5.6
+  (007 was 6.1; scores swing a point). Top items: fire and flood look cheap (second review in a row),
+  the world outside is a treadmill (fourth), art styles fight, crew stand mid-room, tiny typewriter
+  text. Triage in `review/LEDGER.md` 33 to 38; fire visuals and parallax rock lead the next visual pass.
+- **After the export (in main, not in build 5):** the scanner's blast word is shortened ("BLAST NOT
+  READY" instead of the clipped "BLAST: POWER WEAPO"), found by the QA audit.
 - **Not judged by a person yet:** no hands-on play by the lead (Stewart away, computer use needs his
   click), no critic run on the miner. Stewart's run of build 5 is the first real test of G.
 

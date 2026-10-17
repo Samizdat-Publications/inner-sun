@@ -70,11 +70,10 @@ Stewart asked for.
 ## Then
 - [x] Playtest build 5 (`m1c-playtest-5`): the away miner, the requisitions toast, the rock tile
       repeat broken, the crystal hollow lit, the blast ring and map fixes.
-- [x] Playtest build 4 exported (`m1c-playtest-4`, from e1ffb36, the one the critics saw); Stewart plays
-      `m1c-playtest-4b` (the same plus the stop-notice fix of e110a40). Not done: the requisitions toast at the
-      start of a dive; the map structure marks were never seen in a still.
+- [x] Playtest build 4 exported (`m1c-playtest-4`, from e1ffb36, the one the critics saw); `m1c-playtest-4b`
+      added the stop-notice fix of e110a40. Never played: build 5 replaced it. The requisitions toast
+      and the map structure marks (seen in the gallery's `map_mid` still) came in build 5.
 
-Playtest build 4, the Gemini critic, a hands-on run by the lead, the making-of page, Stewart plays.
 
 ## Answers to Stewart's questions (for the summary and the help page)
 - Helm: needs a crew member at the bridge station. While drilling it sets how fast the drill turns

@@ -407,7 +407,7 @@ stills at seed 21 (greedy run). Revert: the shader block in `RockTiles.SHADER_CO
 
 ## D046 (AI): The away miner: park, send one crew member, carry the haul home
 Stewart (build 3): "explore a park and disembark to allow a single miner to mine out the veins? Up to
-you", and "more things to manage so it feels less on rails". Design: M plus a click sends the
+you", and "more things to manage so it feels less on rails". Design: G plus a click sends the
 selected crew member to a point in the rock within 12 m of the drill head. Sending parks the drill
 (no separate park key) and it resumes on its own once the miner is back, so there is one thing to
 learn. The miner walks to the drill room, climbs out, digs a one-cell tunnel by hand, mines out the

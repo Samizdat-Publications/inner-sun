@@ -31,6 +31,7 @@ A visual record of Inner Sun, oldest first.
 | 025 | 2026-10-16 21:47 | [025_m1c-verbs-structures-frames.jpg](025_m1c-verbs-structures-frames.jpg) | review frames, build 20261016-213119-eb64f36, seed 21 | eb64f36 |
 | 026 | 2026-10-16 22:38 | [026_m1c-playtest-4-frames.jpg](026_m1c-playtest-4-frames.jpg) | review frames, build 20261016-222207-e1ffb36, seed 33 | e1ffb36 |
 | 027 | 2026-10-16 22:59 | [027_m1c-rock-structures-notice.jpg](027_m1c-rock-structures-notice.jpg) | Build 4: fractured rock and side cutting, old mine works in the rock, crates opening, the drill-stop notice | e110a40 |
-| 028 | 2026-10-17 00:08 | [028_m1c-requisitions-toast.jpg](028_m1c-requisitions-toast.jpg) | Build 4c: the requisitions toast at the start of a dive, rock with the tile repeat broken | 656a1b7 |
-| 029 | 2026-10-17 00:08 | [029_m1c-crystal-hollow-lit.jpg](029_m1c-crystal-hollow-lit.jpg) | Build 4c: the crystal hollow lit blue with fine glints instead of a black blob | 656a1b7 |
+| 028 | 2026-10-17 00:08 | [028_m1c-requisitions-toast.jpg](028_m1c-requisitions-toast.jpg) | Build 4c: the requisitions toast at the start of a dive, rock with the tile repeat broken | 1be191c |
+| 029 | 2026-10-17 00:08 | [029_m1c-crystal-hollow-lit.jpg](029_m1c-crystal-hollow-lit.jpg) | Build 4c: the crystal hollow lit blue with fine glints instead of a black blob | 1be191c |
 | 030 | 2026-10-17 01:43 | [030_m1c-away-miner.jpg](030_m1c-away-miner.jpg) | The away miner: Okafor tunnels beside the parked tower, carries +22 ore home; SEND MINER card (G), MINER OUTSIDE alert, PARKED notice, OUTSIDE crew card | d410ae2 |
+| 031 | 2026-10-17 02:21 | [031_m1c-playtest-5-frames.jpg](031_m1c-playtest-5-frames.jpg) | review frames, build 20261017-020702-14c963f, seed 41 | 14c963f |

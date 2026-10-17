@@ -14,7 +14,7 @@ and the merges. Playtest build 5 is exported (`m1c-playtest-5`) and replaces bui
 this whole session moved Stewart's weekly quota from 75% to about 77%. Next round (M1d) is the same
 as the prompt below, with build 5 in place of build 4.
 
-## M1c in one paragraph
+## M1c in one paragraph (superseded by build 5 above: read "build 4" there as history)
 Stewart's build 3 notes ("picking a spot on the radar and going straight down", "more things to
 manage", buried towns, something to keep on death) became D034: every powered system has a job in
 the dig. Built and merged: loud stop notices (no power, broken bit); hold depth and helm-powered side
