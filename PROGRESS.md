@@ -1,6 +1,27 @@
 # Progress
 
-Updated: 2026-10-17, M1c playtest build 5c ready (the away miner D046, hazard visuals D049, world depth D050); Stewart has not played build 4 or 5.
+Updated: 2026-10-17, M1d playtest build 6 ready (fixes from Stewart's first build 5c run).
+
+## M1d status: playtest build 6 ready (Stewart's first build 5c notes)
+- **Build:** `builds/InnerSun.exe`, launched by `Play Inner Sun.bat`: `m1d-playtest-6` (milestone zip
+  `builds/milestones/m1d-playtest-6/`): build 5c plus the fixes below.
+- **His build 5c run** (seed 258521, 15 minutes, row 2 of 14, abandoned when his PC froze) and his
+  live notes are at the top of `docs/STEWART_FEEDBACK.md`, with what the run record shows.
+- **Fixed from his notes:** the miner climbs out a side hatch onto the rock instead of digging the
+  cell under the tower (D051); the away miner is no longer also drawn inside the drill room; the
+  miner's aim says what a click would bring home ("~12 ORE +2 GEMS", "BARREN: STRAIGHT BACK", "GAS ON
+  THE WAY"; unit-tested, not yet seen in a still); one-time TOPSIDE hints for 14 verbs including
+  pause, parking ("the drill parks itself"), buried structures ("cut in for crates", also a second
+  line on the scanner label) and douse, each with a glow on its control, once per profile, never in
+  bot or replay runs (`game/view/hud/hint_director.gd`).
+- **Douse not found:** none of his douse presses reached the game, yet the real-input self-test
+  passes for his exact case. Build 6 records an input diary in each run record (`summary.ui`: raw
+  clicks with the control under the mouse, F presses); `python tools/run_report.py` prints it. Read it
+  first after his next run.
+- **The freeze:** the game measured 144 fps average, 1% low 56 in a miner sortie. Three stray
+  `python -` processes from 15 October were each spinning a CPU core, and the 5c export's bot run was
+  still playing during his first minutes. Stewart was given the command to stop the strays.
+- **Checks:** `check: ok` (368 tests); determinism and export: see the newest commit message.
 
 ## M1c status: playtest build 5c ready for Stewart
 - **Build:** `builds/InnerSun.exe`, launched by `Play Inner Sun.bat`: `m1c-playtest-5c` (milestone zip

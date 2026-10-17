@@ -8,7 +8,12 @@ session at effort **high** (his choice) with his weekly quota at about 80%, to s
 plan is ready in `docs/plans/M1d.md`: the start protocol (`python tools/run_report.py --since
 2026-10-17` first), a triage table to fill, the questions build 5b asked him with the levers behind
 each answer, a decision tree for the likely notes, work that needs no notes, the bridge to M2, and
-budget pacing. Specs ready to dispatch: `specs/m1d_onboarding_hints.md`, `specs/m2_burrowers.md`.
+budget pacing. Specs ready to dispatch: `specs/m2_burrowers.md` (the onboarding hints are built).
+**Already started (2026-10-17):** Stewart played build 5c for 15 minutes (his notes and what the run
+record shows are at the top of `docs/STEWART_FEEDBACK.md`); build 6 (`m1d-playtest-6`) fixes the
+miner's exit (D051), the miner drawn twice, adds the miner's aim estimate and the onboarding hints.
+Douse never reached the game for him and the cause is not found: build 6 records an input diary in
+each run record; read it with `python tools/run_report.py` after his next run, first thing.
 
 Paste this into a new session (folder `C:\Users\stewa\Documents\Claude\Inner Sun`, Opus 5.5, effort
 high, Auto):
