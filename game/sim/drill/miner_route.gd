@@ -98,3 +98,50 @@ static func plan(d: DrillSim, p: Vector2) -> PackedInt32Array:
 			r += sy
 		route.append(r * d.cols + c)
 	return route
+
+
+## What a miner sent to p would bring home, for the view's aim readout (read-only, no state):
+## {"ore": n, "gems": n, "hazard": "gas" | "water" | ""}. The vein is DrillMiner's own rule from p's
+## cell (yielding cells breadth first, neighbours in index order, up to vein_max cells, yield_pct of
+## each), nothing when p's cell yields nothing (they would turn straight back). The hazard is the
+## first gas or water pocket cell on the tunnel. Stewart's build 5c run: six sorties brought home 4
+## ore and 13 gems, because nothing said which clicks were veins.
+static func estimate(d: DrillSim, p: Vector2, vein_max: int, yield_pct: int) -> Dictionary:
+	var out: Dictionary = {"ore": 0, "gems": 0, "hazard": ""}
+	for i: int in plan(d, p):
+		var m0: int = d.grid[i]
+		if m0 != 0 and d.burst_marks[i] == 0 and (d.gas_of[m0] == 1 or d.water_of[m0] == 1):
+			out["hazard"] = "gas" if d.gas_of[m0] == 1 else "water"
+			break
+	var c: int = floori(p.x / d.cell_m)
+	var r: int = floori(p.y / d.cell_m)
+	if c < 0 or r < 0 or c >= d.cols or r >= d.rows:
+		return out
+	var start: int = r * d.cols + c
+	if d.grid[start] == 0 or d.yield_res_of[d.grid[start]] < 0:
+		return out
+	var ore_i: int = RunState.RESOURCES.find("ore")
+	var seen := {start: true}
+	var queue := PackedInt32Array([start])
+	var k: int = 0
+	var ore: int = 0
+	var gems: int = 0
+	while k < queue.size() and k < vein_max:
+		var j: int = queue[k]
+		k += 1
+		var m: int = d.grid[j]
+		var amt: int = d.yield_amount_of[m] * yield_pct / 100
+		if d.yield_res_of[m] == ore_i:
+			ore += amt
+		else:
+			gems += amt
+		var jr: int = j / d.cols
+		var jc: int = j % d.cols
+		for n: int in [j - d.cols if jr > 0 else -1, j - 1 if jc > 0 else -1, j + 1 if jc < d.cols - 1 else -1,
+				j + d.cols if jr < d.rows - 1 else -1]:
+			if n >= 0 and not seen.has(n) and d.grid[n] != 0 and d.yield_res_of[d.grid[n]] >= 0:
+				seen[n] = true
+				queue.append(n)
+	out["ore"] = ore
+	out["gems"] = gems
+	return out

@@ -381,9 +381,26 @@ func _draw_aim(n: Node2D, d: DrillSim, k: float) -> void:
 	n.draw_line(at * ppm - Vector2(10, 0) * k, at * ppm + Vector2(10, 0) * k, tc, 2.0 * k)
 	n.draw_line(at * ppm - Vector2(0, 10) * k, at * ppm + Vector2(0, 10) * k, tc, 2.0 * k)
 	n.draw_dashed_line(head, at * ppm, Color(tc, 0.45), 2.0 * k, 10.0 * k)
-	if not ok:
-		var txt: String = MinerCard.reason_text(why, d.miner.range_m)
-		n.draw_string(UiTheme.mono(), at * ppm + Vector2(rad + 8.0 * k, 5.0 * k), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(8, roundi(20.0 * k)), tc)
+	var txt: String = MinerCard.reason_text(why, d.miner.range_m) if not ok else aim_value_text(d, sim, at)
+	n.draw_string(UiTheme.mono(), at * ppm + Vector2(rad + 8.0 * k, 5.0 * k), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(8, roundi(20.0 * k)), tc)
+
+
+## What a click here would bring home: "~12 ORE +2 GEMS", "BARREN: STRAIGHT BACK", plus "GAS ON THE
+## WAY" or "WATER ON THE WAY" (MinerRoute.estimate; Stewart could not tell veins from bare rock).
+static func aim_value_text(d: DrillSim, s: Sim, at: Vector2) -> String:
+	var e: Dictionary = MinerRoute.estimate(d, at, roundi(s.db.tune("miner.vein_max_cells")), roundi(s.db.tune("miner.yield_pct")))
+	var ore: int = int(e["ore"])
+	var gems: int = int(e["gems"])
+	var parts := PackedStringArray()
+	if ore > 0:
+		parts.append("~%d ORE" % ore)
+	if gems > 0:
+		parts.append("+%d GEMS" % gems if ore > 0 else "~%d GEMS" % gems)
+	var txt: String = " ".join(parts) if not parts.is_empty() else "BARREN: STRAIGHT BACK"
+	var hz: String = str(e["hazard"])
+	if not hz.is_empty():
+		txt += ", %s ON THE WAY" % hz.to_upper()
+	return txt
 
 
 ## The mouse in segment meters (or the dev override), or (-1, -1) when the mouse is not over the world.

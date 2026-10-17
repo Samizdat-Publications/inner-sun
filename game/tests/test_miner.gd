@@ -597,3 +597,16 @@ func test_policy_bots_send_and_always_bring_the_miner_home() -> void:
 		check(still_out == 0 or fr.sim.run.is_over(), "%s seed %d: out only if the run ended" % [bot, p_seed])
 	check_gt(float(sorties), 0.0, "the policy bots use the miner")
 
+
+
+func test_estimate_tells_a_vein_from_bare_rock() -> void:
+	var s: Sim = _sim()
+	var d: DrillSim = s.drill
+	_box(s, 44, 47, 22, 24, _code(s, "copper_ore"))  # 12 cells, beside the hull on the right.
+	var vein: Dictionary = MinerRoute.estimate(d, Vector2(22.75, 11.75), 30, 100)
+	check_gt(float(int(vein["ore"])), 0.0, "a vein shows its ore")
+	check_eq(str(vein["hazard"]), "", "no pocket on the way")
+	var bare: Dictionary = MinerRoute.estimate(d, Vector2(5.25, 15.25), 30, 100)
+	check_eq(int(bare["ore"]) + int(bare["gems"]), 0, "bare rock shows nothing")
+	_box(s, 41, 42, 18, 24, _code(s, "gas_pocket"))
+	check_eq(str(MinerRoute.estimate(d, Vector2(22.75, 11.75), 30, 100)["hazard"]), "gas", "gas on the way is named")
