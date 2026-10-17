@@ -25,6 +25,9 @@
     {"trigger": "codex", "text": "TOPSIDE has logged your find, Auger. It was already in the log."},
     {"trigger": "pursuer_close", "text": "Reduce drill noise now, Auger. Do not ask us what is listening."},
     {"trigger": "gate", "text": "Gate on your scope. The last crew through reported warm air. We do not have the rest of that transmission."},
-    {"trigger": "store", "text": "That trader is not on our books, Auger. Pay in gems, not names."}
+    {"trigger": "store", "text": "That trader is not on our books, Auger. Pay in gems, not names."},
+    {"trigger": "structure", "text": "Auger, TOPSIDE. You have broken into a void that is not on the survey. Note the contents. Do not note them aloud."},
+    {"trigger": "structure", "text": "Copy the break-in. That construction predates your clearance, Auger. Most of what you find will."},
+    {"trigger": "structure", "text": "Any sealed container in there is program property. Even the ones we did not - Disregard. Open with care."}
   ]
 }

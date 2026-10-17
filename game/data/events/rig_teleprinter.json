@@ -1,0 +1,54 @@
+{
+  "id": "rig_teleprinter",
+  "kind": "structure",
+  "structures": ["soviet_rig"],
+  "layer": "crust",
+  "weight": 1.0,
+  "once_per_run": true,
+  "title": "The Teleprinter",
+  "file": "FIELD REPORT 34-Z // AUGER",
+  "start": "intro",
+  "pages": {
+    "intro": {
+      "text": "In the module's radio room a teleprinter is running. Paper tape has spooled onto the floor in a drift a meter deep, all of it the same five Cyrillic letter groups, over and over. The set draws power from a cable that runs into the bulkhead and down, not up. The keyboard is clean. Somebody has been dusting it.",
+      "radio": "Auger, do not transmit on that set. Do not read the tape aloud. Copy.",
+      "options": [
+        {
+          "text": "Tear off the tape and bring it aboard.",
+          "outcomes": [
+            {"weight": 1, "page": "tape", "effects": [{"type": "codex", "id": "zarya_rig"}, {"type": "reveal", "rows": 2}]}
+          ]
+        },
+        {
+          "text": "Type a reply on the keyboard.",
+          "outcomes": [
+            {"weight": 1, "page": "reply", "effects": [{"type": "reveal", "rows": 3}, {"type": "pursuer", "rows": -0.3}]},
+            {"weight": 1, "page": "reply_bad", "effects": [{"type": "system_damage", "system": "helm", "bars": 1}, {"type": "pursuer", "rows": 0.6}]}
+          ]
+        },
+        {
+          "text": "Cut the cable and strip the set.",
+          "outcomes": [
+            {"weight": 2, "page": "salvage", "effects": [{"type": "res", "res": "cells", "amount": 2}, {"type": "res", "res": "ore", "amount": 6}]},
+            {"weight": 1, "page": "shock", "effects": [{"type": "crew_damage", "target": "picked", "amount": 30.0}, {"type": "res", "res": "cells", "amount": 1}]}
+          ]
+        }
+      ]
+    },
+    "tape": {
+      "text": "{crew} reels in two hundred meters of tape and runs it through the decoder. The groups are a depth, a heading and one word repeated: ZARYA. The heading points down and a little to the left of your own. Whoever is sending is not asking for help. They are giving directions."
+    },
+    "reply": {
+      "text": "{crew} types AUGER and a question mark. The printer stops. Then it prints one new group, once: a column of soundings for the rock ahead of you, accurate to the meter. The tape ends with the Russian word for thank you. Nobody aboard can say who is thanking whom."
+    },
+    "reply_bad": {
+      "text": "{crew} types AUGER and a question mark. The printer stops. Your helm console goes dark, relights, and prints the same five letter groups across every screen. The deck plates begin to hum. Somewhere ahead, something has your call sign now."
+    },
+    "salvage": {
+      "text": "{crew} cuts the cable. The printer stops mid-letter, and for the first time in decades the module is quiet. The set gives up two sealed cells and a box of copper fittings worth melting down. The cut cable end sags into the bulkhead and, after a moment, is pulled through from the other side."
+    },
+    "shock": {
+      "text": "The cable is carrying more than any cable should. {crew} is thrown across the radio room and comes to with burns on both palms and hair standing straight up. The set gives up one cell. The printer keeps typing, unpowered, for another ten seconds."
+    }
+  }
+}

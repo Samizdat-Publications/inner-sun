@@ -3,7 +3,7 @@
   "name": "Crystal hollow",
   "label": "CRYSTAL HOLLOW",
   "codex": "the_hollows",
-  "blurb": "Placeholder: an oval cavern lined with crystal, a still pool at the bottom, and sometimes a light.",
+  "blurb": "An oval cavern grown over with quartz and amethyst, a still pool at the bottom. The air is warm and smells of rain. Sometimes there is a lamp.",
   "legend": {"q": "gem", "a": "amethyst", "e": {"material": "emerald", "from_depth_m": 450.0, "else": "amethyst"}, "w": "water_pocket", ".": "relic_air"},
   "stamp": [
     "     qa  aq     ",

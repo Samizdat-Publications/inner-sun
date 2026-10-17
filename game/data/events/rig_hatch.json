@@ -5,36 +5,51 @@
   "layer": "crust",
   "weight": 1.0,
   "once_per_run": true,
-  "title": "Placeholder: The Sealed Hatch",
-  "file": "FIELD REPORT // RIG MODULE",
+  "title": "Do Not Open",
+  "file": "FIELD REPORT 33-Z // AUGER",
   "start": "intro",
   "pages": {
     "intro": {
-      "text": "Placeholder: inside the module a second hatch is welded shut from the inside. Stencilled on it in Cyrillic: DO NOT OPEN. The air on this side smells of machine oil.",
+      "text": "Inside the module the air is dry and smells of machine oil. Bunks made, cups racked, a calendar stopped on a month with no year. At the aft end a second hatch is welded shut from this side, the bead neat and even. Stencilled across it in red Cyrillic: DO NOT OPEN. Below that, someone has scratched a tally of days. It stops at 212.",
+      "radio": "Auger, TOPSIDE. Program seals apply to that hardware. They have always applied.",
       "options": [
         {
-          "text": "Placeholder: cut the hatch open with the torch.",
+          "text": "Cut the weld with the torch.",
           "outcomes": [
             {"weight": 2, "page": "stores", "effects": [{"type": "res", "res": "cells", "amount": 2}, {"type": "res", "res": "coolant", "amount": 4}]},
             {"weight": 1, "page": "gas", "effects": [{"type": "hazard", "kind": "fire", "room": "system:drill", "level": 0.4}, {"type": "res", "res": "cells", "amount": 1}]}
           ]
         },
         {
-          "text": "Placeholder: copy the stencils and leave it sealed.",
+          "text": "Blow the hatch with a shaped charge.",
+          "requires": {"res": {"charges": 1}},
           "outcomes": [
-            {"weight": 1, "page": "leave", "effects": [{"type": "reveal", "rows": 1}]}
+            {"weight": 2, "page": "blown", "effects": [{"type": "res", "res": "charges", "amount": -1}, {"type": "res", "res": "cells", "amount": 3}, {"type": "res", "res": "coolant", "amount": 3}, {"type": "pursuer", "rows": 0.4}]},
+            {"weight": 1, "page": "blown_bad", "effects": [{"type": "res", "res": "charges", "amount": -1}, {"type": "res", "res": "cells", "amount": 1}, {"type": "hull", "amount": -3}, {"type": "pursuer", "rows": 0.6}]}
+          ]
+        },
+        {
+          "text": "Copy the stencils and leave it sealed.",
+          "outcomes": [
+            {"weight": 1, "page": "leave", "effects": [{"type": "reveal", "rows": 2}]}
           ]
         }
       ]
     },
     "stores": {
-      "text": "Placeholder: behind the hatch, a storeroom: sealed power cells in racks and coolant in drums. Nobody is inside."
+      "text": "The weld parts with a hiss of air that has been waiting. Behind the hatch is a storeroom: power cells in a rack, each one wrapped and dated, and coolant drums sealed with program wax. Nobody is inside. On the inner face of the hatch someone has scratched the same tally of days."
     },
     "gas": {
-      "text": "Placeholder: the torch touches something the hatch was holding in. Flame rolls back down the access tube into the drill room."
+      "text": "The torch is halfway round when the gap draws breath. Whatever the hatch was holding in is lighter than air and very glad to meet a flame. Fire rolls back down the access tube and into your drill room. {crew} grabs one cell from the rack on the way out, which is either courage or habit."
+    },
+    "blown": {
+      "text": "The charge takes the hatch off its hinges and puts it through the far bulkhead. The storeroom behind is untouched: cells in racks, coolant in sealed drums. The bang goes on in the rock for a long time after the dust settles, travelling away from you, then, slowly, back."
+    },
+    "blown_bad": {
+      "text": "It was too much charge. The hatch comes back the way it went in and takes a strip of your hull plate with it. Most of the rack is scrap. {crew} digs one cell out of the wreck and holds it up like a prize. The rock keeps ringing long after the smoke clears."
     },
     "leave": {
-      "text": "Placeholder: the stencils include a depth chart. {crew} copies it onto your map."
+      "text": "{crew} copies the stencils by lamplight. Most are maintenance notes. One is a chart of the strata below the module, hand-corrected in pencil, the corrections dated after the module was buried. You plot it onto your own map. The hatch stays shut. The tally stays at 212."
     }
   }
 }

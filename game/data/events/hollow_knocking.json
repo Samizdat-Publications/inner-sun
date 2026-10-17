@@ -5,22 +5,29 @@
   "layer": "crust",
   "weight": 1.0,
   "once_per_run": true,
-  "title": "Placeholder: Something Knocking",
-  "file": "FIELD REPORT // THE HOLLOWS",
+  "title": "Three Knocks",
+  "file": "FIELD REPORT 36-H // AUGER",
   "start": "intro",
   "pages": {
     "intro": {
-      "text": "Placeholder: the crystals ring when the drill stops. Then, from the far wall of the hollow, something knocks back: three times, patient.",
+      "text": "The crystals ring when the drill stops, a high clean note that takes a long time to die. When it does, something knocks on the far wall of the hollow. Three times, evenly spaced, patient. Then it waits. The sound is not coming through the rock. It is coming from the other side of it, and the wall there is two meters of solid amethyst.",
       "options": [
         {
-          "text": "Placeholder: knock back, three times.",
+          "text": "Knock back, three times.",
           "outcomes": [
             {"weight": 1, "page": "answer", "effects": [{"type": "res_range", "res": "gems", "min": 6, "max": 12}]},
             {"weight": 1, "page": "wall", "effects": [{"type": "hull", "amount": -3}, {"type": "pursuer", "rows": 0.3}]}
           ]
         },
         {
-          "text": "Placeholder: kill the lamps and wait it out.",
+          "text": "Knock back four times.",
+          "outcomes": [
+            {"weight": 1, "page": "four", "effects": [{"type": "reveal", "rows": 3}]},
+            {"weight": 1, "page": "four_bad", "effects": [{"type": "hazard", "kind": "breach", "room": "random", "level": 0.04}, {"type": "hull", "amount": -2}]}
+          ]
+        },
+        {
+          "text": "Kill the lamps and wait it out.",
           "outcomes": [
             {"weight": 1, "page": "quiet", "effects": [{"type": "pursuer", "rows": 0.2}]}
           ]
@@ -28,13 +35,19 @@
       ]
     },
     "answer": {
-      "text": "Placeholder: the knocking stops. When the lamps come back on, a row of cut crystals has been set out on the ledge by the pool."
+      "text": "{crew} raps three times on the hull with a wrench. Silence. The lamps flicker and steady, and a row of cut gems is sitting on the ledge by the pool: faceted, sorted by size, still wet. Nobody saw them arrive. {crew} collects them with the wrench, not the hand."
     },
     "wall": {
-      "text": "Placeholder: the far wall answers by coming in. Crystal and rock slam into the hull before the hollow goes still."
+      "text": "{crew} knocks three times. The far wall answers by coming in. A slab of amethyst the size of a truck shears off and slams into the hull, and the whole hollow rings like a struck bowl. Somewhere far behind you, something else hears it and turns."
+    },
+    "four": {
+      "text": "{crew} knocks four. A pause, long enough to be thinking. Then the knocking moves: along the wall, down under the pool and away into the rock ahead, three knocks at a time, like someone pacing out a path. Your scanner follows the sound, and the rock ahead comes clear for meters."
+    },
+    "four_bad": {
+      "text": "{crew} knocks four. The answer is one knock, much harder. A seam opens in the amethyst, the pool drains through it, and the water comes on through a split in your hull plate. The knocking does not come again. It does not need to."
     },
     "quiet": {
-      "text": "Placeholder: you wait in the dark for a long time. Nothing knocks again. Far above, the follower keeps coming."
+      "text": "You kill the lamps and sit in the dark while the crystals tick as they cool. Nothing knocks again. After an hour {crew} swears they can hear breathing, and then that it is their own. You relight and move on, an hour behind."
     }
   }
 }
