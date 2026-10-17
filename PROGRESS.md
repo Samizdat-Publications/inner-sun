@@ -1,8 +1,36 @@
 # Progress
 
-Updated: 2026-10-16, M1c playtest build 4 ready (D034 "every system has a job in the dig").
+Updated: 2026-10-17, M1c playtest build 5 ready (the away miner, D046), Stewart has not played build 4 yet.
 
-## M1c status: playtest build 4 ready for Stewart
+## M1c status: playtest build 5 ready for Stewart
+- **Build:** `builds/InnerSun.exe`, launched by `Play Inner Sun.bat`: `m1c-playtest-5` (milestone zip
+  `builds/milestones/m1c-playtest-5/`). Build 4 was never played, so build 5 replaces it: everything
+  in build 4 below, plus this session's work. Interim build `m1c-playtest-4c` (7cd11ea) is the polish
+  without the miner.
+- **The away miner (D046 to D048; sim 3be827f, view a1337c1):** G arms the order for the crew member
+  selected on the crew cards; a click on the rock or the scanner within 12 m of the drill head sends
+  them. The drill parks; they walk to the drill room, climb out, dig a tunnel by hand, mine out the
+  vein at the target and walk home. While out they man nothing; gas, water and fault rock hurt them;
+  the haul pays only on return (lost if they die); G recalls. Card, figure with headlamp, haul tag,
+  OUTSIDE crew card, alert and PARKED notice, scanner dot, help paragraph. Seen in stills
+  (`docs/progress/030`, and `harness/out/shots_m1d/miner/t20.png`).
+- **Polish (1be191c):** a requisitions toast lists what the owned requisitions put aboard at the
+  start of the first dive (`docs/progress/028`); the rock tile repeat is broken by a second, turned
+  sample blended by noise (critic 007); structures take an optional "light" block, so the crystal
+  hollow is a blue-lit cave instead of a black blob (`029`); the blast range ring draws only inside
+  the world view; the map's front shadow no longer makes the "triangulation failed" error; the map's
+  pursuit label moves away from the player's node. The map's structure marks were seen in the
+  gallery's `map_mid` still.
+- **Checks:** `check: ok` (339 tests); determinism ok, hash e4c82e3d6d55a625 at tick 1200 (headless and
+  Movie Maker, `python tools/determinism.py`) and the same hash in the exported build's own check; the
+  exported build plays a whole bot run to its end (FINAL tick 36000).
+- **Balance with the miner (300 runs per bot, `docs/research/m1-evidence/balance_m1c_miner.md`):**
+  balanced 38.3% wins, cautious 27.0%, greedy 13.7%; balanced sends 1.2 miners a run (62% of runs);
+  no miner deaths; the haul is about 2% of all ore.
+- **Not judged by a person yet:** no hands-on play by the lead (Stewart away, computer use needs his
+  click), no critic run on the miner. Stewart's run of build 5 is the first real test of G.
+
+## M1c build 4 (exported, never played: build 5 contains it)
 - **Build:** `builds/InnerSun.exe`, launched by `Play Inner Sun.bat`. The build Stewart plays is
   `m1c-playtest-4b` (exported from 1b4b202, milestone zip `builds/milestones/m1c-playtest-4b/`); the
   Gemini-reviewed build is `m1c-playtest-4` (e1ffb36), the same game without the stop-notice fix.
@@ -34,23 +62,22 @@ Updated: 2026-10-16, M1c playtest build 4 ready (D034 "every system has a job in
   `review/LEDGER.md` 22 to 32.
 
 ## Known gaps (M1c)
-- **No hands-on play by the lead this round:** computer-use access was declined, so the new keys were
-  checked by tests (`ui_selftest`, `test_dig_verbs_view`) and stills, not by a person. Stewart's run of
-  build 4 is the first real test of the new controls.
+- **No hands-on play by the lead in M1c:** computer-use access was declined (build 4) and Stewart was
+  away (build 5), so the new keys were checked by tests (`ui_selftest`, `test_dig_verbs_view`,
+  `test_miner_view`) and stills, not by a person. Stewart's run of build 5 is the first real test.
 - The balanced bot wins about 38% (the band is 10 to 30%): kept on purpose until Stewart has played
   (D039, D044). Levers: the gate, charge prices, `douse_fire_level`, `structure_chance`.
-- About 5 structures a run may be too many to feel special; the crystal hollow's interior reads as a
-  black blob with blocky gems; the map's structure marks were never seen in a still.
-- The blast range ring shows as stray arcs in the gaps between the side panels.
-- Not built: the away miner (plan round E), the requisitions toast at the start of a dive, fights from
-  structure events (ruled out by the lint, D042).
+- About 5 structures a run may be too many to feel special (lever: `structure_chance`).
+- Not built: fights from structure events (ruled out by the lint, D042). After a mid-segment fight,
+  CombatSim returns the run to "idle", not "drill" (found by the miner builder; older).
 - Critic M2 items: dense small text and a spreadsheet store, hazards and crew that need more life,
-  rooms hard to tell apart, the rock tile repeat (ledger 24 to 32).
+  rooms hard to tell apart (ledger 24 to 31); the rock tile repeat (32) is fixed in build 5, not yet
+  re-judged by a critic.
 - `ship_view.gd`, `main.gd`, `scanner_panel.gd`, `drill_sim.gd`, `run_state.gd` and some new files are
-  over 400 lines. One "triangulation failed" polygon error at startup in windowed runs (older).
+  over 400 lines, now also `drill_miner.gd` (497) and `policy_bot.gd` (467).
 
 ## Exactly what is next
-1. Stewart plays build 4 and writes notes at the top of `docs/STEWART_FEEDBACK.md`.
+1. Stewart plays build 5 and writes notes at the top of `docs/STEWART_FEEDBACK.md`.
 2. Next session (M1d, prompt in `HANDOFF.md`): replay his runs, triage, iterate, new playtest build.
 
 ## M1b (built, playtested by Stewart 2026-10-16: build 3)

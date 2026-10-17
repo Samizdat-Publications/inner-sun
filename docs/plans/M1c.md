@@ -61,12 +61,15 @@ Stewart asked for.
       opens the store mid-segment.
 - [x] Surveys and the map show structures; the scanner and the rock view draw them.
 
-## Round E (if the budget allows): the away miner
-- [ ] Park the drill (P) and send a crew member from the drill room into the rock to dig a vein by
-      hand: slow, quiet, full yield; gas, water and rockfalls hurt them; the ship cannot move off
-      without leaving them behind.
+## Round E: the away miner (spec `specs/m1d_away_miner.md`, D046 to D048)
+- [x] G sends the selected crew member to dig a vein by hand within 12 m (sim 3be827f, view a1337c1):
+      the drill parks until they are back (no separate park key), full yield, quiet; gas, water and
+      fault rock hurt them; the haul pays only on return and is lost if they die; G recalls. Bots use
+      it (balanced 1.2 sorties a run, wins 38%, no miner deaths in 900 runs).
 
 ## Then
+- [x] Playtest build 5 (`m1c-playtest-5`): the away miner, the requisitions toast, the rock tile
+      repeat broken, the crystal hollow lit, the blast ring and map fixes.
 - [x] Playtest build 4 exported (`m1c-playtest-4`, from e1ffb36, the one the critics saw); Stewart plays
       `m1c-playtest-4b` (the same plus the stop-notice fix of e110a40). Not done: the requisitions toast at the
       start of a dive; the map structure marks were never seen in a still.

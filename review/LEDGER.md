@@ -36,4 +36,4 @@ A rejected issue that returns in 2 later critiques becomes FIX or goes to docs/N
 | 29 | 20261016-222207-e1ffb36 | gemini 007 | The giant DRILL HAS NO POWER box blocks the drill head (00:00 to 00:04) | FIX | The notice waits 1.5 s (bots power the drill a moment after a segment starts), sits at the top of the world, smaller; the full-reactor hint only when the reactor is full |
 | 30 | 20261016-222207-e1ffb36 | gemini 007 | Dense small text; the store reads like a spreadsheet | DEFER | M2 UI pass (with 24) |
 | 31 | 20261016-222207-e1ffb36 | gemini 007 | Rooms visually noisy; crew blend in | DEFER | M2 art pass (with 26, 27) |
-| 32 | 20261016-222207-e1ffb36 | gemini 007 | The rock still reads as a repeating tile (world 6, up from 3) | DEFER | M2 rock pass: break the 1.28 m tile repeat (rotation or a second tile per slot) |
+| 32 | 20261016-222207-e1ffb36 | gemini 007 | The rock still reads as a repeating tile (world 6, up from 3) | FIX | 1be191c: a second sample of the tile, larger by the golden ratio and turned 90 degrees, blended in by slow noise |

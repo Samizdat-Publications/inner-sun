@@ -1,8 +1,20 @@
 # Handoff
 
-From the M1c session (2026-10-16) to the next round, which starts after Stewart plays build 4.
+From the M1c session (2026-10-16) to the next round, which starts after Stewart plays build 5.
 
-## M1c in one paragraph (newest)
+## Build 5 in one paragraph (newest, 2026-10-17)
+Stewart had not played build 4 yet and asked for the outstanding list, on high effort, to about 80%
+of his weekly quota. Done: the M1c polish (requisitions toast at the first dive, the rock tile repeat
+broken, structure "light" blocks with a blue-lit crystal hollow, the blast ring clipped to the world
+view, the map's "triangulation failed" error and pursuit label) and plan round E, the away miner
+(D046 to D048: G sends the selected crew member to dig a vein by hand, the drill parks until they are
+back, the haul pays only on return). The sim was a builder-opus round (about 70 minutes, 371k tokens),
+the view a Sonnet builder round (about 25 minutes, 347k tokens); the lead did the polish, the specs
+and the merges. Playtest build 5 is exported (`m1c-playtest-5`) and replaces build 4. Usage note:
+this whole session moved Stewart's weekly quota from 75% to about 77%. Next round (M1d) is the same
+as the prompt below, with build 5 in place of build 4.
+
+## M1c in one paragraph
 Stewart's build 3 notes ("picking a spot on the radar and going straight down", "more things to
 manage", buried towns, something to keep on death) became D034: every powered system has a job in
 the dig. Built and merged: loud stop notices (no power, broken bit); hold depth and helm-powered side
@@ -24,7 +36,7 @@ to 45 minutes and 240k to 460k tokens).
 Paste this into a new session (folder `C:\Users\stewa\Documents\Claude\Inner Sun`, Opus 5.5, effort
 xhigh, Auto):
 ```
-Continue Inner Sun: M1d. Read CLAUDE.md, PROGRESS.md and HANDOFF.md (the newest paragraph), then docs/STEWART_FEEDBACK.md (my build 4 notes are at the top), docs/plans/M1c.md and docs/DECISIONS.md D034 onward. Replay any runs I mention from %APPDATA%\InnerSun\runs\. Write docs/plans/M1d.md from my notes and the open M1c items, then work autonomously per CLAUDE.md, judge changes with the Gemini critic and by playing by hand (python tools/play.py plus computer use; I will approve the access), keep what is fun. Republish the making-of page (https://claude.ai/artifact/UJjDA4PJkSXMKjpg2zxQpc) when something visible lands. Stop with a new playtest build. Stop earlier only for "checkpoint", a usage limit, or a decision that is genuinely mine.
+Continue Inner Sun: M1d. Read CLAUDE.md, PROGRESS.md and HANDOFF.md (the newest paragraph), then docs/STEWART_FEEDBACK.md (my build 5 notes are at the top), docs/plans/M1c.md and docs/DECISIONS.md D034 onward. Replay any runs I mention from %APPDATA%\InnerSun\runs\. Write docs/plans/M1d.md from my notes and the open M1c items, then work autonomously per CLAUDE.md, judge changes with the Gemini critic and by playing by hand (python tools/play.py plus computer use; I will approve the access), keep what is fun. Republish the making-of page (https://claude.ai/artifact/UJjDA4PJkSXMKjpg2zxQpc) when something visible lands. Stop with a new playtest build. Stop earlier only for "checkpoint", a usage limit, or a decision that is genuinely mine.
 ```
 
 ## M1b in one paragraph
