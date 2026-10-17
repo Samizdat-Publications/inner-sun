@@ -35,3 +35,4 @@ A visual record of Inner Sun, oldest first.
 | 029 | 2026-10-17 00:08 | [029_m1c-crystal-hollow-lit.jpg](029_m1c-crystal-hollow-lit.jpg) | Build 4c: the crystal hollow lit blue with fine glints instead of a black blob | 1be191c |
 | 030 | 2026-10-17 01:43 | [030_m1c-away-miner.jpg](030_m1c-away-miner.jpg) | The away miner: Okafor tunnels beside the parked tower, carries +22 ore home; SEND MINER card (G), MINER OUTSIDE alert, PARKED notice, OUTSIDE crew card | d410ae2 |
 | 031 | 2026-10-17 02:21 | [031_m1c-playtest-5-frames.jpg](031_m1c-playtest-5-frames.jpg) | review frames, build 20261017-020702-14c963f, seed 41 | 14c963f |
+| 032 | 2026-10-17 02:51 | [032_m1d-hazard-visuals.jpg](032_m1d-hazard-visuals.jpg) | Fire fills the Drill Room floor with flame, warm light on the room and crew; deep water hides the machinery. Smoke haze and scorch were retuned after this still and are not yet seen. | 92cdba4 |

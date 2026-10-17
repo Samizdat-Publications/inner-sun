@@ -118,3 +118,82 @@ static func glow_of(src: Sprite2D, dir: String, tex_name: String, target: float)
 ## screenshots; above about 1.0 it blooms). Dividing by the CanvasModulate color blew everything out.
 static func set_glow(g: CanvasItem, target: float) -> void:
 	g.modulate = Color(target, target, target, 1.0)
+
+
+## A flame tongue: a vertical teardrop (point up, round at the bottom), white-yellow at the heart,
+## orange then red toward the edge, transparent at the rim. Made once; used additive.
+static func flame_tongue() -> Texture2D:
+	if _cache.has("flame_tongue"):
+		return _cache["flame_tongue"] as Texture2D
+	var w: int = 32
+	var h: int = 64
+	var img: Image = Image.create(w, h, false, Image.FORMAT_RGBA8)
+	for y: int in range(h):
+		var v: float = float(y) / float(h - 1)
+		var half: float = 0.0
+		if v <= 0.8:
+			half = pow(sin(v / 0.8 * PI * 0.5), 1.5)
+		else:
+			half = cos((v - 0.8) / 0.2 * PI * 0.5)
+		for x: int in range(w):
+			var u: float = (float(x) - 15.5) / 16.0
+			var d: float = absf(u) / maxf(half, 0.001)
+			var c := Color(0, 0, 0, 0)
+			if d < 1.0:
+				var heart: float = pow(1.0 - d * d, 1.4) * (0.3 + 0.7 * v)
+				c = _flame_color(heart)
+				c.a = clampf(heart * 1.25, 0.0, 1.0) * clampf(v * 5.0, 0.0, 1.0)
+			img.set_pixel(x, y, c)
+	var tex: ImageTexture = ImageTexture.create_from_image(img)
+	_cache["flame_tongue"] = tex
+	return tex
+
+
+static func _flame_color(heat: float) -> Color:
+	var red := Color(1.0, 0.14, 0.03)
+	var orange := Color(1.0, 0.55, 0.1)
+	var hot := Color(1.0, 0.96, 0.62)
+	if heat < 0.5:
+		return red.lerp(orange, heat / 0.5)
+	return orange.lerp(hot, (heat - 0.5) / 0.5)
+
+
+## A soft round blob (flame core, embers): bright in the middle, quickly transparent.
+static func flame_blob() -> Texture2D:
+	if _cache.has("flame_blob"):
+		return _cache["flame_blob"] as Texture2D
+	var n: int = 48
+	var img: Image = Image.create(n, n, false, Image.FORMAT_RGBA8)
+	for y: int in range(n):
+		for x: int in range(n):
+			var d: float = Vector2(float(x) - 23.5, float(y) - 23.5).length() / 24.0
+			var c := Color(0, 0, 0, 0)
+			if d < 1.0:
+				var k: float = pow(1.0 - d, 1.8)
+				c = _flame_color(k)
+				c.a = clampf(k * 1.3, 0.0, 1.0)
+			img.set_pixel(x, y, c)
+	var tex: ImageTexture = ImageTexture.create_from_image(img)
+	_cache["flame_blob"] = tex
+	return tex
+
+
+## A soft grey smoke puff with a little lumpiness; tinted and faded by the particle ramp.
+static func smoke_puff() -> Texture2D:
+	if _cache.has("smoke_puff"):
+		return _cache["smoke_puff"] as Texture2D
+	var n: int = 64
+	var img: Image = Image.create(n, n, false, Image.FORMAT_RGBA8)
+	for y: int in range(n):
+		for x: int in range(n):
+			var p := Vector2(float(x) - 31.5, float(y) - 31.5)
+			var ang: float = atan2(p.y, p.x)
+			var lump: float = 1.0 + 0.16 * sin(ang * 3.0 + 0.7) + 0.1 * sin(ang * 5.0 + 2.1)
+			var d: float = p.length() / (32.0 * lump)
+			var c := Color(0, 0, 0, 0)
+			if d < 1.0:
+				c = Color(0.55, 0.53, 0.5, clampf(pow(1.0 - d, 1.5), 0.0, 1.0))
+			img.set_pixel(x, y, c)
+	var tex: ImageTexture = ImageTexture.create_from_image(img)
+	_cache["smoke_puff"] = tex
+	return tex

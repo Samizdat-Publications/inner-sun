@@ -6,7 +6,7 @@ extends Node2D
 ## per-room, per-crew and per-strip nodes (each only meets nearby lights) and idle lights are
 ## disabled, not dimmed. Ship space is meters with y down; this node's origin is the ship's top-left.
 ## Draw order (z): rock -10, wall -5, floor -4, props -3, lamp -2, heat 0, ladders 1, doors and hatch
-## rims 2, room frame 3, hull 3, flames 5, crew 6 (limbs 4 to 8), water 10, labels 12, tags 14.
+## rims 2, room frame 3, water 3 (under the crew), hull 3, fire (RoomFire: scorch -2, haze 4, flames 5), crew 6 (limbs 4 to 8), labels 12, tags 14.
 
 const ROCK_CHUNK: int = 512
 const LAMP_ENERGY: float = 1.7
@@ -33,8 +33,7 @@ var _radial: GradientTexture2D
 var _room_art: Array[RoomArt] = []
 var _lamps: Array[PointLight2D] = []
 var _alarms: Array[PointLight2D] = []
-var _fire_lights: Array[PointLight2D] = []
-var _flames: Array[CPUParticles2D] = []
+var _fire: RoomFire = RoomFire.new()
 var _sprays: Array[CPUParticles2D] = []  ## Water jetting in from the hull at a breach, per room.
 var _enemy: bool = false
 var _crew: Array[CrewSprite] = []
@@ -78,7 +77,7 @@ func setup(p_sim: Sim, p_world: ShipWorld, p_ppm: float) -> void:
 	_build_hull()
 	_build_occluders()
 	_build_lights()
-	_build_flames()
+	_fire.build(self, world.ship, ppm, _foot_lift, _radial)
 	_build_sprays()
 	_build_crown()
 	_build_crew()
@@ -92,6 +91,7 @@ func setup(p_sim: Sim, p_world: ShipWorld, p_ppm: float) -> void:
 func rebind(p_sim: Sim, p_world: ShipWorld) -> void:
 	sim = p_sim
 	world = p_world
+	_fire.reset()
 	_rebuild_crew()
 
 
@@ -203,7 +203,7 @@ func _build_rooms() -> void:
 		_fn(0, func(n: Node2D) -> void: RoomFx.draw_heat(n, world.ship.rooms[ri], room_rect_px(world.ship.rooms[ri]), _time), 2, 2.0)
 		_fn(3, func(n: Node2D) -> void: RoomFx.draw_frame(n, room_rect_px(world.ship.rooms[ri])))
 		var left: bool = r.rect.get_center().x < ship_size_m().x * 0.5
-		_fn(10, func(n: Node2D) -> void: RoomWater.draw(n, world.ship.rooms[ri], room_rect_px(world.ship.rooms[ri]), ppm, _time, _slosh, _agit, left), 1, 1.8)
+		_fn(3, func(n: Node2D) -> void: RoomWater.draw(n, world.ship.rooms[ri], room_rect_px(world.ship.rooms[ri]), ppm, _time, _slosh, _agit, left), 1, 1.8)
 		_fn(11, func(n: Node2D) -> void: RoomFx.draw_alarm_rim(n, world.ship.rooms[ri], room_rect_px(world.ship.rooms[ri]), _time), 2, 2.0)
 		_fn(12, func(n: Node2D) -> void: RoomFx.draw_label(n, world.ship, world.ship.rooms[ri], room_rect_px(world.ship.rooms[ri]), ppm, _font, _time), 1)
 
@@ -338,38 +338,6 @@ func _build_lights() -> void:
 		var bulb: Vector2 = rp.position + RoomArt.lamp_point(rp, ppm)
 		_lamps.append(_light(bulb + Vector2(0, ppm * 0.1), ENEMY_LAMP if _enemy else Color(1.0, 0.84, 0.62), LAMP_ENERGY, rp.size.x * 0.85, true, 200.0))
 		_alarms.append(_light(Vector2(rp.position.x + ppm * 0.4, rp.position.y + ppm * 0.3), Color(1.0, 0.1, 0.06), 0.0, rp.size.x * 0.9, true, 160.0))
-		_fire_lights.append(_light(Vector2(rp.get_center().x, rp.end.y - ppm * 0.6), Color(1.0, 0.48, 0.16), 0.0, rp.size.x * 0.95, true, 140.0))
-
-
-func _build_flames() -> void:
-	var dot: GradientTexture2D = ShipView.radial_texture(32)
-	var ramp := Gradient.new()
-	ramp.set_color(0, Color(3.0, 2.2, 0.9, 1.0))
-	ramp.set_color(1, Color(0.4, 0.05, 0.02, 0.0))
-	ramp.add_point(0.4, Color(2.2, 0.75, 0.15, 0.85))
-	var mat := ArtLib.additive_unshaded()
-	for r: Room in world.ship.rooms:
-		var rp: Rect2 = room_rect_px(r)
-		var p := CPUParticles2D.new()
-		p.texture = dot
-		p.material = mat
-		p.amount = 90
-		p.lifetime = 0.8
-		p.emitting = false
-		p.position = Vector2(rp.get_center().x, rp.end.y - _foot_lift)
-		p.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
-		p.emission_rect_extents = Vector2(rp.size.x * 0.38, 3.0)
-		p.direction = Vector2(0, -1)
-		p.spread = 16.0
-		p.gravity = Vector2(0, -260)
-		p.initial_velocity_min = 40.0
-		p.initial_velocity_max = 110.0
-		p.scale_amount_min = 0.7
-		p.scale_amount_max = 1.6
-		p.color_ramp = ramp
-		p.z_index = 5
-		add_child(p)
-		_flames.append(p)
 
 
 ## A jet of water from the outer wall into each room, shown while the room has a breach. The wall is
@@ -705,15 +673,12 @@ func _update(delta: float) -> void:
 		var hazard: bool = r.fire > 0.0 or r.breach_m2 > 0.0 or r.level_m() > 0.3
 		_alarms[i].enabled = hazard
 		_alarms[i].energy = 0.4 + 0.9 * (0.5 + 0.5 * sin(_time * 6.0 + float(i)))
-		_fire_lights[i].enabled = r.fire > 0.0
-		_fire_lights[i].energy = 2.6 * r.fire * (0.8 + 0.2 * sin(_time * 23.0 + float(i) * 1.7) + 0.1 * sin(_time * 41.0))
-		_flames[i].emitting = r.fire > 0.02
-		_flames[i].speed_scale = 0.6 + r.fire
 		_sprays[i].emitting = r.breach_m2 > 0.0
 		_sprays[i].speed_scale = clampf(0.8 + r.breach_m2 * 8.0, 0.8, 1.6)
 		var lamp_k: float = 1.0 - clampf(r.level_m() / r.rect.size.y, 0.0, 0.7)
 		_lamps[i].energy = LAMP_ENERGY * lamp_k
 		_room_art[i].update(ship, r, _time, lamp_k)
+	_fire.update(ship, _time, delta)
 	for c: CrewMember in ship.crew:
 		var spr: CrewSprite = _crew[c.index]
 		spr.crew = c
