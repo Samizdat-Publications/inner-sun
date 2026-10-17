@@ -26,6 +26,12 @@ const EVENTS: Dictionary = {
 	"bracing_absorbed": {"sound": "bracing_absorb", "db": -2.0, "jitter": 0.05, "bus": "SFX"},
 	"fight_start": {"sound": "radio_squelch", "db": 0.0, "jitter": 0.0, "bus": "Radio"},
 	"event_started": {"sound": "radio_squelch", "db": -3.0, "jitter": 0.04, "bus": "Radio"},
+	# M1c dig verbs: existing sounds (nothing fits better yet).
+	"blast_fired": {"sound": "charge_fire", "db": -3.0, "jitter": 0.05, "bus": "SFX"},
+	"blast": {"sound": "charge_explosion", "db": -1.0, "jitter": 0.05, "bus": "SFX"},
+	"rockfall_warn": {"sound": "hull_groan", "db": -6.0, "jitter": 0.08, "bus": "SFX"},
+	"rockfall": {"sound": "charge_explosion", "db": -5.0, "jitter": 0.1, "bus": "SFX"},
+	"doused": {"sound": "pocket_burst", "db": -7.0, "jitter": 0.08, "bus": "SFX"},
 	"mined": {"sound": "ui_click", "db": -13.0, "jitter": 0.18, "bus": "SFX"},  # A soft tick per pickup.
 	"store_opened": {"sound": "ui_click", "db": 0.0, "jitter": 0.0, "bus": "SFX"},
 	"phase_dead": {"sound": "hull_groan", "db": 2.0, "jitter": 0.0, "bus": "SFX"},

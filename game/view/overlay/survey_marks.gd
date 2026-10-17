@@ -3,7 +3,7 @@ extends RefCounted
 ## Survey readings on the node map (n["survey"], see sim/run/survey.gd), drawn beside a node and said
 ## in words for the tooltip. Pips are the richness tier (1 to the number of tiers); small coloured
 ## squares are the ore materials the rock can hold, diamonds the gem materials, then a gas flame and a
-## water drop. Colours and names come from the layer's rock table, so new ores show up by themselves.
+## water drop, a pale zigzag for fault rock (rockfalls: power bracing). Colours and names come from the layer's rock table, so new ores show up by themselves.
 
 const PIP_GAP: float = 9.0
 const ICON_GAP: float = 9.0
@@ -50,6 +50,11 @@ static func draw(ci: CanvasItem, at: Vector2, survey: Dictionary, tiers: int, in
 		ci.draw_circle(w + Vector2(0, 1.5), 3.6, Color(0.30, 0.60, 0.92, dim))
 		ci.draw_colored_polygon(PackedVector2Array([w + Vector2(0, -5.5), w + Vector2(3.2, 0.5), w + Vector2(-3.2, 0.5)]), Color(0.30, 0.60, 0.92, dim))
 		x += ICON_GAP + 2.0
+	if bool(survey.get("faults", false)):
+		var f: Vector2 = Vector2(x + 4.0, at.y + 5.0)
+		var zig := PackedVector2Array([f + Vector2(-4.5, -5.0), f + Vector2(1.0, -1.5), f + Vector2(-2.0, 1.0), f + Vector2(4.5, 5.5)])
+		ci.draw_polyline(zig, Color(0.86, 0.72, 0.46, dim), 2.2)
+		x += ICON_GAP + 2.0
 	var width: float = x - at.x
 	var y2: float = at.y + 16.0
 	var x2: float = at.x + 1.0
@@ -87,6 +92,8 @@ static func words(survey: Dictionary, tiers: int, info: Dictionary, deposit: boo
 		hazards.append("GAS POCKETS")
 	if bool(survey.get("water", false)):
 		hazards.append("WATER POCKETS")
+	if bool(survey.get("faults", false)):
+		hazards.append("FAULT ROCK (BRACE)")
 	out.append("AHEAD: " + (", ".join(hazards) if not hazards.is_empty() else "CLEAR"))
 	return out
 
@@ -95,9 +102,9 @@ static func words(survey: Dictionary, tiers: int, info: Dictionary, deposit: boo
 static func draw_key(ci: CanvasItem, x: float, y: float, info: Dictionary) -> float:
 	UiTheme.text(ci, Vector2(x, y), "SURVEY MARKS", 15, UiTheme.AMBER)
 	y += 22.0
-	var demo: Dictionary = {"tier": 1, "ores": [], "gems": [], "gas": true, "water": true}
+	var demo: Dictionary = {"tier": 1, "ores": [], "gems": [], "gas": true, "water": true, "faults": true}
 	draw(ci, Vector2(x, y - 12.0), demo, 3, info)
-	UiTheme.text(ci, Vector2(x + 76.0, y), "RICHNESS, GAS, WATER", 13, UiTheme.TEXT)
+	UiTheme.text(ci, Vector2(x + 88.0, y), "RICHNESS, GAS, WATER, FAULTS", 13, UiTheme.TEXT)
 	y += 22.0
 	var ores: Array = []
 	var gems: Array = []

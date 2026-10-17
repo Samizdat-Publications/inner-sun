@@ -29,6 +29,7 @@ def main(argv=None):
     ap.add_argument("--res", default="1920x1080")
     ap.add_argument("--gpu-index", default=None)
     ap.add_argument("--timeout", type=int, default=300)
+    ap.add_argument("--extra", default="", help='extra game flags, space separated, e.g. "--arm=1 --aim=26,23"')
     ap.add_argument("--no-import", action="store_true")
     a = ap.parse_args(argv)
     names = [n for n in a.names.split(",") if n]
@@ -48,6 +49,7 @@ def main(argv=None):
             args += [f"--mode={a.mode}", f"--profile-dir={os.path.join(paths.OUT, 'profile_shots')}"]
         if a.bot:
             args += [f"--bot={a.bot}"]
+        args += a.extra.split()
         r = proc.run_godot(args, a.timeout, log_name="shots")
     except proc.ToolError as e:
         print("shots: FAIL (" + str(e) + ")")

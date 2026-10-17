@@ -20,6 +20,7 @@ const HULL_LOW: float = 0.34
 const DRILL_ROOM_DEEP_M: float = 1.2  ## Crew skip rooms deeper than 1.4 m on their own (crew_ai).
 const CHIP_H: float = 38.0
 const ALERT_FONT: int = 24
+const FAULT_LOOK_M: float = 6.0  ## Fault rock this close ahead raises the bracing alert.
 
 var sim: Sim = null
 var alerts: Array[Dictionary] = []
@@ -77,6 +78,10 @@ static func compute(s: Sim) -> Array[Dictionary]:
 	var stop: Dictionary = drill_stop(s)
 	if not str(stop.get("alert", "")).is_empty():
 		_add(out, int(stop["sev"]), str(stop["kind"]), str(stop["alert"]), "")
+	var fault_m: float = fault_ahead_m(s, FAULT_LOOK_M)
+	if fault_m >= 0.0 and s.systems.bracing_layers(s.player) <= 0:
+		var bkey: String = power_key(s.ship, s.ship.room_with_system("bracing"))
+		_add(out, 58, "fault", "FAULT ROCK AHEAD: power bracing (%s)" % bkey if not bkey.is_empty() else "FAULT ROCK AHEAD: power bracing", "")
 	var coolant: int = s.run.get_res("coolant")
 	if s.run.mode != "run":
 		coolant = COOLANT_LOW + 1  # Scenarios do not bill coolant: no supply alerts there.
@@ -130,9 +135,42 @@ static func drill_stop(s: Sim) -> Dictionary:
 					"notice": "BIT BROKEN: the drill crawls at %d%% speed. Press B to fit a new one (%d spare)." % [crawl, bits]}
 		return {"sev": 86, "kind": "bit", "alert": "BIT BROKEN: no spares",
 				"notice": "BIT BROKEN and no spare bits: the drill crawls at %d%% speed. Buy bits at a trading post." % crawl}
+	if d.at_wall:
+		return {"sev": 84, "kind": "wall", "alert": "AT THE WALL: steer down (S)",
+				"notice": "AT THE WALL: the drill is pressed against the side of the segment and cannot go on. Press S to steer straight down."}
 	if d.bit_wear >= BIT_WORN:
 		return {"sev": 50, "kind": "bit", "alert": "BIT WORN %d%%: B fits a new one" % roundi(d.bit_wear * 100.0), "notice": ""}
 	return {}
+
+
+## How far ahead (meters, along the heading, up to `look_m`) the drill meets fault rock, or -1.0 when
+## the way is clear or the segment has none. Samples the footprint's leading edges as it would move.
+static func fault_ahead_m(s: Sim, look_m: float) -> float:
+	var d: DrillSim = s.drill
+	if not d.active or s.run.phase != "drill" or not bool(d.survey.get("faults", false)):
+		return -1.0
+	var rad: float = deg_to_rad(d.heading_deg)
+	var f := Vector2(sin(rad) * d.side_scale, cos(rad)).normalized()
+	var step: float = d.cell_m
+	var t: float = 0.0
+	while t <= look_m:
+		var pos: Vector2 = d.ship_pos + f * t
+		var xs: Array[float] = [pos.x, pos.x + d.ship_size.x * 0.5, pos.x + d.ship_size.x]
+		var ys: Array[float] = [pos.y + d.ship_size.y, pos.y + d.ship_size.y * 0.5]
+		for yy: float in ys:
+			for xx: float in xs:
+				if _unstable_at(d, xx, yy):
+					return t
+		t += step
+	return -1.0
+
+
+static func _unstable_at(d: DrillSim, x: float, y: float) -> bool:
+	var c: int = int(floor(x / d.cell_m))
+	var r: int = int(floor(y / d.cell_m))
+	if c < 0 or r < 0 or c >= d.cols or r >= d.rows:
+		return false
+	return d.unstable_of[d.grid[r * d.cols + c]] == 1
 
 
 ## The power panel key (Q W E R T Y) of a system's room, or "" when it has no row.

@@ -29,6 +29,7 @@ const TYPE_CPS: float = 170.0
 const FADE_S: float = 0.3
 const CAUSE_TEXT: Dictionary = {
 	"hull": "Hull breached. The rock took the tower apart one plate at a time.",
+	"rockfall": "Hull breached by falling rock. The tower cut into fractured shale, and the roof came down on it faster than the bracing could hold.",
 	"crew_fire": "Crew lost to fire. The last of them went down in a corridor full of smoke.",
 	"crew_drowned": "Crew lost to flooding. The water found every room, and then it found them.",
 	"crew_heat": "Crew lost to heat. The gauges topped out before anyone did.",
@@ -146,7 +147,7 @@ func stamp_for(s: Sim) -> String:
 func cause_text(s: Sim) -> String:
 	var cause: String = s.run.end_cause
 	var base: String = str(CAUSE_TEXT.get(cause, "Contact lost. Cause not recorded."))
-	if cause == "hull":
+	if cause == "hull" or cause == "rockfall":
 		base = hull_text(s)
 	if s.run.phase != "won" and not cause.begins_with("crew_"):
 		var alive: int = 0
@@ -161,6 +162,8 @@ func cause_text(s: Sim) -> String:
 ## A hull death names what was hitting the ship: the gate machine or a rival rig in a fight, the
 ## front when it had caught the ship, the rock otherwise.
 static func hull_text(s: Sim) -> String:
+	if s.run.end_cause == "rockfall":
+		return str(CAUSE_TEXT["rockfall"])
 	if s.combat.active and s.enemy != null:
 		if s.combat.boss:
 			return "Hull breached. The gate machine took the tower apart one plate at a time."

@@ -70,7 +70,7 @@ var serial: int = -1
 
 var _scale: float = 5.0
 var _slot: PackedByteArray = PackedByteArray()  # painted tile slot per material code
-var _kind: PackedByteArray = PackedByteArray()  # 0 rock, 1 ore, 2 gem, 3 water
+var _kind: PackedByteArray = PackedByteArray()  # 0 rock, 1 ore, 2 gem, 3 water, 4 fault rock (unstable)
 var _seen: PackedByteArray = PackedByteArray()  # the view's copy of the grid
 var _last: PackedInt32Array = PackedInt32Array()
 var _mcols: int = 0  # mosaic size in cells (whole chunks, so it can be wider and taller than the grid)
@@ -406,6 +406,8 @@ func _make_palette() -> void:
 			kind = 3
 		elif code < drill.yield_res_of.size() and drill.yield_res_of[code] >= 0:
 			kind = 2 if RunState.RESOURCES[drill.yield_res_of[code]] == "gems" else 1
+		elif code < drill.unstable_of.size() and drill.unstable_of[code] == 1:
+			kind = 4
 		_kind[code] = kind
 
 
@@ -512,12 +514,23 @@ func _paint_run(c0: int, c1: int, r: int) -> void:
 				var sheen: float = smoothstep(0.78, 0.95, 0.5 + 0.5 * sin(float(Y) * 0.4 + na * 5.0))
 				shade = shade * 0.8 + sheen * 0.25
 				bump *= 0.25
+			var tr: float = 1.0
+			var tg: float = 1.0
+			var tbl: float = 1.0
+			if kind == 4:
+				# Fractured shale: pale and warm, cut by a dark web of cracks (the rock that falls on you).
+				var web: float = absf(sin(float(X) * 0.19 + float(Y) * 0.11 + nb * 5.0)) * absf(sin(float(Y) * 0.23 - float(X) * 0.07 + na * 6.0))
+				var crack: float = 1.0 - smoothstep(0.0, 0.11, web)
+				shade = shade * 1.18 * (1.0 - 0.72 * crack)
+				bump *= 1.0 + 1.6 * crack
+				tr = 1.25
+				tg = 0.98
+				tbl = 0.70
 			var p: int = y * wpx + x
 			var o: int = p * 4
-			var sh8: int = clampi(roundi(shade * 255.0), 0, 255)
-			alb[o] = sh8
-			alb[o + 1] = sh8
-			alb[o + 2] = sh8
+			alb[o] = clampi(roundi(shade * tr * 255.0), 0, 255)
+			alb[o + 1] = clampi(roundi(shade * tg * 255.0), 0, 255)
+			alb[o + 2] = clampi(roundi(shade * tbl * 255.0), 0, 255)
 			idb[p] = slots[code] * 16
 			alb[o + 3] = clampi(roundi(cover * 255.0), 0, 255)
 			var dhdx: float = 0.0
