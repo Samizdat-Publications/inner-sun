@@ -34,6 +34,19 @@ the first time it would pay off, in TOPSIDE's voice, once ever.
   | weapons | the first fight starts | F1 and F2 arm a weapon, click an enemy room to fire | weapon cards |
   | requisitions | the first death screen with research to spend | R opens requisitions: research buys starting gear | the button |
   | map | the first map choice | survey marks show what is in the rock on the way | survey log |
+- **From Stewart's build 5c run (2026-10-17, must be covered):** he asked "is there a pause button",
+  "do I have to turn off power to stop the drill and deploy the miner?" (he cut the drill to 0 bars
+  by hand), "I'm at an old mine shaft, how do I exploit it, do I send the miner?", and douse "isn't
+  doing anything". So add:
+  | Hint | When | Says (gist) | Glows |
+  |---|---|---|---|
+  | pause | the first fire, the first fight or the first miner sent, whichever comes first | Space pauses; orders still work while paused | the top bar's clock |
+  | structure | a buried structure within 15 m of the drill head (its scanner box in view) | cut into it with the drill or a blast: crates pay at once; G sends the miner to a crate in range | scanner |
+  | miner (extend) | as above | add: the drill parks itself, no need to cut its power | miner card |
+  | douse (first fire) | as above | add: one coolant per press, 6 s to vent again | DOUSE button |
+  Also, without waiting for a hint: the scanner's structure label gets a second line "CUT IN FOR
+  CRATES" until it is broken into, and the miner card's ready line reads "G, THEN CLICK THE ROCK.
+  THE DRILL PARKS ITSELF." (`game/view/hud/scanner_extras.gd` and `miner_card.gd`, both owned below).
 - Data: new radio triggers `hint_<name>` in `game/data/radio/topside_crust.json` (one or two lines
   each, the style guide's voice, no em dashes); extend the radio lint's trigger list. The view picks
   a hint's line by a hash of the profile's run count, never the sim's streams.
@@ -44,7 +57,7 @@ the first time it would pay off, in TOPSIDE's voice, once ever.
 New `game/view/hud/hint_director.gd` (HintDirector: conditions, pacing, glow requests),
 `game/view/run_screen.gd` and `game/view/main.gd` (build and bind it; keep main.gd's edit tiny),
 the cards that glow (`hud/blast_card.gd`, `hud/miner_card.gd`, `hud/power_panel.gd`,
-`hud/crew_cards.gd`, `hud/scanner_panel.gd`: a `glow(seconds)` method each, drawn as a pulsing
+`hud/crew_cards.gd`, `hud/scanner_panel.gd`, `hud/scanner_extras.gd`, `hud/top_bar.gd`: a `glow(seconds)` method each where they glow, drawn as a pulsing
 brass outline), `game/meta/profile.gd`, `game/data/radio/topside_crust.json`, the radio lint
 (`game/sim/events/encounter_lint.gd`, the trigger list only), `game/view/boot.gd` only if a flag must
 be listed, tests `game/tests/test_hints.gd`, README (one line).
