@@ -9,9 +9,10 @@ This repository is built mostly by Claude, autonomously. Stewart owns it and pla
 
 ## Where things stand
 
-Milestone 1a, "find the fun", builds the first playable slice: one layer (the Crust), a node map, the
-drilling between nodes, power and heat, fires and floods, a rival drill crew to fight, events, a
-store, and a full run from the first node to death (or the layer gate) and the codex. See
+Milestone 1, "find the fun", is iterating on Stewart's playtests: one layer (the Crust), a node map,
+hands-on drilling where every system has a job (side cutting, rockfalls, blasts, douse), ore and gems
+that buy gear, buried structures to break into, rival drill crews to fight, events, stores, and
+research that buys starting equipment for the next run. Playtest build 4 is the latest. See
 `PROGRESS.md` for details.
 
 ## Play it
@@ -49,7 +50,8 @@ is one descent. Dying is normal: what you learn goes into the codex and lifts re
   yellow-green and water pockets blue. Whatever the crown cuts floats up as "+2 IRON", "+5 EMERALD"
   (bigger for gold and gems), a line at the top of the world shows the dig so far, and a plaque sums
   up the segment on arrival. The mouse wheel zooms the drilling view.
-- **Blast.** While drilling, **F2** (or the BLAST card at the bottom left) arms the charge launcher;
+- **Blast.** While drilling, the charge launcher's weapon key (**F2** on the starting ship) or the BLAST
+  card at the bottom left arms it;
   click the rock (in the view or on the scanner, up to 14 m away) to blast it. It needs a bar in
   weapons and costs a charge. A blast cracks hard shells, burns off gas pockets and drains water
   pockets before you reach them, but shatters half the ore it frees: cutting a vein yourself pays all

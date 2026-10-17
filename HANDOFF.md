@@ -10,14 +10,16 @@ cutting (heading to +-90); fault rock whose rockfalls bracing soaks; blasts by t
 (half the ore shatters, D039); douse (a coolant unit on a fire); buried structures (old mine works, a
 Soviet rig module, a crystal hollow with a sometimes-trader: crates, break-in events, a mid-dig store);
 research and requisitions (D040); the rock shader redrawn as fractured blocks (D045). Playtest build 4
-is exported (`m1c-playtest-4`). Not done: the away miner (plan round E), hands-on play by the lead
+is exported (`m1c-playtest-4b`, which Stewart plays; `m1c-playtest-4` is the critic-reviewed build
+without the stop-notice fix). Not done: the away miner (plan round E), hands-on play by the lead
 (computer-use access was declined this session, so judging leaned on stills and the Gemini critic),
 and the critic's M2 art items (`review/LEDGER.md` 24 to 28). The balanced bot wins about 38% (above the
 10 to 30% band, kept on purpose: D039, D044); tune only if build 4 is too easy for Stewart.
 Next round (M1d): triage his build 4 notes first, then the candidates in `docs/plans/M1c.md` that are
 still open. Effort xhigh for the lead while triaging, high once it is plain building; Sonnet builders
-for view and data, Opus builders only for sim-heavy work (each Opus round here took 1 to 3.5 hours and
-350k to 460k tokens).
+for view and data, Opus builders only for sim-heavy work (from this session's task reports: the two
+Opus sim rounds took 3.4 and 1.0 hours and about 405k and 368k tokens; Sonnet view and meta rounds 35
+to 45 minutes and 240k to 460k tokens).
 
 Paste this into a new session (folder `C:\Users\stewa\Documents\Claude\Inner Sun`, Opus 5.5, effort
 xhigh, Auto):
@@ -67,21 +69,18 @@ write notes at the top of `docs/STEWART_FEEDBACK.md` under a dated heading: what
 boring or confusing, what he wanted to do and could not. His runs are saved in
 `%APPDATA%\InnerSun\runs\`, so any problem can be replayed exactly (`python tools/replay.py --latest`).
 
-## Start the next session (M1b)
+## Start the next session (M1d)
 In the Claude app, open the Code tab and start a new session with these settings:
 - **Folder:** `C:\Users\stewa\Documents\Claude\Inner Sun`
 - **Model:** Opus 5.5
-- **Effort:** xhigh (M1b is judgment about fun: what to change and what to leave alone)
+- **Effort:** xhigh (triaging playtest notes is judgment about fun)
 - **Permission mode:** Auto
 
 Or paste this into Windows PowerShell:
 ```powershell
 cd "C:\Users\stewa\Documents\Claude\Inner Sun"; claude --model claude-opus-5-5 --effort xhigh --permission-mode auto
 ```
-Then paste this as the first message:
-```
-Continue Inner Sun: M1b. Read CLAUDE.md, PROGRESS.md and HANDOFF.md, then docs/STEWART_FEEDBACK.md (my playtest notes are at the top), docs/plans/M1.md (M1b) and docs/BACKLOG.md. First re-measure trusted perf on an idle machine and run the Gemini gate critic if its cap has lifted (PROGRESS, Known issues). Replay any runs I mention from %APPDATA%\InnerSun\runs\. Triage my notes into docs/plans/M1b.md (with the balance report's known weak spots), then iterate on the core loop autonomously per CLAUDE.md, delegating as HANDOFF.md describes. Send me progress pictures, and stop with a new playtest build when the changes are ready for me to try. Stop earlier only for "checkpoint", a usage limit, or a decision that is genuinely mine.
-```
+Then paste the prompt from "M1c in one paragraph (newest)" at the top of this file.
 
 ## Delegation (what worked in M1a)
 
@@ -113,7 +112,8 @@ Continue Inner Sun: M1b. Read CLAUDE.md, PROGRESS.md and HANDOFF.md, then docs/S
 1. `python tools/capture.py --mode run --bot balanced --seed <n> --duration 240 --stills 16 --label <label>`
    (a whole run; event, store, map and death screens are held long enough to see them).
 2. `python tools/critic.py` (headless player-critic with a tool-call audit; `--model opus` at gates).
-   `python tools/critic_gemini.py` watches the video (blocked while the Gemini spend cap is reached).
+   `python tools/critic_gemini.py` watches the video (about 0.15 USD a review; its scores swing a
+   point or more between runs, so trust what two reviews agree on).
 3. Triage every issue in `review/LEDGER.md` as FIX, DEFER or REJECT; fix the FIX items.
 4. Balance: `python tools/balance.py --full --runs 1000 --procs 6 --pack` (about 12 minutes), report in
    `harness/out/balance/full_report.md`; copy the headline report to `docs/research/` when it matters.
@@ -123,7 +123,7 @@ Continue Inner Sun: M1b. Read CLAUDE.md, PROGRESS.md and HANDOFF.md, then docs/S
   it). API reference of this exact build: `harness/out/godot-api/doc/classes/`.
 - Blender 5.1: `C:\Program Files\Blender Foundation\Blender 5.1\blender.exe`.
 - API keys: environment first, then `C:\Users\stewa\ClaudeProjects\Noclip\.env`, loaded inside scripts.
-  Gemini works (but its monthly spend cap is reached, see `docs/NEEDS_STEWART.md`); ElevenLabs works;
+  Gemini works (critics 006 and 007 ran in M1c); ElevenLabs works;
   no PixelLab key. Never read or print keys.
 - Everyday tools (all launch Godot through job objects): `check.py`, `shots.py` (`--mode run --bot`),
   `capture.py`, `perf.py` (`--mode run`), `determinism.py`, `export.py` (`--playtest --label`),
@@ -172,11 +172,9 @@ Continue Inner Sun: M1b. Read CLAUDE.md, PROGRESS.md and HANDOFF.md, then docs/S
 Black Diamond (`C:\Users\stewa\Documents\Claude\Black Diamond`) builds in Godot on this PC at the same
 time. Shared rules: `C:\Users\stewa\Documents\Claude\GODOT-SIDE-BY-SIDE.md`.
 
-## Known gaps going into M1b
-See `docs/BACKLOG.md` (non-blocking polish) and `PROGRESS.md` (known issues). The balance report's
-weak spots are the first M1b candidates: the middle rows rarely threaten the hull, rivals feel
-scripted, gems pile up unspent, ore makes repairs nearly free, the lance is never bought, bits never
-break.
+## Known gaps
+`PROGRESS.md` ("Known gaps (M1c)"), `docs/BACKLOG.md` (non-blocking polish) and `review/LEDGER.md`
+(critic items deferred to M2).
 
 ## Session protocols
 - **Checkpoint** (Stewart types it): finish or safely stop the current step, update PROGRESS and

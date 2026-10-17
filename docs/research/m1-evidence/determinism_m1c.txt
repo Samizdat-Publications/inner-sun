@@ -1,0 +1,6 @@
+M1c determinism check, 2026-10-16, commit 1b4b202 (python tools/determinism.py)
+  headless: exit 0, 22s, tick=1200 hash=e56bb4f3272aeb65
+  movie: exit 0, 65s, tick=1200 hash=e56bb4f3272aeb65
+determinism: ok (hash e56bb4f3272aeb65 at tick 1200)
+
+Exported build m1c-playtest-4b (1b4b202): export check hash e56bb4f3272aeb65 at tick 1200 (harness/out/export_4b.log).

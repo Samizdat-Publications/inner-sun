@@ -4,7 +4,7 @@ Updated: 2026-10-16, M1c playtest build 4 ready (D034 "every system has a job in
 
 ## M1c status: playtest build 4 ready for Stewart
 - **Build:** `builds/InnerSun.exe`, launched by `Play Inner Sun.bat`. The build Stewart plays is
-  `m1c-playtest-4b` (exported from e110a40, milestone zip `builds/milestones/m1c-playtest-4b/`); the
+  `m1c-playtest-4b` (exported from 1b4b202, milestone zip `builds/milestones/m1c-playtest-4b/`); the
   Gemini-reviewed build is `m1c-playtest-4` (e1ffb36), the same game without the stop-notice fix.
 - **Round A, the drill says why it stopped (4d8a318):** "DRILL HAS NO POWER: press R", "BIT BROKEN:
   press B (n spare)" or no spares, fitting, overheated, wrecked, at the wall; the notice waits 1.5 s
@@ -22,9 +22,12 @@ Updated: 2026-10-16, M1c playtest build 4 ready (D034 "every system has a job in
   fights, the gate, ore); the TOPSIDE SUPPLY screen buys six permanent starting upgrades; they ride
   in the replay header.
 - **Rock (0ec9d6a, D045):** fractured blocks with fading cracks instead of wavy beds.
-- **Checks:** `check: ok` (306 tests), determinism ok (hash e56bb4f3272aeb65 at tick 1200), the
-  exported build plays a bot run to its end. Perf in captures: 1% low about 59 to 61 fps, GPU 0.9 ms
-  (contended, untrusted).
+- **Checks:** `check: ok` (306 tests); determinism ok, hash e56bb4f3272aeb65 at tick 1200, both in
+  `python tools/determinism.py` (`docs/research/m1-evidence/determinism_m1c.txt`) and in the exported
+  build's own check; the exported build plays a bot run to its end.
+- **Perf (UNTRUSTED, contended):** two captures gave a 1% low of 60.9 and 59.3 fps (the second from only
+  2 perf samples), GPU 0.9 ms. That is at or just under the 60 fps floor, measured while other work ran
+  on this PC: re-measure with `python tools/perf.py --mode run` on an idle machine before tuning.
 - **Balance (300 runs per bot, `docs/research/m1-evidence/balance_m1c_structures.md`):** cautious 26%,
   greedy 15%, balanced 38% wins; medians 18 to 22 min; about 4 to 6 structures entered a run.
 - **Critics:** Gemini 006 4.5 (before the rock fix), 007 6.1 (world outside the hull 3 to 6). Triage in
@@ -129,7 +132,7 @@ with light background GPU use, so the tool's strict "trusted" flag is off.
     `review/LEDGER.md`.
   - The exported build plays a whole bot run to its end.
 
-## Known issues
+## Known issues (M1a, kept as history)
 - **Perf:** after D023 the whole-run frame time is p99 12.7 ms, 1% low 78.5 fps, average 196 fps
   (`docs/research/m1-evidence/perf_run_mode_after_fix.json`). Draw-step spikes of 11 to 13 ms remain
   occasionally (cause not found); a new segment's rock fills in over about a second. The perf tool
@@ -141,8 +144,8 @@ with light background GPU use, so the tool's strict "trusted" flag is off.
   exported builds override that (`no_focus.template=false`, verified in the exported game with
   `--print-window-settings`: `no_focus=false template=true`) and boot pulls the window to the
   front. If keys still do nothing, clicking the window gives it the keyboard (README says so).
-- The Gemini critic and new Gemini art are blocked by the Gemini monthly spend cap
-  (`docs/NEEDS_STEWART.md`). No PixelLab key.
+- The Gemini critic and new Gemini art were blocked by the Gemini monthly spend cap in M1a (it worked
+  again from M1b). No PixelLab key.
 - Capture windows flash on screen for about a second at startup; keep windowed runs batched.
 - RAM on this PC was nearly full (leftover node processes from Claude sessions); git pushes failed
   intermittently until it freed up.

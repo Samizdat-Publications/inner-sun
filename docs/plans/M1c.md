@@ -67,7 +67,8 @@ Stewart asked for.
       without leaving them behind.
 
 ## Then
-- [x] Playtest build 4 exported (`m1c-playtest-4`, from e1ffb36). Not done: the requisitions toast at the
+- [x] Playtest build 4 exported (`m1c-playtest-4`, from e1ffb36, the one the critics saw); Stewart plays
+      `m1c-playtest-4b` (the same plus the stop-notice fix of e110a40). Not done: the requisitions toast at the
       start of a dive; the map structure marks were never seen in a still.
 
 Playtest build 4, the Gemini critic, a hands-on run by the lead, the making-of page, Stewart plays.
