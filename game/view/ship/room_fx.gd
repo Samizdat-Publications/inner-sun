@@ -119,7 +119,7 @@ static func draw_ladder_flow(n: Node2D, ship: Ship, world: ShipWorld, li: int, p
 static func draw_tags(n: Node2D, ship: Ship, sprites: Array[CrewSprite], ppm: float, font: Font) -> void:
 	var order: Array[int] = []
 	for i: int in range(sprites.size()):
-		if ship.crew[i].alive:
+		if ship.crew[i].alive and not ship.crew[i].away:
 			order.append(i)
 	order.sort_custom(func(a: int, b: int) -> bool: return sprites[a].position.x < sprites[b].position.x)
 	var placed: Array[Rect2] = []

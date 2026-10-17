@@ -686,8 +686,9 @@ func _update(delta: float) -> void:
 		spr.station_system = ship.rooms[c.room].system if c.room >= 0 and c.room < ship.rooms.size() else "none"
 		spr.position = c.pos * ppm + Vector2(0.0, -_foot_lift)
 		spr.update(delta, _time)
+		spr.visible = not c.away  # The away miner is drawn outside by MinerLayer, not in the drill room.
 		_crew_lights[c.index].position = (c.pos + Vector2(0, -1.0)) * ppm
-		_crew_lights[c.index].enabled = c.alive
+		_crew_lights[c.index].enabled = c.alive and not c.away
 	if _drill != null:
 		_process_drilling()
 	for n: FnDraw in _redraw:
