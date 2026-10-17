@@ -21,6 +21,27 @@ the heading at -90, an old mine works on the scanner below and to the left):
 Answers given in chat: Space pauses; sending the miner parks the drill on its own; break in by
 drilling or blasting into the structure, crates pay at once (the miner's crate loot pays on return,
 range 12 m).
+- Later, verbatim: "Also douse isn't doing anything." (screenshot: the bracing room burning, the
+  DOUSE (F) button over it, Vasquez fighting the fire.) "I have to step out for a sec, read my
+  playthrough I only did 2 levels but log it and make whatever changes and I'll be back in an hour
+  or two." "I just ended it as the CPU got overloaded and it was freezing."
+
+What his run record shows (`python tools/run_report.py --since 2026-10-17`; seed 258521, 15:06,
+abandoned at row 2 of 14, 130 m): ore +205, gems +17, one structure entered, one crate opened, no
+fights. Six miner sorties (Vasquez every time), five came home, two recalls; the haul was 4 ore and
+13 gems in all. 335 steer and 112 power commands. Never used: blast, douse, bit change, crew
+assign, weapons. Not a single douse command reached the game although he tried: the real-input
+self-test passes for the same case (a top-deck fire, F and the button), so the cause is not found;
+the next build records an input diary to settle it (D051).
+The freeze: the game itself measured 144 fps average, 1% low 56 fps in a miner sortie on this PC.
+Three stray Python processes from 15 October (PIDs 47728, 79448, 77740, each `python -`) had been
+spinning one CPU core each for about two days, and the build 5c export's own 10-minute bot run was
+still playing in the background during his first minutes. Both are likely causes; the strays are
+his to stop.
+
+Changed for the next build: the miner climbs out a side hatch (D051); the away miner is no longer
+drawn inside the drill room as well (his first screenshot showed Vasquez in both places); onboarding
+hints for pause, parking, structures and douse (spec `specs/m1d_onboarding_hints.md`).
 
 ## 2026-10-16: playtest build 3 (reached row 8)
 Verbatim:
