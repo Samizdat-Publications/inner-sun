@@ -76,6 +76,8 @@ func _on_event(sim: Sim, e: Dictionary) -> void:
 			toast = {}
 		"loot":
 			_on_loot(e)
+		"miner_back":
+			_on_miner_back(sim, e)
 		"mined":
 			_on_mined(sim, e)
 		"gas_burst":
@@ -100,6 +102,22 @@ func _on_mined(sim: Sim, e: Dictionary) -> void:
 	else:
 		ore += amount
 	_add_pickup(mat, res, amount, float(e.get("x_m", 0.0)), float(e.get("y_m", 0.0)), "", color_of(sim, mat))
+
+
+## The away miner climbed in: what they carried is paid now ("resource" events), so it joins the tally
+## (as "miner", by its resource) and rises from the drill head as one text.
+func _on_miner_back(sim: Sim, e: Dictionary) -> void:
+	var haul: Dictionary = e.get("haul", {})
+	for res: String in haul.keys():
+		var n: int = int(haul[res])
+		if n <= 0:
+			continue
+		totals["miner"] = int(totals.get("miner", 0)) + n
+		if res == "gems":
+			gems += n
+		elif res == "ore":
+			ore += n
+		_add_pickup("miner", res, n, DrillMiner.head(sim.drill).x, DrillMiner.head(sim.drill).y, "MINER: +%d %s" % [n, res.to_upper()], Color(0.7, 1.0, 0.75), true)
 
 
 ## A crate paid: a floating text where it stood (absolute, not at the crown), counted in the tally.

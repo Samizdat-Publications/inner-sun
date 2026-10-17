@@ -18,6 +18,7 @@ const CONTROLS: Array[String] = [
 	"POWER   Q W E R T Y add a bar to a system, Shift plus the key removes one. Or click the bars.",
 	"CREW   1 2 3 select, left-click a room to send them, right-click to release them.",
 	"BLAST   power weapons (E), F2 arms the charge launcher, then click the rock or the scanner (14 m range). Esc cancels.",
+	"MINER   G sends the selected crew member to dig a vein by hand (12 m): click the rock or the scanner. G recalls.",
 	"DOUSE   F puts out the worst fire with a coolant unit, or click DOUSE on the burning room.",
 	"FIGHTS   F1 F2 arm a weapon, then click an enemy room. Power weapons (E) and bracing (W).",
 	"PAUSE   Space. You can give orders while paused. The world also holds while the map is open.",
@@ -34,6 +35,7 @@ const WHEN: Array[String] = [
 	"FLOODING   Water pockets (blue on the scanner) and breaches let water in. Crew patch breaches; pumps run while COOLANT AND PUMPS has power. Crew will not wade into deep water on their own: order one in (1-3, then click the room).",
 	"FIRE   Crew put fires out; fires grow, spread through doors and hatches, and break systems.",
 	"DAMAGE   Crew repair broken power bars on their own; power comes back after a repair. Hull only comes back at a trading post (2 ore a point).",
+	"AWAY MINER   The drill parks and the front keeps coming. Gas, water and faults hurt them. The haul pays on return, lost if they die.",
 	"DRILL STOPPED   a red notice says why: no power (R), a broken bit (B fits a spare), overheated, wrecked, or at the wall (S steers down).",
 ]
 

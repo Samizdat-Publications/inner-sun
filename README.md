@@ -56,6 +56,13 @@ is one descent. Dying is normal: what you learn goes into the codex and lifts re
   weapons and costs a charge. A blast cracks hard shells, burns off gas pockets and drains water
   pockets before you reach them, but shatters half the ore it frees: cutting a vein yourself pays all
   of it.
+- **Away miner.** While drilling, **G** (or the SEND MINER card next to the blast card) arms the order for
+  the crew member selected on the crew cards (1 to 3); click the rock or the scanner within 12 m of the
+  drill head to send them. They climb out and dig a tunnel by hand to the spot, mine out the vein there
+  at full yield and walk home. The drill parks until they are back, and the front keeps coming. They are
+  not aboard to man stations or fight fires, and gas, water and fault rock hurt them. What they carry
+  pays only when they climb back in, and is lost if they die. **G** again recalls them; **Esc** or a
+  right click cancels the aim.
 - **Fault rock.** Pale cracked rock drops rockfalls on the top deck while you cut it. Each bracing
   layer (two bars in **W**) soaks one; without one you lose hull and a top room is damaged.
 - **Buried structures.** Old mine works, a Soviet rig module, a crystal hollow: break in for crates of

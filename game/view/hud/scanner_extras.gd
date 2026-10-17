@@ -176,3 +176,43 @@ static func draw_notes(ci: CanvasItem, s: Sim, screen: Rect2, t: float, target_d
 		UiTheme.bold_text(ci, Vector2(cx - box.size.x * 0.5, box.position.y + 19.0), "AT THE WALL: steer down (S)", 17, UiTheme.TEXT, null, HORIZONTAL_ALIGNMENT_CENTER, box.size.x)
 	if not blast_word_text.is_empty():
 		UiTheme.text(ci, Vector2(screen.end.x - 150.0, screen.position.y + 20.0), blast_word_text, 14, Color(UiTheme.CRT, 0.9), null, HORIZONTAL_ALIGNMENT_RIGHT, 142.0)
+
+## The away miner on the glass: a bright dot at their feet with a short trail back to the drill head and
+## the target as a small cross; with the order armed, the miner's range ring around the head and, when
+## `hover` is a panel point inside the screen, a circle there (green when the sim would send them).
+static func draw_miner(ci: CanvasItem, s: Sim, screen: Rect2, look_m: float, hover: Vector2, t: float, armed: bool, crew_id: String = "") -> void:
+	var d: DrillSim = s.drill
+	if not d.active:
+		return
+	var width_m: float = float(d.cols) * d.cell_m
+	var crown: float = d.ship_pos.y + d.ship_size.y
+	var px: Vector2 = Vector2(screen.size.x / width_m, screen.size.y / look_m)
+	var head_m: Vector2 = DrillMiner.head(d)
+	if armed:
+		var head_px: Vector2 = m_to_screen(head_m, screen, width_m, crown, look_m)
+		var pulse: float = 0.55 + 0.35 * sin(t * 4.0)
+		for run: PackedVector2Array in ellipse_runs(head_px, d.miner.range_m * px.x, d.miner.range_m * px.y, screen):
+			if run.size() >= 2:
+				ci.draw_polyline(run, Color(UiTheme.CRT, pulse), 2.0)
+		if screen.has_point(hover):
+			var m: Vector2 = screen_to_m(hover, screen, width_m, crown, look_m)
+			var ok: bool = DrillMiner.target_ok(d, s, crew_id, m).is_empty()
+			var col: Color = UiTheme.CRT if ok else UiTheme.ALARM
+			for run2: PackedVector2Array in ellipse_runs(hover, d.cell_m * 2.0 * px.x, d.cell_m * 2.0 * px.y, screen, 24):
+				if run2.size() >= 2:
+					ci.draw_polyline(run2, col, 2.0)
+	var mn: DrillMiner = d.miner
+	if not mn.is_out():
+		return
+	var feet: Vector2 = m_to_screen(mn.pos, screen, width_m, crown, look_m)
+	var head2: Vector2 = m_to_screen(head_m, screen, width_m, crown, look_m)
+	var tgt: Vector2 = m_to_screen(mn.target, screen, width_m, crown, look_m)
+	if screen.has_point(tgt):
+		ci.draw_line(tgt - Vector2(4, 4), tgt + Vector2(4, 4), Color(UiTheme.AMBER, 0.8), 1.5)
+		ci.draw_line(tgt - Vector2(4, -4), tgt + Vector2(4, -4), Color(UiTheme.AMBER, 0.8), 1.5)
+	if screen.has_point(feet):
+		ci.draw_dashed_line(head2, feet, Color(1.0, 1.0, 1.0, 0.55), 1.5, 4.0)
+		var blink: float = 0.7 + 0.3 * sin(t * 8.0)
+		ci.draw_circle(feet, 9.0, Color(1.0, 1.0, 0.8, 0.25 * blink))
+		ci.draw_circle(feet, 5.0, Color(1.0, 1.0, 0.85, blink))
+

@@ -33,3 +33,4 @@ A visual record of Inner Sun, oldest first.
 | 027 | 2026-10-16 22:59 | [027_m1c-rock-structures-notice.jpg](027_m1c-rock-structures-notice.jpg) | Build 4: fractured rock and side cutting, old mine works in the rock, crates opening, the drill-stop notice | e110a40 |
 | 028 | 2026-10-17 00:08 | [028_m1c-requisitions-toast.jpg](028_m1c-requisitions-toast.jpg) | Build 4c: the requisitions toast at the start of a dive, rock with the tile repeat broken | 656a1b7 |
 | 029 | 2026-10-17 00:08 | [029_m1c-crystal-hollow-lit.jpg](029_m1c-crystal-hollow-lit.jpg) | Build 4c: the crystal hollow lit blue with fine glints instead of a black blob | 656a1b7 |
+| 030 | 2026-10-17 01:43 | [030_m1c-away-miner.jpg](030_m1c-away-miner.jpg) | The away miner: Okafor tunnels beside the parked tower, carries +22 ore home; SEND MINER card (G), MINER OUTSIDE alert, PARKED notice, OUTSIDE crew card | d410ae2 |

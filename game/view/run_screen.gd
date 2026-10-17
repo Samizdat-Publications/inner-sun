@@ -20,6 +20,7 @@ var alerts: AlertsStrip
 var scanner: ScannerPanel
 var weapons: WeaponCards
 var blast: BlastCard  ## The charge launcher's card while drilling.
+var miner: MinerCard  ## The away miner's order card, right of the blast card.
 var callouts: DigCallouts  ## Rockfall chip and the dig verbs' short messages.
 var enemy: EnemyPanel
 var dossier: Dossier
@@ -60,6 +61,9 @@ func build(p_sim: Sim, p_profile: Profile) -> void:
 	weapons = WeaponCards.build(_layer, sim)
 	blast = BlastCard.build(_layer, sim)
 	scanner.blast = blast
+	miner = MinerCard.build(_layer, sim, blast)
+	miner.crew_id_getter = func() -> String: return cards.selected_id
+	scanner.miner = miner
 	enemy = EnemyPanel.build(_layer, sim)
 	# Overlays last, in stacking order: map, dossier and store, codex, death (on top).
 	map = MapView.build(_layer, sim)
@@ -93,6 +97,7 @@ func bind(p_sim: Sim, p_profile: Profile) -> void:
 	scanner.bind(sim)
 	weapons.bind(sim)
 	blast.bind(sim)
+	miner.bind(sim)
 	enemy.bind(sim)
 	map.bind(sim)
 	dossier.bind(sim)
@@ -191,6 +196,7 @@ func _process(delta: float) -> void:
 	power.keys_enabled = not (store.is_open() or codex.is_open() or help.is_open() or death.is_open())
 	weapons.keys_enabled = not overlay_open()
 	blast.keys_enabled = not overlay_open()
+	miner.keys_enabled = not overlay_open()
 	scanner.keys_enabled = not overlay_open()
 	_update_req_toast(delta)
 

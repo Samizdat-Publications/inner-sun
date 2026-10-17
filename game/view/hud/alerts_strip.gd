@@ -20,6 +20,7 @@ const HULL_LOW: float = 0.34
 const DRILL_ROOM_DEEP_M: float = 1.2  ## Crew skip rooms deeper than 1.4 m on their own (crew_ai).
 const CHIP_H: float = 38.0
 const ALERT_FONT: int = 24
+const MINER_SEV: int = 60  ## The away miner outside (a bit alert is 40 to 86).
 const FAULT_LOOK_M: float = 6.0  ## Fault rock this close ahead raises the bracing alert.
 
 var sim: Sim = null
@@ -78,6 +79,10 @@ static func compute(s: Sim) -> Array[Dictionary]:
 	var stop: Dictionary = drill_stop(s)
 	if not str(stop.get("alert", "")).is_empty():
 		_add(out, int(stop["sev"]), str(stop["kind"]), str(stop["alert"]), "")
+	if s.drill.active and s.drill.miner.is_out():
+		var mc: CrewMember = s.ship.crew_by_id(s.drill.miner.crew_id)
+		if mc != null:
+			_add(out, MINER_SEV, "miner", "MINER OUTSIDE: %s %d" % [mc.name.to_upper(), roundi(mc.hp)], "")
 	var fault_m: float = fault_ahead_m(s, FAULT_LOOK_M)
 	if fault_m >= 0.0 and s.systems.bracing_layers(s.player) <= 0:
 		var bkey: String = power_key(s.ship, s.ship.room_with_system("bracing"))
@@ -108,6 +113,10 @@ static func drill_stop(s: Sim) -> Dictionary:
 	var d: DrillSim = s.drill
 	if not d.active or s.run.phase != "drill":
 		return {}
+	if d.parked and d.miner.is_out():  # Parked on purpose: nothing else (power, a bit) is the reason it is not cutting.
+		var mc: CrewMember = s.ship.crew_by_id(d.miner.crew_id)
+		var who: String = mc.name.to_upper() if mc != null else "THE MINER"
+		return {"sev": MINER_SEV, "kind": "miner", "alert": "", "notice": "PARKED: %s IS OUTSIDE. G recalls." % who}
 	var ri: int = s.ship.room_with_system("drill")
 	if ri < 0:
 		return {}

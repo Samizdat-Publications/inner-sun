@@ -47,6 +47,7 @@ var build_headless: bool = false  ## Tests only: build the world and the UI even
 var fx: DigFx  ## The dig verbs' effects in the world (blast aim and explosion, rockfall, side cutting).
 var douse: DouseLayer  ## DOUSE buttons on burning rooms.
 var structures: StructureLayer  ## The buried structure's room, glow, lamp and crate pops.
+var miner_layer: MinerLayer  ## The away miner: aim, figure, headlamp.
 var look_structure: bool = false  ## Dev only (--look=structure): the camera frames the buried structure.
 var _steer: SteerControl = SteerControl.new()
 var _finished: bool = false
@@ -125,6 +126,7 @@ func _start_run() -> bool:
 		screen.bind(run.sim, profile)
 		fx.bind(run.sim, screen.blast)
 		structures.bind(run.sim)
+		miner_layer.bind(run.sim, screen.miner)
 		douse.bind(run.sim)
 		if hud != null:
 			hud.bind(run)
@@ -334,6 +336,16 @@ func _unhandled_input(event: InputEvent) -> void:
 			screen.blast.disarm()
 			get_viewport().set_input_as_handled()
 			return
+	# Armed, a left click on the rock sends the selected crew member out as the miner.
+	if screen.miner.armed and rock_view != null and RunScreen.WORLD_RECT.has_point(mb.position):
+		if mb.button_index == MOUSE_BUTTON_LEFT:
+			screen.miner.aim(world_to_m(mb.position))
+			get_viewport().set_input_as_handled()
+			return
+		if mb.button_index == MOUSE_BUTTON_RIGHT:
+			screen.miner.disarm()
+			get_viewport().set_input_as_handled()
+			return
 	# A click on a burning room's DOUSE button.
 	if mb.button_index == MOUSE_BUTTON_LEFT and douse != null:
 		var burning_id: String = douse.room_at(mb.position)
@@ -452,16 +464,22 @@ func _build_world() -> void:
 	structures = StructureLayer.new()
 	structures.setup(run.sim, PPM)
 	add_child(structures)
+	miner_layer = MinerLayer.new()
+	miner_layer.setup(run.sim, screen.miner, PPM)
+	add_child(miner_layer)
 	look_structure = args.get_str("look", "") == "structure"
 	if args.has("aim"):
 		var aim: PackedStringArray = args.get_str("aim", "").split(",")
 		if aim.size() == 2:
 			fx.aim_override = Vector2(float(aim[0]), float(aim[1]))
+			miner_layer.aim_override = fx.aim_override
 	var pickups := PickupLayer.new()
 	pickups.setup(screen.tally.digs, PPM)
 	add_child(pickups)
 	if run_mode and _is_human() and profile != null and profile.runs == 0:
 		screen.help.open()  # A fresh profile sees the help page first (never in bot captures).
+	if args.has("arm-miner"):
+		screen.miner.dev_arm = true  # Dev only: look at the miner's aim ring.
 	if args.has("arm"):
 		screen.weapons.armed = args.get_int("arm", -1)  # Dev only: look at the aiming highlights.
 		screen.blast.armed = args.get_int("arm", -1) == BlastCard.launcher_slot(run.sim)  # ... and the blast ring.
