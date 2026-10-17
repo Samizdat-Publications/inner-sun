@@ -11,7 +11,8 @@ extends Node2D
 ##    walls and pockets catch the hull floodlights;
 ##  - gem and ore cells get a second, additive and unshaded glint layer (one sprite per 16 x 16 chunk)
 ##    that blooms;
-##  - air cells are transparent over a dim back wall, so the shaft is not pure black.
+##  - air cells are transparent over DepthLayers' far wall, so the shaft is not pure black; the rock shader
+##    tints the stone in depth bands (seg_top_m is the absolute depth of the segment's top);
 ## Repainting is incremental and budgeted. The view keeps its own copy of the grid; when a chunk's
 ## change counter moves it diffs that chunk against the copy and marks the changed cells plus one cell
 ## around them dirty (a pixel reads only cells within one cell of its own: the bilinear height, the
@@ -149,6 +150,8 @@ func setup(p_drill: DrillSim, p_ppm: float) -> void:
 	_rock.light_mask = LIGHT_MASK
 	_rock.material = RockTiles.material_for(_rock.size_px, _tex_id, ppm)
 	_rock.z_index = -20
+	var top_m: float = drill.start_depth_m - drill.start_y
+	DepthLayers.apply_bands(_rock.material as ShaderMaterial, top_m, top_m + float(drill.rows) * drill.cell_m)
 	_rock.self_modulate = Color(ROCK_GAIN, ROCK_GAIN, ROCK_GAIN, 1.0)
 	add_child(_rock)
 	for i: int in range(n):
@@ -834,13 +837,12 @@ func _build_occluder(idx: int, cx: int, cy: int) -> void:
 
 # Backdrop ----------------------------------------------------------------------------------------
 
-## The dim back wall behind the shaft, and solid rock beyond the grid's sides and bottom.
+## Solid rock beyond the grid's sides and bottom. The wall behind the openings is DepthLayers' far wall
+## (it scrolls slower than the rock, so it reads as further away).
 func _build_backdrop() -> void:
-	var tex: Texture2D = RockTiles.canvas_tile("shaft")
 	var w: float = float(drill.cols) * drill.cell_m * ppm
 	var h: float = float(drill.rows) * drill.cell_m * ppm
 	var pad: float = 16.0 * ppm
-	_wall(tex, Rect2(-pad, -pad, w + pad * 2.0, h + pad * 2.0), Color(1.9, 1.7, 1.55), -30)
 	var apron: Texture2D = RockTiles.canvas_tile("dense")
 	var tint := Color(1.1, 1.05, 1.0)
 	_wall(apron, Rect2(-pad, -pad, pad, h + pad * 2.0), tint, -21)

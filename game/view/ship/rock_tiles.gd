@@ -38,6 +38,11 @@ uniform vec3 tints[8];
 uniform float hardness[8];
 uniform float ppm = 80.0;
 uniform float detail = 0.9;
+// Depth bands (DepthLayers): the absolute depth of the segment's top and the band palette.
+uniform float seg_top_m = 0.0;
+uniform float band_b[32];  // band j begins at band_b[j] (n + 1 entries), see DepthLayers.apply_bands
+uniform vec3 band_c[32];
+uniform int band_n = 0;
 float hash1(float n) { return fract(sin(n * 91.345) * 437.585); }
 float vnoise(vec2 x) {
 	vec2 i = floor(x);
@@ -116,7 +121,23 @@ void fragment() {
 	tile = mix(vec3(dot(tile, vec3(0.33))), tile, 1.0 - 0.25 * h) * mix(vec3(1.0), tone, rockish);
 	// Beds also shift colour a little (iron-stained, pale, grey), so the layers read even in dim light.
 	vec3 bed_tint = mix(vec3(1.0), vec3(1.0 + 0.3 * bed_k, 1.0 + 0.08 * bed_k, 1.0 - 0.28 * bed_k), rockish);
-	COLOR = vec4(tile * tints[slot] * base.rgb * 1.25 * strata * bed_tint, base.a);
+	// Depth bands: broad beds by absolute depth, each a hue and value shift, blended over about 2 m with
+	// a thin dark seam. Only the plain rock slots (0 to 3): ore, gems, water and built things keep their colours.
+	float dep = seg_top_m + m.y + sin(m.x * 0.31 + sin(m.y * 0.2)) * 0.6;
+	int bi = 0;
+	for (int i = 1; i < 31; i++) {
+		if (i < band_n && band_b[i] <= dep) { bi = i; }
+	}
+	float lo = dep - band_b[bi];
+	float hi = band_b[min(bi + 1, 31)] - dep;
+	float wp = 0.5 * (1.0 - smoothstep(0.0, 1.0, lo));
+	float wn = 0.5 * (1.0 - smoothstep(0.0, 1.0, hi));
+	vec3 band = band_c[bi] * (1.0 - wp - wn) + band_c[max(bi - 1, 0)] * wp + band_c[min(bi + 1, max(band_n - 1, 0))] * wn;
+	float seam = 1.0 - 0.38 * (1.0 - smoothstep(0.06, 0.3, min(lo, hi)));
+	float ba = (slot < 4 && band_n > 0) ? 1.0 : 0.0;
+	band = mix(vec3(1.0), band, ba);
+	seam = mix(1.0, seam, ba);
+	COLOR = vec4(tile * tints[slot] * base.rgb * 1.25 * strata * bed_tint * band * seam, base.a);
 	vec3 nm = NORMAL_MAP;
 	vec3 tn2 = texture(atlas_n, uv2).xyz;
 	tn2 = vec3(1.0 - tn2.y, tn2.x, tn2.z);  // The turned sample's normals turn with it.

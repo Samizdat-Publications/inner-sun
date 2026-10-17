@@ -37,3 +37,4 @@ A visual record of Inner Sun, oldest first.
 | 031 | 2026-10-17 02:21 | [031_m1c-playtest-5-frames.jpg](031_m1c-playtest-5-frames.jpg) | review frames, build 20261017-020702-14c963f, seed 41 | 14c963f |
 | 032 | 2026-10-17 02:51 | [032_m1d-hazard-visuals.jpg](032_m1d-hazard-visuals.jpg) | Fire fills the Drill Room floor with flame, warm light on the room and crew; deep water hides the machinery. Smoke haze and scorch were retuned after this still and are not yet seen. | 92cdba4 |
 | 033 | 2026-10-17 03:06 | [033_m1d-fire-smoke-water.jpg](033_m1d-fire-smoke-water.jpg) | Build 5b: flame tongues and smoke in a burning reactor, teal murky water in the flooded bottom deck | af9b792 |
+| 034 | 2026-10-17 13:07 | [034_m1d-world-depth.jpg](034_m1d-world-depth.jpg) | World depth: far wall behind openings on its own parallax, silhouettes between, dust in front, and depth bands in the rock (blue-grey shale over iron-stained stone with a seam) | d4c42af |
