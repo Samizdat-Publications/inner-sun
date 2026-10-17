@@ -30,3 +30,4 @@ A visual record of Inner Sun, oldest first.
 | 024 | 2026-10-16 14:44 | [024_m1b-playtest-3-frames.jpg](024_m1b-playtest-3-frames.jpg) | M1b playtest build 3: digging is the game; review frames, build 20261016-143018-88d916d, seed 7 | 72dd4fb |
 | 025 | 2026-10-16 21:47 | [025_m1c-verbs-structures-frames.jpg](025_m1c-verbs-structures-frames.jpg) | review frames, build 20261016-213119-eb64f36, seed 21 | eb64f36 |
 | 026 | 2026-10-16 22:38 | [026_m1c-playtest-4-frames.jpg](026_m1c-playtest-4-frames.jpg) | review frames, build 20261016-222207-e1ffb36, seed 33 | e1ffb36 |
+| 027 | 2026-10-16 22:59 | [027_m1c-rock-structures-notice.jpg](027_m1c-rock-structures-notice.jpg) | Build 4: fractured rock and side cutting, old mine works in the rock, crates opening, the drill-stop notice | e110a40 |

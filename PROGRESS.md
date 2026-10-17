@@ -1,8 +1,56 @@
 # Progress
 
-Updated: 2026-10-16, M1b playtest build 3 ready (D024 "digging is the game").
+Updated: 2026-10-16, M1c playtest build 4 ready (D034 "every system has a job in the dig").
 
-## M1b status: playtest build 3 ready for Stewart
+## M1c status: playtest build 4 ready for Stewart
+- **Build:** `builds/InnerSun.exe`, launched by `Play Inner Sun.bat`. The build Stewart plays is
+  `m1c-playtest-4b` (exported from e110a40, milestone zip `builds/milestones/m1c-playtest-4b/`); the
+  Gemini-reviewed build is `m1c-playtest-4` (e1ffb36), the same game without the stop-notice fix.
+- **Round A, the drill says why it stopped (4d8a318):** "DRILL HAS NO POWER: press R", "BIT BROKEN:
+  press B (n spare)" or no spares, fitting, overheated, wrecked, at the wall; the notice waits 1.5 s
+  and sits at the top of the world (seen in a still). Help lists what every system does.
+- **Round B, dig verbs (02a5d7c, 3764711, D035 to D039):** heading to +-90 (hold depth), turn rate and
+  side cutting scale with manned helm bars; fault rock and rockfalls that bracing layers soak; blast
+  (F2, click the rock: 14 m range, half the ore shatters); douse (F, one coolant); steering keys A, D
+  (15 degree steps), S, Shift+A or D; the blast card, scanner range ring, rockfall and douse effects,
+  power-row job lines.
+- **Round C, buried structures (7683edf, 8699be6, eb64f36, D041 to D044):** old mine works, a Soviet
+  rig module, a crystal hollow (sometimes a trader), as data stamps; crates of loot, break-in banner
+  with a TOPSIDE line, a codex entry, five structure events, a mid-segment store and event; scanner
+  outlines and map marks.
+- **Round D, research and requisitions (c3bc966, D040):** every run earns research (rows, new codex,
+  fights, the gate, ore); the TOPSIDE SUPPLY screen buys six permanent starting upgrades; they ride
+  in the replay header.
+- **Rock (0ec9d6a, D045):** fractured blocks with fading cracks instead of wavy beds.
+- **Checks:** `check: ok` (306 tests), determinism ok (hash e56bb4f3272aeb65 at tick 1200), the
+  exported build plays a bot run to its end. Perf in captures: 1% low about 59 to 61 fps, GPU 0.9 ms
+  (contended, untrusted).
+- **Balance (300 runs per bot, `docs/research/m1-evidence/balance_m1c_structures.md`):** cautious 26%,
+  greedy 15%, balanced 38% wins; medians 18 to 22 min; about 4 to 6 structures entered a run.
+- **Critics:** Gemini 006 4.5 (before the rock fix), 007 6.1 (world outside the hull 3 to 6). Triage in
+  `review/LEDGER.md` 22 to 32.
+
+## Known gaps (M1c)
+- **No hands-on play by the lead this round:** computer-use access was declined, so the new keys were
+  checked by tests (`ui_selftest`, `test_dig_verbs_view`) and stills, not by a person. Stewart's run of
+  build 4 is the first real test of the new controls.
+- The balanced bot wins about 38% (the band is 10 to 30%): kept on purpose until Stewart has played
+  (D039, D044). Levers: the gate, charge prices, `douse_fire_level`, `structure_chance`.
+- About 5 structures a run may be too many to feel special; the crystal hollow's interior reads as a
+  black blob with blocky gems; the map's structure marks were never seen in a still.
+- The blast range ring shows as stray arcs in the gaps between the side panels.
+- Not built: the away miner (plan round E), the requisitions toast at the start of a dive, fights from
+  structure events (ruled out by the lint, D042).
+- Critic M2 items: dense small text and a spreadsheet store, hazards and crew that need more life,
+  rooms hard to tell apart, the rock tile repeat (ledger 24 to 32).
+- `ship_view.gd`, `main.gd`, `scanner_panel.gd`, `drill_sim.gd`, `run_state.gd` and some new files are
+  over 400 lines. One "triangulation failed" polygon error at startup in windowed runs (older).
+
+## Exactly what is next
+1. Stewart plays build 4 and writes notes at the top of `docs/STEWART_FEEDBACK.md`.
+2. Next session (M1d, prompt in `HANDOFF.md`): replay his runs, triage, iterate, new playtest build.
+
+## M1b (built, playtested by Stewart 2026-10-16: build 3)
 - **Build:** `builds\InnerSun.exe` (exported from 88d916d, launched by `Play Inner Sun.bat`), milestone
   zip `builds\milestones\m1b-playtest-3\`, tag `m1b-playtest-3`.
 - **Round 1, controls for a human (970e5d1):** hand-tested in a real window: help on the first run (H),
@@ -26,7 +74,7 @@ Updated: 2026-10-16, M1b playtest build 3 ready (D024 "digging is the game").
 - **Hands-on tool:** `python tools/play.py [--exe] -- <game args>` (a normal focusable window in a job
   object, its own profile folder).
 
-## Known gaps (M1b)
+### Known gaps after M1b
 - Critic 005's top problem: the rock texture's horizontal wavy bands read as "scrolling wallpaper";
   it wants chunky, jagged, varied rock, a less rectangular ship silhouette, and darker surroundings
   lit by the ship's own lights. Taste note: keep ore visible within the floodlights (Stewart wants to
@@ -36,11 +84,6 @@ Updated: 2026-10-16, M1b playtest build 3 ready (D024 "digging is the game").
 - Wheel zoom and the brightened pickup text were never seen in a still. `ship_view.gd`, `main.gd`,
   `scanner_panel.gd`, `drill_sim.gd`, `run_state.gd` are over 400 lines.
 - One "triangulation failed" polygon error at startup in windowed runs (probably older).
-
-## Exactly what is next
-1. Stewart plays build 3 and writes notes at the top of `docs/STEWART_FEEDBACK.md`.
-2. Next session: replay his runs, triage, iterate (HANDOFF.md has the prompt). Later: Agartha-style
-   break-through hollows and different layer worlds (`docs/plans/M1b.md`, "Later").
 
 ## M1a (built, playtested by Stewart 2026-10-16)
 
@@ -86,9 +129,6 @@ with light background GPU use, so the tool's strict "trusted" flag is off.
     `review/LEDGER.md`.
   - The exported build plays a whole bot run to its end.
 
-## In flight
-Nothing. Everything is committed and pushed (check `git status`, `git log origin/main -1`).
-
 ## Known issues
 - **Perf:** after D023 the whole-run frame time is p99 12.7 ms, 1% low 78.5 fps, average 196 fps
   (`docs/research/m1-evidence/perf_run_mode_after_fix.json`). Draw-step spikes of 11 to 13 ms remain
@@ -108,8 +148,3 @@ Nothing. Everything is committed and pushed (check `git status`, `git log origin
   intermittently until it freed up.
 - Non-blocking polish and the balance report's weak spots: `docs/BACKLOG.md`.
 
-## Exactly what is next
-1. Stewart plays and writes notes at the top of `docs/STEWART_FEEDBACK.md`.
-2. Start M1b with the prompt in `HANDOFF.md`: replay any runs he
-   mentions, triage his notes plus the balance weak spots into `docs/plans/M1b.md`, iterate, new
-   playtest builds, until he says the core loop is fun. Then plan M2.
