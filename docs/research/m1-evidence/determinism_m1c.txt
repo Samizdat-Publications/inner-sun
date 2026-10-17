@@ -19,3 +19,6 @@ the exported game ended at FINAL tick=36000 hash=fab7ad14f1e5eb9c, the same as b
 
 Build m1c-playtest-5c (d2319b2, view-only changes over 5b): determinism ok, e4c82e3d6d55a625 at
 tick 1200; the exported playtest bot run ended at FINAL tick=36000 hash=fab7ad14f1e5eb9c.
+
+Build m1d-playtest-6 (cc60330): determinism ok, e4c82e3d6d55a625 at tick 1200 (unchanged); the exported
+playtest bot run ended at FINAL tick=36000 hash=430099885b028e6e (the miner's side-hatch route changed it).

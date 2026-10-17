@@ -21,7 +21,9 @@ Updated: 2026-10-17, M1d playtest build 6 ready (fixes from Stewart's first buil
 - **The freeze:** the game measured 144 fps average, 1% low 56 in a miner sortie. Three stray
   `python -` processes from 15 October were each spinning a CPU core, and the 5c export's bot run was
   still playing during his first minutes. Stewart was given the command to stop the strays.
-- **Checks:** `check: ok` (368 tests); determinism and export: see the newest commit message.
+- **Checks:** `check: ok` (368 tests); determinism ok (e4c82e3d6d55a625 at tick 1200, unchanged); the
+  exported build plays a whole bot run to its end (FINAL tick 36000, hash 430099885b028e6e: changed from
+  5c because the bots' miner now uses the side hatch).
 
 ## M1c status: playtest build 5c ready for Stewart
 - **Build:** `builds/InnerSun.exe`, launched by `Play Inner Sun.bat`: `m1c-playtest-5c` (milestone zip
