@@ -62,21 +62,44 @@ void fragment() {
 	float rockish = slot < 6 ? 1.0 : 0.0;
 	float h = hardness[slot];
 	vec2 m = p / ppm;
-	float warp = 0.45 * sin(m.x * 0.8 + sin(m.y * 0.4) * 1.3) + 0.9 * sin(m.x * 0.21 + 1.7);
-	float bed = (m.y + warp) / 1.7;
-	float bed_id = floor(bed);
-	float bed_k = hash1(bed_id) - 0.5;
-	float edge = abs(fract(bed) - 0.5) * 2.0;
-	float seam = smoothstep(0.955, 1.0, edge);
-	float fine = sin((m.y + warp * 0.7) * 9.0 + hash1(bed_id + 7.0) * 6.28) * 0.5 + 0.5;
-	float strata = 1.0 + rockish * ((0.2 + 0.28 * h) * bed_k * 2.0 + (0.05 + 0.07 * h) * (fine - 0.5) * 2.0);
-	strata *= 1.0 - rockish * (0.28 + 0.30 * h) * seam;
-	float vein = 1.0 - smoothstep(0.0, 0.07, abs(sin(m.x * 2.3 + 2.4 * sin(m.y * 1.3 + m.x * 0.5))));
-	strata *= 1.0 - rockish * h * h * 0.32 * vein;
+	// Fractured blocks, not wavy beds (critics 005 and 006: "scrolling wallpaper of wavy sand"): a
+	// cellular split into blocks about 1.2 by 0.8 m, each a little lighter or darker, with dark crack
+	// seams between them (wider in hard rock). A faint, broad layering is all that is left of the beds.
+	vec2 q = vec2(m.x / (1.7 - 0.5 * h), m.y / (0.8 - 0.15 * h));
+	vec2 ip = floor(q);
+	vec2 fp = fract(q);
+	float d1 = 8.0;
+	float d2 = 8.0;
+	vec2 best = vec2(0.0);
+	for (int j = -1; j <= 1; j++) {
+		for (int i = -1; i <= 1; i++) {
+			vec2 g = vec2(float(i), float(j));
+			vec2 cell = ip + g;
+			vec2 o = vec2(hash1(cell.x * 17.0 + cell.y * 131.0), hash1(cell.x * 59.0 + cell.y * 23.0 + 7.0)) * 0.8 + 0.1;
+			vec2 r = g + o - fp;
+			float d = dot(r, r);
+			if (d < d1) {
+				d2 = d1;
+				d1 = d;
+				best = cell;
+			} else if (d < d2) {
+				d2 = d;
+			}
+		}
+	}
+	float gap = sqrt(d2) - sqrt(d1);
+	float crack = 1.0 - smoothstep(0.015, 0.06 + 0.04 * h, gap);
+	float chip = 1.0 - smoothstep(0.0, 0.25, gap);  // block edges a touch darker: they read as faces
+	float bed_k = hash1(best.x * 7.0 + best.y * 113.0) - 0.5;
+	float layer = sin(m.y * 0.35 + 0.6 * sin(m.x * 0.13)) * 0.5;
+	float strata = 1.0 + rockish * ((0.16 + 0.2 * h) * bed_k * 2.0 + 0.05 * layer);
+	// Cracks fade in and out along their length, so the blocks do not close up into paving stones.
+	float run = smoothstep(-0.2, 0.6, sin(m.x * 1.7 + sin(m.y * 0.9) * 2.0) * sin(m.y * 2.3 + m.x * 0.4));
+	strata *= 1.0 - rockish * ((0.18 + 0.32 * h) * crack * (0.35 + 0.65 * run) + 0.1 * chip);
 	vec3 tone = mix(vec3(1.07, 1.02, 0.9), vec3(0.9, 0.95, 1.06), h);
 	tile = mix(vec3(dot(tile, vec3(0.33))), tile, 1.0 - 0.25 * h) * mix(vec3(1.0), tone, rockish);
 	// Beds also shift colour a little (iron-stained, pale, grey), so the layers read even in dim light.
-	vec3 bed_tint = mix(vec3(1.0), vec3(1.0 + 0.45 * bed_k, 1.0 + 0.1 * bed_k, 1.0 - 0.4 * bed_k), rockish);
+	vec3 bed_tint = mix(vec3(1.0), vec3(1.0 + 0.3 * bed_k, 1.0 + 0.08 * bed_k, 1.0 - 0.28 * bed_k), rockish);
 	COLOR = vec4(tile * tints[slot] * base.rgb * 1.25 * strata * bed_tint, base.a);
 	vec3 nm = NORMAL_MAP;
 	vec3 tn = texture(atlas_n, uv).xyz;

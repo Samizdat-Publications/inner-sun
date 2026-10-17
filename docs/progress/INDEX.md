@@ -28,3 +28,4 @@ A visual record of Inner Sun, oldest first.
 | 022 | 2026-10-16 13:05 | [022_m1b-dig-view-rock-crew.jpg](022_m1b-dig-view-rock-crew.jpg) | M1b round 3a: zoomed-out drilling camera, rock with strata and a fill light, crew with bright harnesses and halos, murky water, the fight in the rock | 50a1c78 |
 | 023 | 2026-10-16 14:00 | [023_m1b-ore-in-view-tally.jpg](023_m1b-ore-in-view-tally.jpg) | M1b round 3b: a coal vein visible in the main drilling view, the THIS DIG tally, a pickup at the crown, colour-coded deposits and a legend on the scanner | 5742da5 |
 | 024 | 2026-10-16 14:44 | [024_m1b-playtest-3-frames.jpg](024_m1b-playtest-3-frames.jpg) | M1b playtest build 3: digging is the game; review frames, build 20261016-143018-88d916d, seed 7 | 72dd4fb |
+| 025 | 2026-10-16 21:47 | [025_m1c-verbs-structures-frames.jpg](025_m1c-verbs-structures-frames.jpg) | review frames, build 20261016-213119-eb64f36, seed 21 | eb64f36 |

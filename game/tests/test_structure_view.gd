@@ -260,7 +260,7 @@ func test_banner_shows_the_label_and_waits_out_an_overlay() -> void:
 	b._process(StructureBanner.SHOW_S)
 	check(not b.is_showing(), "and it goes after its time")
 	check_eq(StructureBanner.radio_line(s, "soviet_rig", "st"), StructureBanner.radio_line(s, "soviet_rig", "st"), "the TOPSIDE line is chosen without randomness")
-	var lines: PackedStringArray = StructureBanner.wrap("one two three four five six seven eight nine ten", 17, 120.0, 2)
+	var lines: PackedStringArray = StructureBanner.wrap_lines("one two three four five six seven eight nine ten", 17, 120.0, 2)
 	check(lines.size() <= 2 and lines.size() >= 1, "a long line wraps to at most two")
 	b.free()
 

@@ -63,7 +63,7 @@ static func radio_line(s: Sim, structure: String, segment: String) -> String:
 
 
 ## Split `text` into lines no wider than `width` px at `size`, on spaces (at most `max_lines`, the rest cut).
-static func wrap(text: String, size: int, width: float, max_lines: int = 2) -> PackedStringArray:
+static func wrap_lines(text: String, size: int, width: float, max_lines: int = 2) -> PackedStringArray:
 	var out := PackedStringArray()
 	var cur: String = ""
 	for word: String in text.split(" "):
@@ -110,7 +110,7 @@ func _draw() -> void:
 		return
 	var fade: float = clampf((SHOW_S - age) / 0.8, 0.0, 1.0) * clampf(age / 0.15, 0.0, 1.0)
 	var drop: float = (1.0 - clampf(age / 0.25, 0.0, 1.0)) * -24.0
-	var lines: PackedStringArray = wrap("TOPSIDE: " + radio, 17, WIDTH - 60.0) if not radio.is_empty() else PackedStringArray()
+	var lines: PackedStringArray = wrap_lines("TOPSIDE: " + radio, 17, WIDTH - 60.0) if not radio.is_empty() else PackedStringArray()
 	var h: float = 92.0 + 22.0 * float(lines.size())
 	var cx: float = RunScreen.WORLD_RECT.get_center().x
 	var r := Rect2(cx - WIDTH * 0.5, POS_Y + drop, WIDTH, h)

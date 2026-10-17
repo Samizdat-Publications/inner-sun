@@ -395,3 +395,12 @@ to 1.8. Wins: cautious 25.7%, greedy 15.0%, balanced 37.7% (D039 at 100 runs: 16
 the gate more often) and left balanced where it was: still above the 10 to 30% band for the reason
 D038/D039 gave (gate, charge prices). No structure tuning was changed for it; if the lead wants
 fewer, the levers are `structure_chance` (0.3 + 0.02 per row is about 6 a run) and the loot tables.
+
+## D045 (AI): The rock is fractured blocks, not wavy beds
+Gemini critics 005 and 006 both scored the world outside the hull 3/10 for the same reason: the rock
+read as "a scrolling screen saver of wavy sand". The cause was the rock shader in
+`game/view/ship/rock_tiles.gd`: horizontal wavy beds every 1.7 m with strong light and dark swings and
+fine sine lines. Now a cellular split makes blocks about 1.7 by 0.8 m (smaller in hard rock), each a
+little lighter or darker and tinted, with dark crack seams that fade in and out along their length
+(full cracks closed the blocks into paving stones); only a faint broad layering is left. Seen in
+stills at seed 21 (greedy run). Revert: the shader block in `RockTiles.SHADER_CODE`.
