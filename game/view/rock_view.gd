@@ -520,12 +520,12 @@ func _paint_run(c0: int, c1: int, r: int) -> void:
 			if kind == 4:
 				# Fractured shale: pale and warm, cut by a dark web of cracks (the rock that falls on you).
 				var web: float = absf(sin(float(X) * 0.19 + float(Y) * 0.11 + nb * 5.0)) * absf(sin(float(Y) * 0.23 - float(X) * 0.07 + na * 6.0))
-				var crack: float = 1.0 - smoothstep(0.0, 0.08, web)
+				var crack: float = 1.0 - smoothstep(0.0, 0.11, web)
 				shade = shade * 1.18 * (1.0 - 0.72 * crack)
 				bump *= 1.0 + 1.6 * crack
-				tr = 1.22
-				tg = 1.04
-				tbl = 0.74
+				tr = 1.25
+				tg = 0.98
+				tbl = 0.70
 			var p: int = y * wpx + x
 			var o: int = p * 4
 			alb[o] = clampi(roundi(shade * tr * 255.0), 0, 255)

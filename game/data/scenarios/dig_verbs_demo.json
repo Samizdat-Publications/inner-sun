@@ -2,7 +2,7 @@
   "id": "dig_verbs_demo",
   "name": "Dig verbs: hold depth, an armed blast and its explosion, fault rock and a rockfall, a fire and a douse (stills for the view)",
   "ship": "light_drill",
-  "duration_s": 34,
+  "duration_s": 50,
   "bot": "idle",
   "timeline": [
     {"at_s": 0.05, "cmd": {"type": "power", "room": "bracing", "bars": 0}},
@@ -15,6 +15,7 @@
     {"at_s": 7.0, "cmd": {"type": "steer", "angle": 0.0}},
     {"at_s": 16.0, "cmd": {"type": "blast", "x_m": 26.0, "y_m": 23.0}},
     {"at_s": 26.0, "cmd": {"type": "ignite", "room": "weapons", "level": 0.5}},
-    {"at_s": 29.0, "cmd": {"type": "douse", "room": "weapons"}}
+    {"at_s": 29.0, "cmd": {"type": "douse", "room": "weapons"}},
+    {"at_s": 30.0, "cmd": {"type": "steer", "angle": 90.0}}
   ]
 }

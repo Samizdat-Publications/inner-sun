@@ -4,7 +4,8 @@ extends Node
 ##   --shots=<a,b> --out=<dir>: named shots at story moments (start, fire, flood, arrive, fire_out, end;
 ##     drilling: drill_start, ore, burst, segment_done; whole runs: event, store, map, fight, death)
 ##     dig verbs: rockwarn, rockfall, blast_fired, blast, douse; and tN (N whole seconds) for a still at a
-##     fixed time, e.g. t12, for a scenario timeline that shows a state rather than an event
+##     fixed time, e.g. t12, for a scenario timeline that shows a state rather than an event; hN is the
+##     same but opens the help page first
 ##   --capture=<dir> --stills=<n> --sheets=<m>: evenly spaced stills, plus m bursts of 9 frames
 ##     0.4 s apart for 3x3 motion sheets, for the blind review inbox.
 ## Moments come from the sim's own events, so the frames follow the story, not wall-clock time.
@@ -17,7 +18,7 @@ const MOMENT_DELAY_S: Dictionary = {"fire": 4.0, "flood": 8.0, "arrive": 0.6, "f
 	"drill_start": 2.5, "ore": 0.35, "burst": 0.35, "segment_done": 0.4,
 	"event": 0.0, "store": 0.0, "map": 0.0, "fight": 5.0, "death": 0.5,
 	"volley": 0.7, "impact": 0.12, "block": 0.15, "miss": 0.2,
-	"rockwarn": 0.5, "rockfall": 0.12, "blast_fired": 0.3, "blast": 0.1, "douse": 0.35}
+	"rockwarn": 0.5, "rockfall": 0.2, "blast_fired": 0.3, "blast": 0.1, "douse": 0.35}
 const HOLD_MOMENTS: Array[String] = ["event", "store", "map", "death"]
 const HOLD_FRAMES: int = 150  ## About 2.5 s at 60 fps.
 const HOLD_SHOT_AT: int = 45  ## Frames into a hold when its shot is taken (overlays fade in first).
@@ -72,7 +73,7 @@ func _ready() -> void:
 	if shots.has("start"):
 		_due["start"] = 30
 	for shot_name: String in shots:
-		if shot_name.length() > 1 and shot_name.begins_with("t") and shot_name.substr(1).is_valid_int():
+		if shot_name.length() > 1 and (shot_name.begins_with("t") or shot_name.begins_with("h")) and shot_name.substr(1).is_valid_int():
 			_due[shot_name] = int(shot_name.substr(1)) * Sim.TICK_HZ
 
 
@@ -84,6 +85,9 @@ func _physics_process(_delta: float) -> void:
 	for shot_name: String in _due.keys():
 		if not _taken.has(shot_name) and t >= int(_due[shot_name]):
 			_taken[shot_name] = true
+			if shot_name.begins_with("h") and shot_name.length() > 1 and shot_name.substr(1).is_valid_int():
+				var scr: RunScreen = main.get("screen")
+				scr.help.open()  # hN: the help page opens at N seconds and stays (put it last)
 			if shot_name.begins_with("shot:"):
 				_taken[shot_name.substr(5)] = true
 			_queue.append(shot_name if shot_name.contains(":") else "shot:" + shot_name)

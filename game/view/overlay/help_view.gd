@@ -17,7 +17,8 @@ const CONTROLS: Array[String] = [
 	"STEER   A and D turn the drill 15 degrees a press (hold to keep turning), S points it straight down, Shift plus A or D cuts sideways (hold depth). Or click the scanner. B fits a new bit.",
 	"POWER   Q W E R T Y add a bar to a system, Shift plus the key removes one. Or click the bars.",
 	"CREW   1 2 3 select, left-click a room to send them, right-click to release them.",
-	"BLAST   power weapons (E), F2 arms the charge launcher, then click the rock or the scanner (14 m range). Esc cancels. DOUSE   F puts out the worst fire, or click DOUSE on the room.",
+	"BLAST   power weapons (E), F2 arms the charge launcher, then click the rock or the scanner (14 m range). Esc cancels.",
+	"DOUSE   F puts out the worst fire with a coolant unit, or click DOUSE on the burning room.",
 	"FIGHTS   F1 F2 arm a weapon, then click an enemy room. Power weapons (E) and bracing (W).",
 	"PAUSE   Space. You can give orders while paused. The world also holds while the map is open.",
 	"EVENTS   click an option or press its number. Greyed options say what they need. H or Esc closes this page.",
@@ -25,8 +26,8 @@ const CONTROLS: Array[String] = [
 const SYSTEMS: Array[String] = [
 	"HELM   needs crew on the bridge. Drilling: more bars turn the drill faster and let it cut sideways faster. Fights: dodges shots, 6% a bar.",
 	"BRACING   every 2 bars hold a layer that soaks one hit, back after 6 s. It soaks rockfalls in fault rock (pale brown hatching on the scanner) and hits in fights.",
-	"WEAPONS   guns in fights. The charge launcher also blasts rock for a charge: a vein or pocket out of reach. A blast pays half the ore it frees.",
-	"COOLANT AND PUMPS   spends coolant (top bar) to chill every room and runs the pumps. Needs a bar powered to DOUSE a fire (one coolant, 6 s between).",
+	"WEAPONS   guns in fights. The charge launcher also blasts rock for a charge: a vein or pocket out of reach. A blast pays half the ore.",
+	"COOLANT AND PUMPS   spends coolant (top bar) to chill every room and runs the pumps. Needs a bar powered to DOUSE a fire.",
 	"DRILL   more bars cut faster, hotter and louder. Repairs go at crew speed whatever the drill does.",
 ]
 const WHEN: Array[String] = [
@@ -36,9 +37,9 @@ const WHEN: Array[String] = [
 	"DRILL STOPPED   a red notice says why: no power (R), a broken bit (B fits a spare), overheated, wrecked, or at the wall (S steers down).",
 ]
 
-const HEAD_SIZE: int = 24
+const HEAD_SIZE: int = 22
 const BODY_SIZE: int = 18
-const GAP: float = 5.0  ## The column's separation.
+const GAP: float = 3.0  ## The column's separation.
 
 var _t: float = 0.0
 

@@ -111,15 +111,15 @@ func _build_particles() -> void:
 	var puff := Gradient.new()
 	puff.set_color(0, Color(0.5, 0.45, 0.4, 0.0))
 	puff.set_color(1, Color(0.35, 0.31, 0.27, 0.0))
-	puff.add_point(0.2, Color(0.55, 0.5, 0.44, 0.55))
-	_dust = _puff(puff, 40, 1.8, 90.0, 40.0)
+	puff.add_point(0.2, Color(0.5, 0.45, 0.4, 0.4))
+	_dust = _puff(puff, 40, 1.8, 90.0, 2.5, 6.0)
 	_dust.one_shot = true
 	_dust.explosiveness = 0.9
 	_dust.spread = 180.0
 	_dust.direction = Vector2(0, -1)
 	_dust.gravity = Vector2(0, -20)
 	add_child(_dust)
-	_warn_dust = _puff(puff, 36, 1.6, 40.0, 70.0)
+	_warn_dust = _puff(puff, 30, 1.6, 40.0, 1.2, 3.0)
 	_warn_dust.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
 	_warn_dust.direction = Vector2(0, 1)
 	_warn_dust.spread = 25.0
@@ -134,15 +134,17 @@ func _build_particles() -> void:
 	_fall.direction = Vector2(0, 1)
 	_fall.spread = 22.0
 	_fall.gravity = Vector2(0, 1500)
-	_fall.initial_velocity_min = 80.0
-	_fall.initial_velocity_max = 260.0
-	_fall.scale_amount_min = 1.6
-	_fall.scale_amount_max = 4.2
+	_fall.initial_velocity_min = 160.0
+	_fall.initial_velocity_max = 420.0
+	_fall.scale_amount_min = 2.4
+	_fall.scale_amount_max = 6.0
 	_fall.z_index = 0
 	add_child(_fall)
 	_side_sparks = CrownDebris.make_streaks(Vector2(1.0, 0.0), 0.0)
-	_side_sparks.amount = 48
-	_side_sparks.lifetime = 0.5
+	_side_sparks.amount = 80
+	_side_sparks.lifetime = 0.55
+	_side_sparks.scale_amount_min = 0.9
+	_side_sparks.scale_amount_max = 2.0
 	_side_sparks.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
 	_side_sparks.z_index = 0
 	add_child(_side_sparks)
@@ -153,7 +155,7 @@ func _build_particles() -> void:
 	add_child(_side_chips)
 
 
-static func _puff(ramp: Gradient, amount: int, life: float, vel: float, scale_max: float) -> CPUParticles2D:
+static func _puff(ramp: Gradient, amount: int, life: float, vel: float, scale_min: float, scale_max: float) -> CPUParticles2D:
 	var p := CPUParticles2D.new()
 	p.texture = ShipView.radial_texture(48)
 	p.material = ArtLib.unshaded()
@@ -162,10 +164,10 @@ static func _puff(ramp: Gradient, amount: int, life: float, vel: float, scale_ma
 	p.emitting = false
 	p.initial_velocity_min = vel * 0.4
 	p.initial_velocity_max = vel
-	p.scale_amount_min = scale_max * 0.25
-	p.scale_amount_max = scale_max * 0.1
+	p.scale_amount_min = scale_min
+	p.scale_amount_max = scale_max
 	p.color_ramp = ramp
-	p.modulate = Color(3.0, 3.0, 3.2, 1.0)  # The CanvasModulate dims unshaded drawings: lift them back.
+	p.modulate = Color(1.7, 1.6, 1.5, 1.0)  # The CanvasModulate dims unshaded drawings: lift them back.
 	return p
 
 
@@ -226,7 +228,7 @@ func _on_event(e: Dictionary) -> void:
 ## Rock falling onto the roof: a band across the top deck, starting a few meters up.
 func _place_fall() -> void:
 	var d: DrillSim = sim.drill
-	_fall.position = Vector2((d.ship_pos.x + d.ship_size.x * 0.5) * ppm, (d.ship_pos.y - 3.2) * ppm)
+	_fall.position = Vector2((d.ship_pos.x + d.ship_size.x * 0.5) * ppm, (d.ship_pos.y - 1.1) * ppm)
 	_fall.emission_rect_extents = Vector2(d.ship_size.x * 0.46 * ppm, 6.0)
 
 
@@ -298,15 +300,15 @@ func _draw_layer(n: Node2D) -> void:
 func _draw_aim(n: Node2D, d: DrillSim, k: float) -> void:
 	var centre := Vector2(d.ship_pos.x + d.ship_size.x * 0.5, d.ship_pos.y + d.ship_size.y * 0.5) * ppm
 	var range_m: float = sim.db.tune("drill.blast_range_m")
-	var pulse: float = 0.45 + 0.25 * sin(_t * 4.0)
+	var pulse: float = 0.65 + 0.25 * sin(_t * 4.0)
 	var col := Color(1.0, 0.72, 0.30, pulse)
-	var seg: int = 72
+	var seg: int = 40
 	for i: int in range(seg):
 		if i % 2 == 1:
 			continue
 		var a0: float = float(i) / float(seg) * TAU
 		var a1: float = float(i + 1) / float(seg) * TAU
-		n.draw_arc(centre, range_m * ppm, a0, a1, 4, col, 3.0 * k)
+		n.draw_arc(centre, range_m * ppm, a0, a1, 6, col, 5.0 * k)
 	var m: Vector2 = _aim_point()
 	if m.x < 0.0:
 		return

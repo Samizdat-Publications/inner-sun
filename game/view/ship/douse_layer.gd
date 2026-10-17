@@ -31,8 +31,9 @@ func setup(p_sim: Sim, p_view: ShipView, p_ppm: float) -> void:
 	ppm = p_ppm
 	z_index = 40
 	material = ArtLib.unshaded()
-	# The dark ambient still multiplies unshaded items: lift by its inverse (as PickupLayer does).
-	modulate = Color(1.0 / RockView.AMBIENT.r, 1.0 / RockView.AMBIENT.g, 1.0 / RockView.AMBIENT.b, 1.0)
+	# The dark ambient still multiplies unshaded items: an unshaded drawing needs a x2 boost (HANDOFF,
+	# glow; dividing by the ambient colour blows it out to white).
+	modulate = Color(2.0, 2.0, 2.0, 1.0)
 	bind(p_sim)
 
 
@@ -137,14 +138,14 @@ func _spray(room_id: String) -> void:
 
 func _make_spray() -> CPUParticles2D:
 	var ramp := Gradient.new()
-	ramp.set_color(0, Color(0.35, 0.55, 0.62, 0.95))
-	ramp.set_color(1, Color(0.18, 0.26, 0.32, 0.0))
-	ramp.add_point(0.5, Color(0.28, 0.42, 0.5, 0.7))
+	ramp.set_color(0, Color(0.30, 0.55, 0.70, 0.9))
+	ramp.set_color(1, Color(0.10, 0.20, 0.30, 0.0))
+	ramp.add_point(0.5, Color(0.22, 0.40, 0.52, 0.6))
 	var p := CPUParticles2D.new()
 	p.texture = ShipView.radial_texture(20)
 	p.material = ArtLib.additive_unshaded()
-	p.amount = 110
-	p.lifetime = 1.0
+	p.amount = 70
+	p.lifetime = 0.9
 	p.one_shot = true
 	p.explosiveness = 0.25
 	p.emitting = false

@@ -321,7 +321,8 @@ func test_help_page_fits_its_frame_and_mentions_the_new_keys() -> void:
 		check(all.contains(needle), "the help page mentions " + needle)
 	check(not all.contains(String.chr(0x2014)), "no em dash in the help text")
 	var h: float = HelpView.content_height(UiTheme.mono())
-	check(h <= HelpView.FRAME.size.y - 150.0, "the text (%d px) fits the frame (%d px)" % [int(h), int(HelpView.FRAME.size.y - 150.0)])
+	# The labels run a little taller than the font metrics say: keep 40 px of air above the close button.
+	check(h <= HelpView.FRAME.size.y - 190.0, "the text (%d px) fits the frame with air (%d px)" % [int(h), int(HelpView.FRAME.size.y - 190.0)])
 
 
 func test_survey_marks_show_faults() -> void:
