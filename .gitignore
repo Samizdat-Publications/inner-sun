@@ -26,3 +26,6 @@ __pycache__/
 .claude/data/
 .claude/worktrees/
 .claude/settings.local.json
+
+# Landing page build output (tools/site_build.py)
+site-dist/

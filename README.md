@@ -1,32 +1,64 @@
-# Inner Sun (working title)
+# Inner Sun
 
-An FTL-style roguelite about a drill ship boring down into a hollow Earth. You command the crew of a
-tall drilling tower: split the reactor's power between systems, keep the heat down, put out fires,
-patch floods, and choose your route down through layers that get stranger the deeper you go. At the
-very bottom is the answer to a modern mystery.
+![Status: in development](https://img.shields.io/badge/status-in%20development-d29922)
 
-This repository is built mostly by Claude, autonomously. Stewart owns it and plays it.
+An FTL-style roguelite: a drill ship bores down through a hollow Earth toward the place where the saucers are built.
 
-## Where things stand
+![Inner Sun](docs/media/hero.gif)
 
-Milestone 1, "find the fun", is iterating on Stewart's playtests: one layer (the Crust), a node map,
-hands-on drilling where every system has a job (side cutting, rockfalls, blasts, douse), ore and gems
-that buy gear, buried structures to break into, rival drill crews to fight, events, stores, and
-research that buys starting equipment for the next run. Playtest build 4 is the latest. See
-`PROGRESS.md` for details.
+**[Landing page](https://inner-sun.pages.dev)** · **[Making-of log](docs/making-of/README.md)**
 
-## Play it
+## What it is
 
-Double-click `Play Inner Sun.bat` in this folder, or paste this into Windows PowerShell:
+You command the crew of **Auger**, a near-future black-budget drilling tower, in a 2D side-view cutaway. Split the reactor's power between helm, bracing, weapons, drill and coolant; keep the heat down, put out fires and pump out floods; steer the crown onto veins of ore and gems, blast through shells and gas pockets, or park and send a crew member into the rock to dig a vein by hand. Each run is one descent down a node map of the Crust, with redacted field-dossier events, trading posts, buried structures, rival drill crews and something that follows the noise you make. Real history (Byrd, the Kola borehole, Project Mohole) turns up only as lore you discover. It is a working title, in development: milestone 1, "find the fun", iterates on weekly playtests.
+
+## Screenshots
+
+| | |
+|---|---|
+| ![The tower in fractured rock, blast craters opening onto a far wall](docs/media/shot-dig.jpg) | ![A reactor fire with smoke and a flooded pump room](docs/media/shot-ship.jpg) |
+| ![The away miner tunnelling beside the parked tower](docs/media/shot-miner.jpg) | ![The node map with the pursuer's front](docs/media/shot-map.jpg) |
+
+## How it was made
+
+Godot 4.7.2 (Forward+), strictly typed GDScript, built almost entirely by Claude working autonomously, with Stewart pitching, playing every build and writing the notes that steer it.
+
+- **One deterministic simulation.** The rules live in `game/sim/` as plain classes with no rendering and no clock. The game, 368 headless tests and balance runs all push commands into the same sim at a fixed 60 Hz, so a seed plus the command log replays any run, and headless, Movie Maker and exported runs must end on the same hash.
+- **Bots and a blind critic.** Three policy bots play about 1,000 full runs in twelve minutes to tune the Crust. Each build is filmed off-screen with Godot's Movie Maker while a bot plays and judged blind, first by a Claude critic on frames, later by Gemini watching the video (scores went 3.8, 5.8, 6.1, 5.6, 6.8, 4.5, 6.1, 5.6, 5.0).
+- **Content is data.** Ships, rooms, weapons, crew, events, layers, codex and radio lines live in `game/data/**/*.json`, checked by a data lint.
+
+The whole journey, with pictures, clips and every turn Stewart's playtests caused, is in [docs/making-of](docs/making-of/README.md) and [docs/progress](docs/progress/INDEX.md).
+
+## Run it locally
+
+Windows, with Godot 4.7.2 and Python 3 (Pillow, NumPy) on the path:
 
 ```powershell
-cd "C:\Users\stewa\Documents\Claude\Inner Sun"; & "C:\Users\stewa\Documents\Claude\Inner Sun\Play Inner Sun.bat"
+winget install GodotEngine.GodotEngine; git clone https://github.com/Samizdat-Publications/inner-sun.git; cd inner-sun; godot --path game
 ```
 
-It starts a new run. Close the window to quit (an unfinished run is saved too). If the keys do
-nothing at first, click once inside the game window to give it the keyboard.
+`python tools/check.py` runs the import, the tests and the self-test (it must print `check: ok`). The other everyday tools are listed in [CLAUDE.md](CLAUDE.md).
 
-### How to play (one page)
+## Credits
+
+| What | Who | Licence |
+|---|---|---|
+| Painted rooms, props, crew and rock | Generated for this project with Google Gemini (prompts in `pipeline/manifests/`) | Project-owned, MIT |
+| Blender sprites (art bake-off) | Made for this project in Blender by script | Project-owned, MIT |
+| Placeholder sound effects | Generated for this project with ElevenLabs (prompts in `pipeline/manifests/audio.json`) | Project-owned, MIT |
+| Share Tech Mono | Ralph du Carrois, [google/fonts](https://github.com/google/fonts/tree/main/ofl/sharetechmono) | SIL OFL 1.1 |
+| Special Elite | Astigmatic, [google/fonts](https://github.com/google/fonts/tree/main/apache/specialelite) | Apache 2.0 |
+| Godot Engine | Godot Engine contributors | MIT |
+
+Full list: [docs/CREDITS.md](docs/CREDITS.md).
+
+## Licence
+
+Code is MIT (see [LICENSE](LICENSE)). Third-party assets listed above keep their own licences.
+
+## How to play (one page)
+
+The current playtest build is a Windows export (`builds/InnerSun.exe`, not in git); from a clone, run the project with Godot as above.
 
 You command the drill tower **Auger**, boring down through the Crust toward the layer gate. Each run
 is one descent. Dying is normal: what you learn goes into the codex and lifts redactions next time.
@@ -101,14 +133,6 @@ is one descent. Dying is normal: what you learn goes into the codex and lifts re
   starts again.
 
 Every run you play is saved for bug hunting in `%APPDATA%\InnerSun\runs\` (paste that into the
-Windows Explorer address bar to open it). If something goes wrong, note the time: Claude can replay
-that exact run.
-
-## Start the next build session
-
-The exact prompt and settings are in `HANDOFF.md` ("Start the next session"). In short: open the
-Claude app, Code tab, new session in `C:\Users\stewa\Documents\Claude\Inner Sun`, model Opus 5.5,
-effort xhigh, permission mode Auto, then paste the prompt from `HANDOFF.md`.
 
 ## Where to look
 
@@ -116,14 +140,12 @@ effort xhigh, permission mode Auto, then paste the prompt from `HANDOFF.md`.
 |---|---|
 | `PROGRESS.md` | Current milestone, what is done, what is next |
 | `PLAN.md` | The approved plan: design, decisions, milestones, content roadmap, risks |
-| `HANDOFF.md` | How a fresh session picks up the work |
-| `docs/STEWART_FEEDBACK.md` | Your notes and decisions; they outrank everything else |
+| `HANDOFF.md` | How a fresh Claude session picks up the work (delegation, tools, gotchas) |
+| `CLAUDE.md` | The project's hard rules and everyday commands |
+| `docs/STEWART_FEEDBACK.md` | Playtest notes and decisions; they outrank everything else |
+| `docs/DECISIONS.md` | Every design and technical decision, why, and how to revert it |
+| `docs/making-of/` | The making-of timeline, milestone clips and stills |
 | `docs/progress/` | Progress pictures, in order |
-| `docs/research/godot-loop.md` | The Milestone 0 proof, with evidence |
+| `docs/research/godot-loop.md` | The Milestone 0 proof of the autonomous loop, with evidence |
 | `docs/SPEND.md` | Every paid AI generation and its cost |
-
-## Running two Godot games at once
-
-Inner Sun and Black Diamond can both run Godot on this PC at the same time. If you notice the PC
-getting slow, closing Chrome tabs and Notion frees the most memory. The rules both projects follow
-are in `C:\Users\stewa\Documents\Claude\GODOT-SIDE-BY-SIDE.md`.
+| `site/` | The landing page (deployed to Cloudflare Pages) |

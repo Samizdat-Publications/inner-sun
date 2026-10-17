@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inner Sun: a drill ship bores into a hollow Earth</title>
+<meta name="description" content="An FTL-style roguelite in a side-view cutaway: command the crew of a drilling tower boring down through a hollow Earth toward the place the saucers are built. In development, built in Godot.">
+<meta name="theme-color" content="#0b0907">
+<meta property="og:title" content="Inner Sun">
+<meta property="og:description" content="A drill ship bores down through a hollow Earth toward the place the saucers are built. An FTL-style roguelite, in development.">
+<meta property="og:image" content="media/og.jpg">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230b0907'/%3E%3Crect x='11' y='3' width='10' height='18' fill='none' stroke='%23ff8a1e' stroke-width='2.5'/%3E%3Cpath d='M9 21 H23 L16 30 Z' fill='%23ff8a1e'/%3E%3C/svg%3E">
+<link rel="preload" href="fonts/ShareTechMono-Regular.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<a class="skip" href="#ship">Skip to the game</a>
+
+<header class="bar">
+  <a class="bar-mark" href="#top" aria-label="Inner Sun, back to the top">INNER SUN</a>
+  <nav class="bar-links" aria-label="Sections">
+    <a href="#ship">The ship</a>
+    <a href="#dig">The dig</a>
+    <a href="#miner">The miner</a>
+    <a href="#run">A run</a>
+    <a href="#making">How it was made</a>
+  </nav>
+  <a class="btn btn-small" href="https://github.com/Samizdat-Publications/inner-sun">Source</a>
+</header>
+
+<aside class="gauge" aria-hidden="true">
+  <span class="gauge-label">DEPTH</span>
+  <span class="gauge-rail"><span class="gauge-fill" id="gauge-fill"></span></span>
+  <span class="gauge-value" id="gauge-value">0 m</span>
+</aside>
+
+<main>
+
+<section class="hero" id="top" aria-labelledby="hero-title">
+  <video class="hero-video" id="hero-video" muted loop playsinline autoplay preload="auto" poster="media/hero.jpg" aria-label="The drill tower boring down through layered rock, its crew at work inside.">
+    <source src="media/hero.mp4" type="video/mp4">
+  </video>
+  <div class="hero-shade"></div>
+  <div class="hero-text">
+    <p class="pill"><span class="pill-dot"></span>In development: milestone 1</p>
+    <h1 id="hero-title" class="wordmark">INNER SUN</h1>
+    <p class="tagline">A drill ship bores down through a hollow Earth toward the place where the saucers are built.</p>
+    <div class="cta">
+      <a class="btn" href="https://github.com/Samizdat-Publications/inner-sun">Source on GitHub</a>
+      <a class="btn btn-ghost" href="https://github.com/Samizdat-Publications/inner-sun/tree/main/docs/making-of">Follow the build</a>
+    </div>
+    <p class="hero-note">A Windows game in Godot 4.7. No public build yet: it is in weekly playtests.</p>
+  </div>
+  <a class="scroll-cue" href="#orders" aria-label="Scroll down">BEGIN DESCENT</a>
+</section>
+
+<section class="orders strata s1" id="orders" aria-labelledby="orders-title">
+  <div class="dossier">
+    <p class="stamp">CLASSIFIED</p>
+    <p class="dossier-ref">FIELD ORDER 1-A // AUGER</p>
+    <h2 id="orders-title">Your orders</h2>
+    <p>You command the drill tower <b>Auger</b>, a near-future black-budget rig standing on its own drill bit. Bore down through the Crust, row by row, past old mine works, a <span class="redact">Soviet rig module</span> and caverns no survey ever logged. Keep the reactor's power where it matters, keep the heat down, put out the fires, pump out the water, and keep moving: something follows the noise you make.</p>
+    <p>At the bottom of the hollow world is the facility where the <span class="redact">unidentified craft</span> are built. Nobody who went looking has come back up to say so.</p>
+    <p class="topside"><span>TOPSIDE</span> Auger, TOPSIDE. Dying is normal. What you learn goes in the codex, and the codex lifts the black bars next time.</p>
+  </div>
+</section>
+
+<section class="feature strata s2" id="ship" aria-labelledby="ship-title">
+  <div class="feature-text">
+    <p class="layer">ROW 2 / 18 m</p>
+    <h2 id="ship-title">Run the tower</h2>
+    <p>The ship is a cutaway of six rooms stacked on a drill crown. The reactor's bars go where you send them: helm, bracing, weapons, drill, coolant and pumps. Deeper rock is hotter, fires spread room to room and water pools in the bottom deck.</p>
+    <p>Your crew handle emergencies on their own when they can. When they can't, you pause, pull a bar from the drill and send someone up the ladder with an extinguisher.</p>
+  </div>
+  <figure class="screen">
+    <span class="screen-tag">CAM 01 // FIRE AND FLOOD</span>
+    <video data-inview muted loop playsinline preload="none" poster="media/ship.jpg" aria-label="A reactor fire and a flooded pump room, with smoke climbing the hatch.">
+      <source src="media/ship.mp4" type="video/mp4">
+    </video>
+  </figure>
+</section>
+
+<section class="feature flip strata s3" id="dig" aria-labelledby="dig-title">
+  <div class="feature-text">
+    <p class="layer">ROW 5 / 64 m</p>
+    <h2 id="dig-title">Dig where it pays</h2>
+    <p>Nine ores and gems sit in the rock by depth, from coal to emerald. Steer onto a vein, hold depth to cut sideways along it, or fire a mining charge to crack a shell, burn off a gas pocket or drain the water before you reach it. A blast shatters half the ore it frees; cutting the vein yourself pays all of it.</p>
+    <p>The seismic scanner shows what is ahead: ore, gas, water, fault rock that drops rockfalls on the top deck, and buried structures to break into for crates.</p>
+  </div>
+  <figure class="screen">
+    <span class="screen-tag">CAM 02 // THE CROWN</span>
+    <video data-inview muted loop playsinline preload="none" poster="media/dig.jpg" aria-label="The tower holds depth along a vein, fires a mining charge and takes a rockfall.">
+      <source src="media/dig.mp4" type="video/mp4">
+    </video>
+  </figure>
+</section>
+
+<section class="feature strata s4" id="miner" aria-labelledby="miner-title">
+  <div class="feature-text">
+    <p class="layer">ROW 8 / 112 m</p>
+    <h2 id="miner-title">Send a miner out</h2>
+    <p>Park the drill and send one crew member into the rock with a pick and a headlamp. They climb out a side hatch, tunnel to the vein you clicked and mine it out by hand, at full yield.</p>
+    <p>While they are out they man nothing, and the gas, the water and the fault rock can hurt them. The haul pays only if they climb back in. The front keeps coming the whole time.</p>
+  </div>
+  <figure class="screen">
+    <span class="screen-tag">CAM 03 // SIDE HATCH</span>
+    <video data-inview muted loop playsinline preload="none" poster="media/miner.jpg" aria-label="A crew member tunnels out from the parked tower to a vein and carries the ore home.">
+      <source src="media/miner.mp4" type="video/mp4">
+    </video>
+  </figure>
+</section>
+
+<section class="feature flip strata s5" id="run" aria-labelledby="run-title">
+  <div class="feature-text">
+    <p class="layer">ROW 11 / 160 m</p>
+    <h2 id="run-title">One descent</h2>
+    <p>A run is one dive down a node map of the Crust: events written as redacted field dossiers, trading posts that take ore for gear and gems for supplies, rival drill crews who tunnel in beside you to fight, and the layer gate at the bottom.</p>
+    <p>Every run earns research. Spend it on requisitions loaded onto every later dive: spare bits, charges, a tungsten head, a fourth crew member.</p>
+  </div>
+  <figure class="screen">
+    <span class="screen-tag">CAM 04 // FULL RUN, BOT AT THE CONTROLS</span>
+    <video data-inview muted loop playsinline preload="none" poster="media/run.jpg" aria-label="A bot plays a run: the node map, drilling, an event dossier and the store.">
+      <source src="media/run.mp4" type="video/mp4">
+    </video>
+  </figure>
+</section>
+
+<section class="gallery strata s6" aria-labelledby="gallery-title">
+  <h2 id="gallery-title" class="center">From the field</h2>
+  <div class="shots">
+    <figure><img src="media/shot-map.jpg" alt="The node map: drilled path, routes below, the pursuer's front creeping down." loading="lazy" width="1280" height="720"><figcaption>The node map. The dark front swallows the rows behind you.</figcaption></figure>
+    <figure><img src="media/shot-dossier.jpg" alt="An event dossier with a redaction bar and three choices." loading="lazy" width="1280" height="720"><figcaption>Events arrive as field dossiers. The codex lifts the redactions.</figcaption></figure>
+    <figure><img src="media/shot-combat.jpg" alt="Two drill towers fight through the rock." loading="lazy" width="1280" height="720"><figcaption>A rival rig tunnels in. Power to weapons and bracing.</figcaption></figure>
+    <figure><img src="media/shot-hollow.jpg" alt="A crystal hollow lit blue beside the tower." loading="lazy" width="1280" height="720"><figcaption>A crystal hollow, sometimes with a trader inside.</figcaption></figure>
+  </div>
+</section>
+
+<section class="making strata s7" id="making" aria-labelledby="making-title">
+  <div class="making-head">
+    <p class="layer">THE GATE / 214 m</p>
+    <h2 id="making-title">How it was made</h2>
+    <p class="lede">Inner Sun is built almost entirely by Claude, working autonomously in long sessions. Stewart pitched it, plays every build and writes notes; his notes outrank everything. Three days in, it has 177 commits, 368 automated tests and six playtest builds.</p>
+  </div>
+
+  <div class="pillars">
+    <article>
+      <h3>One simulation, everywhere</h3>
+      <p>The rules live in plain GDScript classes with no rendering and no clock. The game, the tests and headless balance runs all drive the same sim through one command chain at a fixed 60 Hz. A seed plus the command log replays any run exactly, and every build checks that headless, recorded and exported runs end on the same hash.</p>
+    </article>
+    <article>
+      <h3>Bots that play a thousand runs</h3>
+      <p>Three policy bots (cautious, greedy, balanced) play about 1,000 full runs in twelve minutes. Their win rates and death rows tune the Crust: when the balanced bot wins too often or a row kills everyone, a number in a data file moves.</p>
+    </article>
+    <article>
+      <h3>A critic who has never seen the code</h3>
+      <p>Each build is filmed off-screen by Godot's Movie Maker while a bot plays, then judged blind: first by a Claude critic that sees only frames, later by Gemini watching the video. Its scores and complaints ("a debug view, not a game yet") become the next list of fixes.</p>
+    </article>
+  </div>
+
+  <figure class="chart">
+    <figcaption>Blind critic score per review build (average of ten categories, out of 10)</figcaption>
+    <svg viewBox="0 0 640 220" role="img" aria-label="Critic scores: 3.8, 5.8, 6.1, 5.6, 6.8, 4.5, 6.1, 5.6, 5.0 over nine reviews from 15 to 17 October 2026.">
+      <g class="grid">
+        <line x1="40" x2="630" y1="190" y2="190"/><line x1="40" x2="630" y1="130" y2="130"/><line x1="40" x2="630" y1="70" y2="70"/><line x1="40" x2="630" y1="10" y2="10"/>
+        <text x="32" y="194">0</text><text x="32" y="134">3</text><text x="32" y="74">6</text><text x="32" y="14">9</text>
+      </g>
+      <polyline class="line" points="60,114 130,74 200,68 270,78 340,54 410,100 480,68 550,78 620,90"/>
+      <g class="dots">
+        <circle cx="60" cy="114" r="4"/><circle cx="130" cy="74" r="4"/><circle cx="200" cy="68" r="4"/><circle cx="270" cy="78" r="4" class="g"/><circle cx="340" cy="54" r="4" class="g"/><circle cx="410" cy="100" r="4" class="g"/><circle cx="480" cy="68" r="4" class="g"/><circle cx="550" cy="78" r="4" class="g"/><circle cx="620" cy="90" r="4" class="g"/>
+      </g>
+      <g class="labels">
+        <text x="60" y="132">3.8</text><text x="130" y="92">5.8</text><text x="200" y="86">6.1</text><text x="270" y="96">5.6</text><text x="340" y="44">6.8</text><text x="410" y="118">4.5</text><text x="480" y="58">6.1</text><text x="550" y="96">5.6</text><text x="620" y="108">5.0</text><text x="60" y="212">M0</text><text x="165" y="212">M1a</text><text x="305" y="212">M1b</text><text x="480" y="212">M1c</text><text x="620" y="212">M1d</text>
+      </g>
+    </svg>
+    <p class="chart-note">Orange: Claude critic on frames. Green: Gemini on video, which judges harder and swings a point between runs. The dip at 4.5 was the first rock texture ("wavy sand"); it was redrawn the same night. The last point is the footage on this page.</p>
+  </figure>
+
+  <div class="evolution" aria-label="The same ship over three days">
+    <figure><img src="media/evo-1.jpg" alt="Milestone 0: grey boxes, placeholder crew and a fire in the drill room." loading="lazy" width="640" height="360"><figcaption><b>15 Oct, M0.</b> The loop proof: a node-free sim, a bot, planted bugs caught.</figcaption></figure>
+    <figure><img src="media/evo-2.jpg" alt="The first drilling view in greybox: the tower in its shaft." loading="lazy" width="640" height="360"><figcaption><b>15 Oct.</b> The drill bites: a real shaft through layered rock.</figcaption></figure>
+    <figure><img src="media/evo-3.jpg" alt="The painted cutaway with props, crew and a fire." loading="lazy" width="640" height="360"><figcaption><b>15 Oct.</b> Painted rooms and crew replace the grey boxes.</figcaption></figure>
+    <figure><img src="media/evo-4.jpg" alt="The current build: the tower in fractured rock with blast craters and a far wall." loading="lazy" width="640" height="360"><figcaption><b>17 Oct, build 6.</b> Fractured rock, parallax depth, every system with a job.</figcaption></figure>
+  </div>
+
+  <ol class="timeline">
+    <li><time>15 Oct</time><div><b>Kickoff.</b> Stewart pitches a drill ship boring into a hollow Earth; the tall tower is chosen.</div></li>
+    <li><time>15 Oct</time><div><b>M0: the autonomous loop proven.</b> Off-screen frames, planted bugs caught, the same hash headless and on film.</div></li>
+    <li><time>15 Oct</time><div><b>The blind critic installed.</b> First review: 3.8 out of 10. An art bake-off, then painted rooms and crew lit in Godot.</div></li>
+    <li><time>16 Oct</time><div><b>M1a playtest build.</b> A whole run with fights, events, a store and a death report. Handed to Stewart.</div></li>
+    <li><time>16 Oct</time><div><b>M1b: digging is the game.</b> His first note: nothing to do but steer. Now nine ores and gems, a zoomed-out dig view and twenty-minute runs.</div></li>
+    <li><time>16 Oct</time><div><b>M1c: every system gets a job.</b> Side cutting, rockfalls, blasts, douse, buried structures, research and requisitions.</div></li>
+    <li><time>17 Oct</time><div><b>The away miner and world depth.</b> A crew member digs by hand; flames, smoke, teal water and a parallax far wall.</div></li>
+    <li><time>17 Oct</time><div><b>Build 6.</b> From his notes: the miner climbs out a side hatch, the aim says what a click is worth, TOPSIDE teaches each verb once.</div></li>
+  </ol>
+  <p class="center"><a class="btn btn-ghost" href="https://github.com/Samizdat-Publications/inner-sun/tree/main/docs/making-of">The full making-of log</a></p>
+</section>
+
+</main>
+
+<footer class="foot">
+  <p class="pill"><span class="pill-dot"></span>In development</p>
+  <p>Inner Sun is a working title. Godot 4.7.2, strictly typed GDScript. Code is MIT.</p>
+  <p class="credits">Painted rooms, crew and rock generated for the project with Google Gemini; placeholder sounds generated with ElevenLabs. Share Tech Mono (SIL OFL 1.1) and Special Elite (Apache 2.0). Godot Engine (MIT).</p>
+  <p><a href="https://github.com/Samizdat-Publications/inner-sun">Source on GitHub</a> · <a href="https://github.com/Samizdat-Publications">Samizdat Publications</a></p>
+</footer>
+
+<script src="site.js" defer></script>
+</body>
+</html>

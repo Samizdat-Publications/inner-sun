@@ -39,3 +39,4 @@ A visual record of Inner Sun, oldest first.
 | 033 | 2026-10-17 03:06 | [033_m1d-fire-smoke-water.jpg](033_m1d-fire-smoke-water.jpg) | Build 5b: flame tongues and smoke in a burning reactor, teal murky water in the flooded bottom deck | af9b792 |
 | 034 | 2026-10-17 13:07 | [034_m1d-world-depth.jpg](034_m1d-world-depth.jpg) | World depth: far wall behind openings on its own parallax, silhouettes between, dust in front, and depth bands in the rock (blue-grey shale over iron-stained stone with a seam) | d4c42af |
 | 035 | 2026-10-17 13:16 | [035_m1d-world-depth-craters.jpg](035_m1d-world-depth-craters.jpg) | Build 5c: blast craters open onto a far wall that scrolls slower than the rock; shale and iron beds in the rock | 78ad7d9 |
+| 036 | 2026-10-17 19:25 | [036_showcase-build6-frames.jpg](036_showcase-build6-frames.jpg) | showcase capture, build 6; review frames, build 20261017-191130-b6d5318, seed 41 | b6d5318 |

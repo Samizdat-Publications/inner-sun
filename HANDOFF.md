@@ -165,6 +165,12 @@ Then paste the prompt from "M1c in one paragraph (newest)" at the top of this fi
   `--replay=<record>`, `--profile-dir=<dir>`, `--debug-hud`; capture and test flags in `main.gd`.
 
 ## Gotchas
+- **Movie Maker footage is gamma-encoded twice (found 2026-10-17, showcase session).** Every clip from
+  `capture.py` is brighter and greyer than the game and its own stills: each channel is the still with
+  sRGB encoding applied a second time (an sRGB decode matches the still to 2.5 percent mean error). So
+  the Gemini critic has been judging washed-out video. The landing page clips are corrected at encode
+  time with an sRGB decode per channel: `format=rgb24,lutrgb=r='if(lte(val,10.31),val/12.92,255*pow((val/255+0.055)/1.055,2.4))'`
+  (the same for g and b); the capture pipeline itself is unchanged. Fixing it in `capture.py` (or the Movie Maker colour path) would change what the critic sees.
 - **About 15 lights per canvas item.** Godot 2D lets one canvas item take only about 15 lights and
   silently drops the rest. Keep drawings in small nodes and disable idle lights. Lights reach only the
   items whose rectangle contains them: the rock is one mosaic item for that reason.

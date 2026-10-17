@@ -1,0 +1,28 @@
+{
+  "name": "Inner Sun",
+  "repo": "inner-sun",
+  "pitch": "An FTL-style roguelite: a drill ship bores down through a hollow Earth toward the place where the saucers are built.",
+  "status": "in-development",
+  "version": "0.6.0",
+  "kind": "game",
+  "started": "2026-10-15",
+  "updated": "2026-10-17",
+  "tech": ["Godot 4.7", "GDScript", "Python", "FFmpeg", "Gemini"],
+  "links": {
+    "landing": "https://inner-sun.pages.dev",
+    "play": "",
+    "devlog": "https://github.com/Samizdat-Publications/inner-sun/tree/main/docs/making-of"
+  },
+  "hero": {
+    "gif": "docs/media/hero.gif",
+    "poster": "site/media/hero.jpg",
+    "clip": "site/media/hero.mp4"
+  },
+  "credits": [
+    { "what": "Painted rooms, props, crew and rock", "who": "Generated for this project with Google Gemini", "licence": "MIT (project-owned)" },
+    { "what": "Placeholder sound effects", "who": "Generated for this project with ElevenLabs", "licence": "MIT (project-owned)" },
+    { "what": "Share Tech Mono font", "who": "Ralph du Carrois", "licence": "SIL OFL 1.1" },
+    { "what": "Special Elite font", "who": "Astigmatic", "licence": "Apache 2.0" },
+    { "what": "Godot Engine", "who": "Godot Engine contributors", "licence": "MIT" }
+  ]
+}
