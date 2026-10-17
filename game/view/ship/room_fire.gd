@@ -6,7 +6,7 @@ extends RefCounted
 ## the floor and lower walls after the fire is out. Everything here is view memory: nothing feeds back
 ## into the sim. Per burning room: 50 core + 60 tongue + 16 ember + 48 smoke = 174 particles at most
 ## and one light. Idle rooms emit nothing and their nodes are hidden.
-## Draw order (z): scorch -2, haze 4, flames 5.
+## Draw order (z): scorch -1 (above the painted room art, -5 to -2), haze 4, flames 5.
 
 const CORE_N: int = 50
 const TONGUE_N: int = 60
@@ -107,7 +107,7 @@ func build(parent: Node2D, ship: Ship, ppm: float, foot_lift: float, radial: Tex
 		_rects.append(rp)
 		var ri: int = r.index
 		var sc := FireDraw.new()
-		sc.z_index = -2
+		sc.z_index = -1
 		sc.material = ArtLib.unshaded()
 		sc.fn = func(d: Node2D) -> void: _draw_scorch(d, ri)
 		sc.visible = false
@@ -206,13 +206,13 @@ func _update_room(i: int, t: float) -> void:
 	if burning:
 		var ext := Vector2(span_px * 0.5, 3.0)
 		var core_px: float = clampf(rp.size.y * (0.12 + 0.16 * f), 20.0, 110.0)
-		core.position = floor_pt
+		core.position = floor_pt - Vector2(0.0, core_px * 0.4)  # Sprites are centred: keep them above the floor.
 		core.emission_rect_extents = ext
 		core.scale_amount_min = core_px * 0.7 / 48.0
 		core.scale_amount_max = core_px * 1.2 / 48.0
 		core.speed_scale = 0.7 + f
 		var tongue_px: float = clampf(h * 0.8, 24.0, 190.0)
-		tg.position = floor_pt + Vector2(0.0, -4.0)
+		tg.position = floor_pt - Vector2(0.0, tongue_px * 0.42)
 		tg.emission_rect_extents = ext
 		tg.scale_amount_min = tongue_px * 0.6 / 64.0
 		tg.scale_amount_max = tongue_px / 64.0
@@ -246,15 +246,15 @@ func _draw_haze(d: Node2D, i: int) -> void:
 	var depth: float = rp.size.y * (0.2 + 0.7 * amount)
 	var pts: PackedVector2Array = _haze_pts[i]
 	var cols: PackedColorArray = _haze_cols[i]
-	var top_a: float = clampf(1.7 * amount, 0.0, 0.94)
+	var top_a: float = clampf(1.9 * amount, 0.0, 0.9)
 	for k: int in range(HAZE_COLS + 1):
 		var x: float = rp.position.x + rp.size.x * float(k) / float(HAZE_COLS)
 		var roll: float = 1.0 + 0.16 * sin(_time * 0.7 + float(k) * 1.3 + float(i)) + 0.1 * sin(_time * 1.3 - float(k) * 2.1)
 		pts[k] = Vector2(x, rp.position.y)
-		cols[k] = Color(0.03, 0.028, 0.025, top_a)
+		cols[k] = Color(0.34, 0.32, 0.3, top_a)  # Grey and milky: near-black vanished into the dark rooms.
 		var back: int = (HAZE_COLS + 1) * 2 - 1 - k
 		pts[back] = Vector2(x, rp.position.y + depth * roll)
-		cols[back] = Color(0.07, 0.06, 0.055, 0.0)
+		cols[back] = Color(0.3, 0.28, 0.26, 0.0)
 	d.draw_polygon(pts, cols)
 
 
@@ -264,7 +264,7 @@ func _draw_scorch(d: Node2D, i: int) -> void:
 	if s <= 0.01:
 		return
 	var up: float = rp.size.y * 0.42 * s
-	var a: float = 0.85 * s
+	var a: float = 0.97 * s
 	var dark := Color(0.02, 0.015, 0.012, a)
 	var clear := Color(0.02, 0.015, 0.012, 0.0)
 	d.draw_polygon(

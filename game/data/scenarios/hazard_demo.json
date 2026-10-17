@@ -1,0 +1,14 @@
+{
+  "id": "hazard_demo",
+  "name": "Hazard visuals: a big reactor fire (its smoke climbs the hatch to the bridge) and a deep flood in coolant and pumps (crew automation off so the fire burns on; stills for the fire, smoke, scorch and water views)",
+  "ship": "light_drill",
+  "duration_s": 40,
+  "bot": "scripted_fire_drill",
+  "timeline": [
+    {"at_s": 0.1, "cmd": {"type": "auto", "crew": "vasquez", "on": false}},
+    {"at_s": 0.1, "cmd": {"type": "auto", "crew": "okafor", "on": false}},
+    {"at_s": 0.1, "cmd": {"type": "auto", "crew": "lindqvist", "on": false}},
+    {"at_s": 1.0, "cmd": {"type": "ignite", "room": "reactor", "level": 0.9}},
+    {"at_s": 2.0, "cmd": {"type": "breach", "room": "coolant", "size_m2": 0.3}}
+  ]
+}

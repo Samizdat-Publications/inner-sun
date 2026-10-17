@@ -6,10 +6,10 @@ extends RefCounted
 ## drifts, a few bubbles, and foam where a breach pours in. Drawn unshaded like the other hazards, so
 ## the colors are written as they should look (the drawing node carries the boost).
 
-const SILT: Color = Color(0.30, 0.29, 0.15)
-const DEEP: Color = Color(0.07, 0.08, 0.045)
-const CREST: Color = Color(0.74, 0.72, 0.5)
-const FOAM: Color = Color(0.93, 0.92, 0.8)
+const SILT: Color = Color(0.14, 0.25, 0.24)  ## Teal-green murk: water, not mustard (the warm room light yellowed the old olive).
+const DEEP: Color = Color(0.03, 0.07, 0.075)
+const CREST: Color = Color(0.55, 0.74, 0.72)
+const FOAM: Color = Color(0.86, 0.94, 0.92)
 const MIN_LEVEL_PX: float = 16.0
 const MAX_TILT: float = 0.14  ## Surface slope at full slosh (px of height per px of width).
 
@@ -43,7 +43,7 @@ static func draw(n: Node2D, r: Room, rp: Rect2, ppm: float, t: float, slosh: flo
 	body.append(Vector2(rp.end.x, rp.end.y))
 	body.append(Vector2(rp.position.x, rp.end.y))
 	# A faint wash over the room so even a puddle reads, then the murky body.
-	n.draw_rect(rp, color(Color(0.1, 0.11, 0.05), 0.05 + 0.12 * sqrt(fill)))
+	n.draw_rect(rp, color(Color(0.04, 0.1, 0.1), 0.05 + 0.12 * sqrt(fill)))
 	var depth_k: float = clampf(lvl / maxf(rp.size.y, 1.0), 0.0, 1.0)
 	# Murky: shallow water shows what is under it, deep water hides the machinery.
 	n.draw_colored_polygon(body, color(SILT, 0.5 + 0.42 * sqrt(depth_k)))
@@ -65,12 +65,12 @@ static func draw(n: Node2D, r: Room, rp: Rect2, ppm: float, t: float, slosh: flo
 
 
 static func _surface(n: Node2D, crest: PackedVector2Array) -> void:
-	n.draw_polyline(crest, color(Color(0.7, 0.68, 0.45), 0.28), 6.0)
-	n.draw_polyline(crest, color(Color(0.62, 0.6, 0.4), 0.95), 2.5)
+	n.draw_polyline(crest, color(Color(0.5, 0.7, 0.68), 0.28), 6.0)
+	n.draw_polyline(crest, color(Color(0.5, 0.66, 0.64), 0.8), 2.5)
 	var under := PackedVector2Array()
 	for p: Vector2 in crest:
 		under.append(Vector2(p.x, p.y + 6.0))
-	n.draw_polyline(under, color(Color(0.45, 0.43, 0.25), 0.4), 2.0)
+	n.draw_polyline(under, color(Color(0.3, 0.44, 0.42), 0.4), 2.0)
 
 
 ## Small bright ripples running along the surface line.
@@ -82,7 +82,7 @@ static func _ripples(n: Node2D, rp: Rect2, crest: PackedVector2Array, t: float, 
 		var p: Vector2 = crest[k]
 		var half: float = 5.0 + 4.0 * float(i % 3)
 		var a: float = 0.55 * sin(f * PI)
-		n.draw_line(Vector2(p.x - half, p.y + 3.0), Vector2(p.x + half, p.y + 3.0), color(Color(0.95, 0.93, 0.7), a), 2.0)
+		n.draw_line(Vector2(p.x - half, p.y + 3.0), Vector2(p.x + half, p.y + 3.0), color(Color(0.8, 0.92, 0.9), a), 2.0)
 
 
 ## Silt drifting in the water and a few slow bubbles.
@@ -93,7 +93,7 @@ static func _silt(n: Node2D, rp: Rect2, lvl: float, t: float, index: int) -> voi
 		var f: float = fposmod(t * 0.07 + float(i) * 0.113 + float(index) * 0.29, 1.0)
 		var x: float = rp.position.x + rp.size.x * fposmod(float(i) * 0.41 + 0.17 * float(index) + 0.05 * sin(t * 0.6 + float(i)), 1.0)
 		var y: float = rp.end.y - f * (lvl - 6.0)
-		n.draw_circle(Vector2(x, y), 1.6 + float(i % 3), color(Color(0.5, 0.46, 0.3), 0.3))
+		n.draw_circle(Vector2(x, y), 1.6 + float(i % 3), color(Color(0.38, 0.52, 0.5), 0.3))
 	for i: int in range(4):
 		var f2: float = fposmod(t * 0.3 + float(i) * 0.27 + float(index) * 0.31, 1.0)
 		var bx: float = rp.position.x + rp.size.x * fposmod(float(i) * 0.37 + 0.11 * float(index), 1.0)

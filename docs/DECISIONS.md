@@ -464,3 +464,15 @@ cells; recall with the front within 1.2 rows or the miner under 40 hp. Greedy at
 from 15.0% to 5.3% wins (pursuer deaths 35% to 58%), at 1.75 to 11.3%; at 2 it is 13.7%.
 Evidence: `docs/research/m1-evidence/balance_m1c_miner.md`. Revert: greedy `miner_rows = 1.5` in
 `PolicyBot.make_policy`, or `miner_on = false` to take the bots off the miner.
+
+## D049 (AI): Hazards read as emergencies; water is teal, smoke is grey
+Gemini 006 and 008 both put the hazards first ("a pixelated flame overlay"). A builder moved the fire
+into `game/view/ship/room_fire.gd` with soft flame tongues, a stronger flickering light, smoke, a
+ceiling haze that climbs hatches, and scorch; the lead fixed what the stills showed: the flame sprites
+were centred on the floor (half of each hung into the hull below), and a near-black haze and scorch
+vanished into the dark painted rooms (a debug colour proved they drew). The haze is now grey and
+milky. The water's old olive silt read as mustard once it was opaque in warm room light, so it is a
+dark teal-green murk, matching the HUD's blue water icons. The scorch stays dark and is still faint on
+dark floors (known gap). `game/data/scenarios/hazard_demo.json` (crew automation off, a reactor fire
+and a deep flood) gives repeatable stills. Revert: the colour constants in `room_water.gd` and the
+haze colours in `room_fire.gd`.
