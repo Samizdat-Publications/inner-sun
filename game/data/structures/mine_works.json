@@ -3,7 +3,7 @@
   "name": "Old mine works",
   "label": "OLD MINE WORKS",
   "codex": "old_workings",
-  "blurb": "Placeholder: a timbered gallery from a mine nobody mapped, crates still stacked by the rails.",
+  "blurb": "A timbered gallery propped in a style a century out of date, rails hand-forged, crates still stacked by the props. The rock overhead is loose and has been waiting a long time to come down.",
   "legend": {"f": "fault_rock", "r": "rubble", "T": "timber", "=": "timber", ".": "relic_air", "c": "crate"},
   "stamp": [
     "   ffffffff     fffffffff     ",

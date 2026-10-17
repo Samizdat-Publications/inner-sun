@@ -5,33 +5,54 @@
   "layer": "crust",
   "weight": 1.0,
   "once_per_run": true,
-  "title": "Placeholder: The Cage",
-  "file": "FIELD REPORT // OLD WORKINGS",
+  "title": "The Tally Board",
+  "file": "FIELD REPORT 31-M // AUGER",
   "start": "intro",
   "pages": {
     "intro": {
-      "text": "Placeholder: the gallery ends at a mine cage hanging in a shaft that goes on down. The cable is old steel and still taut. Something in the cage has been stacked with care.",
+      "text": "The gallery ends at a shaft head. A mine cage hangs a few meters down, jammed in its guides, its floor stacked with crates under a tarp. Beside the shaft is a tally board of brass check tags, one per miner. Every tag hangs on the hook marked DOWN. The winding brake is still set, and the cable hums when the drill turns.",
+      "radio": "Auger, those tags are not your concern. Count them anyway.",
       "options": [
         {
-          "text": "Placeholder: send {crew} down the ladder to the cage.",
+          "text": "Send {crew} down the ladder to unload it.",
           "outcomes": [
-            {"weight": 2, "page": "haul", "effects": [{"type": "res", "res": "charges", "amount": 2}, {"type": "res_range", "res": "ore", "min": 10, "max": 20}]},
-            {"weight": 1, "page": "fall", "effects": [{"type": "crew_damage", "target": "picked", "amount": 35.0}, {"type": "res", "res": "ore", "amount": 8}]}
+            {"weight": 3, "page": "haul", "effects": [{"type": "res", "res": "charges", "amount": 2}, {"type": "res_range", "res": "ore", "min": 10, "max": 18}]},
+            {"weight": 1, "page": "fall", "effects": [{"type": "crew_damage", "target": "picked", "amount": 35.0}, {"type": "res", "res": "ore", "amount": 6}]}
           ]
         },
         {
-          "text": "Placeholder: leave the cage hanging and keep cutting.",
+          "text": "Release the brake and winch the cage up.",
           "outcomes": [
-            {"weight": 1, "effects": []}
+            {"weight": 2, "page": "winched", "effects": [{"type": "res_range", "res": "coolant", "min": 3, "max": 5}, {"type": "res", "res": "bits", "amount": 1}, {"type": "res", "res": "ore", "amount": 8}]},
+            {"weight": 1, "page": "dropped", "effects": [{"type": "hull", "amount": -5}, {"type": "pursuer", "rows": 0.3}]}
+          ]
+        },
+        {
+          "text": "Hang one tag on the UP hook.",
+          "outcomes": [
+            {"weight": 1, "page": "tag", "effects": [{"type": "reveal", "rows": 1}, {"type": "pursuer", "rows": -0.3}]},
+            {"weight": 1, "page": "tag_back", "effects": [{"type": "pursuer", "rows": 0.3}]}
           ]
         }
       ]
     },
     "haul": {
-      "text": "Placeholder: the cage holds blasting caps in oiled paper and a sack of sorted ore. {crew} climbs back with both."
+      "text": "{crew} climbs down forty rungs and lifts the tarp: shaped charges in oiled paper, a sack of sorted ore, and a miner's lamp still warm to the touch. It takes three trips. On the last one {crew} notices the rungs are worn bright in the middle, as if someone climbed them this morning."
     },
     "fall": {
-      "text": "Placeholder: a rung gives way. {crew} drops two meters onto the cage roof and climbs back slowly, with one sack."
+      "text": "The twelfth rung is timber gone to punk. {crew} drops two meters onto the cage roof, and the cage drops ten centimeters with them, then holds. They come back up one rung at a time, holding a single sack of ore in one hand and their ribs in the other."
+    },
+    "winched": {
+      "text": "The brake comes off with a shriek and the drill winch takes the load. The cage rises slowly, dripping. Under the tarp: coolant in stone jars, a drill bit wrapped in sacking, ore in neat bags. A brass plate gives the cage's weight limit in a unit nobody aboard has heard of."
+    },
+    "dropped": {
+      "text": "The brake comes off and the cage goes the wrong way. It falls for a long time. The free end of the cable comes up the shaft like a whip and opens a seam in your hull plate. Far below, the cage lands. It sounds like it landed on something that moved."
+    },
+    "tag": {
+      "text": "{crew} lifts tag 41 off DOWN and hangs it on UP. For a minute nothing happens. Then the hum in the deck plates fades, the way a dog stops growling once it has decided you belong. The scanner trace sharpens on the rock ahead. Nobody suggests moving another tag."
+    },
+    "tag_back": {
+      "text": "{crew} hangs tag 41 on UP and turns away. When they look back it is on DOWN again, still swinging. Nobody aboard touched it. The hum in the deck plates rises half a tone and stays there. {crew} writes the number in the log and underlines it twice."
     }
   }
 }

@@ -1,9 +1,9 @@
 {
   "id": "soviet_rig",
-  "name": "Rig module",
+  "name": "Soviet rig module",
   "label": "SOVIET RIG MODULE",
   "codex": "rig_module",
-  "blurb": "Placeholder: a riveted steel drill module, sealed, its stencils in Cyrillic.",
+  "blurb": "A drilling module of riveted hull plate, buried whole, its stencils in Cyrillic. The steel dulls a bit in minutes. A shaped charge on the seam is the polite way to knock.",
   "legend": {"S": "steel", ".": "relic_air", "c": "crate", "p": "tape_case"},
   "stamp": [
     "SSSSSSSSSSSSSSSS",

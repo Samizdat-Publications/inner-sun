@@ -1,0 +1,57 @@
+{
+  "id": "hollow_pool",
+  "kind": "structure",
+  "structures": ["crystal_hollow"],
+  "layer": "crust",
+  "weight": 1.0,
+  "once_per_run": true,
+  "title": "The Level Pool",
+  "file": "FIELD REPORT 37-H // AUGER",
+  "start": "intro",
+  "pages": {
+    "intro": {
+      "text": "The pool at the bottom of the hollow is perfectly clear and perfectly level, though your tower stands at a tilt of four degrees. The water reads 37 C. Two meters down, on the pale floor of the pool, a brass lamp is burning. Bootprints lead down the crystal slope and into the water. None lead out.",
+      "options": [
+        {
+          "text": "Pump the pool into the coolant tanks.",
+          "outcomes": [
+            {"weight": 3, "page": "pumped", "effects": [{"type": "res_range", "res": "coolant", "min": 4, "max": 7}]},
+            {"weight": 1, "page": "pump_bad", "effects": [{"type": "res", "res": "coolant", "amount": 2}, {"type": "system_damage", "system": "coolant", "bars": 1}]}
+          ]
+        },
+        {
+          "text": "Send {crew} down on a line for the lamp.",
+          "outcomes": [
+            {"weight": 2, "page": "lamp", "effects": [{"type": "res", "res": "cells", "amount": 1}, {"type": "res_range", "res": "gems", "min": 5, "max": 9}]},
+            {"weight": 1, "page": "deep", "effects": [{"type": "crew_damage", "target": "picked", "amount": 30.0}]}
+          ]
+        },
+        {
+          "text": "Chip crystal from the walls.",
+          "outcomes": [
+            {"weight": 2, "page": "crystal", "effects": [{"type": "res_range", "res": "gems", "min": 4, "max": 8}, {"type": "pursuer", "rows": 0.3}]},
+            {"weight": 1, "page": "shatter", "effects": [{"type": "res", "res": "gems", "amount": 2}, {"type": "crew_damage", "target": "picked", "amount": 20.0}]}
+          ]
+        }
+      ]
+    },
+    "pumped": {
+      "text": "The pumps drink the pool down to a puddle. The water runs clean and turns colder in the tanks than it was in the pool. When it is gone the lamp still sits on the dry floor, still lit, and the bootprints end at a smooth crystal wall. By the time you look again, the pool is full."
+    },
+    "pump_bad": {
+      "text": "The first tanks fill clean. Then the intake draws up something that is not water: a slow, clear jelly that fouls the strainers and seizes a pump. {crew} clears it with a knife. The jelly slides back into the pool on its own, in no hurry at all."
+    },
+    "lamp": {
+      "text": "{crew} goes in on a line. The water is body-warm and takes no ripples. The lamp is brass and burns no fuel anyone can find. Around it, set out in a careful circle, lie a sealed power cell and a scatter of cut gems. {crew} takes those. The lamp they leave, on a feeling."
+    },
+    "deep": {
+      "text": "The pool is two meters deep at the edge and much deeper in the middle. {crew} goes down after the lamp and keeps going down. You haul on the line for a full minute before they surface, half-drowned and blue, saying the lamp kept the same distance the whole way."
+    },
+    "crystal": {
+      "text": "{crew} works the lower walls with a cold chisel. The crystal comes away in clean blades of amethyst and quartz and rings for a long time after each blow. The ringing carries. Far behind you, something with a great deal of patience takes note."
+    },
+    "shatter": {
+      "text": "The third blow finds a flaw. A blade of quartz the length of an arm shears off the wall and comes down point first. {crew} gets out of the way, mostly. They come back aboard with a few small stones and a long cut, and stop talking to the crystals."
+    }
+  }
+}
