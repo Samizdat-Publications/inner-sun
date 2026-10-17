@@ -55,6 +55,18 @@ header.hero h1 span { color: var(--brass); display: block; }
 .shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
 figure { margin: 0; display: grid; gap: 6px; min-width: 0; }
 figure img, figure video { width: 100%; max-width: 100%; height: auto; display: block; border: 1px solid var(--seam); background: #000; }
+figure img { cursor: zoom-in; transition: border-color 0.15s; }
+figure img:hover, figure img:focus-visible { border-color: var(--brass); }
+figure img:focus-visible { outline: 2px solid var(--brass); outline-offset: 3px; }
+/* Click a picture to see it full size; click anywhere, the close button or Esc to go back. */
+dialog.lightbox { padding: 0; border: 1px solid var(--seam); background: var(--rock); color: var(--paper); max-width: 96vw; max-height: 94vh; width: auto; }
+dialog.lightbox::backdrop { background: rgba(8, 6, 4, 0.88); }
+dialog.lightbox figure { margin: 0; display: grid; gap: 0; }
+dialog.lightbox img { display: block; max-width: 96vw; max-height: calc(94vh - 52px); width: auto; height: auto; cursor: zoom-out; border: 0; }
+dialog.lightbox .bar { display: flex; gap: 12px; align-items: center; justify-content: space-between; padding: 8px 12px; border-top: 1px solid var(--seam); min-height: 36px; }
+dialog.lightbox figcaption { font-size: 13px; }
+dialog.lightbox button { font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; background: transparent; color: var(--brass); border: 1px solid var(--brass); padding: 4px 10px; cursor: pointer; flex: none; }
+dialog.lightbox button:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
 figcaption { font-family: var(--mono); font-size: 12px; color: var(--dim); line-height: 1.45; }
 footer { margin-top: 56px; padding-top: 18px; border-top: 1px solid var(--seam); font-family: var(--mono); font-size: 12px; color: var(--dim); }
 @media (max-width: 760px) {
@@ -270,3 +282,38 @@ footer { margin-top: 56px; padding-top: 18px; border-top: 1px solid var(--seam);
 
   <footer>Built by Claude for Stewart Gregerson. Source: the Inner Sun repository, docs/making-of and docs/progress.</footer>
 </div>
+
+<dialog class="lightbox" id="lightbox" aria-label="Picture, full size">
+  <figure>
+    <img id="lightbox-img" src="" alt="">
+    <div class="bar"><figcaption id="lightbox-cap"></figcaption><button type="button" id="lightbox-close">Close (Esc)</button></div>
+  </figure>
+</dialog>
+<script>
+(function () {
+  var box = document.getElementById("lightbox");
+  var big = document.getElementById("lightbox-img");
+  var cap = document.getElementById("lightbox-cap");
+  if (!box || typeof box.showModal !== "function") { return; }
+  function open(img) {
+    big.src = img.currentSrc || img.src;
+    big.alt = img.alt;
+    var fig = img.closest("figure");
+    var fc = fig ? fig.querySelector("figcaption") : null;
+    cap.textContent = fc ? fc.textContent : img.alt;
+    box.showModal();
+  }
+  document.querySelectorAll("main figure img").forEach(function (img) {
+    img.tabIndex = 0;
+    img.setAttribute("role", "button");
+    img.setAttribute("aria-label", "Show full size: " + img.alt);
+    img.addEventListener("click", function () { open(img); });
+    img.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(img); }
+    });
+  });
+  box.addEventListener("click", function () { box.close(); });
+  document.getElementById("lightbox-close").addEventListener("click", function (e) { e.stopPropagation(); box.close(); });
+  box.addEventListener("close", function () { big.src = ""; });
+})();
+</script>
