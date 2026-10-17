@@ -26,7 +26,8 @@ numerically delicate piece. Deliver it correct, deterministic, fast and tested.
 - Prefer simple, stable formulations (compute flows, clamp, then apply) over clever ones. Every
   tunable goes in `game/data/tuning/*.json` with its unit in the key name.
 - Check exact Godot API signatures in `harness/out/godot-api/doc/classes/`.
-- Touch only the files the spec lists. Never use an em dash. Never read `.env`. Do not commit unless
+- Touch only the files the spec lists. No em dash in game text, docs, commit messages or your report
+  (code and comments are fine). Never read `.env`. Do not commit unless
   told to. Launch Godot only through `tools/`; never kill processes by name.
 
 ## Report back (short)

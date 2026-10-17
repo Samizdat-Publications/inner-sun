@@ -65,8 +65,9 @@ Reference: `docs/research/` (the loop proof and evidence, the tooling brief), `d
     generation logged in `docs/SPEND.md` (soft cap about $40 per session). No names, code, art or
     text from FTL, Barotrauma or any other game. Real history (Byrd, Kola, Project Mohole) appears
     only as discoverable lore.
-13. **Writing.** Never use an em dash anywhere: code, comments, data, UI text, docs, commits, chat.
-    Use a comma, colon, period or spaced hyphen. The data lint rejects em dashes in game text.
+13. **Writing.** No em dash in anything a player or reader sees: UI and game text (the data lint
+    rejects them in game data), docs, the making-of page, commit messages, chat. Use a comma, colon,
+    period or spaced hyphen. Code and code comments are fine (Stewart, 2026-10-17).
 
 ## Everyday commands (from the repo root)
 

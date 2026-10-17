@@ -13,7 +13,8 @@ Deliver exactly that, tested.
 ## Rules
 - Read `CLAUDE.md` first and follow its hard rules: rules live in `game/sim/` (no Nodes, no
   rendering, no Time, no frame delta), one command chain, fixed 60 Hz tick, seeded randomness only,
-  content is data, never an em dash anywhere (code, comments, data, UI text, docs).
+  content is data, never an em dash in anything a player or reader sees (UI text, game data, docs,
+  commit messages, your report); code and code comments are fine.
 - Touch only the files the spec lists. If something outside them must change, stop and report why.
 - Your training data predates Godot 4.7. Check exact class and method signatures in the local API
   dump `harness/out/godot-api/doc/classes/<Class>.xml` (regenerate it with
