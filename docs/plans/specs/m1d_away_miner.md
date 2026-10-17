@@ -136,15 +136,79 @@ docs/research/m1-evidence/balance_m1c_miner.md. Report (under 40 lines): what yo
 the commands and events as built, the read-only fields, tuning values chosen and why, balance
 numbers, anything you could not do or changed from this spec, files over 400 lines.
 
-## Part 2: the view (after part 1 merges)
-- M arms the miner order for the selected crew member (crew card) like F2 arms a blast: the aim
-  circle (green when `target_ok` is ""), the range ring clipped to the world view, a click on the rock
-  or the scanner sends. M again, Escape cancels; while a miner is out M recalls.
-- The miner in the world: a small crew figure with the crew colour harness and a headlamp
-  (one PointLight2D), digging sparks and pick strokes in "dig" and "vein", the haul as a small tag
-  ("+12 ore +2 gems"), a red flash on "miner_hurt", a rockfall warning over the miner.
-- Crew card: "OUTSIDE" with hp, phase and haul; an alert "MINER OUTSIDE" while out; the drill-stop
-  notice says "PARKED: MINER OUTSIDE (M recalls)".
-- Scanner: the miner as a dot and the tunnel already shows as cut rock.
-- Help: one paragraph on the miner (what it costs, what can hurt them, that the haul pays on return).
-- Death screen line for the miner causes; the dig tally counts the haul on return.
+## Part 2: the view (after part 1 merges; for a `builder`, Sonnet)
+
+Part 1 is merged (3be827f, merge c2237be). As built: `send_miner {crew, x_m, y_m}` and `recall_miner`
+(refusals: "no_segment", "miner_out", "no_crew", "outside", "range", "no_miner"). Read-only:
+`sim.drill.parked`; `sim.drill.miner` has active, crew_id, phase ("board", "exit", "dig", "vein",
+"return", "enter"), pos (feet, segment meters), target, haul (PackedInt32Array by
+RunState.RESOURCES), cells_dug, strain, rockfall_ticks, range_m, next_cell, action_ticks,
+action_total, sorties, is_out(); `DrillMiner.target_ok(d, sim, crew_id, point) -> String` ("" or the
+why) and `DrillMiner.head(d) -> Vector2` (the exit point). Events: "miner_out" {crew, x_m, y_m},
+"miner_hurt" {crew, cause, hp (the damage), left}, "miner_rockfall_warn" {in_s}, "miner_back"
+{crew, haul, called_off?}, "miner_lost" {crew, cause, haul}, "loot" with miner: true. Causes:
+"miner_gas", "miner_water", "miner_rockfall", "miner_strike". Scenario `miner_demo` (seed 1): Okafor is
+sent at 2 s to (23.0, 14.15) and comes back with 22 ore at about 50 s.
+
+### Owned files
+New: game/view/hud/miner_card.gd (MinerCard), game/view/miner_layer.gd (MinerLayer), a test
+game/tests/test_miner_view.gd. Edit: game/view/main.gd (create, bind, clicks, the G key: keep the
+edit small, main.gd is over 400 lines), game/view/run_screen.gd (build and bind the card, keys
+enabled like the blast card), game/view/hud/scanner_panel.gd and hud/scanner_extras.gd (click to send,
+the miner dot), game/view/hud/crew_cards.gd (OUTSIDE), game/view/hud/alerts_strip.gd (alert and
+notice), game/view/overlay/help_view.gd (a paragraph), game/view/overlay/death_screen.gd (cause text),
+game/view/boot.gd (only if you add a dev flag: every bot or capture flag goes into Boot.BOT_FLAGS),
+game/tests/ui_selftest.gd and test_ui.gd if needed, README.md (keys table), docs/progress/.
+Not game/sim/**, game/bots/**, game/data/** (except nothing), not the rock or structure views.
+
+### What to build
+- **The order (MinerCard)**: a card like the BlastCard (`game/view/hud/blast_card.gd`: copy its
+  look, flash text and arming), placed to the right of the blast card in the same row, only while
+  drilling. Title "G  SEND MINER: <CREW NAME>" (the crew member selected on the crew cards; 1 to 3
+  select). G arms it (aim mode: like F2), a left click on the rock or the scanner sends
+  `send_miner` with the selected crew and the clicked point (meters), right click or Escape disarms.
+  While a miner is out the card reads "<NAME> OUTSIDE: <phase word>, haul +N ore +M gems" with an hp
+  bar, and G (or a click on the card) recalls (`recall_miner`). Refusals are flashed in words (reuse
+  BlastCard.reason_text's style: "TOO FAR (12 M)", "A MINER IS ALREADY OUT", ...). Arming the miner
+  disarms the blast and the reverse.
+- **The aim (in MinerLayer)**: the range ring around `DrillMiner.head(d)` of radius range_m, drawn
+  ONLY where it falls inside RunScreen.WORLD_RECT (copy the clipping in `DigFx._draw_aim`), a circle
+  under the mouse, green when `target_ok` is "" else red, and a dashed line from the head to it.
+- **The miner in the world (MinerLayer, a Node2D in segment space at the rock's origin like
+  StructureLayer; ppm 80)**: hidden in "board"; from "exit" on a small figure about 1.6 m tall
+  (draw it: legs, body, helmet, a harness band in that crew member's colour from the crew cards) at
+  `pos`, facing `target`; one PointLight2D headlamp (texture from `RockView.light_texture`, height
+  about 120, `range_item_cull_mask = RockView.LIGHT_MASK`, energy about 0.9, warm white) switched off
+  when not out (the rock is one canvas item: keep exactly one light here); in "dig" and "vein" a
+  pick swing (a short line rotating on a sine) and a few chips (`CrownDebris.make_chips` is used by
+  StructureLayer: reuse it) at `next_cell`; the haul as a small tag above the head ("+12 ore +2 gems",
+  only when nonzero); a red flash and a floating "-45" on "miner_hurt"; a pulsing "!" over the head
+  while rockfall_ticks > 0. Unshaded, additive drawings need the x1.8 to x2.0 boost (HANDOFF gotchas).
+- **Crew card**: an away crew member's card says OUTSIDE (in the card's status corner) instead of
+  IDLE or a job, and their "go to" button is hidden while out.
+- **Alerts and notice**: an alert chip "MINER OUTSIDE: <NAME> <hp>" (severity like the bit alerts),
+  and while `drill.parked` the drill-stop notice says "PARKED: <NAME> IS OUTSIDE. G recalls." (check
+  `AlertsStrip.drill_stop` order so a parked drill does not also say "no power").
+- **Scanner**: the miner as a bright dot at pos with a short trail to the head; a click while the
+  card is armed sends (like the blast's `scanner.blast` hook).
+- **Help**: a paragraph: G sends the selected crew member to dig a vein by hand within 12 m; the drill
+  parks until they are back; they are not aboard to man stations or fight fires; gas, water and
+  fault rock hurt them; the haul pays only when they climb back in, and is lost if they die; G
+  recalls. The dig tally and pickups: check that the haul paid on return shows in THIS DIG (it is
+  paid with "resource" events); if not, add it.
+- **Death screen**: causes "miner_gas" and friends read as "lost outside: gas burst" etc. if a run
+  ends showing them (crew deaths list).
+
+### Rules and checks
+Strict typing, no em dashes, view only reads the sim and pushes commands. `python tools/check.py` must
+say `check: ok`. Windowed runs flash a window on Stewart's screen: at most 3 windowed jobs in total.
+Take stills with `python tools/shots.py --scenario miner_demo --seed 1 --names t4,t12,t30,t52
+--out harness/out/shots_miner --no-import` (add `--extra=--look=...` style flags only if you add
+them) and LOOK at them: the figure, the light, the tunnel, the tag and the card must read at 1080p.
+Add one progress picture with `python tools/progress.py <png> --label m1c-away-miner --note "..."`.
+Stage explicit paths only, commit on your branch ending with
+`Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`; do not push or merge.
+
+### Report (under 30 lines)
+Branch and commit, files changed, how to drive it (keys), what the stills show (and their paths),
+anything not done, files over 400 lines.
