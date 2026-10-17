@@ -1,0 +1,30 @@
+{
+  "id": "soviet_rig",
+  "name": "Rig module",
+  "label": "SOVIET RIG MODULE",
+  "codex": "rig_module",
+  "blurb": "Placeholder: a riveted steel drill module, sealed, its stencils in Cyrillic.",
+  "legend": {"S": "steel", ".": "relic_air", "c": "crate", "p": "tape_case"},
+  "stamp": [
+    "SSSSSSSSSSSSSSSS",
+    "S..............S",
+    "S.cc.......cc..S",
+    "S.cc.......cc..S",
+    "S..............S",
+    "SSSSSSS..SSSSSSS",
+    "S..............S",
+    "S.cc.......pp..S",
+    "S.cc.......pp..S",
+    "SSSSSSSSSSSSSSSS"
+  ],
+  "mirror": true,
+  "loot": [
+    {"weight": 2, "res": "cells", "amount": 1},
+    {"weight": 2, "res": "coolant", "amount": 5},
+    {"weight": 1, "res": "charges", "amount": 2}
+  ],
+  "loot_by_material": {"tape_case": [{"weight": 1, "res": "cells", "amount": 3}]},
+  "event_chance": 0.6,
+  "trader": "",
+  "trader_chance": 0.0
+}

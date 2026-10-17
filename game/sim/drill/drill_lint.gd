@@ -3,7 +3,8 @@ extends RefCounted
 ## Checks the rock tables (game/data/rock/*.json) and the drill tuning: unique material codes and
 ## ids, code 0 is air, numeric hardness, yields naming real run resources, strata and features
 ## naming real materials, feature groups and depth windows, a yield and a hazard flag (water, gas)
-## never on one material, flags (water, gas, unstable) are booleans, every tuning key present.
+## never on one material, flags (water, gas, unstable, loot, interior) are booleans, every tuning key
+## present. The buried structures and the tables' structure lists: StructureLint.
 
 const FEATURE_KINDS: Array[String] = ["vein", "lens", "pocket", "blob"]
 
@@ -17,6 +18,7 @@ static func lint(db: DataDB, errs: PackedStringArray) -> void:
 		errs.append("%s/rock: the default rock table \"%s\" is missing" % [db.root, DrillSim.DEFAULT_ROCK])
 	for id: String in rock.keys():
 		_lint_table(rock[id], db.source_of("rock", id), errs)
+	StructureLint.lint(db, errs)
 
 
 static func _lint_table(table: Dictionary, file: String, errs: PackedStringArray) -> void:
@@ -48,9 +50,11 @@ static func _lint_table(table: Dictionary, file: String, errs: PackedStringArray
 		var color: String = str(md.get("color", ""))
 		if not Color.html_is_valid(color):
 			errs.append("%s: color \"%s\" is not a hex color" % [where, color])
-		for flag: String in ["water", "gas", "unstable"]:
+		for flag: String in ["water", "gas", "unstable", "loot", "interior"]:
 			if md.has(flag) and not (md[flag] is bool):
 				errs.append("%s: \"%s\" must be true or false" % [where, flag])
+		if bool(md.get("loot", false)) and (bool(md.get("water", false)) or bool(md.get("gas", false)) or md.has("yield")):
+			errs.append("%s: a crate (loot) is not a pocket and pays its loot, not a yield" % where)
 		if bool(md.get("water", false)) and bool(md.get("gas", false)):
 			errs.append("%s: a material is a water pocket or a gas pocket, not both" % where)
 		if md.has("yield") and (bool(md.get("water", false)) or bool(md.get("gas", false))):

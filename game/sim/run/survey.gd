@@ -3,25 +3,32 @@ extends RefCounted
 ## Survey readings ("scanning planets"): every map node except the start carries n["survey"], a
 ## reading of the rock on the segment that leads to it (from the row above, row_depth_m of rock).
 ## Rolled once per run from the stream "survey", node by node in map order, five draws per node,
-## so a seed always gives the same readings. The reading is not a guess: DrillSim generates that
-## segment's rock FROM it (RockGen.options_of), so what the survey says is what the rock holds.
-## The view shows it once the node is inside scanner range (RunState.is_revealed).
+## plus two per node from the stream "survey/structure" for the buried structure (a separate stream
+## so adding structures left every other reading of a seed as it was, D041), so a seed always gives
+## the same readings. The reading is not a guess: DrillSim generates that segment's rock FROM it
+## (RockGen.options_of), so what the survey says is what the rock holds. The view shows it once the
+## node is inside scanner range (RunState.is_revealed).
 ##
 ## A reading (keys in this order):
 ##   {"tier": 0.., "tier_name": "poor" | "fair" | ..., "richness": ore and gem count scale,
 ##    "ores": ore material ids the rock at that depth can hold (data order),
 ##    "gems": gem material ids it holds ([] when the survey found none),
 ##    "gas": gas pockets on the way, "water": water pockets on the way,
-##    "faults": fault rock (unstable, rockfalls) on the way}
+##    "faults": fault rock (unstable, rockfalls) on the way,
+##    "structure": the buried structure on the way (a data/structures id, "" for none)}
 ## Layer data, "survey": {"tiers": [{"name", "richness", "weight"}, ...] (poorest first),
-##   "gems_chance", "gas_chance", "water_chance", "faults_chance", and "deposit": the same chances plus "min_tier"
-##   for "deposit" nodes (a known rich seam: a richer tier and more gas and water), and optional
-##   "per_row": chances added for each row below the first segment (both kinds of node)}.
+##   "gems_chance", "gas_chance", "water_chance", "faults_chance", "structure_chance", and "deposit":
+##   the same chances plus "min_tier" for "deposit" nodes (a known rich seam: a richer tier and more
+##   gas and water), and optional "per_row": chances added for each row below the first segment
+##   (both kinds of node)}.
+## The rock table lists the structures: "structures": [{"structure": id, "weight", "from_depth_m",
+## "to_depth_m"}]; a segment can hold those whose window holds its middle depth (pick_structure).
 
-const CHANCES: Array[String] = ["gems_chance", "gas_chance", "water_chance", "faults_chance"]
+const CHANCES: Array[String] = ["gems_chance", "gas_chance", "water_chance", "faults_chance", "structure_chance"]
 
 
-static func add_to_map(map: Array, layer: Dictionary, rock: Dictionary, rng: RandomNumberGenerator) -> void:
+static func add_to_map(map: Array, layer: Dictionary, rock: Dictionary, rng: RandomNumberGenerator,
+		structure_rng: RandomNumberGenerator = null) -> void:
 	var sd: Dictionary = layer.get("survey", {})
 	var step_m: float = float(layer.get("row_depth_m", 36.0))
 	for row: Variant in map:
@@ -31,14 +38,15 @@ static func add_to_map(map: Array, layer: Dictionary, rock: Dictionary, rng: Ran
 			if r == 0:
 				n["survey"] = {}
 				continue
-			n["survey"] = roll(sd, rock, str(n["type"]) == "deposit", float(r - 1) * step_m, step_m, rng, r - 1)
+			n["survey"] = roll(sd, rock, str(n["type"]) == "deposit", float(r - 1) * step_m, step_m, rng, r - 1,
+					structure_rng)
 
 
 ## One reading for a segment from run depth d0 down by depth_m. `deeper` is the number of rows below
 ## the first segment: each adds the layer's survey.per_row chances (gas and water get likelier deeper
-## down; a chance never goes above 1).
+## down; a chance never goes above 1). The structure draws come from structure_rng (rng when null).
 static func roll(sd: Dictionary, rock: Dictionary, deposit: bool, d0: float, depth_m: float,
-		rng: RandomNumberGenerator, deeper: int = 0) -> Dictionary:
+		rng: RandomNumberGenerator, deeper: int = 0, structure_rng: RandomNumberGenerator = null) -> Dictionary:
 	var p: Dictionary = sd.get("deposit", {}) if deposit else sd
 	var per_row: Dictionary = sd.get("per_row", {})
 	var tiers: Array = sd.get("tiers", [])
@@ -58,10 +66,38 @@ static func roll(sd: Dictionary, rock: Dictionary, deposit: bool, d0: float, dep
 	var gas: bool = rng.randf() < float(p.get("gas_chance", 0.0)) + d * float(per_row.get("gas_chance", 0.0))
 	var water: bool = rng.randf() < float(p.get("water_chance", 0.0)) + d * float(per_row.get("water_chance", 0.0))
 	var faults: bool = rng.randf() < float(p.get("faults_chance", 0.0)) + d * float(per_row.get("faults_chance", 0.0))
+	var srng: RandomNumberGenerator = structure_rng if structure_rng != null else rng
+	var s_roll: float = srng.randf()
+	var s_pick: float = srng.randf()
+	var structure: String = ""
+	if s_roll < float(p.get("structure_chance", 0.0)) + d * float(per_row.get("structure_chance", 0.0)):
+		structure = pick_structure(rock, d0 + depth_m * 0.5, s_pick)
 	var td: Dictionary = tiers[tier] if not tiers.is_empty() else {}
 	return {"tier": tier, "tier_name": str(td.get("name", "fair")), "richness": float(td.get("richness", 1.0)),
 		"ores": possible(rock, "ore", d0, depth_m), "gems": possible(rock, "gems", d0, depth_m) if gems else [],
-		"gas": gas, "water": water, "faults": faults}
+		"gas": gas, "water": water, "faults": faults, "structure": structure}
+
+
+## The rock table's structure (weighted, data order) whose depth window [from_depth_m, to_depth_m)
+## holds run depth mid_m, chosen by u (0..1); "" when none fits.
+static func pick_structure(rock: Dictionary, mid_m: float, u: float) -> String:
+	var total: float = 0.0
+	for s: Variant in rock.get("structures", []):
+		var sd: Dictionary = s
+		if mid_m >= float(sd.get("from_depth_m", 0.0)) and mid_m < float(sd.get("to_depth_m", 1.0e12)):
+			total += maxf(0.0, float(sd.get("weight", 1.0)))
+	if total <= 0.0:
+		return ""
+	var left: float = u * total
+	var last: String = ""
+	for s: Variant in rock.get("structures", []):
+		var sd: Dictionary = s
+		if mid_m >= float(sd.get("from_depth_m", 0.0)) and mid_m < float(sd.get("to_depth_m", 1.0e12)):
+			last = str(sd.get("structure", ""))
+			left -= maxf(0.0, float(sd.get("weight", 1.0)))
+			if left < 0.0:
+				return last
+	return last
 
 
 ## Material ids of a feature group that can occur in a segment from run depth d0 down by depth_m,

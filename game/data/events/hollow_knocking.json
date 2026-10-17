@@ -1,0 +1,40 @@
+{
+  "id": "hollow_knocking",
+  "kind": "structure",
+  "structures": ["crystal_hollow"],
+  "layer": "crust",
+  "weight": 1.0,
+  "once_per_run": true,
+  "title": "Placeholder: Something Knocking",
+  "file": "FIELD REPORT // THE HOLLOWS",
+  "start": "intro",
+  "pages": {
+    "intro": {
+      "text": "Placeholder: the crystals ring when the drill stops. Then, from the far wall of the hollow, something knocks back: three times, patient.",
+      "options": [
+        {
+          "text": "Placeholder: knock back, three times.",
+          "outcomes": [
+            {"weight": 1, "page": "answer", "effects": [{"type": "res_range", "res": "gems", "min": 6, "max": 12}]},
+            {"weight": 1, "page": "wall", "effects": [{"type": "hull", "amount": -3}, {"type": "pursuer", "rows": 0.3}]}
+          ]
+        },
+        {
+          "text": "Placeholder: kill the lamps and wait it out.",
+          "outcomes": [
+            {"weight": 1, "page": "quiet", "effects": [{"type": "pursuer", "rows": 0.2}]}
+          ]
+        }
+      ]
+    },
+    "answer": {
+      "text": "Placeholder: the knocking stops. When the lamps come back on, a row of cut crystals has been set out on the ledge by the pool."
+    },
+    "wall": {
+      "text": "Placeholder: the far wall answers by coming in. Crystal and rock slam into the hull before the hollow goes still."
+    },
+    "quiet": {
+      "text": "Placeholder: you wait in the dark for a long time. Nothing knocks again. Far above, the follower keeps coming."
+    }
+  }
+}

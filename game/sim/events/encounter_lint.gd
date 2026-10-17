@@ -5,12 +5,15 @@ extends RefCounted
 ## effect must be a known type with valid fields. Em dashes are already rejected when the JSON loads.
 ## Each problem names its file.
 
-const KINDS: Array[String] = ["event", "cavern", "hazard", "recruit"]
+## "structure": started by a buried structure's break-in mid-segment, never at a node. Such an event
+## lists the structures it belongs to ("structures": [ids]), needs no "rows", and may not start a
+## fight (the drilling segment is still under way; a fight there is ruled out, D042).
+const KINDS: Array[String] = ["event", "cavern", "hazard", "recruit", "structure"]
 const CREW_RULES: Array[String] = ["first", "random", "skill:fire", "skill:repair"]
 const CODEX_CATEGORIES: Array[String] = ["history", "place", "creature", "tech", "topside"]
 const RADIO_TRIGGERS: Array[String] = [
 	"run_start", "first_segment", "fire", "flood", "low_hull", "fight_start", "fight_won",
-	"crew_died", "codex", "pursuer_close", "gate", "store",
+	"crew_died", "codex", "pursuer_close", "gate", "store", "structure",
 ]
 const HAZARD_KINDS: Array[String] = ["fire", "breach", "heat"]
 const CREW_TARGETS: Array[String] = ["picked", "random", "all"]
@@ -166,7 +169,20 @@ static func _lint_event(db: DataDB, d: Dictionary, file: String, errs: PackedStr
 		errs.append("%s: needs a \"layer\"" % file)
 	elif not db.table("layers").is_empty() and not db.table("layers").has(str(d["layer"])):
 		errs.append("%s: layer \"%s\" does not exist" % [file, str(d["layer"])])
-	var rows: Variant = d.get("rows", [])
+	var structure_kind: bool = str(d.get("kind", "")) == "structure"
+	if structure_kind:
+		var sl: Variant = d.get("structures", [])
+		if not (sl is Array) or (sl as Array).is_empty():
+			errs.append("%s: a structure event needs a non-empty \"structures\" list" % file)
+		else:
+			for sid: Variant in (sl as Array):
+				if not db.table("structures").has(str(sid)):
+					errs.append("%s: structure \"%s\" does not exist" % [file, str(sid)])
+		if _has_effect(d.get("pages", {}), "fight"):
+			errs.append("%s: a structure event cannot start a fight (it opens mid-segment)" % file)
+	elif d.has("structures"):
+		errs.append("%s: only events of kind \"structure\" list structures" % file)
+	var rows: Variant = d.get("rows", [0, 0] if structure_kind else [])
 	if not (rows is Array) or (rows as Array).size() != 2 or not _num((rows as Array)[0]) or not _num((rows as Array)[1]) \
 			or int((rows as Array)[0]) < 0 or int((rows as Array)[0]) > int((rows as Array)[1]):
 		errs.append("%s: rows must be [first, last] with 0 <= first <= last" % file)
@@ -209,6 +225,25 @@ static func _lint_event(db: DataDB, d: Dictionary, file: String, errs: PackedStr
 	for pid: Variant in pages.keys():
 		if not reached.has(str(pid)):
 			errs.append("%s: page \"%s\" is never reached" % [file, str(pid)])
+
+
+## True if any outcome on any page has an effect of this type.
+static func _has_effect(pages: Variant, kind: String) -> bool:
+	if not (pages is Dictionary):
+		return false
+	for pg: Variant in (pages as Dictionary).values():
+		if not (pg is Dictionary):
+			continue
+		for opt: Variant in ((pg as Dictionary).get("options", []) as Array):
+			if not (opt is Dictionary):
+				continue
+			for o: Variant in ((opt as Dictionary).get("outcomes", []) as Array):
+				if not (o is Dictionary):
+					continue
+				for e: Variant in ((o as Dictionary).get("effects", []) as Array):
+					if e is Dictionary and str((e as Dictionary).get("type", "")) == kind:
+						return true
+	return false
 
 
 static func _lint_option(db: DataDB, v: Variant, pages: Dictionary, where: String, errs: PackedStringArray, reached: Dictionary) -> void:

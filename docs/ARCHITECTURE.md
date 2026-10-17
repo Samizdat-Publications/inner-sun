@@ -51,8 +51,8 @@ commands, whatever the phase.
 | `scenario` | yes | timeline (ScenarioRun) | the scenario ends (tests, captures, M0 drills) |
 | `idle` | yes | pursuer | `choose_node` starts a segment |
 | `drill` | yes | DrillSim, pursuer | the ship reaches the node: arrival |
-| `dialog` | frozen | Encounter (event pages) | the event ends (to idle, combat or death) |
-| `store` | frozen | Encounter (store) | `leave` |
+| `dialog` | frozen | Encounter (event pages) | the event ends (to idle, combat or death; to drill when a structure opened it mid-segment) |
+| `store` | frozen | Encounter (store) | `leave` (to idle; to drill when a structure opened it mid-segment) |
 | `combat` | yes, both ships | CombatSim, enemy AI, pursuer | a ship dies |
 | `dead`, `won` | frozen | nothing | terminal |
 
@@ -90,6 +90,26 @@ Every powered system has a job while drilling. Commands, events and read-only fi
 - Douse (Systems, SystemsDouse): `{"type": "douse", "room": id}`; `systems.douse_ready(sim, room)`
   says why not; `"doused" {"room", "fire_before", "fire_after", "heat_j"}`; heat leaves through
   `hazards.add_heat` so the books stay exact. Read `systems.douse_cooldown_ticks`.
+
+### Buried structures (M1c round C)
+Data: `game/data/structures/<id>.json` (`id`, `name`, `label`, `codex`, `legend` {char: material id
+or {"material", "from_depth_m", "else"}}, `stamp` rows of 0.5 m cells, " " keeps the rock, `mirror`,
+`loot` [{"weight", "res", "amount"}], optional `loot_by_material`, `event_chance`, `trader`,
+`trader_chance`), linted by StructureLint (from DrillLint). The rock table lists them
+(`structures`: [{"structure", "weight", "from_depth_m", "to_depth_m"}]); the survey rolls at most one
+per segment (`survey.structure`, layer `structure_chance`, stream `survey/structure`).
+- Placement (StructureStamp, from the segment stream after the features): `drill.structures` holds
+  `id`, `label`, `def`, `rect` and `interior` (segment meters), `cell_rect`, `mirrored`;
+  `drill.structure_marks` per cell (2 interior: `interior` or `loot` materials, 1 the rest).
+- Crates (`loot` materials): the first cut cell opens the connected crate (`drill.burst_marks`) and
+  pays one roll from `drill/<segment>/loot` through `run.add`: `"loot" {"structure", "res",
+  "amount", "x_m", "y_m"}`. Read `structures.crates_total`, `crates_opened`, `loot_res`.
+- Break-in: the first interior cut (footprint or blast): `"structure_entered" {"structure",
+  "label"}`, the codex entry learned, then from `drill/<segment>/structure` a trader store or a
+  `"kind": "structure"` event mid-segment: `"structure_outcome" {"structure", "outcome", "id"}`.
+  The drill stays active and pauses; Encounter returns to `drill`; arrival waits for it.
+- `"structure_placed" {"structure", "x_m", "y_m", "w_m", "h_m", "mirror"}` at segment begin;
+  `segment_done` carries `structure`, `entered`, `crates`.
 
 ### Conservation APIs
 Anything that adds or removes heat or water goes through HazardSim so the books balance:

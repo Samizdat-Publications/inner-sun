@@ -1,0 +1,28 @@
+{
+  "id": "mine_works",
+  "name": "Old mine works",
+  "label": "OLD MINE WORKS",
+  "codex": "old_workings",
+  "blurb": "Placeholder: a timbered gallery from a mine nobody mapped, crates still stacked by the rails.",
+  "legend": {"f": "fault_rock", "r": "rubble", "T": "timber", "=": "timber", ".": "relic_air", "c": "crate"},
+  "stamp": [
+    "   ffffffff     fffffffff     ",
+    "  rrrrrrrrrrrrrrrrrrrrrrrrrr  ",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "T......T......T......T......T.",
+    "T......T......T......T......T.",
+    "T.cc...T......T...cc.T..cc..T.",
+    "T.cc...T......T...cc.T..cc..T.",
+    "= = = = = = = = = = = = = = = "
+  ],
+  "mirror": true,
+  "loot": [
+    {"weight": 3, "res": "ore", "amount": 20},
+    {"weight": 2, "res": "coolant", "amount": 4},
+    {"weight": 2, "res": "charges", "amount": 2},
+    {"weight": 1, "res": "bits", "amount": 1}
+  ],
+  "event_chance": 0.4,
+  "trader": "",
+  "trader_chance": 0.0
+}

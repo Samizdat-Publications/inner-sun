@@ -346,3 +346,52 @@ Result (100 runs per bot, `docs/research/m1-evidence/balance_m1c_d039.md`): blas
 a careful player more tools, which is the point of D034. Kept as is for build 4: the spread between
 policies is healthy and Stewart's runs are the real test. If build 4 proves too easy for a human, the
 levers are the gate (hull 13), charge prices (2 for 8 gems) and `douse_fire_level`.
+
+## D041 (AI): Buried structures are data stamps, placed from the segment stream
+Structures (`game/data/structures/<id>.json`) are ASCII stamps of 0.5 m cells with a legend of rock
+materials (" " keeps the rock; a legend entry may switch material by depth, used for the hollow's
+emerald below 450 m). The rock table lists them with weights and depth windows; the survey rolls
+at most one per segment (`structure_chance` 0.3, +0.02 per row, deposits 0.5) and picks among those
+whose window holds the segment's middle depth. Its two draws per node come from a new stream
+`survey/structure`, not `survey`, so every other reading of an existing seed stayed exactly as it was
+(old balance runs stay comparable). The stamp is placed after the rock features with four draws from
+the segment stream (depth fraction 0.25 to 0.75, offset 3 to 9 m to a side, side, mirror), clamped
+inside the grid and a cell below the start shaft; a segment without a structure draws nothing new,
+so its rock is unchanged. Interior = cells of an `interior` material (`relic_air`) or a `loot`
+material (crates). New materials: timber, steel (6.0, hard rock for gear), crate, rubble, relic_air,
+tape_case. Placement numbers are `drill.structure_*` tuning keys. Revert: drop the survey key and the
+rock table's `structures` list (the code then never places anything).
+
+## D042 (AI): Crates, break-in, and the mid-segment store and event
+A crate's first cut cell (footprint or blast) floods-and-marks the whole crate in `burst_marks` and
+pays one roll of the structure's loot table (or `loot_by_material`) from `drill/<segment>/loot`
+through `run.add`; a blast pays a crate in full (the 50% shatter of D039 is for rock yields). The
+rig's sealed tape is its own material (`tape_case`) paying 3 power cells, so tables stay resources
+only (no codex rows; the codex comes from the break-in). The first interior cut emits
+`structure_entered`, learns the codex entry (`run.learn`) and rolls `drill/<segment>/structure`:
+trader (store) first, then a `"kind": "structure"` event (once per run each), else nothing. The
+drill stays active and pauses (the world is frozen in dialog and store as at nodes); Encounter's
+`_to_idle` returns to "drill" whenever the drill is active, arrival is checked only in "drill", and
+`RunState.ship_row_f` counts progress while the drill is active (not only in phase "drill"), so the
+pursuer cap does not jump during the page. Structure events may not start a fight (lint): a fight
+mid-segment would need CombatSim to hand back to a live segment, not worth it now. Store effects,
+deaths, pursuer and reveal effects work mid-segment. Revert: the DrillStructures calls in DrillSim
+and the one-line `_to_idle` change.
+
+## D043 (AI): Bots and structures
+DrillBot scores unopened crate cells (`value_crate`, per cell) and interior cells until entered
+(`value_interior`) on its lanes: cautious 2 / 0.1, balanced 4 / 0.3, greedy 6 / 0.5, so cautious
+takes them only when they are on its way (its 4 m detour). Loot blasts count unopened crate cells at
+`blast_crate_value` 12 (cautious never loot-blasts). Node choice adds `structure_bonus` (0.3, 0.8,
+1.2) for a survey with a structure. Structure events use the existing option scoring. Revert: zero
+the fields.
+
+## D044 (AI): Structure balance, kept as is
+300 runs per bot (`docs/research/m1-evidence/balance_m1c_structures.md`, seeds 1000..1299): about 6
+structures lie on a run's path; cautious enters 4.1 and opens 5 crates (26 loot units), balanced
+5.3 and 8 (45), greedy 5.7 and 12 (71); hollow traders met 0.4 to 0.5 a run, structure events 1.4
+to 1.8. Wins: cautious 25.7%, greedy 15.0%, balanced 37.7% (D039 at 100 runs: 16, 9, 39; D038 at 300:
+26, 12, 40); medians 18 to 22 min as before. So structures lifted the greedy bot most (it reached
+the gate more often) and left balanced where it was: still above the 10 to 30% band for the reason
+D038/D039 gave (gate, charge prices). No structure tuning was changed for it; if the lead wants
+fewer, the levers are `structure_chance` (0.3 + 0.02 per row is about 6 a run) and the loot tables.

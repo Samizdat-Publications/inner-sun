@@ -60,6 +60,8 @@ static func _node_score(sim: Sim, bot: PolicyBot, n: Dictionary) -> float:
 			score -= bot.gas_fear
 		if bool(sv.get("water", false)):
 			score -= bot.water_fear
+		if not str(sv.get("structure", "")).is_empty():
+			score += bot.structure_bonus
 	return score
 
 

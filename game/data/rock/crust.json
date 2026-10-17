@@ -18,7 +18,18 @@
     {"code": 12, "id": "amethyst", "name": "Amethyst geode", "hardness": 2.2, "color": "#9a57d8", "yield": {"res": "gems", "amount": 2}},
     {"code": 13, "id": "emerald", "name": "Emerald pocket", "hardness": 2.5, "color": "#27c06a", "yield": {"res": "gems", "amount": 5}},
     {"code": 14, "id": "gas_pocket", "name": "Gas pocket", "hardness": 0.5, "color": "#b4c23a", "gas": true},
-    {"code": 15, "id": "fault_rock", "name": "Fractured shale", "hardness": 0.7, "color": "#857257", "unstable": true}
+    {"code": 15, "id": "fault_rock", "name": "Fractured shale", "hardness": 0.7, "color": "#857257", "unstable": true},
+    {"code": 16, "id": "timber", "name": "Mine timber", "hardness": 0.6, "color": "#7a5a32", "unstable": true},
+    {"code": 17, "id": "steel", "name": "Hull plate", "hardness": 6.0, "color": "#5d6670"},
+    {"code": 18, "id": "crate", "name": "Supply crate", "hardness": 0.4, "color": "#a07a3c", "loot": true},
+    {"code": 19, "id": "rubble", "name": "Loose rubble", "hardness": 0.5, "color": "#6b5f52", "unstable": true},
+    {"code": 20, "id": "relic_air", "name": "Old air", "hardness": 0.0, "color": "#1a1714", "interior": true},
+    {"code": 21, "id": "tape_case", "name": "Sealed tape case", "hardness": 0.4, "color": "#3c5a3a", "loot": true}
+  ],
+  "structures": [
+    {"structure": "mine_works", "weight": 3.0, "from_depth_m": 0.0, "to_depth_m": 420.0},
+    {"structure": "soviet_rig", "weight": 2.0, "from_depth_m": 180.0},
+    {"structure": "crystal_hollow", "weight": 2.0, "from_depth_m": 300.0}
   ],
   "strata": [
     {"material": "soft_rock", "weight": 2.0, "min_m": 3.0, "max_m": 8.0},

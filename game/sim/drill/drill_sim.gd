@@ -14,7 +14,10 @@ extends SimModule
 ## from power, gear, the bit and the leading band (side cells weighted |sin h| * side, bottom cells
 ## cos h). at_wall: pressed against the segment wall at a heading past at_wall_heading_deg.
 ## Pocket hazards, fault rock strain and rockfalls, and blasts by the charge launcher live in
-## DrillVerbs (verbs); the "blast" command goes there.
+## DrillVerbs (verbs); the "blast" command goes there. A buried structure named by the survey (old
+## mine works, a rig module, a crystal hollow) is stamped into the rock and broken into through
+## DrillStructures (structures): crates pay loot, the break-in may open a store or an event
+## mid-segment (the run leaves "drill" and comes back to it; arrival waits until it does).
 ## Gear (RunState.gear_x) scales cut speed, bit wear and the hardness of hard rock, read when the
 ## segment begins. Segment space: meters, +x right, +y down, like ship space. See ARCHITECTURE.md.
 ##
@@ -22,7 +25,8 @@ extends SimModule
 ## the blast point), DrillVerbs' events (pockets, rockfalls, blasts), "bit_broken",
 ## "segment_done" {"segment", "time_s", "distance_m", "mined" (cells by material id), "yield"
 ## (resource units by material id), "ore", "gems", "noise", "lost_water_ml", "gas_bursts", "rockfalls",
-## "blasts"}.
+## "blasts", "structure" (id or ""), "entered", "crates"}, and DrillStructures' events (placed,
+## entered, loot, outcome).
 
 const COMMANDS: Array[String] = ["steer", "change_bit", "begin_segment", "blast"]
 const CHUNK_CELLS: int = 16  ## The view redraws the rock in chunks of 16 x 16 cells.
@@ -43,7 +47,8 @@ const TUNING_KEYS: Array[String] = [
 	"drill.hard_rock_min_hardness", "drill.at_wall_heading_deg", "drill.rockfall_strain_cells",
 	"drill.rockfall_warn_s", "drill.rockfall_hull_pts", "drill.rockfall_sys_bars", "drill.blast_cooldown_s",
 	"drill.blast_range_m", "drill.blast_fuse_s", "drill.blast_radius_m", "drill.blast_fire_m", "drill.blast_noise",
-	"drill.blast_yield_pct",
+	"drill.blast_yield_pct", "drill.structure_at_min_frac", "drill.structure_at_max_frac", "drill.structure_offset_min_m",
+	"drill.structure_offset_max_m",
 ]
 
 # Read by the view (never written outside this class and DrillMaterials).
@@ -100,6 +105,10 @@ var yield_amount_of: PackedInt32Array = PackedInt32Array()
 var water_of: PackedByteArray = PackedByteArray()  ## By code: 1 for water pockets.
 var gas_of: PackedByteArray = PackedByteArray()  ## By code: 1 for gas pockets.
 var unstable_of: PackedByteArray = PackedByteArray()  ## By code: 1 for fault rock (strain, rockfalls).
+var loot_of: PackedByteArray = PackedByteArray()  ## By code: 1 for crates (a structure's loot).
+var interior_of: PackedByteArray = PackedByteArray()  ## By code: 1 for a structure's old air.
+var structure_marks: PackedByteArray = PackedByteArray()  ## By cell: 2 structure interior, 1 the rest of it, 0 none.
+var structures: DrillStructures  ## The segment's buried structure (read its fields for the view).
 var burst_marks: PackedByteArray = PackedByteArray()  ## By cell: 1 once its pocket burst, drained or burned.
 var drill_room: int = -1  ## The player's drill room index (-1 without one).
 
@@ -143,6 +152,7 @@ var _noise_k: float = 0.0
 var _rock_base_c: float = 40.0
 var _rock_c_per_m: float = 0.0
 var _hard_min: float = 3.0
+var _stamp_tune: Dictionary = {}
 
 
 func _init(db: DataDB) -> void:
@@ -170,6 +180,9 @@ func _init(db: DataDB) -> void:
 	_pend_amt.resize(MAX_CODES)
 	_pend_codes.resize(MAX_CODES)
 	verbs = DrillVerbs.new(db)
+	structures = DrillStructures.new()
+	_stamp_tune = {"at_min": db.tune("drill.structure_at_min_frac"), "at_max": db.tune("drill.structure_at_max_frac"),
+		"off_min_m": db.tune("drill.structure_offset_min_m"), "off_max_m": db.tune("drill.structure_offset_max_m")}
 
 
 func commands() -> PackedStringArray:
@@ -229,6 +242,10 @@ func begin_segment(sim: Sim, p_segment_id: String, p_depth_m: float, lateral_m: 
 	var rng: RandomNumberGenerator = sim.rng.get_stream("drill/" + p_segment_id)
 	grid = RockGen.generate(table, rng, cols, rows, cell_m, Rect2(x0, y0, ship_size.x, ship_size.y), target_x,
 			depth_m, sim.run.depth_m, _db.tune("drill.shaft_margin_m"), _db.tune("drill.top_air_m"), survey)
+	structure_marks = PackedByteArray()
+	structure_marks.resize(grid.size())
+	structures.begin_segment(sim, self, _db.table("structures").get(str(survey.get("structure", "")), {}),
+			RockGen.codes_of(table), rng, Rect2(x0, y0, ship_size.x, ship_size.y), _stamp_tune)
 	generated = PackedInt32Array()
 	generated.resize(MAX_CODES)
 	for i: int in range(grid.size()):
@@ -340,6 +357,7 @@ func step(sim: Sim) -> void:
 	if pf > 0.0 and _bit_change_ticks == 0:
 		_drive(sim, bars, pf)
 	verbs.step(sim, self)
+	structures.resolve(sim, self, not sim.run.is_over())
 	if sim.run.is_over():
 		return
 	sim.run.depth_m = start_depth_m + (_py - start_y)
@@ -349,8 +367,8 @@ func step(sim: Sim) -> void:
 		base_c = float(sim.run.layer.get("rock_temp_base_c", base_c))
 		per_m = float(sim.run.layer.get("rock_temp_c_per_m", per_m))
 	sim.ship.rock_temp_c = base_c + per_m * sim.run.depth_m
-	if _py + ship_size.y >= target_y - EPS:
-		_arrive(sim)
+	if sim.run.phase == "drill" and _py + ship_size.y >= target_y - EPS:
+		_arrive(sim)  # Not while a break-in has a store or an event open: the segment waits for it.
 
 
 func _drive(sim: Sim, bars: int, pf: float) -> void:
@@ -404,6 +422,7 @@ func _drive(sim: Sim, bars: int, pf: float) -> void:
 
 func _arrive(sim: Sim) -> void:
 	verbs.end_segment(sim, self)
+	structures.resolve(sim, self, false)
 	var counts: Dictionary = {}
 	var yields: Dictionary = {}
 	for code: int in range(1, materials.size()):
@@ -425,6 +444,9 @@ func _arrive(sim: Sim) -> void:
 		"gas_bursts": gas_bursts,
 		"rockfalls": verbs.rockfalls,
 		"blasts": verbs.blasts,
+		"structure": structures.id,
+		"entered": structures.entered,
+		"crates": structures.crates_opened,
 	})
 	active = false
 	speed_m_s = 0.0
@@ -489,6 +511,8 @@ func _cut(sim: Sim, i: int) -> void:
 ## caller's (the drill's cut, or a blast).
 func take_cell(i: int) -> int:
 	var m: int = grid[i]
+	if structure_marks[i] == StructureStamp.MARK_INTERIOR:
+		structures.note(self, i, m)
 	grid[i] = 0
 	mined[m] += 1
 	chunk_changes[((i / cols) / CHUNK_CELLS) * chunk_cols + (i % cols) / CHUNK_CELLS] += 1
@@ -565,7 +589,7 @@ func state() -> Array:
 		start_center_x, start_y, target_x, target_y, depth_m, start_depth_m, distance_m, segment_ticks,
 		noise_segment, noise_total, mined, yielded, yield_mat, water_in_ml, lost_water_ml, heat_added_j,
 		pockets_burst, gas_bursts, _return_phase, grid, burst_marks, speed_scale, survey.values(), _cut_x, _wear_x, _hard_x,
-		side_scale, at_wall, steep_ticks, verbs.state()]
+		side_scale, at_wall, steep_ticks, verbs.state(), structure_marks, structures.state()]
 
 
 static func lint(db: DataDB, errs: PackedStringArray) -> void:

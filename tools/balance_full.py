@@ -100,7 +100,10 @@ def _bot_section(b, rs):
                      ("crew_lost", "crew lost"), ("fires", "fires started"), ("nodes_overtaken", "nodes overtaken"),
                      ("rockfalls_hit", "rockfalls hit"), ("rockfalls_absorbed", "rockfalls absorbed"),
                      ("rockfall_hull", "hull lost to rockfalls"), ("blasts", "blasts"), ("blast_ore", "ore from blasts"),
-                     ("blast_gems", "gems from blasts"), ("douses", "douses"), ("steep_s", "drilling s past 60 degrees")]:
+                     ("blast_gems", "gems from blasts"), ("douses", "douses"), ("steep_s", "drilling s past 60 degrees"),
+                     ("structures_placed", "structures on the way"), ("structures_entered", "structures entered"),
+                     ("crates_opened", "crates opened"), ("loot_units", "loot units from crates"),
+                     ("traders_met", "hollow traders met"), ("structure_events", "structure events")]:
         xs = [r.get(k, 0) for r in rs]
         out.append(f"- {label}: mean {statistics.fmean(xs):.2f}, runs with any {_pct(sum(1 for x in xs if x), n):.0f}%")
     deaths = collections.Counter(c for r in rs for c in r.get("crew_deaths", []))
@@ -241,6 +244,15 @@ def run_full(a, game_target, make_pack):
             m = [statistics.fmean([r.get(k, 0) for r in rs]) for k in
                  ("rockfalls_hit", "rockfalls_absorbed", "rockfall_hull", "blasts", "blast_ore", "blast_gems", "douses", "steep_s")]
             out.append(f"| {b} | " + " | ".join(f"{x:.2f}" for x in m[:7]) + f" | {m[7]:.0f} |")
+    out += ["", "Buried structures, means per run:", "",
+            "| bot | on the way | entered | crates opened | loot units | traders met | structure events |",
+            "|---|---|---|---|---|---|---|"]
+    for b in bots:
+        rs = rows[b]
+        if rs:
+            m = [statistics.fmean([r.get(k, 0) for r in rs]) for k in
+                 ("structures_placed", "structures_entered", "crates_opened", "loot_units", "traders_met", "structure_events")]
+            out.append(f"| {b} | " + " | ".join(f"{x:.2f}" for x in m) + " |")
     out.append("")
     for b in bots:
         out += _bot_section(b, rows[b])
