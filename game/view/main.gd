@@ -36,6 +36,7 @@ var screen: RunScreen
 var audio: AudioDirector
 var cam: Camera2D
 var rock_view: RockView
+var depth_layers: DepthLayers  ## Far wall, silhouettes and dust, rebuilt with the rock.
 var combat_view: CombatView
 var paused: bool = false
 var drill_zoom: float = 0.74  ## The mouse wheel sets it while drilling; kept for the run (DigCamera).
@@ -152,6 +153,9 @@ func _clear_rock() -> void:
 	if rock_view != null:
 		rock_view.queue_free()
 		rock_view = null
+	if depth_layers != null:
+		depth_layers.queue_free()
+		depth_layers = null
 	view.set_drilling(null)
 	view.position = Vector2.ZERO
 	cam.zoom = Vector2(CUTAWAY_ZOOM, CUTAWAY_ZOOM)
@@ -181,6 +185,8 @@ func _process(delta: float) -> void:
 	if d.active and (rock_view == null or rock_view.serial != d.grid_serial):
 		_begin_drill_view(d)
 	_ease_camera(d, delta)
+	if depth_layers != null:
+		depth_layers.follow(cam.position, cam.zoom.x, view.center_px() + view.position, combat_view.active(), delta)
 	if fx != null:
 		cam.offset = fx.shake_offset()
 	if d.active and not screen.overlay_open():
@@ -230,6 +236,11 @@ func _begin_drill_view(d: DrillSim) -> void:
 	rock_view.setup(d, PPM)
 	add_child(rock_view)
 	move_child(rock_view, 0)
+	if depth_layers != null:
+		depth_layers.queue_free()
+	depth_layers = DepthLayers.new()
+	depth_layers.setup(d, PPM)
+	add_child(depth_layers)
 	view.set_drilling(d)
 	view.position = d.ship_pos * PPM
 	cam.zoom = Vector2(drill_zoom, drill_zoom)
