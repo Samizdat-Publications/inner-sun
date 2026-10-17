@@ -9,7 +9,8 @@ extends RefCounted
 ## - Crates: the first cut cell of a crate (a "loot" material; by the footprint or a blast) opens the
 ##   whole connected crate (flood-and-mark in DrillSim.burst_marks, like a pocket) and pays ONE roll of
 ##   the structure's loot table (or its "loot_by_material" table for that material) from the stream
-##   "drill/<segment>/loot", through run.add: exact integers.
+##   "drill/<segment>/loot", through run.add: exact integers. A crate the away miner opens pays the
+##   same roll into the miner's haul instead (DrillMiner.haul; lost if the miner is already lost).
 ## - Break-in: the first cut of an interior cell (the footprint overlapping the interior, or a blast)
 ##   enters the structure once: "structure_entered", its codex entry learned (run.learn), then one
 ##   roll pair from "drill/<segment>/structure": a trader (trader_chance, when the structure names a
@@ -20,7 +21,7 @@ extends RefCounted
 ## drilling tick, after the drill moved and any blast went off.
 ##
 ## Events: "structure_placed" {"structure", "x_m", "y_m", "w_m", "h_m", "mirror"},
-## "structure_entered" {"structure", "label"}, "loot" {"structure", "res", "amount", "x_m", "y_m"},
+## "structure_entered" {"structure", "label"}, "loot" {"structure", "res", "amount", "x_m", "y_m", "miner"},
 ## "structure_outcome" {"structure", "outcome": "trader" | "event" | "none", "id": store or event id}.
 
 # Read-only for the view and the bots.
@@ -41,6 +42,7 @@ var loot_res: PackedInt32Array = PackedInt32Array()  ## Paid by crates this segm
 var _enter_pending: bool = false
 var _pend_cells: PackedInt32Array = PackedInt32Array()  ## First cut cell of each crate opened since resolve().
 var _pend_codes: PackedInt32Array = PackedInt32Array()
+var _pend_miner: PackedByteArray = PackedByteArray()  ## 1 when the away miner opened that crate.
 
 
 func _init() -> void:
@@ -70,6 +72,7 @@ func begin_segment(sim: Sim, d: DrillSim, p_def: Dictionary, codes: Dictionary, 
 	_enter_pending = false
 	_pend_cells = PackedInt32Array()
 	_pend_codes = PackedInt32Array()
+	_pend_miner = PackedByteArray()
 	if p_def.is_empty():
 		return
 	var at: Dictionary = StructureStamp.place(p_def, codes, rng, d.grid, d.structure_marks, d.cols, d.rows, d.cell_m,
@@ -107,15 +110,16 @@ func _measure(d: DrillSim) -> void:
 		interior = Rect2(Vector2(lo) * d.cell_m, Vector2(hi - lo + Vector2i.ONE) * d.cell_m)
 
 
-## A structure interior cell (structure_marks 2) is being cut; m is its material code. Called by
-## DrillSim.take_cell before the cell turns to air.
-func note(d: DrillSim, i: int, m: int) -> void:
+## A structure interior cell (structure_marks 2) is being cut; m is its material code; by_miner when
+## the away miner cut it. Called by DrillSim.take_cell before the cell turns to air.
+func note(d: DrillSim, i: int, m: int, by_miner: bool = false) -> void:
 	if not entered:
 		_enter_pending = true
 	if d.loot_of[m] == 1 and d.burst_marks[i] == 0:
 		DrillMaterials.flood(d.grid, d.cols, d.rows, i, d.loot_of, d.burst_marks)
 		_pend_cells.append(i)
 		_pend_codes.append(m)
+		_pend_miner.append(1 if by_miner else 0)
 
 
 ## Pay the crates opened since the last call and handle a new break-in. allow_encounter false (at
@@ -135,14 +139,15 @@ func resolve(sim: Sim, d: DrillSim, allow_encounter: bool) -> void:
 	if not _pend_cells.is_empty():
 		var rng: RandomNumberGenerator = sim.rng.get_stream("drill/%s/loot" % d.segment_id)
 		for k: int in range(_pend_cells.size()):
-			_pay_crate(sim, d, rng, _pend_cells[k], _pend_codes[k])
+			_pay_crate(sim, d, rng, _pend_cells[k], _pend_codes[k], _pend_miner[k] == 1)
 		_pend_cells = PackedInt32Array()
 		_pend_codes = PackedInt32Array()
+		_pend_miner = PackedByteArray()
 	if broke_in and allow_encounter:
 		_break_in(sim, d)
 
 
-func _pay_crate(sim: Sim, d: DrillSim, rng: RandomNumberGenerator, cell: int, code: int) -> void:
+func _pay_crate(sim: Sim, d: DrillSim, rng: RandomNumberGenerator, cell: int, code: int, by_miner: bool) -> void:
 	crates_opened += 1
 	var table: Array = def.get("loot", [])
 	var by_mat: Dictionary = def.get("loot_by_material", {})
@@ -155,9 +160,14 @@ func _pay_crate(sim: Sim, d: DrillSim, rng: RandomNumberGenerator, cell: int, co
 	var res: String = str(row.get("res", ""))
 	var got: int = 0
 	if RunState.RESOURCES.has(res):
-		got = sim.run.add(sim, res, int(row.get("amount", 0)))
-		loot_res[RunState.RESOURCES.find(res)] += got
-	sim.emit("loot", {"structure": id, "res": res, "amount": got, "x_m": x, "y_m": y})
+		var ri: int = RunState.RESOURCES.find(res)
+		if not by_miner:
+			got = sim.run.add(sim, res, int(row.get("amount", 0)))
+			loot_res[ri] += got
+		elif d.miner.active:
+			got = maxi(0, int(row.get("amount", 0)))
+			d.miner.haul[ri] += got
+	sim.emit("loot", {"structure": id, "res": res, "amount": got, "x_m": x, "y_m": y, "miner": by_miner})
 
 
 ## The row of a weighted loot table that u (0..1) lands on ({} for an empty table).
@@ -200,4 +210,4 @@ func _break_in(sim: Sim, d: DrillSim) -> void:
 
 func state() -> Array:
 	return [id, rect, interior, mirrored, entered, crates_total, crates_opened, outcome, outcome_id, loot_res,
-		_enter_pending, _pend_cells, _pend_codes]
+		_enter_pending, _pend_cells, _pend_codes, _pend_miner]

@@ -256,7 +256,7 @@ func _hatch_flow(up: Room, lo: Room, l: Link, dt: float) -> int:
 
 func _crew_harm(sim: Sim, world: ShipWorld, dt: float) -> void:
 	for c: CrewMember in world.ship.crew:
-		if not c.alive:
+		if not c.alive or c.away:  # The away miner is outside: no room harm, no rest healing.
 			continue
 		var r: Room = world.ship.rooms[c.room]
 		var fire_d: float = _k("fire.crew_dps") * r.fire * dt

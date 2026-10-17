@@ -417,3 +417,50 @@ hurt the miner instead of the ship, and the haul pays only on return (lost if th
 full yield, quiet, and veins beside the path without steering the whole tower there. Spec:
 `docs/plans/specs/m1d_away_miner.md`. Revert: drop the two commands and `DrillMiner`; nothing else
 depends on them.
+
+## D047 (AI): Away miner, the details the spec left open
+Choices made while building D046 (part 1: sim, bots, tests). Each is small and local to
+`game/sim/drill/drill_miner.gd` / `miner_route.gd` unless named.
+- The tunnel is a fixed 4-connected staircase line from the cell under the drill head to the target
+  cell (ties step down), with no pathfinding around hard rock or pockets; a target level with the hull
+  goes along the row under the ship first, then straight up beside it, so it never crosses the hull.
+  The bots read the same route (`MinerRoute.plan`) to refuse tunnels through pockets.
+- A point inside the ship's footprint is refused as "outside" (it is not rock).
+- The drill keeps going while the miner boards. If the target is no longer rock beside the ship when
+  they reach the hatch (cut by the drill or now above the hull), or the segment ends first, or a
+  recall comes, the sortie is called off: "miner_back" with an empty haul and "called_off": true, no
+  sortie counted. Range is checked when sent, not again at the hatch.
+- In the vein the short walks between cells are folded into each cell's dig time; the way home follows
+  parent links (the cell each one was dug from), not the order they were dug in.
+- A pocket cell drains or burns its whole connected pocket even if the drill already burst it (like a
+  blast), and the miner is hurt every time. Miner noise is per cut solid cell only (0.006, measured at
+  about 0.10 of the drill's per-cell noise at 3 bars in granite; test_miner prints the ratio).
+- An away miner gets no rest healing outside. Event effects (crew_damage, crew_lose) can still reach
+  them (they are still "the crew"); a miner killed that way is lost with that cause. A dead miner keeps
+  `away = true` (they died outside).
+- "miner_out" carries the target point; "miner_hurt" carries the damage as "hp" (like "crew_hit") plus
+  "left". segment_done's "mined" counts the miner's cells; its "yield", "ore" and "gems" stay the
+  drill's own (the haul is paid as plain "resource" events on return).
+- A fight starting while a miner is out (only an event or a break-in could queue one) pulls them aboard
+  at once with the haul paid. CombatSim is not touched: DrillSim.step calls `miner.watch` every tick
+  and the drill steps before combat, so no shot lands first.
+- To keep drill_sim.gd from growing, the segment_done payload moved to `drill_report.gd`; the aim and
+  route rules live in `miner_route.gd`. The full-run report's counters are in `tools/balance_full.py`
+  (where `balance.py --full` writes its report), not balance.py itself.
+Revert: as D046 (drop the two commands, DrillMiner, MinerRoute, MinerPlanner); `drill_report.gd` can
+stay or fold back into `_arrive`.
+
+## D048 (AI): Away miner numbers and bot thresholds
+Tuning (`game/data/tuning/miner.json`) kept at the spec's start values: range 12 m, walk 1.4 m/s,
+hatch 2 s, dig 0.25 s + 0.9 s x hardness, yield 100%, vein up to 30 cells, water 20 hp, gas 45 hp,
+rockfall 35 hp after 12 fault cells (1.2 s warning), strike 30 hp; noise 0.006 per cell (about a
+tenth of the drill's per-cell noise at 3 bars). A typical sortie takes 40 to 50 s. With these the
+balanced bot stays at 38.3% wins (37.7% before; cap about 45%), so nothing was tuned down.
+Bots (`PolicyBot.miner_*`, `MinerPlanner`): send when the front is at least miner_rows behind
+(cautious 3, balanced 2, greedy 2, not the spec's 1.5), the hull above half, no fire aboard, a vein
+worth miner_min_value (cautious 30, balanced 20, greedy 14 ore-equivalent, gems x3) at least 3 m off
+the centre line and off the drill's own lane, through a tunnel with no pocket and fewer than 12 fault
+cells; recall with the front within 1.2 rows or the miner under 40 hp. Greedy at 1.5 rows dropped
+from 15.0% to 5.3% wins (pursuer deaths 35% to 58%), at 1.75 to 11.3%; at 2 it is 13.7%.
+Evidence: `docs/research/m1-evidence/balance_m1c_miner.md`. Revert: greedy `miner_rows = 1.5` in
+`PolicyBot.make_policy`, or `miner_on = false` to take the bots off the miner.

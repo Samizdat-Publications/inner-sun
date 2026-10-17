@@ -3,7 +3,9 @@ extends RefCounted
 ## Crew decisions and movement. A crew member with an order goes to that room and works there; one
 ## on auto takes the most urgent job anywhere (fight a fire, patch a breach, repair a damaged
 ## system), scored by urgency, skill and travel time. Thinking runs at 4 Hz; walking, climbing and
-## working run every tick. Holds no reference to the Sim or its ShipWorld; both are passed in, so
+## working run every tick. Away crew (the miner outside) and crew boarding for a sortie (job
+## "sortie", set by DrillMiner) are left alone: no replanning, and away crew do not move or work.
+## Holds no reference to the Sim or its ShipWorld; both are passed in, so
 ## the same code runs the player's crew and an enemy crew.
 
 const TUNING_KEYS: Array[String] = [
@@ -31,7 +33,7 @@ func think(_sim: Sim, world: ShipWorld) -> void:
 
 ## Pick this crew member's best job now and route to it (keeps the current route if unchanged).
 func replan(world: ShipWorld, c: CrewMember) -> void:
-	if not c.alive or c.climbing:
+	if not c.alive or c.climbing or c.away or c.job_kind == "sortie":
 		return
 	var ship: Ship = world.ship
 	var best_kind: String = ""
@@ -100,7 +102,7 @@ func _set_job(ship: Ship, c: CrewMember, kind: String, room: int) -> void:
 func move(sim: Sim, world: ShipWorld, dt: float) -> void:
 	var ship: Ship = world.ship
 	for c: CrewMember in ship.crew:
-		if not c.alive:
+		if not c.alive or c.away:
 			continue
 		if c.path_i < c.path.size():
 			_advance(ship, c, dt)

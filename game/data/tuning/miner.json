@@ -1,0 +1,18 @@
+{
+  "miner": {
+    "range_m": 12.0,
+    "walk_m_s": 1.4,
+    "hatch_s": 2.0,
+    "dig_base_s": 0.25,
+    "dig_hard_s": 0.9,
+    "yield_pct": 100,
+    "vein_max_cells": 30,
+    "noise_per_cell": 0.006,
+    "water_hp": 20.0,
+    "gas_hp": 45.0,
+    "strain_cells": 12,
+    "rockfall_warn_s": 1.2,
+    "rockfall_hp": 35.0,
+    "strike_hp": 30.0
+  }
+}

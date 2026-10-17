@@ -4,13 +4,15 @@ extends RefCounted
 ## ids, code 0 is air, numeric hardness, yields naming real run resources, strata and features
 ## naming real materials, feature groups and depth windows, a yield and a hazard flag (water, gas)
 ## never on one material, flags (water, gas, unstable, loot, interior) are booleans, every tuning key
-## present. The buried structures and the tables' structure lists: StructureLint.
+## present (the drill's and the away miner's). The buried structures and the tables' structure lists: StructureLint.
 
 const FEATURE_KINDS: Array[String] = ["vein", "lens", "pocket", "blob"]
 
 
 static func lint(db: DataDB, errs: PackedStringArray) -> void:
-	for key: String in DrillSim.TUNING_KEYS:
+	var keys: Array[String] = DrillSim.TUNING_KEYS.duplicate()
+	keys.append_array(DrillMiner.TUNING_KEYS)
+	for key: String in keys:
 		if not db.tuning.has(key):
 			errs.append("%s/tuning: missing number \"%s\"" % [db.root, key])
 	var rock: Dictionary = db.table("rock")

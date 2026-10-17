@@ -14,7 +14,10 @@ extends SimModule
 ## from power, gear, the bit and the leading band (side cells weighted |sin h| * side, bottom cells
 ## cos h). at_wall: pressed against the segment wall at a heading past at_wall_heading_deg.
 ## Pocket hazards, fault rock strain and rockfalls, and blasts by the charge launcher live in
-## DrillVerbs (verbs); the "blast" command goes there. A buried structure named by the survey (old
+## DrillVerbs (verbs); the "blast" command goes there. The away miner (D046) lives in DrillMiner
+## (miner; "send_miner", "recall_miner"): while one is out the drill is parked (no motion, cutting,
+## heat, noise or wear; the segment cannot end) and the miner's cells go through cut() with
+## CUT_MINER, so their yield is carried home instead of paid at once. A buried structure named by the survey (old
 ## mine works, a rig module, a crystal hollow) is stamped into the rock and broken into through
 ## DrillStructures (structures): crates pay loot, the break-in may open a store or an event
 ## mid-segment (the run leaves "drill" and comes back to it; arrival waits until it does).
@@ -22,13 +25,13 @@ extends SimModule
 ## segment begins. Segment space: meters, +x right, +y down, like ship space. See ARCHITECTURE.md.
 ##
 ## Events: "segment_begin", "mined" {"material", "res", "amount", "x_m", "y_m"} (crown position, or
-## the blast point), DrillVerbs' events (pockets, rockfalls, blasts), "bit_broken",
+## the blast point), DrillVerbs' events (pockets, rockfalls, blasts), DrillMiner's, "bit_broken",
 ## "segment_done" {"segment", "time_s", "distance_m", "mined" (cells by material id), "yield"
 ## (resource units by material id), "ore", "gems", "noise", "lost_water_ml", "gas_bursts", "rockfalls",
 ## "blasts", "structure" (id or ""), "entered", "crates"}, and DrillStructures' events (placed,
 ## entered, loot, outcome).
 
-const COMMANDS: Array[String] = ["steer", "change_bit", "begin_segment", "blast"]
+const COMMANDS: Array[String] = ["steer", "change_bit", "begin_segment", "blast", "send_miner", "recall_miner"]
 const CHUNK_CELLS: int = 16  ## The view redraws the rock in chunks of 16 x 16 cells.
 const DEFAULT_ROCK: String = "crust"
 const MAX_CODES: int = 256
@@ -94,6 +97,8 @@ var water_cell_ml: int = 0
 var heat_added_j: int = 0
 var pockets_burst: int = 0
 var verbs: DrillVerbs  ## Pockets, fault rock and rockfalls, blasts (read its fields for the view).
+var miner: DrillMiner  ## The away miner (read its fields for the view).
+var parked: bool = false  ## A miner is out: the drill stands still (set by DrillMiner).
 var gas_bursts: int = 0
 var chunk_cols: int = 0
 var chunk_rows: int = 0
@@ -180,6 +185,7 @@ func _init(db: DataDB) -> void:
 	_pend_amt.resize(MAX_CODES)
 	_pend_codes.resize(MAX_CODES)
 	verbs = DrillVerbs.new(db)
+	miner = DrillMiner.new(db)
 	structures = DrillStructures.new()
 	_stamp_tune = {"at_min": db.tune("drill.structure_at_min_frac"), "at_max": db.tune("drill.structure_at_max_frac"),
 		"off_min_m": db.tune("drill.structure_offset_min_m"), "off_max_m": db.tune("drill.structure_offset_max_m")}
@@ -190,6 +196,7 @@ func commands() -> PackedStringArray:
 
 
 ## {"type": "steer", "angle": deg} | {"type": "change_bit"} | {"type": "blast", "x_m", "y_m"} (DrillVerbs) |
+## {"type": "send_miner", "crew", "x_m", "y_m"} | {"type": "recall_miner"} (DrillMiner) |
 ## {"type": "begin_segment", "segment": id, "depth_m": d, "lateral_m": x, "rock": table id (optional),
 ##  "survey": a node survey (optional, see RockGen.options_of)}
 func apply(sim: Sim, cmd: Dictionary) -> void:
@@ -200,6 +207,10 @@ func apply(sim: Sim, cmd: Dictionary) -> void:
 			change_bit(sim)
 		"blast":
 			verbs.fire_blast(sim, self, Vector2(float(cmd.get("x_m", -1.0)), float(cmd.get("y_m", -1.0))))
+		"send_miner":
+			miner.send(sim, self, str(cmd.get("crew", "")), Vector2(float(cmd.get("x_m", -1.0)), float(cmd.get("y_m", -1.0))))
+		"recall_miner":
+			miner.recall(sim, self)
 		"begin_segment":
 			var sv: Variant = cmd.get("survey", {})
 			begin_segment(sim, str(cmd.get("segment", "")), float(cmd.get("depth_m", 36.0)),
@@ -270,6 +281,7 @@ func begin_segment(sim: Sim, p_segment_id: String, p_depth_m: float, lateral_m: 
 	speed_m_s = 0.0
 	cutting = false
 	at_wall = false
+	parked = false
 	verbs.begin_segment()
 	distance_m = 0.0
 	segment_ticks = 0
@@ -340,6 +352,7 @@ func step(sim: Sim) -> void:
 			sim.emit("bit_changed", {})
 	if sim.run.world_running():
 		verbs.tick_cooldown()
+	miner.watch(sim, self)
 	if not active or sim.run.phase != "drill":
 		return
 	segment_ticks += 1
@@ -354,9 +367,10 @@ func step(sim: Sim) -> void:
 	speed_m_s = 0.0
 	cutting = false
 	at_wall = false
-	if pf > 0.0 and _bit_change_ticks == 0:
+	if pf > 0.0 and _bit_change_ticks == 0 and not parked:
 		_drive(sim, bars, pf)
 	verbs.step(sim, self)
+	miner.step(sim, self)
 	structures.resolve(sim, self, not sim.run.is_over())
 	if sim.run.is_over():
 		return
@@ -367,7 +381,7 @@ func step(sim: Sim) -> void:
 		base_c = float(sim.run.layer.get("rock_temp_base_c", base_c))
 		per_m = float(sim.run.layer.get("rock_temp_c_per_m", per_m))
 	sim.ship.rock_temp_c = base_c + per_m * sim.run.depth_m
-	if sim.run.phase == "drill" and _py + ship_size.y >= target_y - EPS:
+	if sim.run.phase == "drill" and not parked and _py + ship_size.y >= target_y - EPS:
 		_arrive(sim)  # Not while a break-in has a store or an event open: the segment waits for it.
 
 
@@ -421,33 +435,10 @@ func _drive(sim: Sim, bars: int, pf: float) -> void:
 
 
 func _arrive(sim: Sim) -> void:
+	miner.end_segment(sim, self)
 	verbs.end_segment(sim, self)
 	structures.resolve(sim, self, false)
-	var counts: Dictionary = {}
-	var yields: Dictionary = {}
-	for code: int in range(1, materials.size()):
-		var mid: String = str(materials[code].get("id", ""))
-		if mined[code] > 0:
-			counts[mid] = mined[code]
-		if yield_mat[code] > 0:
-			yields[mid] = yield_mat[code]
-	sim.emit("segment_done", {
-		"segment": segment_id,
-		"time_s": snappedf(float(segment_ticks) / Sim.TICK_HZ, 0.01),
-		"distance_m": snappedf(distance_m, 0.01),
-		"mined": counts,
-		"yield": yields,
-		"ore": yielded[RunState.RESOURCES.find("ore")],
-		"gems": yielded[RunState.RESOURCES.find("gems")],
-		"noise": snappedf(noise_segment, 0.01),
-		"lost_water_ml": lost_water_ml,
-		"gas_bursts": gas_bursts,
-		"rockfalls": verbs.rockfalls,
-		"blasts": verbs.blasts,
-		"structure": structures.id,
-		"entered": structures.entered,
-		"crates": structures.crates_opened,
-	})
+	sim.emit("segment_done", DrillReport.segment_done(self))
 	active = false
 	speed_m_s = 0.0
 	cutting = false
@@ -484,13 +475,19 @@ func _advance_footprint(sim: Sim) -> void:
 			if in_old_row and c >= oc0 and c <= oc1:
 				continue
 			if grid[row + c] != 0:
-				_cut(sim, row + c)
+				cut(sim, row + c, DrillMiner.CUT_DRILL)
 	flush_yields(sim, snappedf(_px + ship_size.x * 0.5, 0.01), snappedf(_py + ship_size.y, 0.01))
 	_band_dirty = true
 
 
-func _cut(sim: Sim, i: int) -> void:
-	var m: int = take_cell(i)
+## Cut cell i (not air) by a cutter: the drill's crown (DrillMiner.CUT_DRILL) or the away miner
+## (CUT_MINER). Both book the cell the same way (take_cell); the miner's pocket, strain and noise
+## effects are its own (DrillMiner.on_cut). Blasts call take_cell directly.
+func cut(sim: Sim, i: int, cutter: int) -> void:
+	var m: int = take_cell(i, cutter)
+	if cutter == DrillMiner.CUT_MINER:
+		miner.on_cut(sim, self, i, m)
+		return
 	if unstable_of[m] == 1:
 		verbs.strain += 1
 	if water_of[m] == 1:
@@ -507,16 +504,18 @@ func _cut(sim: Sim, i: int) -> void:
 
 
 ## Turn cell i into air and book it: mined, its chunk's change counter, and its yield (pending until
-## the next flush_yields). Returns the material code it had. Pocket and strain effects are the
-## caller's (the drill's cut, or a blast).
-func take_cell(i: int) -> int:
+## the next flush_yields; for the miner, into its haul). Returns the material code it had. Pocket and
+## strain effects are the caller's (cut, or a blast).
+func take_cell(i: int, cutter: int = DrillMiner.CUT_DRILL) -> int:
 	var m: int = grid[i]
 	if structure_marks[i] == StructureStamp.MARK_INTERIOR:
-		structures.note(self, i, m)
+		structures.note(self, i, m, cutter == DrillMiner.CUT_MINER)
 	grid[i] = 0
 	mined[m] += 1
 	chunk_changes[((i / cols) / CHUNK_CELLS) * chunk_cols + (i % cols) / CHUNK_CELLS] += 1
-	if yield_res_of[m] >= 0:
+	if cutter == DrillMiner.CUT_MINER:
+		miner.book(self, m)
+	elif yield_res_of[m] >= 0:
 		if _pend_amt[m] == 0:
 			_pend_codes[_pend_n] = m
 			_pend_n += 1
@@ -589,7 +588,7 @@ func state() -> Array:
 		start_center_x, start_y, target_x, target_y, depth_m, start_depth_m, distance_m, segment_ticks,
 		noise_segment, noise_total, mined, yielded, yield_mat, water_in_ml, lost_water_ml, heat_added_j,
 		pockets_burst, gas_bursts, _return_phase, grid, burst_marks, speed_scale, survey.values(), _cut_x, _wear_x, _hard_x,
-		side_scale, at_wall, steep_ticks, verbs.state(), structure_marks, structures.state()]
+		side_scale, at_wall, steep_ticks, verbs.state(), structure_marks, structures.state(), parked, miner.state()]
 
 
 static func lint(db: DataDB, errs: PackedStringArray) -> void:

@@ -103,7 +103,9 @@ def _bot_section(b, rs):
                      ("blast_gems", "gems from blasts"), ("douses", "douses"), ("steep_s", "drilling s past 60 degrees"),
                      ("structures_placed", "structures on the way"), ("structures_entered", "structures entered"),
                      ("crates_opened", "crates opened"), ("loot_units", "loot units from crates"),
-                     ("traders_met", "hollow traders met"), ("structure_events", "structure events")]:
+                     ("traders_met", "hollow traders met"), ("structure_events", "structure events"),
+                     ("sorties", "miner sorties"), ("miner_backs", "miners back aboard"), ("miner_deaths", "miner deaths"),
+                     ("haul_ore", "ore from the miner"), ("haul_gems", "gems from the miner"), ("haul_lost", "haul units lost")]:
         xs = [r.get(k, 0) for r in rs]
         out.append(f"- {label}: mean {statistics.fmean(xs):.2f}, runs with any {_pct(sum(1 for x in xs if x), n):.0f}%")
     deaths = collections.Counter(c for r in rs for c in r.get("crew_deaths", []))
@@ -253,6 +255,18 @@ def run_full(a, game_target, make_pack):
             m = [statistics.fmean([r.get(k, 0) for r in rs]) for k in
                  ("structures_placed", "structures_entered", "crates_opened", "loot_units", "traders_met", "structure_events")]
             out.append(f"| {b} | " + " | ".join(f"{x:.2f}" for x in m) + " |")
+    out += ["", "Away miner, means per run (haul share: miner ore over all ore gained, summed over the runs):", "",
+            "| bot | sorties | runs with any % | back | deaths | haul ore | haul gems | lost units | haul share of ore % |",
+            "|---|---|---|---|---|---|---|---|---|"]
+    for b in bots:
+        rs = rows[b]
+        if rs:
+            m = [statistics.fmean([r.get(k, 0) for r in rs]) for k in
+                 ("sorties", "miner_backs", "miner_deaths", "haul_ore", "haul_gems", "haul_lost")]
+            anyp = _pct(sum(1 for r in rs if r.get("sorties", 0)), len(rs))
+            ore_all = sum(r["gained"]["ore"] for r in rs)
+            share = _pct(sum(r.get("haul_ore", 0) for r in rs), ore_all)
+            out.append(f"| {b} | {m[0]:.2f} | {anyp:.0f} | {m[1]:.2f} | {m[2]:.2f} | {m[3]:.1f} | {m[4]:.1f} | {m[5]:.1f} | {share:.1f} |")
     out.append("")
     for b in bots:
         out += _bot_section(b, rows[b])
