@@ -26,3 +26,10 @@ A rejected issue that returns in 2 later critiques becomes FIX or goes to docs/N
 | 19 | 20261015-231813-930fa47 | claude 003 (opus, gate) | Room and crew labels about 8 px | FIX | Room chips 15/14 px, crew tags 13 px |
 | 20 | 20261015-231813-930fa47 | claude 003 (opus, gate) | Weapons sit at 0/3 while drilling; nothing to rebalance between fights | REJECT | By design for now (the drill and coolant need the bars); M1b may add quiet-phase reasons to move power |
 | 21 | 20261015-231813-930fa47 | claude 003 (opus, gate) | The world outside is dark and sparse; depth does not show | DEFER | M1b/M2: strata variety, landmarks (bones, ruins, wrecks), depth cues |
+| 22 | 20261016-213119-eb64f36 | gemini 006 | The rock looks like a scrolling screen saver of wavy sand (also 005) | FIX | D045: fractured blocks with fading cracks instead of wavy beds |
+| 23 | 20261016-213119-eb64f36 | gemini 006 | Break-in banner never drew (script error in the capture log) | FIX | StructureBanner.wrap collided with the wrap() utility; renamed wrap_lines |
+| 24 | 20261016-213119-eb64f36 | gemini 006 | The UI is a wall of tiny dense text in one colour scheme | DEFER | M2 UI pass: icons for the power job lines and the blast card, larger critical numbers; the job lines stay for now (Stewart asked what helm and bracing do) |
+| 25 | 20261016-213119-eb64f36 | gemini 006 | Fire and flooding lack impact (a tint and sparks) | DEFER | M2 art pass: flames that fill the room, water that hides machinery |
+| 26 | 20261016-213119-eb64f36 | gemini 006 | Crew are stiff sprites that slide | DEFER | M2: work and panic animations |
+| 27 | 20261016-213119-eb64f36 | gemini 006 | Rooms are hard to tell apart without labels | DEFER | M2 art pass: a key colour and silhouette per system |
+| 28 | 20261016-213119-eb64f36 | gemini 006 | Fights across an empty void of rock look disconnected | DEFER | M2: closing in, boring toward each other, debris between the towers |
