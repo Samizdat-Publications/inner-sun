@@ -1,10 +1,11 @@
 # Progress
 
-Updated: 2026-10-17, M1c playtest build 5b ready (the away miner D046, hazard visuals D049); Stewart has not played build 4 or 5.
+Updated: 2026-10-17, M1c playtest build 5c ready (the away miner D046, hazard visuals D049, world depth D050); Stewart has not played build 4 or 5.
 
-## M1c status: playtest build 5b ready for Stewart
-- **Build:** `builds/InnerSun.exe`, launched by `Play Inner Sun.bat`: `m1c-playtest-5b` (milestone zip
-  `builds/milestones/m1c-playtest-5b/`): build 5 plus the hazard visuals below and the scanner fix.
+## M1c status: playtest build 5c ready for Stewart
+- **Build:** `builds/InnerSun.exe`, launched by `Play Inner Sun.bat`: `m1c-playtest-5c` (milestone zip
+  `builds/milestones/m1c-playtest-5c/`): build 5b plus world depth (below). `m1c-playtest-5b`
+  (55ddd95) is build 5 plus the hazard visuals and the scanner fix.
   `m1c-playtest-5` (bc3c571, `builds/milestones/m1c-playtest-5/`) is the same without them. Build 4 was never played, so build 5 replaces it: everything
   in build 4 below, plus this session's work. Interim build `m1c-playtest-4c` (7cd11ea) is the polish
   without the miner.
@@ -25,10 +26,16 @@ Updated: 2026-10-17, M1c playtest build 5b ready (the away miner D046, hazard vi
 - **Checks:** `check: ok` (339 tests); determinism ok, hash e4c82e3d6d55a625 at tick 1200 (headless and
   Movie Maker, `python tools/determinism.py`) and the same hash in the exported build's own check; the
   exported build plays a whole bot run to its end (FINAL tick 36000). Build 5b (55ddd95, view-only
-  changes) gives the same hashes: e4c82e3d6d55a625 at tick 1200 and fab7ad14f1e5eb9c for the full run.
+  changes) gives the same hashes: e4c82e3d6d55a625 at tick 1200 and fab7ad14f1e5eb9c for the full run;
+  so does build 5c (d2319b2).
 - **Balance with the miner (300 runs per bot, `docs/research/m1-evidence/balance_m1c_miner.md`):**
   balanced 38.3% wins, cautious 27.0%, greedy 13.7%; balanced sends 1.2 miners a run (62% of runs);
   no miner deaths; the haul is about 2% of all ore.
+- **Build 5c addition, world depth (D050, ledger 34; a Sonnet builder, then the lead's fixes):** a
+  far wall that scrolls at 0.45 of the camera behind every opening (blast craters, side tunnels, the
+  miner's tunnel, caverns), cavern silhouettes at 0.7 between, soft dust in front at 1.25, and colour
+  beds 25 to 59 m thick in the rock (ore and gems keep their colours). Seen in `docs/progress/035`.
+  The far layers only show through openings by design; a structure's dark room still covers them.
 - **Critic:** Gemini 008 on build 5 (seed 41, a 4-minute bot run; the critique never mentions the miner): 5.6
   (007 was 6.1; scores swing a point). Top items: fire and flood look cheap (second review in a row),
   the world outside is a treadmill (fourth), art styles fight, crew stand mid-room, tiny typewriter

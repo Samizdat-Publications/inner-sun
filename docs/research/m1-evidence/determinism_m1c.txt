@@ -16,3 +16,6 @@ playtest bot run in the exported game ended at FINAL tick=36000 hash=fab7ad14f1e
 Build m1c-playtest-5b (55ddd95, view-only changes over build 5): determinism ok, hash e4c82e3d6d55a625
 at tick 1200 (headless and Movie Maker, and the exported build's own check); the playtest bot run in
 the exported game ended at FINAL tick=36000 hash=fab7ad14f1e5eb9c, the same as build 5.
+
+Build m1c-playtest-5c (d2319b2, view-only changes over 5b): determinism ok, e4c82e3d6d55a625 at
+tick 1200; the exported playtest bot run ended at FINAL tick=36000 hash=fab7ad14f1e5eb9c.
