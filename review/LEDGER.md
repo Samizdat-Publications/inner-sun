@@ -33,3 +33,7 @@ A rejected issue that returns in 2 later critiques becomes FIX or goes to docs/N
 | 26 | 20261016-213119-eb64f36 | gemini 006 | Crew are stiff sprites that slide | DEFER | M2: work and panic animations |
 | 27 | 20261016-213119-eb64f36 | gemini 006 | Rooms are hard to tell apart without labels | DEFER | M2 art pass: a key colour and silhouette per system |
 | 28 | 20261016-213119-eb64f36 | gemini 006 | Fights across an empty void of rock look disconnected | DEFER | M2: closing in, boring toward each other, debris between the towers |
+| 29 | 20261016-222207-e1ffb36 | gemini 007 | The giant DRILL HAS NO POWER box blocks the drill head (00:00 to 00:04) | FIX | The notice waits 1.5 s (bots power the drill a moment after a segment starts), sits at the top of the world, smaller; the full-reactor hint only when the reactor is full |
+| 30 | 20261016-222207-e1ffb36 | gemini 007 | Dense small text; the store reads like a spreadsheet | DEFER | M2 UI pass (with 24) |
+| 31 | 20261016-222207-e1ffb36 | gemini 007 | Rooms visually noisy; crew blend in | DEFER | M2 art pass (with 26, 27) |
+| 32 | 20261016-222207-e1ffb36 | gemini 007 | The rock still reads as a repeating tile (world 6, up from 3) | DEFER | M2 rock pass: break the 1.28 m tile repeat (rotation or a second tile per slot) |

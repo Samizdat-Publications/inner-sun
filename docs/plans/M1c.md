@@ -25,40 +25,41 @@ rock (bracing up) is paid for by another system. That is the "take from other sy
 Stewart asked for.
 
 ## Round A: quick fixes (view only, the lead)
-- [ ] A loud notice and alert when the drill has no power ("DRILL HAS NO POWER: press R"), when the
+- [x] A loud notice and alert when the drill has no power ("DRILL HAS NO POWER: press R"), when the
       bit is broken ("BIT BROKEN: press B", or no spares), while a bit is fitted, when the drill
       overheated or is wrecked.
-- [ ] Help says what each system does in the dig and in a fight, what coolant is, and that repairs
+- [x] Help says what each system does in the dig and in a fight, what coolant is, and that repairs
       do not speed up when the drill slows.
 
 ## Round B: dig verbs (spec `specs/m1c_dig_verbs.md`: sim and bots by builder-opus, then the view)
-- [ ] Heading to +-90 degrees (90 = hold depth, cutting sideways along a vein). Turn rate and the
+- [x] Heading to +-90 degrees (90 = hold depth, cutting sideways along a vein). Turn rate and the
       sideways share of the speed scale with helm bars when the helm is manned.
-- [ ] Fault rock (a new unstable material): cutting it builds strain; rockfalls hit the ship; a
+- [x] Fault rock (a new unstable material): cutting it builds strain; rockfalls hit the ship; a
       bracing layer soaks each one, otherwise hull and the top room take damage.
-- [ ] Blast: the charge launcher fires a charge into the rock while drilling (weapons powered, one
+- [x] Blast: the charge launcher fires a charge into the rock while drilling (weapons powered, one
       charge): clears a radius, pays the ore and gems, ignites gas away from the ship, drains water
       pockets, very loud.
-- [ ] Douse: vent coolant into a burning room (one coolant unit, the coolant system powered).
-- [ ] Policy bots use the verbs; 300 runs per bot; tune.
-- [ ] View: A and D step the heading, S straight down, a HOLD DEPTH readout, side sparks, fault rock
+- [x] Douse: vent coolant into a burning room (one coolant unit, the coolant system powered).
+- [x] Policy bots use the verbs; 300 runs per bot; tune (D035 to D039: balanced still about 38%, kept).
+- [x] View: A and D step the heading, S straight down, a HOLD DEPTH readout, side sparks, fault rock
       and rockfalls drawn, blast aiming (F2 while drilling, then click the rock or the scanner), a
       douse button on burning rooms (F douses the worst fire), power-row hints.
-- [ ] Judge by hand (play.py and computer use) and with the Gemini critic: keep what is fun.
+- [~] Judged with stills and the Gemini critic (006: 4.5, noisy; the rock fixed in D045). Hands-on play
+      was not possible (computer-use access declined): Stewart's build 4 run is the hands-on test.
 
 ## Round D: something to keep (spec `specs/m1c_meta.md`, builder, in parallel with round B)
-- [ ] Requisition points earned per run (rows reached, new codex entries, fights won, the gate, ore
+- [x] Requisition points earned per run (rows reached, new codex entries, fights won, the gate, ore
       mined), banked in the profile, shown on the death screen.
-- [ ] A requisitions screen buying permanent starting upgrades (spare bits, charges, coolant,
+- [x] A requisitions screen buying permanent starting upgrades (spare bits, charges, coolant,
       plating, the tungsten head, a fourth crew member). Unlocks go into the replay header.
 
 ## Round C: things in the rock (spec `specs/m1c_structures.md`, after round B merges)
-- [ ] Buried structures with interiors: old mine works (timber, fault rock, crates), a Soviet rig
+- [x] Buried structures with interiors: old mine works (timber, fault rock, crates), a Soviet rig
       wreck (steel plates, salvage, a tape), a crystal hollow (a cavern lined with gems, now and then
       a hermit trader). Agartha-style hollows and towns grow from this in M2.
-- [ ] Breaking in: a banner, a TOPSIDE line, a codex entry; loot cells pay resources; a trader hollow
+- [x] Breaking in: a banner, a TOPSIDE line, a codex entry; loot cells pay resources; a trader hollow
       opens the store mid-segment.
-- [ ] Surveys and the map show structures; the scanner and the rock view draw them.
+- [x] Surveys and the map show structures; the scanner and the rock view draw them.
 
 ## Round E (if the budget allows): the away miner
 - [ ] Park the drill (P) and send a crew member from the drill room into the rock to dig a vein by
@@ -66,6 +67,9 @@ Stewart asked for.
       without leaving them behind.
 
 ## Then
+- [x] Playtest build 4 exported (`m1c-playtest-4`, from e1ffb36). Not done: the requisitions toast at the
+      start of a dive; the map structure marks were never seen in a still.
+
 Playtest build 4, the Gemini critic, a hands-on run by the lead, the making-of page, Stewart plays.
 
 ## Answers to Stewart's questions (for the summary and the help page)

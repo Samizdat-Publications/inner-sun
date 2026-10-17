@@ -8,6 +8,7 @@ extends CanvasLayer
 signal new_run_requested
 
 const WORLD_RECT: Rect2 = Rect2(340.0, 90.0, 1180.0, 938.0)  ## Between the panels, above the alert strip.
+const NOTICE_W: float = 780.0
 
 var sim: Sim
 var profile: Profile
@@ -30,7 +31,7 @@ var help: HelpView
 var tally: DigTally  ## The dig tally and the arrival toast; owns the DigLog.
 var structure_banner: StructureBanner  ## The break-in plaque for a buried structure.
 var _banner: Label
-var _notice: Label  ## The loud line low over the world (the drill is stopped and why).
+var _notice: Label  ## The line at the top of the world when the drill is stopped and why.
 var _root: Control
 var _layer: Control
 
@@ -190,12 +191,14 @@ func _build_banner() -> void:
 	_banner.visible = false
 	_layer.add_child(_banner)
 	_notice = Label.new()
-	_notice.position = Vector2(WORLD_RECT.position.x + 120.0, WORLD_RECT.end.y - 190.0)
-	_notice.custom_minimum_size = Vector2(WORLD_RECT.size.x - 240.0, 0)
-	_notice.size = Vector2(WORLD_RECT.size.x - 240.0, 0)
+	# Top of the world, over the shaft and the top deck: never over the crown and the rock it steers
+	# for (critic 007 found the old spot low over the world covered the drill head).
+	_notice.position = Vector2(WORLD_RECT.get_center().x - NOTICE_W * 0.5, WORLD_RECT.position.y + 52.0)
+	_notice.custom_minimum_size = Vector2(NOTICE_W, 0)
+	_notice.size = Vector2(NOTICE_W, 0)
 	_notice.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_notice.add_theme_font_size_override("font_size", 30)
+	_notice.add_theme_font_size_override("font_size", 23)
 	_notice.add_theme_color_override("font_color", UiTheme.TEXT)
 	_notice.add_theme_stylebox_override("normal", UiTheme.box(Color(0.32, 0.06, 0.04, 0.94), UiTheme.ALARM, 4, 2, 18))
 	_notice.mouse_filter = Control.MOUSE_FILTER_IGNORE

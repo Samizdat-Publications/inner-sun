@@ -126,8 +126,10 @@ static func drill_stop(s: Sim) -> Dictionary:
 		return {"sev": 75, "kind": "damaged", "alert": "", "notice": "DRILL WRECKED: crew repair it on their own. Send one in to hurry (1-3, then click the drill room)."}
 	if r.sys_power <= 0:
 		var key: String = power_key(s.ship, ri)
-		return {"sev": 87, "kind": "power", "alert": "DRILL HAS NO POWER: press %s" % key,
-				"notice": "DRILL HAS NO POWER. Press %s or click the DRILL bars on the power panel. Free a bar first (Shift plus a system's key) if the reactor is full." % key}
+		var notice: String = "DRILL HAS NO POWER. Press %s or click the DRILL bars on the power panel." % key
+		if s.systems.free_bars(s.player) <= 0:
+			notice += " The reactor is full: free a bar first (Shift plus another system's key)."
+		return {"sev": 87, "kind": "power", "alert": "DRILL HAS NO POWER: press %s" % key, "notice": notice}
 	if d.bit_broken:
 		var crawl: int = roundi(s.db.tune("drill.broken_bit_factor") * 100.0)
 		if bits > 0:

@@ -22,6 +22,7 @@ const CUTAWAY_ZOOM: float = 1.15
 const COMBAT_TOP_PX: float = 90.0  ## The enemy panel at the top of the world area.
 const COMBAT_BOTTOM_PX: float = 124.0  ## The weapon cards at the bottom of the world area.
 const HUMAN_CAP_S: float = 6.0 * 3600.0  ## A human run never hits the stuck cap.
+const NOTICE_GRACE_S: float = 1.5  ## The drill-stop notice shows only once the stop has lasted this long.
 const FIGHT_BANNER: String = "HOSTILE CONTACT. Paused. Power weapons (E) and bracing (W), arm a gun (F1, F2) and click an enemy room. Space to fight."
 
 var args: Args
@@ -51,6 +52,7 @@ var _steer: SteerControl = SteerControl.new()
 var _finished: bool = false
 var _in_fight: bool = false
 var _fight_banner: bool = false
+var _stop_s: float = 0.0  ## How long the drill-stop notice has been due (real seconds).
 var _saved: bool = false
 
 
@@ -191,8 +193,11 @@ func _process(delta: float) -> void:
 	if not paused:
 		_fight_banner = false
 	screen.set_banner(FIGHT_BANNER if _fight_banner and paused else "")
+	# The stop notice waits NOTICE_GRACE_S: a drill powered a moment after a segment starts never flashes it.
 	var stop_notice: String = str(AlertsStrip.drill_stop(run.sim).get("notice", ""))
-	screen.set_notice("" if (_fight_banner and paused) or screen.overlay_open() else stop_notice)
+	_stop_s = _stop_s + delta if not stop_notice.is_empty() else 0.0
+	var show_notice: bool = _stop_s >= NOTICE_GRACE_S and not (_fight_banner and paused) and not screen.overlay_open()
+	screen.set_notice(stop_notice if show_notice else "")
 
 
 ## The camera eases to its framing: the drill rock while there is one, the cutaway otherwise, and in a

@@ -1,8 +1,31 @@
 # Handoff
 
-From the M1b session (2026-10-16) to the next round, which starts after Stewart plays build 3.
+From the M1c session (2026-10-16) to the next round, which starts after Stewart plays build 4.
 
-## M1b in one paragraph (newest)
+## M1c in one paragraph (newest)
+Stewart's build 3 notes ("picking a spot on the radar and going straight down", "more things to
+manage", buried towns, something to keep on death) became D034: every powered system has a job in
+the dig. Built and merged: loud stop notices (no power, broken bit); hold depth and helm-powered side
+cutting (heading to +-90); fault rock whose rockfalls bracing soaks; blasts by the charge launcher
+(half the ore shatters, D039); douse (a coolant unit on a fire); buried structures (old mine works, a
+Soviet rig module, a crystal hollow with a sometimes-trader: crates, break-in events, a mid-dig store);
+research and requisitions (D040); the rock shader redrawn as fractured blocks (D045). Playtest build 4
+is exported (`m1c-playtest-4`). Not done: the away miner (plan round E), hands-on play by the lead
+(computer-use access was declined this session, so judging leaned on stills and the Gemini critic),
+and the critic's M2 art items (`review/LEDGER.md` 24 to 28). The balanced bot wins about 38% (above the
+10 to 30% band, kept on purpose: D039, D044); tune only if build 4 is too easy for Stewart.
+Next round (M1d): triage his build 4 notes first, then the candidates in `docs/plans/M1c.md` that are
+still open. Effort xhigh for the lead while triaging, high once it is plain building; Sonnet builders
+for view and data, Opus builders only for sim-heavy work (each Opus round here took 1 to 3.5 hours and
+350k to 460k tokens).
+
+Paste this into a new session (folder `C:\Users\stewa\Documents\Claude\Inner Sun`, Opus 5.5, effort
+xhigh, Auto):
+```
+Continue Inner Sun: M1d. Read CLAUDE.md, PROGRESS.md and HANDOFF.md (the newest paragraph), then docs/STEWART_FEEDBACK.md (my build 4 notes are at the top), docs/plans/M1c.md and docs/DECISIONS.md D034 onward. Replay any runs I mention from %APPDATA%\InnerSun\runs\. Write docs/plans/M1d.md from my notes and the open M1c items, then work autonomously per CLAUDE.md, judge changes with the Gemini critic and by playing by hand (python tools/play.py plus computer use; I will approve the access), keep what is fun. Republish the making-of page (https://claude.ai/artifact/UJjDA4PJkSXMKjpg2zxQpc) when something visible lands. Stop with a new playtest build. Stop earlier only for "checkpoint", a usage limit, or a decision that is genuinely mine.
+```
+
+## M1b in one paragraph
 Stewart's first playtest (2.5 minutes, steering only) said there was nothing to do and runs were
 too short with too little loot. The lead then played it by hand with real keys and mouse and found
 eight control defects, all fixed and re-tested by hand. Stewart chose "digging is the game" (D024):
@@ -25,14 +48,7 @@ design round, in this order unless he says otherwise:
 4. Park and send out a miner (an away team on foot) to mine a vein by hand, with risks.
 5. Meta progression: keep something on death (banked samples or research) that unlocks ships and
    starting gear across runs.
-Prototype 2 to 4 cheaply, judge them with the critics and by hand, and keep what is fun. Effort xhigh for the lead (a design round), high once it is plain building
-(Stewart's quota is tight); Sonnet builders for implementation, Opus builders only for sim-heavy work.
-
-Paste this into a new session (folder `C:\Users\stewa\Documents\Claude\Inner Sun`, Opus 5.5, effort
-xhigh, Auto):
-```
-Continue Inner Sun: M1c. Read CLAUDE.md, PROGRESS.md and HANDOFF.md (the newest paragraph lists the next round), then docs/STEWART_FEEDBACK.md (my build 3 notes are at the top), docs/plans/M1b.md and docs/DECISIONS.md D024 onward. Write docs/plans/M1c.md from my notes, then work autonomously per CLAUDE.md: quick fixes first, then prototype the mining ideas, judge them with the Gemini critic and by playing the build by hand (python tools/play.py plus computer use), keep what is fun. Republish the making-of page (https://claude.ai/artifact/UJjDA4PJkSXMKjpg2zxQpc) when something visible lands. Stop with a new playtest build. Stop earlier only for "checkpoint", a usage limit, or a decision that is genuinely mine.
-```
+(Done in M1c except item 4, the away miner.)
 
 ## State in one paragraph (M1a)
 M1a is built: a whole run plays from the first node to death or the layer gate. A painted drill
@@ -145,6 +161,12 @@ Continue Inner Sun: M1b. Read CLAUDE.md, PROGRESS.md and HANDOFF.md, then docs/S
   seen); git then fails with "getaddrinfo() thread failed to start". Retry later; Stewart restarts the
   Claude app when his sessions are done. Never kill processes by name.
 - **Blocked helper:** a PID-based "kill strays" helper was refused by the safety filter. Do not re-add it.
+- **GDScript utility names win.** A static helper named like a global utility (`wrap`, `clamp`,
+  `snapped`) is shadowed when called unqualified inside its own class: `wrap("text", ...)` called the
+  utility and failed every draw of the break-in banner. Name helpers distinctly (`wrap_lines`).
+- **Computer use needs Stewart's click.** `request_access` shows him a dialog; if he is away or says
+  no, stop the play.py task (the window closes with its job object) and judge with stills and critics.
+- **`shots.py` empties its out folder** before each run: give each batch its own `--out`.
 
 ## Side by side with Black Diamond
 Black Diamond (`C:\Users\stewa\Documents\Claude\Black Diamond`) builds in Godot on this PC at the same
