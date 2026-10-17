@@ -105,6 +105,7 @@ static func lint_one(db: DataDB, d: Dictionary, table: Dictionary, file: String,
 	_lint_stamp(d, legend, interior_chars, loot_char_mat, file, errs)
 	if d.has("mirror") and not (d["mirror"] is bool):
 		errs.append("%s: mirror must be true or false" % file)
+	_lint_light(d.get("light", {}), file, errs)
 	for key: String in ["event_chance", "trader_chance"]:
 		var v: Variant = d.get(key, 0.0)
 		if not _num(v) or float(v) < 0.0 or float(v) > 1.0:
@@ -201,3 +202,19 @@ static func _sorted_keys(d: Dictionary) -> PackedStringArray:
 		out.append(str(k))
 	out.sort()
 	return out
+
+
+## The optional "light" block (view only): colours as "#rrggbb", glow and lamp as positive numbers.
+static func _lint_light(v: Variant, file: String, errs: PackedStringArray) -> void:
+	if not (v is Dictionary):
+		errs.append("%s: light must be an object" % file)
+		return
+	var light: Dictionary = v
+	for key: String in ["color", "room"]:
+		if light.has(key) and not Color.html_is_valid(str(light[key])):
+			errs.append("%s: light.%s must be a colour like \"#8ccfff\"" % [file, key])
+	for key: String in ["glow", "lamp"]:
+		if light.has(key) and (not _num(light[key]) or float(light[key]) <= 0.0):
+			errs.append("%s: light.%s must be a positive number" % [file, key])
+	if light.has("facets") and not (light["facets"] is bool):
+		errs.append("%s: light.facets must be true or false" % file)

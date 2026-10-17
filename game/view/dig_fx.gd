@@ -302,13 +302,21 @@ func _draw_aim(n: Node2D, d: DrillSim, k: float) -> void:
 	var range_m: float = sim.db.tune("drill.blast_range_m")
 	var pulse: float = 0.65 + 0.25 * sin(_t * 4.0)
 	var col := Color(1.0, 0.72, 0.30, pulse)
-	var seg: int = 40
+	# Only the dashes that fall inside the world view: the ring is wider than the screen, and dashes
+	# under the side panels used to peek out as stray arcs in the gaps between them.
+	var to_screen: Transform2D = n.get_global_transform_with_canvas()
+	var view: Rect2 = RunScreen.WORLD_RECT.grow(-6.0)
+	var r_px: float = range_m * ppm
+	var seg: int = 120
 	for i: int in range(seg):
 		if i % 2 == 1:
 			continue
 		var a0: float = float(i) / float(seg) * TAU
 		var a1: float = float(i + 1) / float(seg) * TAU
-		n.draw_arc(centre, range_m * ppm, a0, a1, 6, col, 5.0 * k)
+		var p0: Vector2 = to_screen * (centre + Vector2(cos(a0), sin(a0)) * r_px)
+		var p1: Vector2 = to_screen * (centre + Vector2(cos(a1), sin(a1)) * r_px)
+		if view.has_point(p0) and view.has_point(p1):
+			n.draw_arc(centre, r_px, a0, a1, 3, col, 5.0 * k)
 	var m: Vector2 = _aim_point()
 	if m.x < 0.0:
 		return

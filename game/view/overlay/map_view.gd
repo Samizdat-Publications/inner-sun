@@ -370,7 +370,8 @@ func _draw_shadow() -> void:
 	while x <= SCREEN.end.x + 0.1:
 		var wob: float = 11.0 * sin(float(i2) * 1.7 + _t * 0.8) + 7.0 * sin(float(i2) * 3.1 - _t * 1.3)
 		var spike: float = 18.0 if i2 % 5 == 2 else 0.0
-		edge.append(Vector2(x, minf(front_y + wob + spike, SCREEN.end.y)))
+		# Kept below the top line: a wobble above it made the polygon cross itself ("triangulation failed").
+		edge.append(Vector2(x, clampf(front_y + wob + spike, top + 1.0, SCREEN.end.y)))
 		x += 24.0
 		i2 += 1
 	var poly := PackedVector2Array([Vector2(SCREEN.position.x, top), Vector2(SCREEN.end.x, top)])
@@ -558,7 +559,12 @@ func _draw_front_label() -> void:
 	if front_y <= SCREEN.position.y + 14.0:
 		ly = SCREEN.position.y + 30.0
 	var warn: Color = UiTheme.ALARM if gap < 1.6 else Color(0.78, 0.36, 0.30)
-	UiTheme.text(self, Vector2(SCREEN.position.x + 118.0, ly), txt, 16, Color(warn, 0.65 + 0.35 * UiTheme.pulse(_t, 1.4) if gap < 1.6 else 0.9))
+	# At the end of the chart away from the player's node, so the label never runs under its ring.
+	var lx: float = SCREEN.position.x + 118.0
+	var cur: Dictionary = run.node(run.current_node)
+	if not cur.is_empty() and _pos(cur).x < SCREEN.get_center().x:
+		lx = SCREEN.end.x - UiTheme.text_width(txt, 16) - 24.0
+	UiTheme.text(self, Vector2(lx, ly), txt, 16, Color(warn, 0.65 + 0.35 * UiTheme.pulse(_t, 1.4) if gap < 1.6 else 0.9))
 
 
 func _draw_legend() -> void:

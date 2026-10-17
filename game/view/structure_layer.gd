@@ -24,6 +24,7 @@ const RING_S: float = 0.7
 const BOOST: float = 1.9
 const POPS: int = 4  ## Splinter bursts that can play at once.
 const WARM: Color = Color(1.0, 0.62, 0.30)
+const ROOM: Color = Color8(14, 11, 9)  ## The old air's dark, unless the structure's "light" says otherwise.
 
 ## One additive, unshaded drawing node for the rings.
 class Layer extends Node2D:
@@ -38,6 +39,11 @@ var ppm: float = 80.0
 var serial: int = -1  ## The grid serial the layer was built for.
 var lit_cells: int = 0  ## Cells of the room drawn (tests).
 var lamp: PointLight2D = null
+var tint: Color = WARM  ## The structure's light colour (its data's "light.color").
+var _room_col: Color = ROOM
+var _facets: bool = false
+var _glow_k: float = 1.0  ## "light.glow": the glow's strength against the default.
+var _lamp_k: float = 1.0  ## "light.lamp": the lamp's strength against the default.
 var lamp_energy: float = 0.0  ## Where the lamp is now (tests).
 var glow_level: float = 0.0
 var entered: bool = false
@@ -122,7 +128,9 @@ static func lit_mask(d: DrillSim) -> PackedByteArray:
 
 ## The room's RGBA mask (a dark brown, alpha = the smoothed cells) and the glow's (warm, brightest in
 ## the middle of the room), both `w * CELL_PX` by `h * CELL_PX`, one cell of margin on each side.
-static func room_images(lit: PackedByteArray, w: int, h: int) -> Array[Image]:
+## `tint` colours the glow and `room` the dark air (a structure's "light" block); `facets` scatters
+## bright specks over the glow, for crystal walls.
+static func room_images(lit: PackedByteArray, w: int, h: int, tint: Color = WARM, room_col: Color = ROOM, facets: bool = false) -> Array[Image]:
 	var pw: int = (w + 2) * CELL_PX
 	var ph: int = (h + 2) * CELL_PX
 	var room := PackedByteArray()
@@ -148,17 +156,19 @@ static func room_images(lit: PackedByteArray, w: int, h: int) -> Array[Image]:
 			if alpha <= 0.0:
 				continue
 			var o: int = (y * pw + x) * 4
-			room[o] = 14
-			room[o + 1] = 11
-			room[o + 2] = 9
+			room[o] = room_col.r8
+			room[o + 1] = room_col.g8
+			room[o + 2] = room_col.b8
 			room[o + 3] = roundi(alpha * 235.0)
 			var dx: float = (float(x) / float(CELL_PX) - cxm) / maxf(1.0, float(w) * 0.5)
 			var dy: float = (float(y) / float(CELL_PX) - cym) / maxf(1.0, float(h) * 0.5)
 			var fall: float = clampf(1.0 - sqrt(dx * dx * 0.7 + dy * dy * 0.5), 0.0, 1.0)
 			var g: float = alpha * (0.25 + 0.75 * fall) * 0.55
-			glow[o] = roundi(WARM.r * g * 255.0)
-			glow[o + 1] = roundi(WARM.g * g * 255.0)
-			glow[o + 2] = roundi(WARM.b * g * 255.0)
+			if facets and RockView._hash(x, y, 11) > 0.975:
+				g = minf(1.0, g * 2.0 + 0.06)
+			glow[o] = roundi(tint.r * g * 255.0)
+			glow[o + 1] = roundi(tint.g * g * 255.0)
+			glow[o + 2] = roundi(tint.b * g * 255.0)
 			glow[o + 3] = 255
 	var out: Array[Image] = []
 	out.append(Image.create_from_data(pw, ph, false, Image.FORMAT_RGBA8, room))
@@ -210,6 +220,13 @@ func _rebuild() -> void:
 		return
 	_rect = sr.cell_rect
 	_lit = lit_mask(d)
+	var light: Dictionary = sr.def.get("light", {})
+	tint = Color.html(str(light.get("color", WARM.to_html(false))))
+	_room_col = Color.html(str(light.get("room", ROOM.to_html(false))))
+	_facets = bool(light.get("facets", false))
+	_glow_k = float(light.get("glow", 1.0))
+	_lamp_k = float(light.get("lamp", 1.0))
+	lamp.color = tint
 	_apply_room()
 	entered = sr.entered
 	_enter_age = FLARE_S if entered else 99.0
@@ -226,7 +243,7 @@ func _apply_room() -> void:
 	lit_cells = 0
 	for v: int in _lit:
 		lit_cells += v
-	var imgs: Array[Image] = room_images(_lit, _rect.size.x, _rect.size.y)
+	var imgs: Array[Image] = room_images(_lit, _rect.size.x, _rect.size.y, tint, _room_col, _facets)
 	var d: DrillSim = sim.drill
 	var origin := (Vector2(_rect.position) - Vector2.ONE) * d.cell_m * ppm
 	var k: float = ppm * d.cell_m / float(CELL_PX)
@@ -286,9 +303,9 @@ func _process(delta: float) -> void:
 			_apply_room()
 	var flicker: float = 1.0 + 0.07 * sin(_t * 5.3) + 0.04 * sin(_t * 11.7)
 	lamp_energy = lamp_at(entered, _enter_age) * flicker
-	lamp.energy = lamp_energy
+	lamp.energy = lamp_energy * _lamp_k
 	glow_level = lerpf(glow_level, GLOW_AFTER if entered else GLOW_BEFORE, 1.0 - exp(-3.0 * delta))
-	var gl: float = glow_level * flicker
+	var gl: float = glow_level * flicker * _glow_k
 	_glow.modulate = Color(BOOST * gl, BOOST * gl, BOOST * gl, 1.0)
 
 

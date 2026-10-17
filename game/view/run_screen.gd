@@ -9,6 +9,7 @@ signal new_run_requested
 
 const WORLD_RECT: Rect2 = Rect2(340.0, 90.0, 1180.0, 938.0)  ## Between the panels, above the alert strip.
 const NOTICE_W: float = 780.0
+const REQ_TOAST_S: float = 8.0  ## How long the "requisitions loaded" toast stays up once the first dive shows.
 
 var sim: Sim
 var profile: Profile
@@ -32,6 +33,8 @@ var tally: DigTally  ## The dig tally and the arrival toast; owns the DigLog.
 var structure_banner: StructureBanner  ## The break-in plaque for a buried structure.
 var _banner: Label
 var _notice: Label  ## The line at the top of the world when the drill is stopped and why.
+var _req_toast: Label  ## "TOPSIDE REQUISITIONS LOADED" with what each owned requisition put aboard.
+var _req_left: float = 0.0  ## Seconds of the toast left (counts only while no overlay is open).
 var _root: Control
 var _layer: Control
 
@@ -77,6 +80,7 @@ func build(p_sim: Sim, p_profile: Profile) -> void:
 	top.help_requested.connect(help.toggle)
 	_build_banner()
 	_bind_rows()
+	_arm_req_toast()
 
 
 func bind(p_sim: Sim, p_profile: Profile) -> void:
@@ -100,6 +104,30 @@ func bind(p_sim: Sim, p_profile: Profile) -> void:
 	callouts.bind(sim)
 	structure_banner.bind(sim)
 	_bind_rows()
+	_arm_req_toast()
+
+
+func _arm_req_toast() -> void:
+	_req_toast.text = requisitions_text(sim)
+	_req_left = REQ_TOAST_S if not _req_toast.text.is_empty() else 0.0
+	_req_toast.visible = false
+
+
+## The toast's text for a fresh run: one line per owned requisition ("Spare bits: +1 bits"), "" when
+## the run has none (or is not a full run).
+static func requisitions_text(s: Sim) -> String:
+	if s == null or s.run.mode != "run":
+		return ""
+	var ids: PackedStringArray = Requisitions.owned_from(s.options)
+	var table: Dictionary = s.db.table("requisitions")
+	var lines := PackedStringArray()
+	for id: String in ids:
+		if table.has(id):
+			var def: Dictionary = table[id]
+			lines.append("%s: %s" % [str(def.get("name", id)), Requisitions.effect_line(def, s.db)])
+	if lines.is_empty():
+		return ""
+	return "TOPSIDE REQUISITIONS LOADED\n" + "\n".join(lines)
 
 
 func set_paused(p: bool, label: String = "PAUSED") -> void:
@@ -156,7 +184,7 @@ func selected_crew() -> CrewMember:
 	return null
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if sim == null:
 		return
 	# Power is the one order that stays open under the map and a dossier (options can need power).
@@ -164,6 +192,15 @@ func _process(_delta: float) -> void:
 	weapons.keys_enabled = not overlay_open()
 	blast.keys_enabled = not overlay_open()
 	scanner.keys_enabled = not overlay_open()
+	_update_req_toast(delta)
+
+
+func _update_req_toast(delta: float) -> void:
+	var show: bool = _req_left > 0.0 and not overlay_open() and sim.drill.active
+	_req_toast.visible = show
+	if show:
+		_req_left -= delta
+		_req_toast.modulate.a = clampf(_req_left / 1.0, 0.0, 1.0)
 
 
 func _ship_row() -> float:
@@ -204,3 +241,14 @@ func _build_banner() -> void:
 	_notice.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_notice.visible = false
 	_layer.add_child(_notice)
+	_req_toast = Label.new()
+	_req_toast.position = Vector2(WORLD_RECT.get_center().x - NOTICE_W * 0.5, WORLD_RECT.end.y - 230.0)
+	_req_toast.custom_minimum_size = Vector2(NOTICE_W, 0)
+	_req_toast.size = Vector2(NOTICE_W, 0)
+	_req_toast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_req_toast.add_theme_font_size_override("font_size", 20)
+	_req_toast.add_theme_color_override("font_color", UiTheme.AMBER)
+	_req_toast.add_theme_stylebox_override("normal", UiTheme.box(Color(UiTheme.STEEL_DEEP, 0.92), UiTheme.BRASS, 3, 2, 16))
+	_req_toast.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_req_toast.visible = false
+	_layer.add_child(_req_toast)

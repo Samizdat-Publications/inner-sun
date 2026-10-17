@@ -39,6 +39,16 @@ uniform float hardness[8];
 uniform float ppm = 80.0;
 uniform float detail = 0.9;
 float hash1(float n) { return fract(sin(n * 91.345) * 437.585); }
+float vnoise(vec2 x) {
+	vec2 i = floor(x);
+	vec2 f = fract(x);
+	f = f * f * (3.0 - 2.0 * f);
+	float a = hash1(i.x * 17.0 + i.y * 131.0);
+	float b = hash1((i.x + 1.0) * 17.0 + i.y * 131.0);
+	float c = hash1(i.x * 17.0 + (i.y + 1.0) * 131.0);
+	float d = hash1((i.x + 1.0) * 17.0 + (i.y + 1.0) * 131.0);
+	return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
 void fragment() {
 	vec2 p = UV * size_px;
 	vec2 w = vec2(sin(p.y * 0.083 + sin(p.x * 0.047) * 2.1), sin(p.x * 0.071 + sin(p.y * 0.059) * 2.3)) * 6.0;
@@ -48,8 +58,14 @@ void fragment() {
 	vec2 f = fract(p / tile_px);
 	f = clamp(f, vec2(0.004), vec2(0.996));
 	vec2 uv = vec2((float(slot) + f.x) / 8.0, f.y);
+	// Break the 1.28 m repeat (critic 007): a second sample of the same tile, larger by the golden
+	// ratio and turned 90 degrees (each sample alone stays seamless), blended in by slow noise.
+	vec2 f2 = fract(p / (tile_px * 1.618) + vec2(0.37, 0.71));
+	f2 = clamp(vec2(f2.y, 1.0 - f2.x), vec2(0.004), vec2(0.996));
+	vec2 uv2 = vec2((float(slot) + f2.x) / 8.0, f2.y);
+	float mixk = smoothstep(0.32, 0.68, vnoise(p / ppm * 0.45 + vec2(3.1, 7.7)));
 	vec4 base = COLOR;
-	vec3 tile = texture(atlas_a, uv).rgb;
+	vec3 tile = mix(texture(atlas_a, uv).rgb, texture(atlas_a, uv2).rgb, mixk);
 	// Slot 7 is only the built materials of buried structures (timber, steel, crates): a neutral
 	// grain, so the colour painted into the mosaic is the colour on screen.
 	if (slot == 7) {
@@ -102,7 +118,9 @@ void fragment() {
 	vec3 bed_tint = mix(vec3(1.0), vec3(1.0 + 0.3 * bed_k, 1.0 + 0.08 * bed_k, 1.0 - 0.28 * bed_k), rockish);
 	COLOR = vec4(tile * tints[slot] * base.rgb * 1.25 * strata * bed_tint, base.a);
 	vec3 nm = NORMAL_MAP;
-	vec3 tn = texture(atlas_n, uv).xyz;
+	vec3 tn2 = texture(atlas_n, uv2).xyz;
+	tn2 = vec3(1.0 - tn2.y, tn2.x, tn2.z);  // The turned sample's normals turn with it.
+	vec3 tn = mix(texture(atlas_n, uv).xyz, tn2, mixk);
 	vec2 xy = (nm.xy - 0.5) * 2.0 + (tn.xy - 0.5) * 2.0 * detail;
 	NORMAL_MAP = normalize(vec3(xy, 1.0)) * 0.5 + 0.5;
 }

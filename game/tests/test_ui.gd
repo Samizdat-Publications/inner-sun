@@ -406,3 +406,10 @@ func test_crew_column_fits_four_cards_above_the_strip() -> void:
 	check(ScannerPanel.SIZE.y + TopBar.DESIGN_SIZE.y <= CrewCards.TOP, "the scanner ends above the crew cards")
 	c.free()
 
+
+func test_requisitions_toast_text() -> void:
+	check_eq(RunScreen.requisitions_text(_sim()), "", "no requisitions, no toast")
+	var s: Sim = Sim.new(db(), 7, "light_drill", {"mode": "run", "known_codex": [], "requisitions": ["charge_crate", "spare_bits"]})
+	var t: String = RunScreen.requisitions_text(s)
+	check(t.begins_with("TOPSIDE REQUISITIONS LOADED"), "the toast has its title")
+	check(t.contains("Charge crate: +3 charges"), "and one line per requisition: " + t)

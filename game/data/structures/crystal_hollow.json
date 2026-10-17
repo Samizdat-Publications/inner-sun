@@ -18,6 +18,7 @@
     "      e  e      "
   ],
   "mirror": true,
+  "light": {"color": "#8ccfff", "room": "#0a0e1c", "glow": 1.7, "lamp": 1.25, "facets": true},
   "loot": [],
   "event_chance": 0.5,
   "trader": "hollow_trader",
