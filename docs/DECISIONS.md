@@ -404,3 +404,16 @@ fine sine lines. Now a cellular split makes blocks about 1.7 by 0.8 m (smaller i
 little lighter or darker and tinted, with dark crack seams that fade in and out along their length
 (full cracks closed the blocks into paving stones); only a faint broad layering is left. Seen in
 stills at seed 21 (greedy run). Revert: the shader block in `RockTiles.SHADER_CODE`.
+
+## D046 (AI): The away miner: park, send one crew member, carry the haul home
+Stewart (build 3): "explore a park and disembark to allow a single miner to mine out the veins? Up to
+you", and "more things to manage so it feels less on rails". Design: M plus a click sends the
+selected crew member to a point in the rock within 12 m of the drill head. Sending parks the drill
+(no separate park key) and it resumes on its own once the miner is back, so there is one thing to
+learn. The miner walks to the drill room, climbs out, digs a one-cell tunnel by hand, mines out the
+connected vein at the target, and walks home. Costs and risks: the drill stands still while the front
+keeps coming, the crew member mans nothing and fights no fires while out, gas, water and fault rock
+hurt the miner instead of the ship, and the haul pays only on return (lost if they die). Advantages:
+full yield, quiet, and veins beside the path without steering the whole tower there. Spec:
+`docs/plans/specs/m1d_away_miner.md`. Revert: drop the two commands and `DrillMiner`; nothing else
+depends on them.
