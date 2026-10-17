@@ -76,6 +76,9 @@ func _draw_tally() -> void:
 	for m: Variant in mats:
 		w += UiTheme.text_width("%s %d" % [DigLog.short_name(str(m)).to_lower(), int(digs.totals[m])], FONT) + 18.0
 	w += UiTheme.text_width("= +%d ore +%d gems" % [digs.ore, digs.gems], FONT) + 70.0
+	var crate_s: String = crates_text(sim)
+	if not crate_s.is_empty():
+		w += UiTheme.text_width(crate_s, FONT) + 24.0
 	var r := Rect2(TALLY_POS, Vector2(minf(w, 1150.0), 34.0))
 	draw_rect(r, Color(0.03, 0.04, 0.05, 0.78), true)
 	draw_rect(r, UiTheme.BRASS_DARK, false, 1.5)
@@ -96,12 +99,40 @@ func _draw_tally() -> void:
 	UiTheme.text(self, Vector2(x, y), g, FONT, UiTheme.TEXT)
 	x += UiTheme.text_width(g, FONT) + 6.0
 	UiTheme.icon(self, "gems", Vector2(x + 8.0, y - 6.0), 17.0)
+	x += 26.0
+	if not crate_s.is_empty():
+		UiTheme.text(self, Vector2(x, y), crate_s, FONT, DigLog.LOOT_COLOR)
+
+
+## "crates 1/3" while the segment holds a buried structure with crates, else "".
+static func crates_text(s: Sim) -> String:
+	var st: DrillStructures = s.drill.structures
+	if not st.has_structure() or st.crates_total <= 0:
+		return ""
+	return "crates %d/%d" % [st.crates_opened, st.crates_total]
+
+
+## The structure line of the arrival toast ("OLD MINE WORKS  BROKEN INTO  CRATES 2/3"), "" when the
+## segment had none. Pure: the tests read it.
+static func structure_line(t: Dictionary) -> String:
+	if str(t.get("structure", "")).is_empty():
+		return ""
+	var label: String = str(t.get("label", t.get("structure", ""))).to_upper()
+	var bits := PackedStringArray([label, "BROKEN INTO" if bool(t.get("entered", false)) else "NOT ENTERED"])
+	if int(t.get("crates_total", 0)) > 0:
+		bits.append("CRATES %d/%d" % [int(t.get("crates", 0)), int(t.get("crates_total", 0))])
+	return "  ".join(bits)
 
 
 func _draw_toast() -> void:
 	var t: Dictionary = digs.toast
 	var yields: Dictionary = t.get("yield", {})
-	var rows: int = 3 if (not yields.is_empty() or int(t.get("gas_bursts", 0)) > 0) else 2
+	var yield_row: bool = not yields.is_empty() or int(t.get("gas_bursts", 0)) > 0
+	var rows: int = 3 if yield_row else 2
+	var st_line: String = structure_line(t)
+	var loot: Dictionary = t.get("loot", {})
+	if not st_line.is_empty():
+		rows += 1
 	var h: float = 40.0 + 26.0 * float(rows)
 	var cx: float = RunScreen.WORLD_RECT.get_center().x
 	var fade: float = clampf((DigLog.TOAST_S - digs.toast_age) / 0.8, 0.0, 1.0) * clampf(digs.toast_age / 0.12, 0.0, 1.0)
@@ -128,7 +159,7 @@ func _draw_toast() -> void:
 		UiTheme.bold_text(self, Vector2(x, y), s2, 22, Color(UiTheme.TEXT, fade))
 		x += UiTheme.text_width(s2, 22) + 8.0
 		UiTheme.icon(self, "gems", Vector2(x + 10.0, y - 7.0), 22.0, Color(1, 1, 1, fade))
-	if rows == 3:
+	if yield_row:
 		x = r.position.x + 18.0
 		y += 26.0
 		for m: Variant in yields.keys():
@@ -138,3 +169,12 @@ func _draw_toast() -> void:
 			x += UiTheme.text_width(s, 17) + 16.0
 		if int(t.get("gas_bursts", 0)) > 0:
 			UiTheme.text(self, Vector2(x, y), "GAS BURSTS %d" % int(t["gas_bursts"]), 17, Color(0.85, 0.92, 0.3, fade))
+	if not st_line.is_empty():
+		x = r.position.x + 18.0
+		y += 26.0
+		UiTheme.text(self, Vector2(x, y), st_line, 17, Color(DigLog.LOOT_COLOR, fade))
+		x += UiTheme.text_width(st_line, 17) + 16.0
+		for res: Variant in loot.keys():
+			var ls: String = "+%d %s" % [int(loot[res]), DigLog.short_name(str(res)).to_lower()]
+			UiTheme.text(self, Vector2(x, y), ls, 17, Color(UiTheme.TEXT, fade))
+			x += UiTheme.text_width(ls, 17) + 12.0

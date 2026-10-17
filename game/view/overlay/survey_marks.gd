@@ -7,6 +7,8 @@ extends RefCounted
 
 const PIP_GAP: float = 9.0
 const ICON_GAP: float = 9.0
+const STRUCTURE_KEY: String = "structure:"
+const STRUCTURE_COLOR: Color = Color(0.95, 0.72, 0.38)
 
 
 ## Material id -> {"name", "color"} for the rock table the layer drills through.
@@ -16,7 +18,20 @@ static func material_info(db: DataDB, rock_id: String) -> Dictionary:
 	for m: Variant in rock.get("materials", []):
 		var md: Dictionary = m
 		out[str(md.get("id", ""))] = {"name": str(md.get("name", md.get("id", ""))), "color": Color.html(str(md.get("color", "#c0c0c0")))}
+	# The buried structures the map can name, under "structure:<id>" (their label, as the banner says it).
+	var structures: Dictionary = db.table("structures")
+	for sid: Variant in structures.keys():
+		var sd: Dictionary = structures[sid]
+		out[STRUCTURE_KEY + str(sid)] = {"name": str(sd.get("label", sd.get("name", sid))), "color": STRUCTURE_COLOR}
 	return out
+
+
+## The label of a reading's buried structure ("" for none), from `info` (material_info).
+static func structure_label(survey: Dictionary, info: Dictionary) -> String:
+	var sid: String = str(survey.get("structure", ""))
+	if sid.is_empty():
+		return ""
+	return str((info.get(STRUCTURE_KEY + sid, {}) as Dictionary).get("name", sid.replace("_", " "))).to_upper()
 
 
 ## True when a node's reading is worth drawing: it has one, and the scanner has seen the node.
@@ -55,6 +70,14 @@ static func draw(ci: CanvasItem, at: Vector2, survey: Dictionary, tiers: int, in
 		var zig := PackedVector2Array([f + Vector2(-4.5, -5.0), f + Vector2(1.0, -1.5), f + Vector2(-2.0, 1.0), f + Vector2(4.5, 5.5)])
 		ci.draw_polyline(zig, Color(0.86, 0.72, 0.46, dim), 2.2)
 		x += ICON_GAP + 2.0
+	var sname: String = structure_label(survey, info)
+	if not sname.is_empty():
+		# A little hut: a roof over a door, in the structure colour.
+		var h: Vector2 = Vector2(x + 4.0, at.y + 5.0)
+		var sc := Color(STRUCTURE_COLOR, dim)
+		ci.draw_colored_polygon(PackedVector2Array([h + Vector2(-5.5, -0.5), h + Vector2(0, -5.5), h + Vector2(5.5, -0.5)]), sc)
+		ci.draw_rect(Rect2(h + Vector2(-4.0, -0.5), Vector2(8.0, 6.0)), sc, false, 1.5)
+		x += ICON_GAP + 3.0
 	var width: float = x - at.x
 	var y2: float = at.y + 16.0
 	var x2: float = at.x + 1.0
@@ -71,6 +94,9 @@ static func draw(ci: CanvasItem, at: Vector2, survey: Dictionary, tiers: int, in
 		ci.draw_colored_polygon(dia, Color(col2, dim))
 		ci.draw_polyline(dia + PackedVector2Array([dia[0]]), Color(0, 0, 0, 0.7 * dim), 1.0)
 		x2 += 11.0
+	if not sname.is_empty():
+		UiTheme.text(ci, Vector2(at.x + 1.0, at.y + 36.0), sname, 11, Color(STRUCTURE_COLOR, dim))
+		width = maxf(width, UiTheme.text_width(sname, 11))
 	return maxf(width, x2 - at.x)
 
 
@@ -95,6 +121,9 @@ static func words(survey: Dictionary, tiers: int, info: Dictionary, deposit: boo
 	if bool(survey.get("faults", false)):
 		hazards.append("FAULT ROCK (BRACE)")
 	out.append("AHEAD: " + (", ".join(hazards) if not hazards.is_empty() else "CLEAR"))
+	var sname: String = structure_label(survey, info)
+	if not sname.is_empty():
+		out.append("BURIED: " + sname)
 	return out
 
 

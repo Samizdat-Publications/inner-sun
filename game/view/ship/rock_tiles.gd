@@ -14,6 +14,8 @@ const TILE_M: float = 1.28
 ## Slot per material id; 7 is the shaft back wall.
 const SLOT_OF: Dictionary = {
 	"soft_rock": 0, "rock": 1, "dense_rock": 2, "hard_rock": 3, "iron_ore": 4, "gem": 5, "water_pocket": 6,
+	# Buried structures: built things, not strata. Slot 7 is flat in the shader (colour from the mosaic).
+	"timber": 7, "steel": 7, "crate": 7, "tape_case": 7, "rubble": 2,
 }
 const FILES: Array[String] = ["soft", "dense", "dense", "hard", "iron", "gem", "water", "shaft"]
 ## Per slot tint (granite lighter and warmer; iron a little cooler so it reads as metal in rock).
@@ -48,6 +50,11 @@ void fragment() {
 	vec2 uv = vec2((float(slot) + f.x) / 8.0, f.y);
 	vec4 base = COLOR;
 	vec3 tile = texture(atlas_a, uv).rgb;
+	// Slot 7 is only the built materials of buried structures (timber, steel, crates): a neutral
+	// grain, so the colour painted into the mosaic is the colour on screen.
+	if (slot == 7) {
+		tile = vec3(0.6 + (dot(tile, vec3(0.33)) - 0.4) * 0.5);
+	}
 	// Strata: warped horizontal beds (about 1.7 m thick) each a little lighter or darker, with a thin
 	// dark seam between beds and finer banding inside them. Hard rock shows it harder (more contrast,
 	// cooler and darker, with cracks); soft rock is warmer, paler and crumbly. Water and the shaft wall

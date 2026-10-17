@@ -13,6 +13,7 @@ extends Node2D
 ##                               and aimed (to look at combat; dev only); --arm=<slot> shows aiming
 ## Also: --seed=<n> --bot=<name> --duration=<s> --run-ticks=<n> --loop --debug-hud
 ##   --shots=<a,b> --out=<dir> | --capture=<dir> --stills=<n> --sheets=<m> | --perf=<file> | --selftest
+##   --look=structure            (dev) the drilling camera frames the segment's buried structure
 ## Every bot-driven run ends by printing `FINAL tick=<n> hash=<h>` so tools can compare runs.
 ## Normal play saves the profile and a replayable record of every run (game/meta), finished or not.
 
@@ -44,6 +45,8 @@ var test_args: Args = null  ## Tests only: used instead of the command line.
 var build_headless: bool = false  ## Tests only: build the world and the UI even without a display.
 var fx: DigFx  ## The dig verbs' effects in the world (blast aim and explosion, rockfall, side cutting).
 var douse: DouseLayer  ## DOUSE buttons on burning rooms.
+var structures: StructureLayer  ## The buried structure's room, glow, lamp and crate pops.
+var look_structure: bool = false  ## Dev only (--look=structure): the camera frames the buried structure.
 var _steer: SteerControl = SteerControl.new()
 var _finished: bool = false
 var _in_fight: bool = false
@@ -119,6 +122,7 @@ func _start_run() -> bool:
 		combat_view.rebind(run.sim)
 		screen.bind(run.sim, profile)
 		fx.bind(run.sim, screen.blast)
+		structures.bind(run.sim)
 		douse.bind(run.sim)
 		if hud != null:
 			hud.bind(run)
@@ -198,6 +202,10 @@ func _ease_camera(d: DrillSim, delta: float) -> void:
 	var base_zoom: float = drill_zoom if rock_view != null else CUTAWAY_ZOOM
 	var zoom: float = base_zoom
 	var pos: Vector2 = _drill_cam_target(d) if rock_view != null else _framed(view.center_px(), base_zoom)
+	if look_structure and rock_view != null and d.structures.has_structure():
+		var sr: Rect2 = d.structures.rect
+		zoom = clampf(0.82 * RunScreen.WORLD_RECT.size.x / (sr.size.x * PPM), 0.5, 1.5)
+		pos = _framed(sr.get_center() * PPM, zoom)
 	if combat_view.active():
 		var b: Rect2 = combat_view.bounds_px()
 		zoom = minf(base_zoom, minf(_combat_area().size.x / b.size.x, _combat_area().size.y / b.size.y))
@@ -436,6 +444,10 @@ func _build_world() -> void:
 	fx = DigFx.new()
 	fx.setup(run.sim, screen.blast, PPM)
 	add_child(fx)
+	structures = StructureLayer.new()
+	structures.setup(run.sim, PPM)
+	add_child(structures)
+	look_structure = args.get_str("look", "") == "structure"
 	if args.has("aim"):
 		var aim: PackedStringArray = args.get_str("aim", "").split(",")
 		if aim.size() == 2:

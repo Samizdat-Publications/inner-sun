@@ -23,6 +23,14 @@ extends Node2D
 ## (range_item_cull_mask 2) reach it, never the ship's interior lamps.
 ## Reads sim state only; paints with its own integer hash, so the picture is the same every run.
 
+## Kinds of the built materials of buried structures (the rest are numbers in the comment on _kind).
+const K_TIMBER: int = 5
+const K_STEEL: int = 6
+const K_CRATE: int = 7
+const K_RUBBLE: int = 8
+const K_INTERIOR: int = 9  ## A structure's old air: painted as air, StructureLayer draws the dark room.
+const K_TAPE: int = 10
+
 const CELLS: int = 16
 const CELL_PX: int = 8
 const CHUNK_PX: int = CELLS * CELL_PX
@@ -70,7 +78,8 @@ var serial: int = -1
 
 var _scale: float = 5.0
 var _slot: PackedByteArray = PackedByteArray()  # painted tile slot per material code
-var _kind: PackedByteArray = PackedByteArray()  # 0 rock, 1 ore, 2 gem, 3 water, 4 fault rock (unstable)
+var _kind: PackedByteArray = PackedByteArray()  # 0 rock, 1 ore, 2 gem, 3 water, 4 fault rock (unstable), 5 to 10: see K_*
+var _air: PackedByteArray = PackedByteArray()  # per material code: 1 = painted as air (code 0, a structure's old air)
 var _seen: PackedByteArray = PackedByteArray()  # the view's copy of the grid
 var _last: PackedInt32Array = PackedInt32Array()
 var _mcols: int = 0  # mosaic size in cells (whole chunks, so it can be wider and taller than the grid)
@@ -85,6 +94,7 @@ var _since_upload: int = 0
 var _pc: PackedByteArray = PackedByteArray()  # strip scratch: padded codes, solidity, value jitter
 var _ps: PackedFloat32Array = PackedFloat32Array()
 var _pv: PackedFloat32Array = PackedFloat32Array()
+var _look: PackedFloat32Array = PackedFloat32Array([1.0, 1.0, 1.0, 1.0, 1.0])  # _built_look result: shade, r, g, b, bump
 var _rock: RockNode
 var _img_a: Image
 var _img_n: Image
@@ -294,7 +304,7 @@ func _note_change(ci: int) -> void:
 			_mark_rect(c - 1, r - 1, c_hi, r_hi)
 			var kw: int = _kind[was]
 			var kn: int = _kind[now_code]
-			if ROCK_SHADOWS or kw == 1 or kw == 2 or kn == 1 or kn == 2:
+			if ROCK_SHADOWS or _has_glint(kw) or _has_glint(kn):
 				if _gdirty[ci] == 0:
 					_gdirty[ci] = 1
 					_gdirty_total += 1
@@ -395,14 +405,42 @@ static func _make_tile() -> void:
 		_dft[p] = 6.0 * f * (1.0 - f)
 
 
+## Ore, gems and loot (crates, tape cases) get the additive glint layer.
+static func _has_glint(kind: int) -> bool:
+	return kind == 1 or kind == 2 or kind == K_CRATE or kind == K_TAPE
+
+
+## The kind of a built material by id, or -1 for any other material.
+static func built_kind(material_id: String) -> int:
+	match material_id:
+		"timber":
+			return K_TIMBER
+		"steel":
+			return K_STEEL
+		"crate":
+			return K_CRATE
+		"rubble":
+			return K_RUBBLE
+		"relic_air":
+			return K_INTERIOR
+		"tape_case":
+			return K_TAPE
+	return -1
+
+
 func _make_palette() -> void:
 	_slot.resize(256)
 	_kind.resize(256)
+	_air.resize(256)
 	for code: int in range(256):
 		var m: Dictionary = drill.material(code)
 		_slot[code] = RockTiles.slot_of(str(m.get("id", "")))
 		var kind: int = 0
-		if code < drill.water_of.size() and drill.water_of[code] == 1:
+		var built: int = built_kind(str(m.get("id", "")))
+		_air[code] = 1 if code == 0 or built == K_INTERIOR or (code < drill.interior_of.size() and drill.interior_of[code] == 1) else 0
+		if built >= 0:
+			kind = built
+		elif code < drill.water_of.size() and drill.water_of[code] == 1:
 			kind = 3
 		elif code < drill.yield_res_of.size() and drill.yield_res_of[code] >= 0:
 			kind = 2 if RunState.RESOURCES[drill.yield_res_of[code]] == "gems" else 1
@@ -434,13 +472,14 @@ func _paint_run(c0: int, c1: int, r: int) -> void:
 		for i: int in range(pw):
 			var code: int = _code_at(c0 - 1 + i, r - 1 + j)
 			pc[j * pw + i] = code
-			ps[j * pw + i] = 0.0 if code == 0 else 1.0
+			ps[j * pw + i] = 0.0 if _air[code] == 1 else 1.0
 			pv[j * pw + i] = 0.88 + 0.24 * _hash(c0 - 1 + i, r - 1 + j, 9)
 	var ci: PackedInt32Array = _ci
 	var ft: PackedFloat32Array = _ft
 	var dft: PackedFloat32Array = _dft
 	var kinds: PackedByteArray = _kind
 	var slots: PackedByteArray = _slot
+	var air: PackedByteArray = _air
 	var n_px: int = wpx * CELL_PX
 	var alb := PackedByteArray()
 	alb.resize(n_px * 4)
@@ -485,17 +524,17 @@ func _paint_run(c0: int, c1: int, r: int) -> void:
 			var wj: int = clampi(floori((float(y) + (na - 0.5) * 8.0) / float(CELL_PX)) + 1, 0, 2)
 			var cell: int = wj * pw + wi
 			var code: int = pc[cell]
-			if code == 0:
+			if air[code] == 1:
 				cell = pw + x / CELL_PX + 1
 				code = pc[cell]
-				if code == 0:
-					if cell - 1 >= 0 and pc[cell - 1] != 0:
+				if air[code] == 1:
+					if cell - 1 >= 0 and air[pc[cell - 1]] == 0:
 						cell -= 1
-					elif cell + 1 < cells_n and pc[cell + 1] != 0:
+					elif cell + 1 < cells_n and air[pc[cell + 1]] == 0:
 						cell += 1
-					elif cell - pw >= 0 and pc[cell - pw] != 0:
+					elif cell - pw >= 0 and air[pc[cell - pw]] == 0:
 						cell -= pw
-					elif cell + pw < cells_n and pc[cell + pw] != 0:
+					elif cell + pw < cells_n and air[pc[cell + pw]] == 0:
 						cell += pw
 					code = pc[cell]
 			var kind: int = kinds[code]
@@ -526,6 +565,14 @@ func _paint_run(c0: int, c1: int, r: int) -> void:
 				tr = 1.25
 				tg = 0.98
 				tbl = 0.70
+			elif kind >= K_TIMBER:
+				var geo: int = (y / CELL_PX + 1) * pw + x / CELL_PX + 1
+				_built_look(kind, X, Y, na, nb, pc, kinds, geo, pw, shade)
+				shade = _look[0]
+				tr = _look[1]
+				tg = _look[2]
+				tbl = _look[3]
+				bump *= _look[4]
 			var p: int = y * wpx + x
 			var o: int = p * 4
 			alb[o] = clampi(roundi(shade * tr * 255.0), 0, 255)
@@ -555,6 +602,93 @@ func _paint_run(c0: int, c1: int, r: int) -> void:
 	strips_painted += 1
 
 
+## The look of one pixel of a built material (kind K_TIMBER and up) into _look: shade, the r g b tint
+## and a bump gain. X and Y are mosaic pixels (8 per cell), so the patterns sit on the cell grid:
+## timber has vertical grain, seams and the odd knot; steel plates are brushed, seamed and riveted;
+## crates have a dark frame where they meet the rock, boards, a cross brace and a pale stencil; tape cases are
+## green boxes with a hazard stripe and a reel; rubble is loose chunks. `geo` indexes the cell's own
+## entry in the strip's padded code rows (pc, pw wide), so neighbours are geo +- 1 and +- pw.
+func _built_look(kind: int, X: int, Y: int, na: float, nb: float, pc: PackedByteArray, kinds: PackedByteArray,
+		geo: int, pw: int, shade: float) -> void:
+	var lx: int = X & 7
+	var ly: int = Y & 7
+	var cx: int = X >> 3
+	var cy: int = Y >> 3
+	var r: float = 1.0
+	var g: float = 1.0
+	var b: float = 1.0
+	var bump: float = 1.0
+	match kind:
+		K_TIMBER:
+			var grain: float = 0.5 + 0.5 * sin(float(X) * 0.62 + nb * 5.0 + float(cy) * 1.7)
+			shade *= 0.78 + 0.5 * grain
+			if lx == 0 or ly == 0:
+				shade *= 0.68
+			if _hash(cx, cy, 77) > 0.8 and (lx - 3) * (lx - 3) + (ly - 4) * (ly - 4) < 3:
+				shade *= 0.5
+			r = 1.15
+			g = 0.8
+			b = 0.48
+			bump = 1.4
+		K_STEEL:
+			shade *= (0.92 + 0.18 * sin(float(Y) * 1.9 + na * 7.0)) * (0.85 + 0.3 * nb)
+			if lx == 0 or ly == 0:
+				shade *= 0.5
+			var d2: int = (lx - 2) * (lx - 2) + (ly - 2) * (ly - 2)
+			if d2 < 2:
+				shade *= 1.9
+			elif d2 < 5:
+				shade *= 0.58
+			r = 1.0
+			g = 1.15
+			b = 1.45
+			bump = 0.7
+		K_CRATE, K_TAPE:
+			var same: int = kind
+			var edge: bool = (lx == 0 and kinds[pc[geo - 1]] != same) or (lx == 7 and kinds[pc[geo + 1]] != same) 					or (ly == 0 and kinds[pc[geo - pw]] != same) or (ly == 7 and kinds[pc[geo + pw]] != same)
+			if kind == K_CRATE:
+				r = 1.4
+				g = 1.05
+				b = 0.52
+				shade *= 0.85 + 0.3 * na
+				if (ly & 3) == 0:
+					shade *= 0.72
+				if lx == ly or lx + ly == 7:
+					shade *= 0.62
+				if ((cx + cy) & 1) == 0 and ly >= 3 and ly <= 4 and lx >= 1 and lx <= 6 and (lx * 3 + ly) % 3 != 0:
+					shade = 0.85
+					r = 1.5
+					g = 1.45
+					b = 1.15
+			else:
+				r = 0.6
+				g = 0.92
+				b = 0.66
+				shade *= 0.9
+				if ly >= 5 and ((lx + ly + cx) & 3) < 2:
+					shade = 0.9
+					r = 1.6
+					g = 1.4
+					b = 0.35
+				var rd: int = (lx - 4) * (lx - 4) + (ly - 2) * (ly - 2)
+				if rd <= 4:
+					shade *= 1.45 if rd > 1 else 0.5
+			if edge:
+				shade *= 0.45
+			bump = 1.2
+		K_RUBBLE:
+			shade *= 0.62 + 0.7 * _hash(X >> 1, Y >> 1, 31)
+			r = 1.1
+			g = 0.92
+			b = 0.76
+			bump = 1.8
+	_look[0] = shade
+	_look[1] = r
+	_look[2] = g
+	_look[3] = b
+	_look[4] = bump
+
+
 ## The additive glint layer: sparkles on gem and ore cells, unshaded, brightened so it blooms.
 func _paint_glint(idx: int, cx: int, cy: int) -> void:
 	var px := PackedByteArray()
@@ -570,15 +704,20 @@ func _paint_glint(idx: int, cx: int, cy: int) -> void:
 				break
 			var code: int = drill.grid[r * cols + c]
 			var kind: int = _kind[code]
-			if kind != 1 and kind != 2:
+			if not _has_glint(kind):
 				continue
 			if not any:
 				px.resize(CHUNK_PX * CHUNK_PX * 4)
 				any = true
 			var gem: bool = kind == 2
-			_ore_fill(px, code, lc, lr, gem)
+			_ore_fill(px, code, lc, lr, gem, 0.5 if kind >= K_CRATE else 1.0)
 			if gem:
 				_gem_glow(px, c, r, lc, lr)
+			elif kind >= K_CRATE:
+				# A crate or tape case: one slow warm glint, so loot is told apart from ore.
+				var cs: int = lc * CELL_PX + 1 + floori(_hash(c, r, 22) * 6.0)
+				var cts: int = lr * CELL_PX + 1 + floori(_hash(c, r, 42) * 6.0)
+				_put(px, cs, cts, 1.0, 0.85, 0.5, 0.45)
 			else:
 				# Ore reads as metal in rock: a few small cool glints, not lava.
 				for k: int in range(2):
@@ -613,11 +752,11 @@ func _paint_glint(idx: int, cx: int, cy: int) -> void:
 
 ## A soft wash of the material's own colour over an ore or gem cell (additive, unshaded), so veins and
 ## pockets read plainly from across the shaft and not only when a glint twinkles.
-func _ore_fill(px: PackedByteArray, code: int, lc: int, lr: int, gem: bool) -> void:
+func _ore_fill(px: PackedByteArray, code: int, lc: int, lr: int, gem: bool, gain: float = 1.0) -> void:
 	var col: Color = Color.html(str(drill.material(code).get("color", "#808080")))
 	if col.r * 0.3 + col.g * 0.59 + col.b * 0.11 < 0.3:
 		col = col.lerp(Color(0.72, 0.74, 0.78), 0.6)  # Coal's own colour is near black: a grey wash.
-	var k: float = 0.55 if gem else 0.66
+	var k: float = (0.55 if gem else 0.66) * gain
 	for yy: int in range(CELL_PX):
 		for xx: int in range(CELL_PX):
 			var edge: float = minf(minf(float(xx), float(CELL_PX - 1 - xx)), minf(float(yy), float(CELL_PX - 1 - yy)))

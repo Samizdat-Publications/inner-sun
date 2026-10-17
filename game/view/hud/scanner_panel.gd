@@ -64,6 +64,7 @@ const K_GEM: int = 4
 const K_WATER: int = 5
 const K_GAS: int = 6
 const K_FAULT: int = 7
+const K_LOOT: int = 8  ## Crates and tape cases in a buried structure.
 
 
 static func build(parent: Control, p_sim: Sim) -> ScannerPanel:
@@ -113,8 +114,10 @@ func _classify() -> void:
 		var m: Dictionary = d.material(code)
 		if m.is_empty():
 			_kind[code] = K_ROCK
-		elif code == 0 or str(m.get("id", "")) == "air":
-			_kind[code] = K_VOID
+		elif code == 0 or str(m.get("id", "")) == "air" or d.interior_of[code] == 1:
+			_kind[code] = K_VOID  # A structure's old air reads as a void too.
+		elif d.loot_of[code] == 1:
+			_kind[code] = K_LOOT
 		elif d.unstable_of[code] == 1:
 			_kind[code] = K_FAULT
 		elif d.water_of[code] == 1:
@@ -213,6 +216,8 @@ static func cell_color(k: int, hardness: float, c: int, r: int, tint: Color = Co
 			return Color(0.0, 0.035, 0.02)
 		K_FAULT:
 			return ScannerExtras.fault_color(c, r)
+		K_LOOT:
+			return Color(1.0, 0.74 + 0.08 * n, 0.2)
 		K_WATER:
 			return Color(0.05, 0.16 + 0.05 * n, 0.50 + 0.1 * n)
 		K_ORE:
@@ -422,6 +427,7 @@ func _draw_rock() -> void:
 		var tx: float = SCREEN.position.x + d.target_x / (float(d.cols) * d.cell_m) * SCREEN.size.x
 		draw_colored_polygon(PackedVector2Array([Vector2(tx, ny - 9), Vector2(tx + 9, ny), Vector2(tx, ny + 9), Vector2(tx - 9, ny)]), UiTheme.AMBER)
 		UiTheme.text(self, Vector2(SCREEN.end.x - 86.0, ny - 8.0), "NODE", 15, UiTheme.AMBER, null, HORIZONTAL_ALIGNMENT_RIGHT, 80.0)
+	ScannerExtras.draw_structure(self, sim, SCREEN, look_m(), _t)
 	_draw_legend()
 	# The sweep.
 	var sy: float = SCREEN.position.y + fposmod(_t * SWEEP_HZ, 1.0) * SCREEN.size.y
@@ -437,7 +443,7 @@ func _draw_rock() -> void:
 ## the rock table has, in the colours the screen uses. Drawn from the material table, so new ores show.
 func _draw_legend() -> void:
 	var d: DrillSim = sim.drill
-	var groups: Array = [["ORE", K_ORE], ["GEM", K_GEM], ["GAS", K_GAS], ["WATER", K_WATER], ["FAULT", K_FAULT]]
+	var groups: Array = [["ORE", K_ORE], ["GEM", K_GEM], ["GAS", K_GAS], ["WATER", K_WATER], ["FAULT", K_FAULT], ["LOOT", K_LOOT]]
 	var x: float = SCREEN.position.x + 6.0
 	var y: float = SCREEN.end.y - 17.0
 	draw_rect(Rect2(SCREEN.position.x, y, SCREEN.size.x, 17.0), Color(0.0, 0.03, 0.02, 0.82), true)
@@ -446,7 +452,9 @@ func _draw_legend() -> void:
 		var swatches: Array[Color] = []
 		for code: int in range(1, d.materials.size()):
 			if _kind[code] == kind:
-				swatches.append(_swatch(kind, code))
+				var sw: Color = _swatch(kind, code)
+				if not swatches.has(sw):  # Timber and rubble are both fault rock on the glass: one swatch.
+					swatches.append(sw)
 		if swatches.is_empty():
 			continue
 		UiTheme.text(self, Vector2(x, y + 13.0), str(g[0]), 12, Color(UiTheme.CRT, 0.9))
@@ -464,6 +472,8 @@ func _swatch(kind: int, code: int) -> Color:
 		return cell_color(K_WATER, 0.6, 3, 4)
 	if kind == K_FAULT:
 		return ScannerExtras.FAULT_HATCH
+	if kind == K_LOOT:
+		return cell_color(K_LOOT, 0.4, 3, 4)
 	return _tints[code]
 
 
