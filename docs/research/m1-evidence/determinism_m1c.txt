@@ -12,3 +12,7 @@ determinism: ok (hash e4c82e3d6d55a625 at tick 1200)
 
 Exported build m1c-playtest-5 (bc3c571): export check hash e4c82e3d6d55a625 at tick 1200; the
 playtest bot run in the exported game ended at FINAL tick=36000 hash=fab7ad14f1e5eb9c.
+
+Build m1c-playtest-5b (55ddd95, view-only changes over build 5): determinism ok, hash e4c82e3d6d55a625
+at tick 1200 (headless and Movie Maker, and the exported build's own check); the playtest bot run in
+the exported game ended at FINAL tick=36000 hash=fab7ad14f1e5eb9c, the same as build 5.

@@ -1,10 +1,11 @@
 # Progress
 
-Updated: 2026-10-17, M1c playtest build 5 ready (the away miner, D046), Stewart has not played build 4 yet.
+Updated: 2026-10-17, M1c playtest build 5b ready (the away miner D046, hazard visuals D049); Stewart has not played build 4 or 5.
 
-## M1c status: playtest build 5 ready for Stewart
-- **Build:** `builds/InnerSun.exe`, launched by `Play Inner Sun.bat`: `m1c-playtest-5` (milestone zip
-  `builds/milestones/m1c-playtest-5/`). Build 4 was never played, so build 5 replaces it: everything
+## M1c status: playtest build 5b ready for Stewart
+- **Build:** `builds/InnerSun.exe`, launched by `Play Inner Sun.bat`: `m1c-playtest-5b` (milestone zip
+  `builds/milestones/m1c-playtest-5b/`): build 5 plus the hazard visuals below and the scanner fix.
+  `m1c-playtest-5` (bc3c571, `builds/milestones/m1c-playtest-5/`) is the same without them. Build 4 was never played, so build 5 replaces it: everything
   in build 4 below, plus this session's work. Interim build `m1c-playtest-4c` (7cd11ea) is the polish
   without the miner.
 - **The away miner (D046 to D048; sim 3be827f, view a1337c1):** G arms the order for the crew member
@@ -23,7 +24,8 @@ Updated: 2026-10-17, M1c playtest build 5 ready (the away miner, D046), Stewart 
   gallery's `map_mid` still.
 - **Checks:** `check: ok` (339 tests); determinism ok, hash e4c82e3d6d55a625 at tick 1200 (headless and
   Movie Maker, `python tools/determinism.py`) and the same hash in the exported build's own check; the
-  exported build plays a whole bot run to its end (FINAL tick 36000).
+  exported build plays a whole bot run to its end (FINAL tick 36000). Build 5b (55ddd95, view-only
+  changes) gives the same hashes: e4c82e3d6d55a625 at tick 1200 and fab7ad14f1e5eb9c for the full run.
 - **Balance with the miner (300 runs per bot, `docs/research/m1-evidence/balance_m1c_miner.md`):**
   balanced 38.3% wins, cautious 27.0%, greedy 13.7%; balanced sends 1.2 miners a run (62% of runs);
   no miner deaths; the haul is about 2% of all ore.
@@ -31,8 +33,13 @@ Updated: 2026-10-17, M1c playtest build 5 ready (the away miner, D046), Stewart 
   (007 was 6.1; scores swing a point). Top items: fire and flood look cheap (second review in a row),
   the world outside is a treadmill (fourth), art styles fight, crew stand mid-room, tiny typewriter
   text. Triage in `review/LEDGER.md` 33 to 38; fire visuals and parallax rock lead the next visual pass.
-- **After the export (in main, not in build 5):** the scanner's blast word is shortened ("BLAST NOT
-  READY" instead of the clipped "BLAST: POWER WEAPO"), found by the QA audit.
+- **Build 5b additions:** the scanner's blast word is shortened ("BLAST NOT READY" instead of the
+  clipped "BLAST: POWER WEAPO", found by the QA audit). Hazard visuals (D049, ledger 25 and 33; a
+  Sonnet builder, then the lead's fixes from stills): soft flame tongues that grow with the fire and
+  sit on the floor, a stronger flickering fire light, rising smoke and a grey ceiling haze that climbs
+  hatches to the room above, deeper water that hides the machinery in a dark teal murk (was olive,
+  which read as mustard). Seen in `docs/progress/033` and `harness/out/shots_m1d/haz4/`. The scorch
+  after a fire is still faint on dark floors (known gap). `hazard_demo` scenario for repeatable stills.
 - **Not judged by a person yet:** no hands-on play by the lead (Stewart away, computer use needs his
   click), no critic run on the miner. Stewart's run of build 5 is the first real test of G.
 

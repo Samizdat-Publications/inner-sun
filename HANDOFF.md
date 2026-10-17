@@ -10,7 +10,7 @@ view, the map's "triangulation failed" error and pursuit label) and plan round E
 (D046 to D048: G sends the selected crew member to dig a vein by hand, the drill parks until they are
 back, the haul pays only on return). The sim was a builder-opus round (about 70 minutes, 371k tokens),
 the view a Sonnet builder round (about 25 minutes, 347k tokens); the lead did the polish, the specs
-and the merges. Playtest build 5 is exported (`m1c-playtest-5`) and replaces build 4. Usage note:
+and the merges. Playtest build 5 is exported (`m1c-playtest-5`) and replaces build 4; build 5b (`m1c-playtest-5b`) adds the hazard visuals (D049: flames, smoke, teal water) and is what `Play Inner Sun.bat` launches. Usage note:
 this whole session moved Stewart's weekly quota from 75% to about 77%. Next round (M1d) is the same
 as the prompt below, with build 5 in place of build 4.
 
