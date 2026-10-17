@@ -5,8 +5,11 @@ extends Control
 ## hatching, ore and gems as twinkling glints, water pockets dark blue, voids black. The ship's
 ## heading is a line from the crown, the steered target heading dashed; the next node's depth is a
 ## line across the screen. A sweep scans down the screen. Outside the drill phase it reads NO SIGNAL.
-## Click or drag on the screen to steer toward that point (pushes {"type": "steer", "angle": deg});
-## set `steer_by_mouse = false` if main.gd steers with the keys only.
+## Click or drag on the screen to steer toward that point (pushes {"type": "steer", "angle": deg}, over
+## the full range up to hold depth at 90 degrees); set `steer_by_mouse = false` if main.gd steers with the
+## keys only. With the blast armed (`blast` is the BlastCard) a click fires at that point instead.
+## Fault rock is pale brown hatching; the extras (heading ray, HOLD DEPTH, AT THE WALL, the blast ring)
+## live in ScannerExtras.
 ##
 ## Mount (main.gd, on the HUD CanvasLayer, 1920x1080 design space):
 ##   var scanner: ScannerPanel = ScannerPanel.build(layer, sim)
@@ -25,6 +28,7 @@ const BIT_BUTTON: Rect2 = Rect2(184, 386, 196, 28)
 var sim: Sim = null
 var steer_by_mouse: bool = true
 var keys_enabled: bool = true  ## B fits a new bit; main turns this off while an overlay is open.
+var blast: BlastCard = null  ## Set by RunScreen: a click fires a blast while it is armed.
 
 var _t: float = 0.0
 var _pacer: RedrawPacer = RedrawPacer.new()  ## Redraws at most 60 times a second.
@@ -49,6 +53,7 @@ var _last_steer: float = 1000.0  ## The last angle sent in this drag (a new pres
 var _pend_angle: float = 0.0  ## A steer order waiting for the next sim step, shown at once.
 var _pend_tick: int = -1  ## The sim tick it was queued on; -1 for none.
 var _dragging: bool = false
+var _hover: Vector2 = Vector2(-1000.0, -1000.0)
 
 # Cell kinds.
 const K_VOID: int = 0
@@ -58,6 +63,7 @@ const K_ORE: int = 3
 const K_GEM: int = 4
 const K_WATER: int = 5
 const K_GAS: int = 6
+const K_FAULT: int = 7
 
 
 static func build(parent: Control, p_sim: Sim) -> ScannerPanel:
@@ -109,6 +115,8 @@ func _classify() -> void:
 			_kind[code] = K_ROCK
 		elif code == 0 or str(m.get("id", "")) == "air":
 			_kind[code] = K_VOID
+		elif d.unstable_of[code] == 1:
+			_kind[code] = K_FAULT
 		elif d.water_of[code] == 1:
 			_kind[code] = K_WATER
 		elif d.gas_of[code] == 1:
@@ -203,6 +211,8 @@ static func cell_color(k: int, hardness: float, c: int, r: int, tint: Color = Co
 	match k:
 		K_VOID:
 			return Color(0.0, 0.035, 0.02)
+		K_FAULT:
+			return ScannerExtras.fault_color(c, r)
 		K_WATER:
 			return Color(0.05, 0.16 + 0.05 * n, 0.50 + 0.1 * n)
 		K_ORE:
@@ -241,7 +251,9 @@ func _crown_x_px() -> float:
 ## The steer angle (degrees from straight down) toward a panel-space point.
 func angle_toward(p: Vector2) -> float:
 	var dx: float = p.x - _crown_x_px()
-	var dy: float = maxf(8.0, p.y - SCREEN.position.y)
+	var dy: float = p.y - SCREEN.position.y
+	if dy <= 8.0:
+		return 90.0 * signf(dx)  # Level with the crown or above it: hold depth.
 	return rad_to_deg(atan2(dx, dy))
 
 
@@ -274,6 +286,13 @@ func _gui_input(event: InputEvent) -> void:
 		change_bit()
 		accept_event()
 		return
+	var mm0: InputEventMouseMotion = event as InputEventMouseMotion
+	if mm0 != null:
+		_hover = mm0.position
+	if mb != null and mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT and blast != null and blast.armed and SCREEN.has_point(mb.position):
+		blast.aim(point_m(mb.position))
+		accept_event()
+		return
 	if not steer_by_mouse:
 		return
 	if mb != null and mb.button_index == MOUSE_BUTTON_LEFT:
@@ -295,6 +314,19 @@ func _steer_to(p: Vector2) -> void:
 		return
 	_last_steer = a
 	queue_steer(a)
+
+
+## The segment point (meters) under a panel point on the screen, for a blast click.
+func point_m(p: Vector2) -> Vector2:
+	var d: DrillSim = sim.drill
+	return ScannerExtras.screen_to_m(p, SCREEN, float(d.cols) * d.cell_m, d.ship_pos.y + d.ship_size.y, look_m())
+
+
+## The depth the screen shows, in meters.
+func look_m() -> float:
+	if sim == null or _rows_shown <= 0:
+		return LOOK_AHEAD_M
+	return float(_rows_shown) * sim.drill.cell_m
 
 
 ## Queue a steer order (the click and main's A and D keys use this) and remember it, so TGT and the
@@ -372,13 +404,15 @@ func _draw_rock() -> void:
 	draw_line(Vector2(cx - half, SCREEN.position.y + 2.0), Vector2(cx + half, SCREEN.position.y + 2.0), UiTheme.CRT, 3.0)
 	draw_line(Vector2(cx - half, SCREEN.position.y), Vector2(cx - half, SCREEN.position.y + 10.0), UiTheme.CRT, 2.0)
 	draw_line(Vector2(cx + half, SCREEN.position.y), Vector2(cx + half, SCREEN.position.y + 10.0), UiTheme.CRT, 2.0)
-	var reach: float = SCREEN.size.y
 	var tgt_deg: float = target_heading()
-	var tgt: float = deg_to_rad(tgt_deg)
-	var cur: float = deg_to_rad(d.heading_deg)
+	var ppm_xy := Vector2(SCREEN.size.x / (float(d.cols) * d.cell_m), m_px)
+	var origin := Vector2(cx, SCREEN.position.y + 4.0)
 	if absf(tgt_deg - d.heading_deg) > 0.5:
-		draw_dashed_line(Vector2(cx, SCREEN.position.y + 4.0), _end_of(cx, tgt, reach), Color(UiTheme.AMBER, 0.95), 2.0, 6.0)
-	draw_line(Vector2(cx, SCREEN.position.y + 4.0), _end_of(cx, cur, reach), Color(0.9, 1.0, 0.9), 2.5)
+		draw_dashed_line(origin, ScannerExtras.heading_end(origin, tgt_deg, ppm_xy, SCREEN), Color(UiTheme.AMBER, 0.95), 2.0, 6.0)
+	draw_line(origin, ScannerExtras.heading_end(origin, d.heading_deg, ppm_xy, SCREEN), Color(0.9, 1.0, 0.9), 2.5)
+	if blast != null and blast.armed:
+		ScannerExtras.draw_blast(self, sim, SCREEN, look_m(), _hover, _t)
+	ScannerExtras.draw_notes(self, sim, SCREEN, _t, tgt_deg, ScannerExtras.blast_word(sim, blast != null and blast.armed))
 	# The next node: a line across the screen with a diamond where it sits.
 	var crown: float = d.ship_pos.y + d.ship_size.y
 	var remain: float = d.target_y - crown
@@ -403,7 +437,7 @@ func _draw_rock() -> void:
 ## the rock table has, in the colours the screen uses. Drawn from the material table, so new ores show.
 func _draw_legend() -> void:
 	var d: DrillSim = sim.drill
-	var groups: Array = [["ORE", K_ORE], ["GEM", K_GEM], ["GAS", K_GAS], ["WATER", K_WATER]]
+	var groups: Array = [["ORE", K_ORE], ["GEM", K_GEM], ["GAS", K_GAS], ["WATER", K_WATER], ["FAULT", K_FAULT]]
 	var x: float = SCREEN.position.x + 6.0
 	var y: float = SCREEN.end.y - 17.0
 	draw_rect(Rect2(SCREEN.position.x, y, SCREEN.size.x, 17.0), Color(0.0, 0.03, 0.02, 0.82), true)
@@ -412,7 +446,7 @@ func _draw_legend() -> void:
 		var swatches: Array[Color] = []
 		for code: int in range(1, d.materials.size()):
 			if _kind[code] == kind:
-				swatches.append(_tints[code] if kind != K_WATER else cell_color(K_WATER, 0.6, 3, 4))
+				swatches.append(_swatch(kind, code))
 		if swatches.is_empty():
 			continue
 		UiTheme.text(self, Vector2(x, y + 13.0), str(g[0]), 12, Color(UiTheme.CRT, 0.9))
@@ -424,9 +458,13 @@ func _draw_legend() -> void:
 		x += 8.0
 
 
-static func _end_of(cx: float, rad: float, reach: float) -> Vector2:
-	var y: float = reach
-	return Vector2(cx + tan(clampf(rad, -1.2, 1.2)) * y, SCREEN.position.y + 4.0 + y)
+## The legend colour of a material of this kind.
+func _swatch(kind: int, code: int) -> Color:
+	if kind == K_WATER:
+		return cell_color(K_WATER, 0.6, 3, 4)
+	if kind == K_FAULT:
+		return ScannerExtras.FAULT_HATCH
+	return _tints[code]
 
 
 ## Scanlines, vignette and a glass reflection over the screen, clipped to it by construction.

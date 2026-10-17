@@ -1,0 +1,20 @@
+{
+  "id": "dig_verbs_demo",
+  "name": "Dig verbs: hold depth, an armed blast and its explosion, fault rock and a rockfall, a fire and a douse (stills for the view)",
+  "ship": "light_drill",
+  "duration_s": 34,
+  "bot": "idle",
+  "timeline": [
+    {"at_s": 0.05, "cmd": {"type": "power", "room": "bracing", "bars": 0}},
+    {"at_s": 0.05, "cmd": {"type": "power", "room": "bridge", "bars": 2}},
+    {"at_s": 0.05, "cmd": {"type": "power", "room": "weapons", "bars": 1}},
+    {"at_s": 0.05, "cmd": {"type": "power", "room": "drill", "bars": 4}},
+    {"at_s": 0.05, "cmd": {"type": "power", "room": "coolant", "bars": 1}},
+    {"at_s": 0.1, "cmd": {"type": "begin_segment", "segment": "shots", "depth_m": 36.0, "lateral_m": 0.0, "survey": {"richness": 2.0, "faults": true, "water": true}}},
+    {"at_s": 3.0, "cmd": {"type": "steer", "angle": 90.0}},
+    {"at_s": 7.0, "cmd": {"type": "steer", "angle": 0.0}},
+    {"at_s": 16.0, "cmd": {"type": "blast", "x_m": 26.0, "y_m": 23.0}},
+    {"at_s": 26.0, "cmd": {"type": "ignite", "room": "weapons", "level": 0.5}},
+    {"at_s": 29.0, "cmd": {"type": "douse", "room": "weapons"}}
+  ]
+}

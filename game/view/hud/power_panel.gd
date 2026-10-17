@@ -15,10 +15,18 @@ extends Control
 ## Set `keys_enabled = false` while an overlay is open. Needs the keys Q W E R T Y unused elsewhere.
 
 const WIDTH: float = 340.0
-const ROW_H: float = 76.0
+const ROW_H: float = 92.0
 const ROW_TOP: float = 160.0
 const KEYS: Array[Key] = [KEY_Q, KEY_W, KEY_E, KEY_R, KEY_T, KEY_Y]
 const KEY_NAMES: Array[String] = ["Q", "W", "E", "R", "T", "Y"]
+## What each system does now, in a few words under its bars (UI text, by system id).
+const JOBS: Dictionary = {
+	"helm": "turn and side cut",
+	"bracing": "soaks rockfalls and hits",
+	"weapons": "guns and blast charges",
+	"drill": "speed, heat, noise",
+	"coolant": "cooling, pumps, douse",
+}
 
 var sim: Sim = null
 var keys_enabled: bool = true
@@ -283,6 +291,9 @@ func _draw_row(row: int, sys_defs: Dictionary) -> void:
 		if _hover_room == row and i <= _hover_bar:
 			draw_rect(rect.grow(1.0), Color(1, 1, 1, 0.16), true)
 			draw_rect(rect.grow(1.0), UiTheme.BRASS_LIGHT, false, 1.0)
+	var job: String = str(JOBS.get(r.system, ""))
+	if not job.is_empty():
+		UiTheme.text(self, Vector2(18, y + 84.0), job, 14, UiTheme.TEXT_DIM)
 	if failed:
 		var flick: float = 0.65 + 0.35 * UiTheme.pulse(_t, 2.4)
 		UiTheme.icon(self, "flame", Vector2(262, y + 15), 20.0, Color(1, 1, 1, flick))

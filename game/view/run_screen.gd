@@ -17,6 +17,8 @@ var cards: CrewCards
 var alerts: AlertsStrip
 var scanner: ScannerPanel
 var weapons: WeaponCards
+var blast: BlastCard  ## The charge launcher's card while drilling.
+var callouts: DigCallouts  ## Rockfall chip and the dig verbs' short messages.
 var enemy: EnemyPanel
 var dossier: Dossier
 var store: StoreView
@@ -51,6 +53,8 @@ func build(p_sim: Sim, p_profile: Profile) -> void:
 	alerts = AlertsStrip.build(_layer, sim)
 	scanner = ScannerPanel.build(_layer, sim)
 	weapons = WeaponCards.build(_layer, sim)
+	blast = BlastCard.build(_layer, sim)
+	scanner.blast = blast
 	enemy = EnemyPanel.build(_layer, sim)
 	# Overlays last, in stacking order: map, dossier and store, codex, death (on top).
 	map = MapView.build(_layer, sim)
@@ -62,6 +66,7 @@ func build(p_sim: Sim, p_profile: Profile) -> void:
 	requisitions = death.requisitions
 	death.new_run_requested.connect(func() -> void: new_run_requested.emit())
 	tally = DigTally.build(_layer, sim)
+	callouts = DigCallouts.build(_layer, sim)
 	tally.hide_tally = func() -> bool: return overlay_open() or (sim.combat.active and sim.enemy != null)
 	tally.hide_toast = func() -> bool: return death.is_open() or store.is_open() or dossier.is_open() or codex.is_open() or help.is_open()
 	top.current_row_getter = func() -> float: return _ship_row()
@@ -79,6 +84,7 @@ func bind(p_sim: Sim, p_profile: Profile) -> void:
 	alerts.bind(sim)
 	scanner.bind(sim)
 	weapons.bind(sim)
+	blast.bind(sim)
 	enemy.bind(sim)
 	map.bind(sim)
 	dossier.bind(sim)
@@ -87,6 +93,7 @@ func bind(p_sim: Sim, p_profile: Profile) -> void:
 	death.bind(sim, profile)
 	requisitions = death.requisitions
 	tally.bind(sim)
+	callouts.bind(sim)
 	_bind_rows()
 
 
@@ -150,6 +157,7 @@ func _process(_delta: float) -> void:
 	# Power is the one order that stays open under the map and a dossier (options can need power).
 	power.keys_enabled = not (store.is_open() or codex.is_open() or help.is_open() or death.is_open())
 	weapons.keys_enabled = not overlay_open()
+	blast.keys_enabled = not overlay_open()
 	scanner.keys_enabled = not overlay_open()
 
 

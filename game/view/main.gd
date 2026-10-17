@@ -20,7 +20,6 @@ const PPM: float = 80.0
 const CUTAWAY_ZOOM: float = 1.15
 const COMBAT_TOP_PX: float = 90.0  ## The enemy panel at the top of the world area.
 const COMBAT_BOTTOM_PX: float = 124.0  ## The weapon cards at the bottom of the world area.
-const STEER_DEG: float = 30.0
 const HUMAN_CAP_S: float = 6.0 * 3600.0  ## A human run never hits the stuck cap.
 const FIGHT_BANNER: String = "HOSTILE CONTACT. Paused. Power weapons (E) and bracing (W), arm a gun (F1, F2) and click an enemy room. Space to fight."
 
@@ -43,8 +42,9 @@ var replaying: bool = false
 var run_ticks: int = -1
 var test_args: Args = null  ## Tests only: used instead of the command line.
 var build_headless: bool = false  ## Tests only: build the world and the UI even without a display.
-var _held: Dictionary = {}
-var _steer_sent: float = 0.0
+var fx: DigFx  ## The dig verbs' effects in the world (blast aim and explosion, rockfall, side cutting).
+var douse: DouseLayer  ## DOUSE buttons on burning rooms.
+var _steer: SteerControl = SteerControl.new()
 var _finished: bool = false
 var _in_fight: bool = false
 var _fight_banner: bool = false
@@ -118,6 +118,8 @@ func _start_run() -> bool:
 		view.rebind(run.sim, run.sim.player)
 		combat_view.rebind(run.sim)
 		screen.bind(run.sim, profile)
+		fx.bind(run.sim, screen.blast)
+		douse.bind(run.sim)
 		if hud != null:
 			hud.bind(run)
 	return true
@@ -146,7 +148,7 @@ func _clear_rock() -> void:
 	view.position = Vector2.ZERO
 	cam.zoom = Vector2(CUTAWAY_ZOOM, CUTAWAY_ZOOM)
 	cam.position = _framed(view.center_px(), CUTAWAY_ZOOM)
-	_steer_sent = 0.0
+	_steer.clear()
 
 
 ## The camera position that puts world point `p` at the centre of the free area between the panels.
@@ -171,6 +173,12 @@ func _process(delta: float) -> void:
 	if d.active and (rock_view == null or rock_view.serial != d.grid_serial):
 		_begin_drill_view(d)
 	_ease_camera(d, delta)
+	if fx != null:
+		cam.offset = fx.shake_offset()
+	if d.active and not screen.overlay_open():
+		var held_step: float = _steer.repeat(delta, screen.scanner.target_heading(), run.sim.db.tune("drill.max_heading_deg"))
+		if not is_nan(held_step):
+			screen.scanner.queue_steer(held_step)
 	combat_view.armed = screen.weapons.armed
 	view.selected_crew_id = screen.cards.selected_id
 	combat_view.cam_zoom = cam.zoom.x
@@ -303,6 +311,23 @@ func _unhandled_input(event: InputEvent) -> void:
 			drill_zoom = DigCamera.stepped(drill_zoom, wheel)
 			get_viewport().set_input_as_handled()
 		return
+	# Armed, a left click on the rock fires the charge launcher there (right click or Esc disarms).
+	if screen.blast.armed and rock_view != null and RunScreen.WORLD_RECT.has_point(mb.position):
+		if mb.button_index == MOUSE_BUTTON_LEFT:
+			screen.blast.aim(world_to_m(mb.position))
+			get_viewport().set_input_as_handled()
+			return
+		if mb.button_index == MOUSE_BUTTON_RIGHT:
+			screen.blast.disarm()
+			get_viewport().set_input_as_handled()
+			return
+	# A click on a burning room's DOUSE button.
+	if mb.button_index == MOUSE_BUTTON_LEFT and douse != null:
+		var burning_id: String = douse.room_at(mb.position)
+		if not burning_id.is_empty():
+			run.sim.push({"type": "douse", "room": burning_id})
+			get_viewport().set_input_as_handled()
+			return
 	# In a fight, a left click on an enemy room with a weapon armed aims it (a command, like all orders).
 	var wc: WeaponCards = screen.weapons
 	if mb.button_index == MOUSE_BUTTON_LEFT and wc.armed >= 0 and combat_view.active():
@@ -326,8 +351,25 @@ func _unhandled_input(event: InputEvent) -> void:
 		run.sim.push({"type": "release", "crew": c.id})
 
 
+## A screen point over the rock as segment meters (what a blast click aims at).
+func world_to_m(screen_pos: Vector2) -> Vector2:
+	return (rock_view.get_global_transform_with_canvas().affine_inverse() * screen_pos) / PPM
+
+
+## F puts out the worst fire (one command, like a click on its button); the callouts say why not.
+func _douse_worst() -> void:
+	var id: String = DouseLayer.worst(run.sim)
+	if id.is_empty():
+		screen.callouts.push_line("NO FIRE TO DOUSE", "info")
+		return
+	run.sim.push({"type": "douse", "room": id})
+
+
 func _key(key: InputEventKey) -> void:
 	var code: Key = key.keycode
+	if key.pressed and code == KEY_F and not screen.overlay_open() and not key.shift_pressed:
+		_douse_worst()
+		return
 	if key.pressed and code == KEY_H and screen.help.is_open():
 		screen.help.close_help()
 		return
@@ -343,26 +385,19 @@ func _key(key: InputEventKey) -> void:
 	_drill_key(key)
 
 
-## A and D (or the arrows) steer the drill to -30, 0 or +30 degrees while drilling. Drill power is on
-## the power panel. Commands, like the bots use.
+## Steering while drilling (SteerControl): A and D step the heading 15 degrees and repeat while held, S
+## points straight down, Shift plus A or D holds depth. Drill power is on the power panel. Commands, like
+## the bots use.
 func _drill_key(key: InputEventKey) -> void:
 	var d: DrillSim = run.sim.drill
 	if not d.active:
 		return
-	var code: Key = key.keycode
-	if key.pressed:
-		_held[code] = true
-	else:
-		_held.erase(code)
-	var dir: float = 0.0
-	if _held.has(KEY_D) or _held.has(KEY_RIGHT):
-		dir += 1.0
-	if _held.has(KEY_A) or _held.has(KEY_LEFT):
-		dir -= 1.0
-	if code == KEY_A or code == KEY_D or code == KEY_LEFT or code == KEY_RIGHT:
-		if dir * STEER_DEG != _steer_sent:
-			_steer_sent = dir * STEER_DEG
-			screen.scanner.queue_steer(_steer_sent)
+	if not key.pressed:
+		_steer.release(key.keycode)
+		return
+	var a: float = _steer.press(key.keycode, key.shift_pressed, screen.scanner.target_heading(), run.sim.db.tune("drill.max_heading_deg"))
+	if not is_nan(a):
+		screen.scanner.queue_steer(a)
 
 
 func _build_world() -> void:
@@ -395,6 +430,16 @@ func _build_world() -> void:
 	add_child(screen)
 	screen.build(run.sim, profile)
 	screen.new_run_requested.connect(_start_run)
+	douse = DouseLayer.new()
+	douse.setup(run.sim, view, PPM)
+	view.add_child(douse)
+	fx = DigFx.new()
+	fx.setup(run.sim, screen.blast, PPM)
+	add_child(fx)
+	if args.has("aim"):
+		var aim: PackedStringArray = args.get_str("aim", "").split(",")
+		if aim.size() == 2:
+			fx.aim_override = Vector2(float(aim[0]), float(aim[1]))
 	var pickups := PickupLayer.new()
 	pickups.setup(screen.tally.digs, PPM)
 	add_child(pickups)
@@ -402,6 +447,7 @@ func _build_world() -> void:
 		screen.help.open()  # A fresh profile sees the help page first (never in bot captures).
 	if args.has("arm"):
 		screen.weapons.armed = args.get_int("arm", -1)  # Dev only: look at the aiming highlights.
+		screen.blast.armed = args.get_int("arm", -1) == BlastCard.launcher_slot(run.sim)  # ... and the blast ring.
 	if args.has("debug-hud"):
 		hud = Hud.new()
 		add_child(hud)

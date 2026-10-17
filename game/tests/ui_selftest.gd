@@ -26,6 +26,7 @@ func _all() -> void:
 	await _scenario_crew_and_scanner()
 	await _scenario_dossier()
 	await _scenario_fight()
+	await _scenario_dig_verbs()
 
 
 # Helpers -----------------------------------------------------------------------------------------
@@ -210,6 +211,61 @@ func _scenario_crew_and_scanner() -> void:
 	check(not _queued(s, "change_bit").is_empty(), "B queues change_bit")
 	await _frames(2)
 	check_eq(s.run.get_res("bits"), bits - 1, "a bit is spent")
+	await _drop()
+
+
+func _scenario_dig_verbs() -> void:
+	var m: Main = await _boot()
+	await _into_drill(m)
+	var s: Sim = m.run.sim
+	var sc: ScannerPanel = m.screen.scanner
+	_key(KEY_D)
+	check_eq(sc.target_heading(), 15.0, "D steps the heading 15 degrees")
+	_key(KEY_D)
+	check_eq(sc.target_heading(), 30.0, "and again")
+	_key(KEY_A)
+	check_eq(sc.target_heading(), 15.0, "A steps back")
+	_key(KEY_D, true)
+	check_eq(sc.target_heading(), 90.0, "Shift plus D holds depth")
+	_key(KEY_A, true)
+	check_eq(sc.target_heading(), -90.0, "Shift plus A holds depth the other way")
+	_key(KEY_S)
+	check_eq(sc.target_heading(), 0.0, "S points straight down")
+	await _frames(2)
+	# The blast: power the launcher, F2 arms, a click on the rock fires, the card disarms.
+	s.push({"type": "power", "room": "weapons", "bars": 1})
+	await _frames(2)
+	check(not m.screen.blast.armed, "not armed at first")
+	_key(KEY_F2)
+	check(m.screen.blast.armed, "F2 arms the charge launcher while drilling")
+	_key(KEY_ESCAPE)
+	check(not m.screen.blast.armed, "Esc disarms it")
+	_key(KEY_F2)
+	var d: DrillSim = s.drill
+	var pt := Vector2(d.ship_pos.x + d.ship_size.x * 0.5 + 2.5, d.ship_pos.y + d.ship_size.y + 2.0)
+	var at: Vector2 = m.rock_view.get_global_transform_with_canvas() * (pt * Main.PPM)
+	check(RunScreen.WORLD_RECT.has_point(at), "the rock point is in the world area (%s)" % str(at))
+	s._pending.clear()
+	_click(at)
+	var cmd: Dictionary = _queued(s, "blast")
+	check(not cmd.is_empty(), "a click on the rock queues a blast")
+	check(absf(float(cmd.get("x_m", -9.0)) - pt.x) < 0.2 and absf(float(cmd.get("y_m", -9.0)) - pt.y) < 0.2, "at the clicked point")
+	check(not m.screen.blast.armed, "firing disarms")
+	await _frames(3)
+	check(m.screen.blast.visible, "the card is on screen while drilling")
+	# Douse: F puts out the worst fire; so does a click on its button.
+	s.push({"type": "ignite", "room": "drill", "level": 0.5})
+	await _frames(3)
+	check_eq(DouseLayer.worst(s), "drill", "the drill room burns")
+	s._pending.clear()
+	_key(KEY_F)
+	check_eq(str(_queued(s, "douse").get("room", "")), "drill", "F douses the worst fire")
+	s._pending.clear()
+	var k: float = 1.0 / m.get_viewport().get_canvas_transform().get_scale().x
+	var btn: Rect2 = DouseLayer.button_rect(m.view.room_rect_px(s.ship.rooms[s.ship.room_index("drill")]), k)
+	_click(m.douse.get_global_transform_with_canvas() * btn.get_center())
+	check_eq(str(_queued(s, "douse").get("room", "")), "drill", "a click on the DOUSE button does too")
+	check(_queued(s, "assign").is_empty(), "and is not also a crew order")
 	await _drop()
 
 
