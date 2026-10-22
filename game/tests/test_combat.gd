@@ -233,7 +233,8 @@ func test_evasion_lowers_hits_with_a_fixed_seed() -> void:
 		_disarm(s)
 		s.systems.set_power(s, s.enemy, s.enemy.ship.room_index("coolant"), 0)
 		s.systems.set_power(s, s.enemy, s.enemy.ship.room_index("bridge"), 2)
-		check_eq(s.systems.evasion(s.enemy), per_bar * 2.0, "two manned helm bars")
+		var dodge: float = float(s.db.table("systems")["helm"]["manned_dodge"])  # The rival's helmsman (station skill 1.0).
+		check_lt(absf(s.systems.evasion(s.enemy) - (per_bar * 2.0 + dodge)), 1e-9, "two manned helm bars plus the operator's dodge")
 		var w := WeaponDef.from_def(s.db.table("weapons")["charge_launcher"])
 		w.crew_damage = 0.0
 		w.fire_chance = 0.0
@@ -245,8 +246,8 @@ func test_evasion_lowers_hits_with_a_fixed_seed() -> void:
 				hits += 1
 		misses.append(400 - hits)
 		check_eq(_count(s, "shot_missed", "enemy"), 400 - hits, "every miss is reported")
-	check_eq(misses[0], 0, "no evasion, no misses")
-	check(misses[1] > 120 and misses[1] < 200, "40%% evasion misses about 160 of 400 (got %d)" % misses[1])
+	check(misses[0] > 2 and misses[0] < 30, "the operator's 3%% dodge alone misses about 12 of 400 (got %d)" % misses[0])
+	check(misses[1] > 120 and misses[1] < 200, "43%% evasion misses about 172 of 400 (got %d)" % misses[1])
 
 
 func test_enemy_crew_repairs_and_fights_fires() -> void:

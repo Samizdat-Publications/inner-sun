@@ -18,7 +18,8 @@ extends SimModule
 ##      in run mode the player's cooling is billed in
 ##      whole run "coolant" units (exact integer joules, remainder carried) and stops at zero units;
 ##   5. bracing: layers are capped at effective bars / bracing_bars_per_layer; a missing layer
-##      recharges after bracing_recharge_s, one at a time.
+##      recharges after bracing_recharge_s, one at a time (in exact ticks: the recharge ticks divided
+##      by the bracing station's manned multiplier and rounded, then counted in hazard steps).
 ## The coolant bill itself runs every tick (it only does work when hazards.cooled_j moved), so at any
 ## tick: units billed * coolant_j_per_unit + carried remainder == joules cooled up to the last tick.
 ## Commands (power, douse), damage_room and absorb_hit act at once.
@@ -29,14 +30,21 @@ extends SimModule
 ##
 ## Effects other modules read (all take the ShipWorld):
 ##   reactor_output, allocated, free_bars: reactor bars made, allocated, still free.
-##   is_manned(world, room): a live crew member stands at that station (not climbing, job "go" or
-##     none, path finished).
-##   evasion: helm effective bars * evasion_per_bar when the helm is manned, else 0.
+##   is_manned(world, room): a live crew member stands at that station (not away, not climbing, job
+##     "go" or none, path finished).
+##   operator(world, room): the one crew member who runs that station: of those manning it, the
+##     highest skill_station (ties: lowest crew index); null when nobody mans it. Only the operator
+##     counts; a second crew member in the room adds nothing.
+##   skill_scale(skill): how much of a station's manned effect an operator gives,
+##     max(0, 1 + station_skill_gain * (skill - 1)); 1 at skill 1.0.
+##   evasion: helm effective bars * evasion_per_bar, plus the helm's manned_dodge * skill_scale of its
+##     operator; 0 when the helm has no effective bars or (it needs crew) nobody mans it.
 ##   steer_rate_scale: 1 + steer_per_helm_bar * helm effective bars when manned, else 1.
 ##   side_cut_scale: side_cut_base + side_cut_per_helm_bar * helm effective bars when manned, else the
 ##     base (the drill's sideways motion is multiplied by it).
-##   drill_bars, weapon_bars: effective bars. drill_bonus, weapon_bonus: a MULTIPLIER, 1 + manned_bonus
-##     when the station is manned, else 1.
+##   drill_bars, weapon_bars: effective bars. drill_bonus, weapon_bonus: a MULTIPLIER,
+##     1 + manned_bonus * skill_scale(operator skill) when the station is manned, else 1. Bracing uses
+##     the same multiplier on its recharge rate (step 5).
 ##   bracing_layers, max_layers; absorb_hit(sim, world) spends a layer ("bracing_absorbed").
 ##   damage_room(sim, world, room, bars): hit damage from combat ("system_damaged").
 ##   set_power(sim, world, room, bars): what the "power" command does, for enemy AI use.
@@ -49,6 +57,7 @@ const TUNING_KEYS: Array[String] = [
 	"systems.evasion_per_bar", "systems.steer_per_helm_bar", "systems.bracing_recharge_s",
 	"systems.bracing_bars_per_layer", "systems.side_cut_base", "systems.side_cut_per_helm_bar",
 	"systems.douse_cooldown_s", "systems.douse_fire_level", "systems.douse_j",
+	"systems.station_skill_gain",
 ]
 
 var _defs: Dictionary = {}  ## system id -> definition (from the systems table)
@@ -64,6 +73,8 @@ var _recharge_ticks: int = 1
 var _bars_per_layer: int = 2
 var _side_base: float = 1.0
 var _side_per_bar: float = 0.0
+var _skill_gain: float = 0.0  ## Manned effect per station skill point above 1.0 (station_skill_gain).
+var _helm_dodge: float = 0.0  ## The helm's manned_dodge: evasion an operator at skill 1.0 adds.
 # Douse (the player's ship only; SystemsDouse has the rule).
 var douse_cooldown_ticks: int = 0  ## Ticks before the next douse is allowed (read-only for the view).
 var douse_cooldown_full: int = 1
@@ -82,6 +93,9 @@ func _init(db: DataDB) -> void:
 	_bars_per_layer = maxi(1, roundi(db.tune("systems.bracing_bars_per_layer")))
 	_side_base = db.tune("systems.side_cut_base")
 	_side_per_bar = db.tune("systems.side_cut_per_helm_bar")
+	_skill_gain = db.tune("systems.station_skill_gain")
+	var helm_def: Dictionary = _defs.get("helm", {})
+	_helm_dodge = float(helm_def.get("manned_dodge", 0.0))
 	douse_cooldown_full = maxi(1, roundi(db.tune("systems.douse_cooldown_s") * Sim.TICK_HZ))
 	douse_fire = db.tune("systems.douse_fire_level")
 	douse_j = maxi(0, roundi(db.tune("systems.douse_j")))
@@ -200,16 +214,44 @@ func is_manned(world: ShipWorld, ri: int) -> bool:
 	if ri < 0:
 		return false
 	for c: CrewMember in world.ship.crew:
-		if c.alive and not c.away and c.room == ri and not c.climbing and (c.job_kind == "go" or c.job_kind == "") and c.path_i >= c.path.size():
+		if _mans(c, ri):
 			return true
 	return false
 
 
+## The station's one operator: the best station skill among the crew manning it (ties: the lowest
+## crew index, as the crew list is in index order and only a strictly better skill replaces). Null
+## when nobody mans it.
+func operator(world: ShipWorld, ri: int) -> CrewMember:
+	if ri < 0:
+		return null
+	var best: CrewMember = null
+	for c: CrewMember in world.ship.crew:
+		if _mans(c, ri) and (best == null or c.skill_station > best.skill_station):
+			best = c
+	return best
+
+
+## How much of a station's manned effect an operator of this station skill gives (1 at skill 1.0).
+func skill_scale(skill: float) -> float:
+	return maxf(0.0, 1.0 + _skill_gain * (skill - 1.0))
+
+
 func evasion(world: ShipWorld) -> float:
-	var hi: int = side(world).helm
-	if hi < 0 or not _crewed(world, hi):
+	var sd: SystemsSide = side(world)
+	var hi: int = sd.helm
+	if hi < 0:
 		return 0.0
-	return float(world.ship.rooms[hi].effective_bars()) * _evasion
+	var op: CrewMember = operator(world, hi)
+	if op == null and sd.needs_crew[hi] != 0:
+		return 0.0
+	var bars: int = world.ship.rooms[hi].effective_bars()
+	if bars <= 0:
+		return 0.0  # Unpowered, broken or failed: an operator alone dodges nothing.
+	var e: float = float(bars) * _evasion
+	if op != null:
+		e += _helm_dodge * skill_scale(op.skill_station)
+	return e
 
 
 func steer_rate_scale(world: ShipWorld) -> float:
@@ -300,9 +342,21 @@ func _bars(world: ShipWorld, ri: int) -> int:
 
 
 func _bonus(world: ShipWorld, ri: int) -> float:
-	if ri < 0 or side(world).bonus[ri] == 0.0 or not is_manned(world, ri):
+	if ri < 0:
 		return 1.0
-	return 1.0 + side(world).bonus[ri]
+	var b: float = side(world).bonus[ri]
+	if b == 0.0:
+		return 1.0
+	var op: CrewMember = operator(world, ri)
+	if op == null:
+		return 1.0
+	return 1.0 + b * skill_scale(op.skill_station)
+
+
+## Counts as manning station room ri: alive, aboard, in the room, not climbing, no job but standing
+## there, at the end of the path.
+static func _mans(c: CrewMember, ri: int) -> bool:
+	return c.alive and not c.away and c.room == ri and not c.climbing and (c.job_kind == "go" or c.job_kind == "") and c.path_i >= c.path.size()
 
 
 func _crewed(world: ShipWorld, ri: int) -> bool:
@@ -480,6 +534,10 @@ func _bracing(world: ShipWorld, sd: SystemsSide) -> void:
 		sd.recharge_ticks = 0
 		return
 	sd.recharge_ticks += Sim.HAZARD_EVERY
-	if sd.recharge_ticks >= _recharge_ticks:
+	var need: int = _recharge_ticks
+	var mult: float = _bonus(world, sd.bracing)
+	if mult != 1.0:
+		need = maxi(1, roundi(float(_recharge_ticks) / mult))  # Exact ticks; the seconds are never rounded first.
+	if sd.recharge_ticks >= need:
 		sd.layers += 1
 		sd.recharge_ticks = 0

@@ -92,6 +92,7 @@ func add_crew(cd: Dictionary) -> CrewMember:
 	var skills: Dictionary = cd.get("skills", {})
 	c.skill_fire = float(skills.get("fire", 1.0))
 	c.skill_repair = float(skills.get("repair", 1.0))
+	c.skill_station = float(skills.get("station", 1.0))
 	_crew_ids[c.id] = c.index
 	crew.append(c)
 	return c
