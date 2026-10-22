@@ -575,3 +575,28 @@ for M1d to close (amends D055). Rules: parity merges into main only after M1d ha
 replayed his build 6 runs; nobody exports over `builds/InnerSun.exe` before he has played it; the
 files M1d splits (`docs/plans/M1d.md`, "Ready to dispatch") are left alone by the parity session
 until the split is on main. Revert: the parity session stops and its branch waits.
+
+## Parity branch numbering
+The FTL parity branch (`claude/blissful-neumann-c52d9b`) numbers its decisions from D080, so they
+never collide with the decisions M1d adds on main at the same time (D059 onward).
+
+## D080 (AI): Purging a room is Inner Sun's venting (L-DOR-02)
+Every room gets a purge vent to the bore, a player command like doors (`{"type": "purge", "room",
+"open"}`). An open purge dumps the room's air: its fire dies in a few seconds (slower while a linked
+neighbour burns) and no fire can start or spread into it; the rock's heat pours in at a breach-like
+rate, so near the surface (rock cooler than crew-harm heat) purging is free and from about row 9 a
+purged room hurts crew within 10 to 20 s. Heat stays our air: the cost of the tactic is heat, not
+suffocation. Gas from the rock was left out (it would need the drill module). Purge state lives in
+`HazardSim` so the world hash covers it. Revert: drop the command and the hazard term.
+
+## D081 (AI): Parity round 1 economy, the design choices behind the rows
+Upgrade ladders replace flat prices, with room to climb: helm 4 bars, bracing 6, weapons 5, drill 6,
+coolant 5, reactor 14 (from 3, 4, 4, 5, 4 and 12), first purchasable bars at about two thirds of the
+old flat price and each step adding about half the first step again; reactor bars cheaper than
+system bars and flat in pairs. No per-visit cap: the price is the brake. Ore and gems rewards come in
+three tiers on a base that grows by row (a row-1 fight pays about what it did, row 13 about 4 times);
+supplies do not scale. Stores roll 2 or 3 of 4 sections (systems, gear, weapons, crew) by weight,
+offers by rarity that rises with depth, supplies always on sale but in limited stock, hull repair 2,
+3 and 4 ore a point by depth band, gear and weapons sell back at half. Bots adapt after M1d's split
+(reward values, stock clamps, ladder sums). Revert: the store, systems, gear, weapon, event and
+tuning data of round 1.

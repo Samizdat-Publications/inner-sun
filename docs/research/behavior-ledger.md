@@ -226,31 +226,71 @@ Current Inner Sun values are quoted where they exist, so the gap is visible.
 
 ### L-MAN-01: A crewed station does more, and more again with skill
 - Kind: shape
-- Behavior: Every powered station works better with a crew member at it: the drill cuts faster, weapons charge faster, bracing recharges faster, the helm dodges more. The bonus is modest at a raw recruit's skill and roughly doubles at the top skill, so who stands where is a small constant decision.
-- Target: at base skill, a manned station is 12 to 20% better than unmanned (anchored on today's drill and weapons bonus, which stays in band); a manned helm adds about half of one helm bar's dodge on top of what power gives; at the top skill the bonus is 1.5 to 2 times the base one (Inner Sun's skill multipliers span about two to one). Today: drill and weapons +15% flat, the helm needs a crew member but adds nothing, bracing and coolant ignore crew, skill does not count.
+- Behavior: Every combat and dig station works better with a crew member at it: the drill cuts faster, weapons charge faster, bracing recharges its layers faster, the helm dodges more. The bonus is modest for an ordinary hand and roughly doubles for the best, so who stands where is a small constant decision.
+- Target: at station skill 1.0, a manned drill, weapons and bracing station are each 12 to 20% better than unmanned (cut speed, charge rate, layer recharge rate; anchor: today's drill and weapons +15%, which stays in band), and a manned helm adds 0.02 to 0.04 dodge on top of what its bars give (about half of one bar's 0.06); at station skill 2.0 every one of these bonuses is 1.5 to 2.0 times its skill-1.0 value. Today: drill and weapons +15% flat, the helm needs a crew member but adds nothing, bracing and coolant ignore crew, skill does not count.
 - Evidence: E-MAN-01 (documented), wiki
-- Test: scenario `ledger_manning`: 600 ticks per station with and without crew, at two skills, `test_ledger_crew.gd::test_l_man_01`.
-- Wrong value: every manned bonus at zero must fail.
+- Test: scenario `ledger_manning`: 600 ticks per station with and without crew, at station skill 1.0 and 2.0, `test_ledger_crew.gd::test_l_man_01`.
+- Wrong value: every manned bonus at zero must fail; skill ignored (the 2.0 bonus equal to the 1.0 bonus) must fail the second clause.
 - Core: yes
+- Status: open
+
+### L-MAN-02: One station, one operator
+- Kind: rule
+- Behavior: Only a crew member standing still at the station counts, and a second crew member in the same room adds nothing: the station takes the skill of the best operator there. Someone walking through, climbing, fighting a fire or repairing does not man it.
+- Target: two crew in a station room give exactly the bonus of the better one; a crew member with a job other than standing at the station gives no bonus; the bonus switches on within one crew decision (0.25 s) of the operator arriving.
+- Evidence: E-MAN-02 (documented), wiki
+- Test: scenario `ledger_manning`, `test_ledger_crew.gd::test_l_man_02`.
+- Wrong value: bonuses that add up per crew member in the room must fail.
+- Core: no
+- Status: open
+
+### L-MAN-03: Crew differ in how well they run a station
+- Kind: shape
+- Behavior: Every crew member has a station skill next to their fire and repair skills; the starting crew and the hires differ, so a good pilot or gunner is worth placing.
+- Target: station skills of the starting crew and the hire pool span at least 0.9 to 1.6, with at least one hire at 1.5 or more; the crew card shows it. Today: no station skill.
+- Evidence: E-MAN-03 (assumed), Inner Sun's own content on the shape of E-MAN-01
+- Test: data rule in `test_ledger_crew.gd::test_l_man_03`.
+- Wrong value: every station skill at 1.0 must fail.
+- Core: no
 - Status: open
 
 ### L-DOR-01: Closed doors hold hazards back, and the player works them
 - Kind: rule
-- Behavior: The player opens or closes any door or hatch with one click, paused or not. A closed door stops water, slows heat, and fire crosses it far more slowly than an open one; a reinforced door (an upgrade) holds fire many times longer. Crew pass through closed doors as they walk.
-- Target: a closed door passes fire at 30 to 50% of the open-door rate (between open and Inner Sun's wall rate, `fire.spread_wall_factor`), a reinforced door no faster than a wall; the toggle works paused. Today: the sim honours closed links for water, heat and fire, but nothing lets the player close one; a closed door already passes fire at exactly the wall rate, and every pair of neighbouring rooms also spreads fire through their shared wall in parallel (`HazardSim`, `Ship._find_walls`), so this row needs its own closed-door factor and a wall path that does not bypass a door (Gemini audit, checked).
+- Behavior: The player opens or closes any door or hatch with one click, paused or not. A closed door stops water, slows heat, and fire crosses it far more slowly than an open one. Crew walk through closed doors without opening them to hazards.
+- Target: a closed door or hatch passes fire at 30 to 50% of the same link's open rate, and the wall between two rooms that share a door is not a second fire path past it; the door command works while paused and is a command in the replay; crew still path through closed links. Today: the sim honours closed links for water, heat and fire, but nothing lets the player close one; a closed door passes fire at the wall rate and the shared wall spreads fire in parallel, about 26% of the open rate in total.
 - Evidence: E-DOR-01 (documented), wiki and reimplementation notes agree
-- Test: scenario `ledger_doors` (`test_ledger_doors.gd::test_l_dor_01`) and the real-input self-test for the toggle.
+- Test: scenario `ledger_doors` (`test_ledger_doors.gd::test_l_dor_01`); the real-input self-test for the toggle once the view lands.
 - Wrong value: closed-door fire spread equal to open must fail.
 - Core: yes
 - Status: open
 
 ### L-DOR-02: Purging a room kills its fire, at a price
 - Kind: rule
-- Behavior: Inner Sun's take on venting (heat is our air). Opening a room's purge to the rock puts its fire out within seconds; while the purge stays open the room fills with rock heat (and, deeper down, gas), hurting any crew inside; closing it lets coolant win the room back. A fire with burning neighbours takes longer to die.
-- Target: a full fire alone in a purged room is out in under half the time two crew need (L-FIRE-01), about twice that with burning neighbours; at a row where the rock is at least 8 C above crew-harm heat (`crew.heat_safe_c`; row 9 or deeper with today's layer data, since above about row 4 the rock is cooler than that threshold), the purged room reaches crew-harm heat in 10 to 20 s. Needs a design decision (a D-number) when picked.
+- Behavior: Inner Sun's take on venting (heat is our air, D080). Each room has a purge vent to the bore. Opening it dumps the room's air: its fire dies within seconds, more slowly while a neighbouring room burns; while it stays open the rock's heat pours in, hurting any crew inside; closing it lets coolant win the room back.
+- Target: a full fire alone in a purged room is out in 3 to 6 s, in 6 to 12 s while a linked neighbour burns; a fire cannot start or spread into a room while its purge is open; at a row where the rock is at least 8 C above crew-harm heat (`crew.heat_safe_c`; row 9 or deeper with today's layer data) a purged room at design temperature reaches crew-harm heat in 10 to 20 s; above row 4 (rock cooler than that threshold) purging never harms crew. Exact energy conservation holds.
 - Evidence: E-DOR-02 (assumed), wiki for venting; the heat translation is Inner Sun's
 - Test: scenario `ledger_purge`, `test_ledger_doors.gd::test_l_dor_02`.
-- Wrong value: purge that leaves the fire burning must fail.
+- Wrong value: a purge that leaves the fire burning must fail; a purge with no heat inflow must fail the third clause.
+- Core: no
+- Status: open
+
+### L-DOR-03: Pressure doors hold fire like a wall
+- Kind: rule
+- Behavior: A store upgrade refits the doors and hatches as pressure doors: closed, they hold fire back as well as a solid wall does.
+- Target: with pressure doors fitted, a closed link passes fire no faster than `fire.spread_wall_factor` times its open rate; buyable as gear in the gear section (rarity 3).
+- Evidence: E-DOR-01 (documented), wiki
+- Test: `test_ledger_doors.gd::test_l_dor_03`.
+- Wrong value: pressure doors that change nothing must fail.
+- Core: no
+- Status: open
+
+### L-DOR-F1: Doors and purges read and work at a glance
+- Kind: feel
+- Behavior: A viewer can tell open from closed doors, and a purging room, from a still at normal zoom; the player works them with one click on the door or a room button.
+- Target: critic rubric 4 of 5 or better on two stills (doors closed around a fire; a purging room); Stewart's A/B answer to "as many real choices?" 4 or better.
+- Evidence: E-DOR-F1 (assumed), to observe in O-03
+- Test: critic still with the rubric; Stewart's A/B.
+- Wrong value: doors drawn the same open and closed must score under 3.
 - Core: no
 - Status: open
 
@@ -276,10 +316,20 @@ Current Inner Sun values are quoted where they exist, so the gap is visible.
 
 ### L-ENV-01: Some nodes sit in an environment that changes everything there
 - Kind: rule
-- Behavior: Some fight and hazard nodes carry an environment shown on the map before the player chooses: a rockfall seam (random rooms take falling-rock hits that bracing soaks), magma heat (heat pours into both hulls), magnetite (the scanner goes blind: no survey, no view of the rival's rooms), a gas seam (fires start more easily). It acts on the segment into the node and on any fight there, for both ships alike.
-- Target: 20 to 35% of fight and hazard nodes carry one; always visible on the map; each environment affects both sides in a scenario test.
+- Behavior: Some fight and hazard nodes carry an environment, shown on the map before the player chooses: a rockfall seam, magma heat, magnetite or a gas seam. It acts on the segment into the node and on any fight there, for both ships alike.
+- Target: over 1,000 seeded maps, 20 to 35% of fight and hazard nodes carry one, and never the start, a store or the gate; the environment is in the node data the map view reads; each environment affects both sides in a scenario test. Today: none.
 - Evidence: E-ENV-01 (documented), wiki for the kinds, game data for how often
-- Test: map rule test over 1,000 seeds and one scenario per environment, `test_ledger_env.gd`.
+- Test: map rule test over 1,000 seeds and one scenario per environment, `test_ledger_env.gd::test_l_env_01`.
 - Wrong value: an environment that hits only the player must fail.
+- Core: yes
+- Status: open
+
+### L-ENV-02: Each environment has one clear effect
+- Kind: rule
+- Behavior: Rockfall seam: falling rock hits random rooms of both ships on a rhythm; bracing layers soak it like a shot. Magma heat: the rock is far hotter, so heat pours into both hulls and fires start more easily. Magnetite: the scanner goes blind (no survey of the next nodes, no view of the rival's rooms) and the pursuer slows while you are in it. Gas seam: every fire chance (hits, strikes, autoignition) is higher for both ships.
+- Target: rockfall: one hit every 8 to 15 s per ship, each worth a light shot, soaked by a bracing layer; magma: rock 20 to 35 C hotter than the row's own; magnetite: survey and rival rooms hidden, pursuer speed x0.5 to x0.75 inside; gas: fire chances x1.5 to x2.5. All in data (`game/data/environments/*.json`).
+- Evidence: E-ENV-02 (partly), wiki tooltip prose for the kinds; the strengths are Inner Sun's own
+- Test: one scenario per environment, `test_ledger_env.gd::test_l_env_02`.
+- Wrong value: each environment's strength at zero must fail its scenario.
 - Core: no
 - Status: open
