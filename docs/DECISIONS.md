@@ -587,7 +587,12 @@ neighbour burns) and no fire can start or spread into it; the rock's heat pours 
 rate, so near the surface (rock cooler than crew-harm heat) purging is free and from about row 9 a
 purged room hurts crew within 10 to 20 s. Heat stays our air: the cost of the tactic is heat, not
 suffocation. Gas from the rock was left out (it would need the drill module). Purge state lives in
-`HazardSim` so the world hash covers it. Revert: drop the command and the hazard term.
+`HazardSim` so the world hash covers it. Built in round 2 with one addition by the builder, kept by
+the lead: the vent's conductance grows with the room's open doors and hatches
+(`heat.purge_draught_factor`, bore gas drawn in as fast as they let air out), because a fixed
+conductance cannot put every room in the 10 to 20 s band with doors open and closed; so closing the
+doors around a purge still matters. Revert: drop the command and the hazard term (or set the
+draught factor to 0).
 
 ## D081 (AI): Parity round 1 economy, the design choices behind the rows
 Upgrade ladders replace flat prices, with room to climb: helm 4 bars, bracing 6, weapons 5, drill 6,
