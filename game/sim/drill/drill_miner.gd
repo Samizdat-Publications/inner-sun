@@ -3,7 +3,7 @@ extends RefCounted
 ## The away miner (D046), owned by a DrillSim (DrillSim.miner). One crew member leaves the parked
 ## drill, digs a one-cell tunnel by hand to a point in the rock, mines out the vein there and carries
 ## the haul home. Holds its tuning and state, never the DrillSim or the Sim: both are passed in, so
-## nothing here forms a cycle.
+## nothing here forms a cycle. The tunnel, vein and walk home are stepped by MinerDig (static).
 ##
 ## Commands (through DrillSim): {"type": "send_miner", "crew", "x_m", "y_m"} and {"type": "recall_miner"}.
 ## Phases, all on the fixed tick:
@@ -155,9 +155,9 @@ func recall(sim: Sim, d: DrillSim) -> void:
 		"board":
 			_call_off(sim, d)
 		"exit":
-			_start_enter(d, maxi(1, _hatch_ticks - action_ticks))
+			MinerDig.start_enter(self, d, maxi(1, _hatch_ticks - action_ticks))
 		"dig", "vein":
-			_turn_back(d)
+			MinerDig.turn_back(self, d)
 
 
 ## The segment is ending: a miner still boarding stays aboard.
@@ -211,20 +211,20 @@ func step(sim: Sim, d: DrillSim) -> void:
 		return
 	match phase:
 		"exit":
-			_plan(d)
-			_next_dig(d)
+			MinerDig.plan(self, d)
+			MinerDig.next_dig(self, d)
 		"dig":
-			_finish_step(sim, d)
+			MinerDig.finish_step(sim, self, d)
 			if active:
-				_next_dig(d)
+				MinerDig.next_dig(self, d)
 		"vein":
-			_finish_step(sim, d)
+			MinerDig.finish_step(sim, self, d)
 			if active:
-				_next_vein(d)
+				MinerDig.next_vein(self, d)
 		"return":
 			_at = _par[_at]
-			pos = _feet(d, _cells[_at]) if _at >= 0 else MinerRoute.hatch(d, target)
-			_next_back(d)
+			pos = MinerDig.feet(d, _cells[_at]) if _at >= 0 else MinerRoute.hatch(d, target)
+			MinerDig.next_back(self, d)
 		"enter":
 			_aboard(sim, d)
 
@@ -241,106 +241,6 @@ func _start_exit(sim: Sim, d: DrillSim, c: CrewMember) -> void:
 	_set_phase(d, "exit")
 	_set_action(_hatch_ticks)
 	sim.emit("miner_out", {"crew": crew_id, "x_m": snappedf(target.x, 0.01), "y_m": snappedf(target.y, 0.01)})
-
-
-func _plan(d: DrillSim) -> void:
-	_route = MinerRoute.plan(d, target)
-	_route_i = 0
-
-
-func _next_dig(d: DrillSim) -> void:
-	if _route_i < _route.size():
-		_start_step(d, _route[_route_i], _at)
-		_route_i += 1
-		_set_phase(d, "dig")
-		return
-	if not _vein_ok or _vein_max <= 0:
-		_turn_back(d)
-		return
-	_set_phase(d, "vein")
-	_seen = PackedByteArray()
-	_seen.resize(d.grid.size())
-	_seen[_cells[_at]] = 1
-	_queue_around(d, _at)
-	_next_vein(d)
-
-
-func _next_vein(d: DrillSim) -> void:
-	while _vq_i < _vq.size() and _vein_n < _vein_max:
-		var i: int = _vq[_vq_i]
-		var par: int = _vq_par[_vq_i]
-		_vq_i += 1
-		var m: int = d.grid[i]
-		if m != 0 and d.yield_res_of[m] >= 0:
-			_vein_n += 1
-			_start_step(d, i, par)
-			return
-	_turn_back(d)
-
-
-## Queue the unseen ore and gem neighbours of _cells[k], in cell index order (up, left, right, down).
-func _queue_around(d: DrillSim, k: int) -> void:
-	var i: int = _cells[k]
-	var r: int = i / d.cols
-	var c: int = i % d.cols
-	var nbs := PackedInt32Array([i - d.cols if r > 0 else -1, i - 1 if c > 0 else -1,
-			i + 1 if c < d.cols - 1 else -1, i + d.cols if r < d.rows - 1 else -1])
-	for j: int in nbs:
-		if j >= 0 and _seen[j] == 0 and d.grid[j] != 0 and d.yield_res_of[d.grid[j]] >= 0:
-			_seen[j] = 1
-			_vq.append(j)
-			_vq_par.append(k)
-
-
-func _start_step(d: DrillSim, cell: int, parent: int) -> void:
-	next_cell = cell
-	_step_par = parent
-	var m: int = d.grid[cell]
-	if m == 0:
-		_set_action(maxi(1, roundi(d.cell_m / _walk * Sim.TICK_HZ)))
-	else:
-		var h: float = float(d.materials[m].get("hardness", 1.0))
-		_set_action(maxi(1, roundi((_dig_base + _dig_hard * h) * Sim.TICK_HZ)))
-
-
-## The walk or dig into next_cell is done: cut it if it is still rock, then stand in it.
-func _finish_step(sim: Sim, d: DrillSim) -> void:
-	var cell: int = next_cell
-	next_cell = -1
-	var m: int = d.grid[cell]
-	if phase == "dig" and _route_i >= _route.size():
-		_vein_ok = m != 0 and d.yield_res_of[m] >= 0
-	if m != 0:
-		d.cut(sim, cell, CUT_MINER)
-		if not active:
-			return
-	_cells.append(cell)
-	_par.append(_step_par)
-	_at = _cells.size() - 1
-	pos = _feet(d, cell)
-	if phase == "vein":
-		_queue_around(d, _at)
-
-
-func _turn_back(d: DrillSim) -> void:
-	next_cell = -1
-	_set_phase(d, "return")
-	_next_back(d)
-
-
-func _next_back(d: DrillSim) -> void:
-	if _at < 0:
-		_start_enter(d, _hatch_ticks)
-		return
-	next_cell = _cells[_par[_at]] if _par[_at] >= 0 else -1
-	_set_action(maxi(1, roundi(d.cell_m / _walk * Sim.TICK_HZ)))
-
-
-func _start_enter(d: DrillSim, ticks: int) -> void:
-	next_cell = -1
-	pos = MinerRoute.hatch(d, target)
-	_set_phase(d, "enter")
-	_set_action(ticks)
 
 
 # Cut routing (from DrillSim) ---------------------------------------------------------------------
@@ -485,10 +385,6 @@ func _haul_dict() -> Dictionary:
 		if haul[ri] > 0:
 			out[RunState.RESOURCES[ri]] = haul[ri]
 	return out
-
-
-static func _feet(d: DrillSim, cell: int) -> Vector2:
-	return Vector2((float(cell % d.cols) + 0.5) * d.cell_m, float(cell / d.cols + 1) * d.cell_m)
 
 
 func state() -> Array:
