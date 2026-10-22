@@ -57,7 +57,7 @@ Current Inner Sun values are quoted where they exist, so the gap is visible.
 ### L-UPG-01: Each further bar of a system costs more than the last
 - Kind: shape
 - Behavior: Buying the next bar of a system always costs more than the bar before it, so taking one system toward its top is a commitment that competes with gear, crew and repairs. Every main system has room for at least two more bars on the light drill, so there is a ladder to climb, not one purchase.
-- Target: every system's price ladder except the reactor's (L-UPG-02) (one ore price per bar, in the system's own data) rises strictly bar by bar; on the light drill every system except the reactor can buy at least 2 bars past its starting bars; each step adds 0.4 to 0.9 times the price of the ship's first purchasable step of that system (a straight, steady climb); the first purchasable step costs 0.5 to 1.0 times today's flat price (anchor: helm 120, bracing 140, weapons 160, drill 150, coolant 120 ore). Today: one flat price per system and one bar to buy (bracing two).
+- Target: every system's price ladder except the reactor's (L-UPG-02) (one ore price per bar, in the system's own data) rises strictly bar by bar; on the light drill every system except the reactor can buy at least 2 bars past its starting bars; each purchasable step (bars above the light drill's starting bars; entries below them are never sold and only have to rise) adds 0.4 to 0.9 times the price of the first purchasable step of that system (a straight, steady climb); the first purchasable step costs 0.5 to 1.0 times today's flat price (anchor: helm 120, bracing 140, weapons 160, drill 150, coolant 120 ore). Today: one flat price per system and one bar to buy (bracing two).
 - Evidence: E-UPG-01 (documented), game data
 - Test: rule test `game/tests/test_ledger_economy.gd::test_l_upg_01` over every system's ladder and the light drill's purchasable steps.
 - Wrong value: a flat ladder (every step equal) must fail.
@@ -67,7 +67,7 @@ Current Inner Sun values are quoted where they exist, so the gap is visible.
 ### L-UPG-02: Reactor bars get dearer in steps
 - Kind: shape
 - Behavior: The reactor's next bar costs the same for a short run of bars, then steps up, so early power is cheap and late power is a real expense. A reactor bar is cheaper than a system bar, because a bar of power is only worth something once a system can use it.
-- Target: the light drill can buy at least 6 reactor bars; prices hold flat in pairs and each pair costs 20 to 50% more than the pair before; the first reactor bar costs 0.4 to 0.8 times the mean first purchasable step of the other systems. Today: 200 ore for one bar, one per store, dearer than any system bar.
+- Target: the light drill can buy at least 6 reactor bars; prices hold flat in pairs and each pair costs 20 to 50% more than the pair before; the light drill's first purchasable reactor bar costs 0.4 to 0.8 times the mean first purchasable step of the other systems. Today: 200 ore for one bar, one per store, dearer than any system bar.
 - Evidence: E-UPG-02 (documented), wiki
 - Test: rule test `test_ledger_economy.gd::test_l_upg_02`.
 - Wrong value: every reactor bar at one price must fail.
@@ -187,7 +187,7 @@ Current Inner Sun values are quoted where they exist, so the gap is visible.
 ### L-STO-05: Gear and weapons sell back for part of their price
 - Kind: rule
 - Behavior: At any store the player can sell a weapon or a piece of gear back for part of its list price. The last weapon aboard cannot be sold, and gear that was bolted on whole (hull plating) cannot come off.
-- Target: sell-back pays 33 to 50% of the item's list price, rounded down, in the item's own currency; selling removes the item and its effect exactly (a sold drill head gives back the drill's old speed); selling the last weapon or hull plating is refused with a reason; a sale is a command in the replay. Today: no selling.
+- Target: sell-back pays 33 to 50% of the item's list price, rounded down, in the item's own currency; selling removes the item and its effect exactly (a sold drill head gives back the drill's old speed); selling the last weapon or hull plating is refused with a reason, and so is selling gear that changes the drill while a segment is under way (a mid-dig trader); a sale is a command in the replay. Today: no selling.
 - Evidence: E-STO-01 (documented), wiki
 - Test: rule test `test_ledger_store.gd::test_l_sto_05`.
 - Wrong value: sell-back at the full price must fail.
