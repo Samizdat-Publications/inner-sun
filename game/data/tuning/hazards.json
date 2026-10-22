@@ -10,7 +10,9 @@
     "fire_kw": 55.0,
     "coolant_kw_per_room": 6.0,
     "coolant_target_c": 24.0,
-    "coolant_kw_per_k": 0.6
+    "coolant_kw_per_k": 0.6,
+    "purge_kw_per_k": 2.6,
+    "purge_draught_factor": 1.0
   },
   "fire": {
     "start_level": 0.15,
@@ -19,10 +21,13 @@
     "spread_up_factor": 2.0,
     "spread_down_factor": 0.4,
     "spread_wall_factor": 0.15,
+    "spread_closed_factor": 0.4,
     "autoignite_c": 100.0,
     "autoignite_per_s": 0.05,
     "water_suppress_per_m_s": 0.6,
-    "crew_dps": 9.0
+    "crew_dps": 9.0,
+    "purge_out_per_s": 0.25,
+    "purge_neighbour_factor": 0.5
   },
   "water": {
     "breach_cd": 0.6,

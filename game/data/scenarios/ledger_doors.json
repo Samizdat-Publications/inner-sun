@@ -1,0 +1,13 @@
+{
+  "id": "ledger_doors",
+  "name": "Ledger L-DOR-01: a full drill-room fire with crew automation off, to measure fire spread through door_low and the drill hatch open or closed",
+  "ship": "light_drill",
+  "duration_s": 30,
+  "bot": "idle",
+  "timeline": [
+    {"at_s": 0.0, "cmd": {"type": "auto", "crew": "vasquez", "on": false}},
+    {"at_s": 0.0, "cmd": {"type": "auto", "crew": "okafor", "on": false}},
+    {"at_s": 0.0, "cmd": {"type": "auto", "crew": "lindqvist", "on": false}},
+    {"at_s": 0.0, "cmd": {"type": "ignite", "room": "drill", "level": 1.0}}
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "id": "ledger_purge",
+  "name": "Ledger L-DOR-02: a full fire in the drill room at its design temperature, crew automation off, then its purge vent opens",
+  "ship": "light_drill",
+  "duration_s": 30,
+  "bot": "idle",
+  "timeline": [
+    {"at_s": 0.0, "cmd": {"type": "auto", "crew": "vasquez", "on": false}},
+    {"at_s": 0.0, "cmd": {"type": "auto", "crew": "okafor", "on": false}},
+    {"at_s": 0.0, "cmd": {"type": "auto", "crew": "lindqvist", "on": false}},
+    {"at_s": 0.0, "cmd": {"type": "ignite", "room": "drill", "level": 1.0}},
+    {"at_s": 0.5, "cmd": {"type": "purge", "room": "drill", "open": true}}
+  ]
+}
