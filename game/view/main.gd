@@ -233,10 +233,11 @@ func _process(delta: float) -> void:
 		_fight_banner = false
 	screen.set_banner(FIGHT_BANNER if _fight_banner and paused else "")
 	# The stop notice waits NOTICE_GRACE_S: a drill powered a moment after a segment starts never flashes it.
-	var stop_notice: String = str(AlertsStrip.drill_stop(run.sim).get("notice", ""))
+	var stop: Dictionary = AlertsStrip.drill_stop(run.sim)
+	var stop_notice: String = str(stop.get("notice", ""))
 	_stop_s = _stop_s + delta if not stop_notice.is_empty() else 0.0
 	var show_notice: bool = _stop_s >= NOTICE_GRACE_S and not (_fight_banner and paused) and not screen.overlay_open()
-	screen.set_notice(stop_notice if show_notice else "")
+	screen.set_notice(stop_notice if show_notice else "", str(stop.get("kind", "")))
 
 
 ## The camera eases to its framing: the drill rock while there is one, the cutaway otherwise, and in a

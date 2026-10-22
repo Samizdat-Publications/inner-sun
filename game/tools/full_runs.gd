@@ -46,6 +46,7 @@ func _initialize() -> void:
 		ticks += fr.sim.tick
 		var sum: Dictionary = fr.summary()
 		FullRunStats.add_to(fr.sim, sum)
+		sum["final_hash"] = fr.sim.state_hash()  # Lets a refactor prove every seed ends the same.
 		if trace:
 			for e: Dictionary in fr.sim.events:
 				if str(e["kind"]) == "phase" or str(e["kind"]) == "bad_command":

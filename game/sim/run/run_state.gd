@@ -44,6 +44,7 @@ const TUNING_KEYS: Array[String] = [
 var mode: String = "scenario"  ## "scenario" or "run".
 var phase: String = "scenario"
 var resources: Dictionary = {}
+var start_resources: Dictionary = {}  ## Resources once the run has begun and requisitions are aboard (set by Sim).
 var depth_m: float = 0.0
 var known_codex: PackedStringArray = PackedStringArray()  ## What the profile knew at the start (sorted).
 var learned: PackedStringArray = PackedStringArray()  ## Codex entries learned this run, in order.
@@ -454,7 +455,8 @@ func _strike(sim: Sim, why: String) -> void:
 ## Structure counters (M1c round C): structures_placed (segments that held one), structures_entered,
 ## crates_opened, loot_units (resource units paid by crates into the run), traders_met, structure_events.
 ## Away miner counters (M1c round E): sorties (miners out), miner_backs (came back aboard),
-## miner_deaths, haul_ore and haul_gems (paid on return), haul_lost (units lost with dead miners).
+## miner_deaths, haul_ore and haul_gems (paid on return), haul_lost (units lost with dead miners),
+## sortie_first_s (whole seconds to the first sortie, -1 for none: finds seeds for miner captures).
 func summary(sim: Sim) -> Dictionary:
 	var gained: Dictionary = {}
 	var spent: Dictionary = {}
@@ -464,7 +466,7 @@ func summary(sim: Sim) -> Dictionary:
 	var fights_won: int = 0
 	var verbs: Dictionary = {"rockfalls_hit": 0, "rockfalls_absorbed": 0, "rockfall_hull": 0, "blasts": 0,
 		"blast_ore": 0, "blast_gems": 0, "douses": 0, "structures_placed": 0, "structures_entered": 0,
-		"crates_opened": 0, "loot_units": 0, "traders_met": 0, "structure_events": 0, "sorties": 0, "miner_backs": 0,
+		"crates_opened": 0, "loot_units": 0, "traders_met": 0, "structure_events": 0, "sorties": 0, "sortie_first_s": -1, "miner_backs": 0,
 		"miner_deaths": 0, "haul_ore": 0, "haul_gems": 0, "haul_lost": 0}
 	for e: Dictionary in sim.events:
 		var kind: String = str(e["kind"])
@@ -504,6 +506,8 @@ func summary(sim: Sim) -> Dictionary:
 				verbs["structure_events"] += 1
 		elif kind == "miner_out":
 			verbs["sorties"] += 1
+			if int(verbs["sortie_first_s"]) < 0:
+				verbs["sortie_first_s"] = floori(float(int(e["t"])) / float(Sim.TICK_HZ))
 		elif kind == "miner_back":
 			var paid: Dictionary = e["haul"]
 			if not bool(e.get("called_off", false)):

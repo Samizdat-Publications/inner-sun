@@ -375,3 +375,32 @@ func test_lint_catches_broken_weapons_and_ai() -> void:
 	var clean := PackedStringArray()
 	CombatLint.lint(db(), clean)
 	check(clean.is_empty(), "the real data is clean: " + " | ".join(clean))
+
+
+## Gemini audit (plausible, overstated): power restore gives freed bars by system priority (coolant
+## first) while a rival's plan puts weapons first. Checked here: a hit on the weapons never costs
+## them more than the broken bar (the spare bar goes down the plan to coolant, as the plan says), and
+## after the repair the weapons are back at their planned 3 bars within one AI think.
+func test_rival_power_follows_its_plan_after_damage_and_repair() -> void:
+	var s: Sim = _fight("rival_heavy")
+	_disarm(s)
+	run_seconds(s, 1.0)
+	var wr: Room = _eroom(s, "weapons")
+	check_eq(wr.sys_power, 3, "the plan powers the rival's weapons first, 3 bars")
+	s.systems.damage_room(s, s.enemy, s.enemy.ship.room_index("weapons"), 1.0)
+	var short: int = 0  # Ticks the weapons sit below their intact bars.
+	for t: int in range(60):
+		s.step()
+		if wr.sys_power < wr.intact_bars():
+			short += 1
+	check_eq(short, 0, "the damaged weapons keep every intact bar")
+	check_eq(_eroom(s, "coolant").sys_power, 2, "the plan gives the spare bar to coolant")
+	wr.sys_damage = 0.0
+	var back: int = -1
+	for t: int in range(120):
+		s.step()
+		if wr.sys_power == 3:
+			back = t
+			break
+	check(back >= 0 and back <= Sim.THINK_EVERY + 6, "repaired weapons are back at 3 bars within one AI think (took %d ticks)" % back)
+	check_eq(_eroom(s, "coolant").sys_power, 1, "and coolant gives its bar back")

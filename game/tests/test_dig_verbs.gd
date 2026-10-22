@@ -381,6 +381,36 @@ func test_blast_clears_the_circle_and_pays_exactly() -> void:
 	check_eq(int(s.run.summary(s)["blasts"]), 1, "the summary counts the blast")
 
 
+## Gemini audit: the bots' blast planner valued rock at full yield, but a blast pays only
+## blast_yield_pct of each material, rounded down (D039). Its score must equal what the blast pays.
+func test_blast_planner_values_what_the_blast_pays() -> void:
+	var s: Sim = _sim(0, 1, 0, 1)
+	_begin(s)
+	var d: DrillSim = s.drill
+	_fill_all(s, _code(s, "rock"))
+	var p: Vector2 = _crown(s) + Vector2(3.0, 5.0)
+	_disc(s, p + Vector2(0.5, 0.0), 1.0, _code(s, "copper_ore"))
+	_disc(s, p + Vector2(-1.0, 0.5), 0.6, _code(s, "emerald"))
+	var value_ore: float = 1.0
+	var value_gem: float = 3.0
+	var plan: Dictionary = BlastPlanner.loot_target(s, d, value_ore, value_gem, 0.0)
+	check(not plan.is_empty(), "the planner finds a target")
+	var full: float = 0.0  # What the old planner scored: every cell at its full yield.
+	for i: int in d.verbs.circle_cells(d, Vector2(float(plan["x_m"]), float(plan["y_m"]))):
+		var m: int = d.grid[i]
+		if d.yield_res_of[m] >= 0:
+			full += float(d.yield_amount_of[m]) * (value_ore if d.yield_res_of[m] == RunState.RESOURCES.find("ore") else value_gem)
+	var ore0: int = s.run.get_res("ore")
+	var gems0: int = s.run.get_res("gems")
+	s.push({"type": "blast", "x_m": float(plan["x_m"]), "y_m": float(plan["y_m"])})
+	run_seconds(s, 1.0)
+	check(has_event(s, "blast"), "the charge went off")
+	var paid: float = float(s.run.get_res("ore") - ore0) * value_ore + float(s.run.get_res("gems") - gems0) * value_gem
+	check_gt(paid, 0.0, "the blast paid something")
+	check_eq(float(plan["value"]), paid, "the planner's value is exactly what the blast paid")
+	check_gt(full, paid * 1.5, "full-yield scoring (the old bug) would overvalue it")
+
+
 func test_blast_burns_gas_far_safely_and_near_with_fire() -> void:
 	for near: bool in [false, true]:
 		var s: Sim = _sim(0, 1, 0, 1)

@@ -4,21 +4,22 @@ Polish and follow-ups raised during M1 that are not blocking the M1a playtest. P
 milestone checklist when they matter; delete them when done.
 
 ## Gemini audit (2026-10-22, each checked by the lead; details in `review/consults/2026-10-22_gemini-4-argon.md`)
-- **Blast planner overvalues blasts about twice:** `game/bots/blast_planner.gd` scores rock at full
-  yield and never reads `drill.blast_yield_pct` (D039 halved blast yield). Bots blast too eagerly, so
-  balance numbers around blasting are off.
-- **Greedy bot buys a weapon it cannot power:** `PolicyChoices._can_power_weapon` adds one weapons bar
-  unconditionally (`sys_max + 1 >= need`), whether or not the upgrade is on sale or affordable.
-- **Balance reports show hull 40 at row 0** on a 30-hull ship (`balance_m1c_miner.md`, cautious and
-  balanced; every other resource is at its start value). Find the cause in the report path.
-- **State hash omits the ship's max hull and weapon list** (`ShipWorld.state()`): a divergence there
-  shows only indirectly. Adding them changes the determinism hash (record the new one).
-- **Scenarios use the old rock heat slope:** `drill.json` `rock_temp_c_per_m` 0.08 while runs use the
-  layer's 0.033.
-- **Rival power restore vs the rival AI:** restore follows system priority (coolant first), the rival
-  plan puts weapons first; a short mismatch after damage. Write a test before changing anything.
-- **Two event options no bot ever picks** (`cold_spring` option 0, `byrd_signal` option 0): dominated
-  under the bots' scoring; check whether players would pick them before rewriting.
+Fixed in the M1d interim round (2026-10-22), each with a test:
+- Blast planner scored rock at full yield: now blast_yield_pct of each material, rounded down, as a
+  blast pays (`test_dig_verbs::test_blast_planner_values_what_the_blast_pays`).
+- Greedy bot bought a weapon it could not power: the weapons upgrade counts only when on sale and
+  still affordable after the weapon (`test_bots::test_greedy_buys_no_weapon_it_cannot_power`).
+- Balance reports showed hull 40 at row 0: `FullRunStats` read the end-of-run maximum hull. Row 0 is
+  now `RunState.start_resources`, requisitions included (`test_meta::test_run_stats_row_zero_is_the_start`).
+- State hash: `ShipWorld.state()` now carries `hull_max` and the weapon list
+  (`test_determinism::test_state_hash_covers_max_hull_and_weapons`); the determinism hash changed.
+- Scenario rock heat: `drill.json` now 0.033 C per m like the Crust (`test_data::test_scenario_rock_heat_matches_the_crust`).
+Checked, not a bug: rival power restore vs the rival AI. A hit on the weapons costs only the broken
+bar, the plan gives the spare bar to coolant, and after the repair the weapons are back at 3 bars
+within one AI think (`test_combat::test_rival_power_follows_its_plan_after_damage_and_repair`).
+Open (design, not a bug): two event options no bot picks (`cold_spring` option 0 is the fallback
+when the second coolant loop is down; `byrd_signal` option 0 trades the front for three rows of
+map). Kept for players; revisit only if Stewart's runs show nobody picks them either.
 
 ## Events and writing
 - A `{joined}` placeholder for the crew member who just joined (recruit pages now say "the survivor").

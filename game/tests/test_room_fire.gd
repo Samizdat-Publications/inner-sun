@@ -83,3 +83,17 @@ func test_view_burns_smokes_and_forgets() -> void:
 	check_eq(f._scorch[drill.index], 0.0, "a rebind clears the scorch")
 	check(not f._scorch_nodes[drill.index].visible, "and hides it")
 	v.free()
+
+
+## M1d: the scorch multiplies the art under it (it faded into dark floors as an alpha blend).
+func test_scorch_multiplies_the_art() -> void:
+	check_eq(RoomFire.soot(0.0), Color.WHITE, "no soot leaves the art as it is")
+	var black: Color = RoomFire.soot(1.0)
+	check_lt(black.r + black.g + black.b, 0.1, "full soot is nearly black")
+	check_eq(black.a, 1.0, "multiply colours keep full alpha")
+	var s := Sim.new(db(), 3, "light_drill")
+	var v := ShipView.new()
+	v.setup(s, s.player, 80.0)
+	var mat: CanvasItemMaterial = v._fire._scorch_nodes[0].material
+	check_eq(mat.blend_mode, CanvasItemMaterial.BLEND_MODE_MUL, "the scorch nodes use a multiply blend")
+	v.free()

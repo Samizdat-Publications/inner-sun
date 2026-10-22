@@ -253,11 +253,33 @@ static func _matches(d: Dictionary, want: String) -> bool:
 
 
 ## A bought weapon is only worth it if the weapons system can feed it beside the guns already
-## mounted (counting a weapons upgrade still on sale this visit).
+## mounted, counting one weapons upgrade only if it is on sale this visit, the store would sell it,
+## and the currency left after the weapon still pays for it (Gemini audit, 2026-10-22).
 static func _can_power_weapon(sim: Sim, d: Dictionary) -> bool:
 	var wd: Dictionary = sim.db.table("weapons").get(str(d.get("weapon", "")), {})
 	var need: int = int(wd.get("power", 1))
 	for wid: String in sim.ship.weapons:
 		need += int((sim.db.table("weapons").get(wid, {}) as Dictionary).get("power", 1))
 	var wr: int = sim.ship.room_with_system("weapons")
-	return wr >= 0 and sim.ship.rooms[wr].sys_max + 1 >= need
+	if wr < 0:
+		return false
+	var bars: int = sim.ship.rooms[wr].sys_max
+	if bars >= need:
+		return true
+	return bars + 1 >= need and _weapons_upgrade_affordable(sim, d)
+
+
+## A weapons upgrade line the store would sell now, still affordable after paying for weapon line d.
+static func _weapons_upgrade_affordable(sim: Sim, d: Dictionary) -> bool:
+	var enc: Encounter = sim.encounter
+	var stock: Array = enc.current_store().get("stock", [])
+	var w_cur: String = str(d.get("currency", "gems"))
+	for i: int in range(stock.size()):
+		var u: Dictionary = stock[i]
+		if not _matches(u, "system:weapons") or not _ok(sim, enc, i, 1):
+			continue
+		var cur: String = str(u.get("currency", "gems"))
+		var left: int = sim.run.get_res(cur) - (int(d.get("price", 0)) if cur == w_cur else 0)
+		if left >= int(u.get("price", 0)):
+			return true
+	return false

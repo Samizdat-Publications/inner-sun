@@ -108,7 +108,7 @@ func build(parent: Node2D, ship: Ship, ppm: float, foot_lift: float, radial: Tex
 		var ri: int = r.index
 		var sc := FireDraw.new()
 		sc.z_index = -1
-		sc.material = ArtLib.unshaded()
+		sc.material = _scorch_material()
 		sc.fn = func(d: Node2D) -> void: _draw_scorch(d, ri)
 		sc.visible = false
 		parent.add_child(sc)
@@ -263,10 +263,10 @@ func _draw_scorch(d: Node2D, i: int) -> void:
 	var s: float = _scorch[i]
 	if s <= 0.01:
 		return
+	# Multiply blend (D059): each colour darkens what is under it; white leaves it as it was.
 	var up: float = rp.size.y * 0.42 * s
-	var a: float = 0.97 * s
-	var dark := Color(0.02, 0.015, 0.012, a)
-	var clear := Color(0.02, 0.015, 0.012, 0.0)
+	var dark: Color = soot(0.97 * s)
+	var clear := Color.WHITE
 	d.draw_polygon(
 		PackedVector2Array([Vector2(rp.position.x, rp.end.y), Vector2(rp.end.x, rp.end.y), Vector2(rp.end.x, rp.end.y - up), Vector2(rp.position.x, rp.end.y - up)]),
 		PackedColorArray([dark, dark, clear, clear]))
@@ -282,7 +282,21 @@ func _draw_scorch(d: Node2D, i: int) -> void:
 	for k: int in range(5):
 		var fx: float = fposmod(float(k) * 0.37 + float(i) * 0.21, 1.0)
 		var x: float = rp.position.x + rp.size.x * fx
-		d.draw_circle(Vector2(x, rp.end.y - 6.0), (10.0 + 14.0 * fposmod(fx * 7.0, 1.0)) * s, Color(0.02, 0.015, 0.01, 0.4 * s))
+		d.draw_circle(Vector2(x, rp.end.y - 6.0), (10.0 + 14.0 * fposmod(fx * 7.0, 1.0)) * s, soot(0.4 * s))
+
+
+## The multiply colour for soot of strength a (0 leaves the art as it is, 1 is nearly black).
+static func soot(a: float) -> Color:
+	var c: Color = Color.WHITE.lerp(Color(0.02, 0.015, 0.012), clampf(a, 0.0, 1.0))
+	c.a = 1.0
+	return c
+
+
+static func _scorch_material() -> CanvasItemMaterial:
+	var m := CanvasItemMaterial.new()
+	m.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
+	m.blend_mode = CanvasItemMaterial.BLEND_MODE_MUL
+	return m
 
 
 func _base(parent: Node2D, tex: Texture2D, amount: int, life: float, z: int) -> CPUParticles2D:

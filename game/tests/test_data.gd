@@ -34,3 +34,12 @@ func test_every_tuning_number_is_used() -> void:
 	used.append_array(CombatSim.TUNING_KEYS)
 	for k: String in d.tuning.keys():
 		check(used.has(k), "tuning number \"%s\" is not read by any system (typo or dead number?)" % k)
+
+
+## Gemini audit: scenarios used drill.json's old rock heat slope (0.08 C per m) while runs use the
+## Crust layer's (0.033). The scenario fallback must match the first layer.
+func test_scenario_rock_heat_matches_the_crust() -> void:
+	var d: DataDB = db()
+	var crust: Dictionary = d.table("layers")["crust"]
+	check_eq(d.tune("drill.rock_temp_c_per_m"), float(crust["rock_temp_c_per_m"]), "rock heat slope")
+	check_eq(d.tune("drill.rock_temp_base_c"), float(crust["rock_temp_base_c"]), "rock heat at the surface")

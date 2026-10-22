@@ -204,7 +204,9 @@ def run_full(a, game_target, make_pack):
                 for l in f:
                     if l.strip():
                         try:
-                            rows[r["bot"]].append(json.loads(l))
+                            row = json.loads(l)
+                            row.setdefault("bot", r["bot"])
+                            rows[r["bot"]].append(row)
                         except ValueError:
                             pass
     for b in bots:
