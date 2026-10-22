@@ -15,9 +15,8 @@ Not this round: L-DOR-03 (pressure doors, needs the store round's gear changes) 
 
 ## Files you own (touch nothing else)
 - `game/sim/hazards/hazard_sim.gd` (fire paths through closed links and walls, the purge term, purge
-  state in its `state()`), `game/sim/systems/systems.gd` (only: register the `door` and `purge`
-  commands next to `power` and `douse`, and route them), new `game/sim/systems/systems_doors.gd`
-  (the command rules, like `systems_douse.gd`), `game/sim/ship/link.gd` if a field is needed
+  state in its `state()`), `game/sim/core/sim.gd` (only the existing core `door` command and a new core
+  `purge` command next to it), `game/sim/ship/link.gd` if a field is needed
 - `game/data/tuning/hazards.json` (new keys), `game/tests/test_data.gd` (its tuning-keys list only)
 - new `game/data/scenarios/ledger_doors.json`, `game/data/scenarios/ledger_purge.json`
 - new `game/tests/test_ledger_doors.gd`; existing tests your change breaks (`test_fire.gd`,
@@ -25,7 +24,7 @@ Not this round: L-DOR-03 (pressure doors, needs the store round's gear changes) 
 - `docs/research/behavior-ledger.md`: only the Status lines of L-DOR-01 and L-DOR-02.
 
 **Do not touch** (another session is editing them on main): `game/sim/drill/*`,
-`game/sim/run/run_state.gd`, `game/sim/ship/ship_world.gd`, `game/sim/ship/ship.gd`, `game/bots/**`,
+`game/sim/run/run_state.gd`, `game/sim/ship/ship_world.gd`, `game/sim/ship/ship.gd`, `game/sim/systems/*`, `game/bots/**`,
 `game/data/tuning/drill.json`, everything under `game/view/`, `tools/balance*.py`. Another builder is
 working at the same time on `game/sim/events/*`, `game/sim/combat/combat_loot.gd`,
 `game/sim/combat/combat_sim.gd`, `game/sim/run/gear.gd`, `game/sim/data/data_db.gd` and the store,
@@ -40,10 +39,13 @@ paths; never `git add -A`.
 ## What to build
 
 ### 1. Door commands (L-DOR-01)
-- `{"type": "door", "link": <link id>, "open": true | false}` on the player's ship. Valid in the same
-  phases in which the `power` command is valid today (check how `power` behaves while the game is
-  paused and in a dossier, and match it, so the door works paused). Refused with a reason
-  (`bad_command`): no such link, already in that state. Emits `"door"` {"link", "open"}.
+- A bare core command already exists: `Sim.CORE_COMMANDS` has `"door"` and `Sim._apply` sets
+  `l.open` for `{"type": "door", "link", "open"}` with no checks. Keep it a core command (do not
+  register it in a module: the sim refuses a command declared twice) and give it rules: refused with
+  a reason (`bad_command` {"type": "door", "why"}) for no such link or a link already in that state;
+  emits `"door"` {"link", "open"} on a change. Like today, it applies in any phase: pause is the view
+  not calling `step()`, and commands pushed while paused apply on the next step, so it works paused
+  and in a dossier (do not copy `world_running()` from `systems_douse.gd`).
 - Crew keep pathing through closed links (they already do: `NavGraph` ignores `open`; keep it so, and
   add a test that a crew member crosses a closed door while the door stays closed for hazards).
 - Fire through a closed link: `fire.spread_closed_factor` (new key, start 0.4) times that link's own
@@ -55,21 +57,30 @@ paths; never `git add -A`.
 - Target check (the row): closed rate / open rate for the same link in 0.30 to 0.50.
 
 ### 2. Purge (L-DOR-02, D080)
-- `{"type": "purge", "room": <room id>, "open": true | false}`, same validity as `door`. Emits
+- A new core command `{"type": "purge", "room": <room id>, "open": true | false}` next to `door` in
+  `sim.gd`, same validity, handing the state to `HazardSim`. Emits
   `"purge"` {"room", "open"}. Purge state per room is held by `HazardSim` (for example a
   `PackedByteArray`) and included in `HazardSim.state()` so the world hash covers it.
 - While a room's purge is open:
   - Its fire falls by `fire.purge_out_per_s` (start about 0.25, net of growth; tune to the band),
     reduced by `fire.purge_neighbour_factor` (start 0.5) while any room linked to it burns, and never
     grows. A fire cannot start there (autoignition, a hit or strike, spread from a neighbour).
-  - Rock heat pours in: add `heat.purge_kw_per_k` (a conductance in kW per kelvin, start about 1.5;
+  - Rock heat pours in: add `heat.purge_kw_per_k` (a conductance in kW per kelvin, start about 3.3:
+    the audit's integration puts 10 to 20 s at about 2.4 to 4.5 depending on the room and its doors;
     tune) times (`ship.rock_temp_c` minus the room's temperature) to that room's exchange with the
     rock, exactly like the existing hull term, so the joules stay exact. When the rock is cooler than
-    the room, the purge cools it the same way.
+    the room, the purge cools it the same way. Simplest exact form: add the purge conductance to the
+    room's `hull_k` before `q_rock` is computed, so the one rounded `q_rock` is booked as today.
+  - While a room is purged, hold the spread counters into it at zero, so a neighbour cannot pre-charge
+    it and ignite it the instant the purge closes. A fire put out by a purge emits `"fire_out"` with
+    `"by": "purge"`.
 - Bands to meet in scenarios (`ledger_purge.json`, one 4 x 3 m room at design temperature, fire at
-  1.0): out in 3 to 6 s alone; 6 to 12 s with a burning linked neighbour; at a rock temperature 8 C
+  1.0; set `sim.ship.rock_temp_c` directly in the test, because a scenario keeps the ship's own
+  42 C and nothing in a scenario sets it from a layer): out in 3 to 6 s alone; 6 to 12 s with a burning linked neighbour; at a rock temperature 8 C
   above `crew.heat_safe_c` (56 C with today's 48 C) the purged room reaches 48 C in 10 to 20 s with
-  the coolant system at its normal two bars; with the rock at 46 C the room never reaches 48 C.
+  the coolant system at its normal two bars, for every room of the light drill with its doors open and
+  with them closed; with the rock at 46 C the room never reaches 48 C. "Linked neighbour" means a room
+  joined by a door or hatch (`ship.links`, open or closed), not merely by a wall.
   State the final tuning values in your report.
 
 ## Tests (each closes its row only with the wrong value failing)
