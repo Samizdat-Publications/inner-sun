@@ -20,8 +20,8 @@ Plan: `PLAN.md` section 10. Decisions: D052 to D055. Research: `docs/research/ft
 
 ## P2: rows and observation
 - [ ] Back up `C:\Users\stewa\Documents\My Games\FasterThanLight\` to `research_private\` before any FTL session.
-- [ ] For each picked system: number, shape, rule and feel rows in `behavior-ledger.md`, each with an
-      evidence ID, an Inner Sun target band, a named test and a wrong value.
+- [x] For each picked system: number, shape, rule and feel rows in `behavior-ledger.md`, each with an
+      evidence ID, an Inner Sun target band, a named test and a wrong value. Done 2026-10-22 (28 rows).
 - [ ] Ask Stewart for one recorded FTL run (observation method A); sample it; fill the OBSERVE rows
       and O-06 to O-08 (pacing, crises, decisions per minute).
 - [ ] Method B sessions only for rows A could not settle, with Stewart present.
@@ -32,7 +32,7 @@ Plan: `PLAN.md` section 10. Decisions: D052 to D055. Research: `docs/research/ft
 - [ ] Before each builder dispatch: `python tools/gemini_audit.py --question <q.md> --extra <the spec>`
       asking it to check every target band against the current data and code and every wrong value
       against its band (D057). Verify each finding yourself before changing a row.
-- [ ] `tools/ledger.py` (parser and coverage report) with its own test.
+- [x] `tools/ledger.py` (parser and coverage report) with its own test (`tools/test_ledger.py`).
 - [ ] Per system, one builder spec in `docs/plans/specs/m2p_<system>.md` that quotes only ledger
       rows; scenarios `game/data/scenarios/ledger_<system>.json`; tests `game/tests/test_ledger_<system>.gd`.
 - [ ] Data-only systems first (upgrade prices, rewards, store stock), then crew and stations, then
