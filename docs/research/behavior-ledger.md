@@ -262,7 +262,7 @@ Current Inner Sun values are quoted where they exist, so the gap is visible.
 - Test: scenario `ledger_doors` (`test_ledger_doors.gd::test_l_dor_01`); the real-input self-test for the toggle once the view lands.
 - Wrong value: closed-door fire spread equal to open must fail.
 - Core: yes
-- Status: open
+- Status: passing (sim; view pending)
 
 ### L-DOR-02: Purging a room kills its fire, at a price
 - Kind: rule
@@ -272,7 +272,7 @@ Current Inner Sun values are quoted where they exist, so the gap is visible.
 - Test: scenario `ledger_purge`, `test_ledger_doors.gd::test_l_dor_02`.
 - Wrong value: a purge that leaves the fire burning must fail; a purge with no heat inflow must fail the third clause.
 - Core: no
-- Status: open
+- Status: passing
 
 ### L-DOR-03: Pressure doors hold fire like a wall
 - Kind: rule

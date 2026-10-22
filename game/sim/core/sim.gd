@@ -10,7 +10,7 @@ const TICK_HZ: int = 60
 const DT: float = 1.0 / 60.0
 const HAZARD_EVERY: int = 6  ## Hazards update at 10 Hz.
 const THINK_EVERY: int = 15  ## Crew decide at 4 Hz.
-const CORE_COMMANDS: Array[String] = ["assign", "release", "auto", "ignite", "breach", "door"]
+const CORE_COMMANDS: Array[String] = ["assign", "release", "auto", "ignite", "breach", "door", "purge"]
 
 var tick: int = 0
 var run_seed: int = 0
@@ -141,11 +141,42 @@ func _apply(cmd: Dictionary) -> void:
 				ship.rooms[room].breach_m2 += float(cmd.get("size_m2", 0.02))
 				emit("breach", {"room": ship.rooms[room].id})
 		"door":
-			for l: Link in ship.links:
-				if l.id == str(cmd.get("link", "")):
-					l.open = bool(cmd.get("open", true))
+			_door(cmd)
+		"purge":
+			_purge(cmd, room)
 		_:
 			emit("bad_command", {"type": kind})
+
+
+## {"type": "door", "link", "open"}: open or close a door or hatch of the player's ship (L-DOR-01).
+## Applies in any phase, so it works paused and in a dossier. Emits "door" {"link", "open"}, or
+## "bad_command" {"type": "door", "why"} for no such link or one already in that state.
+func _door(cmd: Dictionary) -> void:
+	var want: bool = bool(cmd.get("open", true))
+	var link_id: String = str(cmd.get("link", ""))
+	for l: Link in ship.links:
+		if l.id == link_id:
+			if l.open == want:
+				emit("bad_command", {"type": "door", "why": "already " + ("open" if want else "closed")})
+				return
+			l.open = want
+			emit("door", {"link": l.id, "open": want})
+			return
+	emit("bad_command", {"type": "door", "why": "no such link"})
+
+
+## {"type": "purge", "room", "open"}: open or close a room's purge vent to the bore (L-DOR-02, D080).
+## Same validity as "door"; the state lives in HazardSim. Emits "purge" {"room", "open"}.
+func _purge(cmd: Dictionary, room: int) -> void:
+	var want: bool = bool(cmd.get("open", true))
+	if room < 0:
+		emit("bad_command", {"type": "purge", "why": "no such room"})
+		return
+	if hazards.is_purged(room) == want:
+		emit("bad_command", {"type": "purge", "why": "already " + ("open" if want else "closed")})
+		return
+	hazards.set_purge(room, want)
+	emit("purge", {"room": ship.rooms[room].id, "open": want})
 
 
 ## Everything that defines the world right now, in a fixed order, for the state hash.
