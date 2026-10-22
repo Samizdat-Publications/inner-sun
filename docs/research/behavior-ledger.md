@@ -48,8 +48,10 @@ Each row is a level-3 heading followed by the same eight fields, in this order, 
 
 ## Example rows (2026-10-22, proposed, for the top of the inventory)
 
-These show the format on the systems that rank highest in `ftl-reference.md`. They are proposals:
-none is in scope until Stewart picks its system, and targets get their final values in step P2.
+These show the format on the systems that rank highest in `ftl-reference.md`. **Scope (D056,
+2026-10-22):** Stewart picked inventory 1 to 6, so the L-UPG, L-RWD, L-MAN, L-DOR, L-STO and L-ENV rows
+are in scope; L-PUR, L-EVT and L-FIRE stay as format examples. Targets get their final values in
+step P2.
 Current Inner Sun values are quoted where they exist, so the gap is visible.
 
 ### L-UPG-01: Each further bar of a system costs more than the last

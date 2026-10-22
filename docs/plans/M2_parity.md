@@ -14,8 +14,9 @@ Plan: `PLAN.md` section 10. Decisions: D052 to D055. Research: `docs/research/ft
   reviewers also check new data for borrowed names.
 
 ## P1: Stewart's pick
-- [ ] Stewart picks systems from the top 10 (and any lower row he wants). Log it in
-      `docs/STEWART_FEEDBACK.md` and mark the picked rows in the inventory.
+- [x] Stewart picks systems from the top 10 (and any lower row he wants). Log it in
+      `docs/STEWART_FEEDBACK.md` and mark the picked rows in the inventory. Done 2026-10-22 (D056):
+      inventory 1 to 6.
 
 ## P2: rows and observation
 - [ ] Back up `C:\Users\stewa\Documents\My Games\FasterThanLight\` to `research_private\` before any FTL session.

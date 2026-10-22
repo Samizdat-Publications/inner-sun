@@ -9,8 +9,9 @@ Updated: 2026-10-17, M1d playtest build 6 ready (fixes from Stewart's first buil
   `PLAN.md` section 10 (an M2 workstream) and its checklist `docs/plans/M2_parity.md`. No REA install.
 - FTL's data folder is unpacked privately in `research_private/` (git-ignored;
   `python tools/ftl_unpack.py` regenerates it). Nothing from it is committed.
-- **Waiting on Stewart:** his pick of systems from the inventory's top 10. The workstream starts
-  after M1d closes; the paste prompt is in `HANDOFF.md` ("Side track: FTL parity").
+- **Stewart's pick (D056):** inventory 1 to 6 (rising upgrade prices, rewards by depth in tiers,
+  manned stations, doors and purging, rolling stores, node environments). The workstream starts
+  after M1d closes, in its own session; the paste prompt is in `HANDOFF.md` ("Side track: FTL parity").
 - `game/sim`, `game/view` and the M1d plan were not touched; `check: ok` (368 tests).
 
 ## M1d status: playtest build 6 ready (Stewart's first build 5c notes)

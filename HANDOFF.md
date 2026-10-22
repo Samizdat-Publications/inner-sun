@@ -27,11 +27,13 @@ survey and scored inventory (`docs/research/ftl-reference.md`), the ledger forma
 (`behavior-ledger.md`), the observation and differential-test plans, `PLAN.md` section 10 and the
 checklist `docs/plans/M2_parity.md`. FTL's data folder is unpacked, private and git-ignored, in
 `research_private/` (regenerate with `python tools/ftl_unpack.py`; never commit anything from it).
-Nothing is built. It starts after M1d closes, once Stewart has picked systems from the top 10.
-Paste this into a new session (folder `C:\Users\stewa\Documents\Claude\Inner Sun`, Opus 5.5, effort
-high, Auto), after adding the pick:
+Nothing is built. Stewart picked inventory 1 to 6 (D056). **Order:** the M1d session comes first
+(its prompt is above; it runs after Stewart plays build 6). When M1d closes, start a separate new
+session with the prompt below. It does not start by itself, and the M1d session should not roll into
+it (it changes balance, which would muddy his build 6 playtest). Paste this into a new session
+(folder `C:\Users\stewa\Documents\Claude\Inner Sun`, Opus 5.5, effort high, Auto):
 ```
-Start the Inner Sun FTL parity workstream (PLAN.md section 10, docs/plans/M2_parity.md). Read CLAUDE.md, PROGRESS.md, HANDOFF.md, then docs/research/ftl-reference.md, behavior-ledger.md, ftl-observation-plan.md and ftl-difftest-plan.md, and D052 to D055 in docs/DECISIONS.md. My picks: <list the systems from the top 10>. You are the observer: you may read research_private/ (run python tools/ftl_unpack.py first if it is missing) and the sources in ftl-reference.md; write ledger rows for my picks in our own words with Inner Sun targets, exact FTL values only in research_private/ledger_evidence.md. Builders work in worktrees from ledger rows alone and never see FTL material. Build data-only systems first, every row closes with its test and its wrong-value check. Ask me for a recorded FTL run when OBSERVE rows need it; I will approve computer use if I am here. Stop with a parity report and a playtest build, or earlier for "checkpoint" or a decision that is genuinely mine.
+Start the Inner Sun FTL parity workstream (PLAN.md section 10, docs/plans/M2_parity.md). Read CLAUDE.md, PROGRESS.md, HANDOFF.md, then docs/research/ftl-reference.md, behavior-ledger.md, ftl-observation-plan.md and ftl-difftest-plan.md, and D052 to D055 in docs/DECISIONS.md. My picks (D056): inventory 1 to 6, rising upgrade prices, rewards that grow with depth in tiers, manned stations, doors and purging, stores that roll their stock, node environments. You are the observer: you may read research_private/ (run python tools/ftl_unpack.py first if it is missing) and the sources in ftl-reference.md; write ledger rows for my picks in our own words with Inner Sun targets, exact FTL values only in research_private/ledger_evidence.md. Builders work in worktrees from ledger rows alone and never see FTL material. Build data-only systems first, every row closes with its test and its wrong-value check. Ask me for a recorded FTL run when OBSERVE rows need it; I will approve computer use if I am here. Stop with a parity report and a playtest build, or earlier for "checkpoint" or a decision that is genuinely mine.
 ```
 
 ## Build 5 in one paragraph (2026-10-17)
