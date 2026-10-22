@@ -99,3 +99,11 @@ Session total (2026-10-15 to 16, M1a): about 15 USD (logged 11.96 plus the 3.00 
 | 2026-10-17 | Gemini (gemini-3.1-pro-preview) | video critic -> 008_gemini.md | 0.13 (est, 44052 in / 3583 out tokens) |
 | 2026-10-17 | Gemini (gemini-3.1-pro-preview) | video critic -> 009_gemini.md | 0.08 (est, 21914 in / 2851 out tokens) |
 | 2026-10-22 | Gemini (gemini-4-argon) | whole-repo consult -> review/consults/2026-10-22_gemini-4-argon.md | 0.75 (est at Pro rates, 297937 in / 12724 out tokens; this model's price unconfirmed) |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen candidate 01 (stray cones fix) | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen candidate 02 (stray cones fix) | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen candidate 03 (stray cones fix) | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen candidate 04 (stray cones fix) | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen candidate 05 (stray cones fix) | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen candidate 06 (stray cones fix) | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen candidate 07 (stray cones fix) | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen candidate 08 (stray cones fix) | 0.14 |
