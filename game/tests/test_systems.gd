@@ -176,12 +176,13 @@ func test_manning_drives_evasion_and_steering() -> void:
 	var sy: Systems = s.systems
 	var bridge: int = _ri(s, "bridge")
 	check(sy.is_manned(s.player, bridge), "Vasquez is at the helm at the start")
-	check_eq(sy.evasion(s.player), 0.06, "one helm bar, manned: 6 percent evasion")
+	# Vasquez runs the helm at station skill 1.3: manned_dodge 0.03 x (1 + 0.75 x 0.3) on top of the bars.
+	check_lt(absf(sy.evasion(s.player) - 0.09675), 1e-9, "one helm bar, manned: 6 percent plus her 3.675 percent dodge")
 	check_eq(sy.steer_rate_scale(s.player), 1.6, "and faster steering")
 	check_lt(absf(sy.side_cut_scale(s.player) - 0.65), 1e-9, "and faster side cutting")
 	s.push({"type": "power", "room": "bridge", "bars": 2})
 	s.step()
-	check_eq(sy.evasion(s.player), 0.12, "two bars: 12 percent")
+	check_lt(absf(sy.evasion(s.player) - 0.15675), 1e-9, "two bars: 12 percent plus her dodge")
 	check_eq(sy.weapon_bonus(s.player), 1.0, "nobody is at the weapons station")
 	s.push({"type": "assign", "crew": "vasquez", "room": "weapons"})
 	s.step()
@@ -192,7 +193,7 @@ func test_manning_drives_evasion_and_steering() -> void:
 	check_eq(sy.steer_rate_scale(s.player), 1.0, "and base steering")
 	check_eq(sy.side_cut_scale(s.player), 0.35, "and base side cutting")
 	check(sy.is_manned(s.player, _ri(s, "weapons")), "she now mans the weapons")
-	check_lt(absf(sy.weapon_bonus(s.player) - 1.15), 1e-9, "a manned weapons station gets the 15 percent bonus")
+	check_lt(absf(sy.weapon_bonus(s.player) - 1.18375), 1e-9, "a manned weapons station: 15 percent x her skill scale 1.225")
 	check_eq(sy.drill_bonus(s.player), 1.0, "the drill room is unmanned")
 
 
@@ -204,10 +205,12 @@ func test_bracing_layers_absorb_and_recharge() -> void:
 	check(sy.absorb_hit(s, s.player), "the layer absorbs a hit")
 	check(not sy.absorb_hit(s, s.player), "the next hit gets through")
 	check(has_event(s, "bracing_absorbed"), "bracing_absorbed was emitted")
-	run_seconds(s, 5.9)
-	check_eq(sy.bracing_layers(s.player), 0, "not recharged before 6 s")
+	# Lindqvist mans the bracing at station skill 0.9: 360 ticks / (1 + 0.15 x 0.925) = 316, counted
+	# in hazard steps: back at 318 ticks (5.3 s).
+	run_seconds(s, 5.2)
+	check_eq(sy.bracing_layers(s.player), 0, "not recharged before 5.3 s")
 	run_seconds(s, 0.2)
-	check_eq(sy.bracing_layers(s.player), 1, "recharged after 6 s")
+	check_eq(sy.bracing_layers(s.player), 1, "recharged after 5.3 s")
 	# Four bars hold two layers, recharged one at a time.
 	room(s, "bracing").sys_max = 4
 	s.push({"type": "power", "room": "drill", "bars": 0})

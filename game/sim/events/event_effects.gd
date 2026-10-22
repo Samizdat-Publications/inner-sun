@@ -8,7 +8,7 @@ const TYPES: Array[String] = [
 	"res", "res_range", "hull", "crew_damage", "crew_join", "crew_lose", "fight", "hazard",
 	"system_damage", "codex", "pursuer", "reveal", "store",
 ]
-const SKILLS: Array[String] = ["fire", "repair"]
+const SKILLS: Array[String] = ["fire", "repair", "station"]
 const J_PER_KJ: float = 1000.0
 
 

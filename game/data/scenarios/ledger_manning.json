@@ -1,0 +1,10 @@
+{
+  "id": "ledger_manning",
+  "name": "Ledger: each station run 600 ticks with and without an operator, at station skill 1.0 and 2.0",
+  "ship": "light_drill",
+  "duration_s": 10,
+  "bot": "idle",
+  "timeline": [
+    {"at_s": 0.0, "cmd": {"type": "power", "room": "weapons", "bars": 1}}
+  ]
+}

@@ -11,6 +11,7 @@
     "bracing_bars_per_layer": 2,
     "douse_cooldown_s": 6.0,
     "douse_fire_level": 0.3,
-    "douse_j": 150000
+    "douse_j": 150000,
+    "station_skill_gain": 0.75
   }
 }

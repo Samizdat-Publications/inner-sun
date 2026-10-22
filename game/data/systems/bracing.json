@@ -6,5 +6,5 @@
   "recover_c": 75.0,
   "priority": 3,
   "needs_crew": false,
-  "manned_bonus": 0.0
+  "manned_bonus": 0.15
 }

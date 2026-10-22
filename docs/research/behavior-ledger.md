@@ -232,7 +232,7 @@ Current Inner Sun values are quoted where they exist, so the gap is visible.
 - Test: scenario `ledger_manning`: 600 ticks per station with and without crew, at station skill 1.0 and 2.0, `test_ledger_crew.gd::test_l_man_01`.
 - Wrong value: every manned bonus at zero must fail; skill ignored (the 2.0 bonus equal to the 1.0 bonus) must fail the second clause.
 - Core: yes
-- Status: open
+- Status: passing
 
 ### L-MAN-02: One station, one operator
 - Kind: rule
@@ -242,7 +242,7 @@ Current Inner Sun values are quoted where they exist, so the gap is visible.
 - Test: scenario `ledger_manning`, `test_ledger_crew.gd::test_l_man_02`.
 - Wrong value: bonuses that add up per crew member in the room must fail.
 - Core: no
-- Status: open
+- Status: passing
 
 ### L-MAN-03: Crew differ in how well they run a station
 - Kind: shape
@@ -252,7 +252,7 @@ Current Inner Sun values are quoted where they exist, so the gap is visible.
 - Test: data rule in `test_ledger_crew.gd::test_l_man_03`.
 - Wrong value: every station skill at 1.0 must fail.
 - Core: no
-- Status: open
+- Status: passing (data; card pending)
 
 ### L-DOR-01: Closed doors hold hazards back, and the player works them
 - Kind: rule

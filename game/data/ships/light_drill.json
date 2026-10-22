@@ -26,8 +26,8 @@
     {"id": "hatch_weapons_coolant", "kind": "hatch", "a": "weapons", "b": "coolant", "x": 5.0, "span_m": 0.8, "breadth_m": 0.8}
   ],
   "crew": [
-    {"id": "vasquez", "name": "Vasquez", "room": "bridge", "x": 2.4, "skills": {"fire": 1.0, "repair": 0.8}},
-    {"id": "okafor", "name": "Okafor", "room": "reactor", "x": 1.8, "skills": {"fire": 1.2, "repair": 1.0}},
-    {"id": "lindqvist", "name": "Lindqvist", "room": "bracing", "x": 5.8, "skills": {"fire": 0.8, "repair": 1.3}}
+    {"id": "vasquez", "name": "Vasquez", "room": "bridge", "x": 2.4, "skills": {"fire": 1.0, "repair": 0.8, "station": 1.3}},
+    {"id": "okafor", "name": "Okafor", "room": "reactor", "x": 1.8, "skills": {"fire": 1.2, "repair": 1.0, "station": 1.0}},
+    {"id": "lindqvist", "name": "Lindqvist", "room": "bracing", "x": 5.8, "skills": {"fire": 0.8, "repair": 1.3, "station": 0.9}}
   ]
 }

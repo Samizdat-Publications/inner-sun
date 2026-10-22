@@ -2,11 +2,11 @@
   "id": "survivors",
   "name": "Survivors",
   "members": [
-    {"id": "duarte", "name": "Duarte", "skills": {"fire": 1.3, "repair": 0.8}, "bio": "Mine rescue, Atacama. Walked out of a collapse that kept her brother."},
-    {"id": "kowalczyk", "name": "Kowalczyk", "skills": {"fire": 0.9, "repair": 1.3}, "bio": "Pipeline welder. Talks to valves. The valves listen."},
-    {"id": "adeyemi", "name": "Adeyemi", "skills": {"fire": 1.1, "repair": 1.1}, "bio": "Navy submariner, retired early. Will not say why."},
-    {"id": "sorensen", "name": "Sorensen", "skills": {"fire": 0.8, "repair": 1.4}, "bio": "Seismologist who stopped trusting her own instruments at 3 000 meters."},
-    {"id": "takahara", "name": "Takahara", "skills": {"fire": 1.4, "repair": 0.7}, "bio": "Twenty years on refinery fires. Sleeps fine."},
-    {"id": "ruiz", "name": "Ruiz", "skills": {"fire": 1.0, "repair": 1.0}, "bio": "Cook on the last rig that came this way. The last rig is still down here."}
+    {"id": "duarte", "name": "Duarte", "skills": {"fire": 1.3, "repair": 0.8, "station": 0.9}, "bio": "Mine rescue, Atacama. Walked out of a collapse that kept her brother."},
+    {"id": "kowalczyk", "name": "Kowalczyk", "skills": {"fire": 0.9, "repair": 1.3, "station": 1.1}, "bio": "Pipeline welder. Talks to valves. The valves listen."},
+    {"id": "adeyemi", "name": "Adeyemi", "skills": {"fire": 1.1, "repair": 1.1, "station": 1.7}, "bio": "Navy submariner, retired early. Will not say why."},
+    {"id": "sorensen", "name": "Sorensen", "skills": {"fire": 0.8, "repair": 1.4, "station": 1.2}, "bio": "Seismologist who stopped trusting her own instruments at 3 000 meters."},
+    {"id": "takahara", "name": "Takahara", "skills": {"fire": 1.4, "repair": 0.7, "station": 1.0}, "bio": "Twenty years on refinery fires. Sleeps fine."},
+    {"id": "ruiz", "name": "Ruiz", "skills": {"fire": 1.0, "repair": 1.0, "station": 1.5}, "bio": "Cook on the last rig that came this way. The last rig is still down here."}
   ]
 }
