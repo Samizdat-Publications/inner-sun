@@ -27,6 +27,11 @@ Plan: `PLAN.md` section 10. Decisions: D052 to D055. Research: `docs/research/ft
 - [ ] Method B sessions only for rows A could not settle, with Stewart present.
 
 ## P3: build from the rows
+- [ ] Work in this session's own worktree and branch; merge into main only after M1d has triaged
+      Stewart's build 6 runs (D058). Leave the files M1d is splitting alone until the split is on main.
+- [ ] Before each builder dispatch: `python tools/gemini_audit.py --question <q.md> --extra <the spec>`
+      asking it to check every target band against the current data and code and every wrong value
+      against its band (D057). Verify each finding yourself before changing a row.
 - [ ] `tools/ledger.py` (parser and coverage report) with its own test.
 - [ ] Per system, one builder spec in `docs/plans/specs/m2p_<system>.md` that quotes only ledger
       rows; scenarios `game/data/scenarios/ledger_<system>.json`; tests `game/tests/test_ledger_<system>.gd`.

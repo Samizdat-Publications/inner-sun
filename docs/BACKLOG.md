@@ -3,6 +3,23 @@
 Polish and follow-ups raised during M1 that are not blocking the M1a playtest. Pull items into a
 milestone checklist when they matter; delete them when done.
 
+## Gemini audit (2026-10-22, each checked by the lead; details in `review/consults/2026-10-22_gemini-4-argon.md`)
+- **Blast planner overvalues blasts about twice:** `game/bots/blast_planner.gd` scores rock at full
+  yield and never reads `drill.blast_yield_pct` (D039 halved blast yield). Bots blast too eagerly, so
+  balance numbers around blasting are off.
+- **Greedy bot buys a weapon it cannot power:** `PolicyChoices._can_power_weapon` adds one weapons bar
+  unconditionally (`sys_max + 1 >= need`), whether or not the upgrade is on sale or affordable.
+- **Balance reports show hull 40 at row 0** on a 30-hull ship (`balance_m1c_miner.md`, cautious and
+  balanced; every other resource is at its start value). Find the cause in the report path.
+- **State hash omits the ship's max hull and weapon list** (`ShipWorld.state()`): a divergence there
+  shows only indirectly. Adding them changes the determinism hash (record the new one).
+- **Scenarios use the old rock heat slope:** `drill.json` `rock_temp_c_per_m` 0.08 while runs use the
+  layer's 0.033.
+- **Rival power restore vs the rival AI:** restore follows system priority (coolant first), the rival
+  plan puts weapons first; a short mismatch after damage. Write a test before changing anything.
+- **Two event options no bot ever picks** (`cold_spring` option 0, `byrd_signal` option 0): dominated
+  under the bots' scoring; check whether players would pick them before rewriting.
+
 ## Events and writing
 - A `{joined}` placeholder for the crew member who just joined (recruit pages now say "the survivor").
 - A requirement "crew pool not empty" so recruit text never lies when the pool is exhausted.

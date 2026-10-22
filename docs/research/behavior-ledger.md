@@ -157,7 +157,7 @@ Current Inner Sun values are quoted where they exist, so the gap is visible.
 ### L-DOR-01: Closed doors hold hazards back, and the player works them
 - Kind: rule
 - Behavior: The player opens or closes any door or hatch with one click, paused or not. A closed door stops water, slows heat, and fire crosses it far more slowly than an open one; a reinforced door (an upgrade) holds fire many times longer. Crew pass through closed doors as they walk.
-- Target: a closed door passes fire at 30 to 50% of the open-door rate (between open and Inner Sun's wall rate, `fire.spread_wall_factor`), a reinforced door no faster than a wall; the toggle works paused. Today: the sim honours closed links for water, heat and fire, but nothing lets the player close one.
+- Target: a closed door passes fire at 30 to 50% of the open-door rate (between open and Inner Sun's wall rate, `fire.spread_wall_factor`), a reinforced door no faster than a wall; the toggle works paused. Today: the sim honours closed links for water, heat and fire, but nothing lets the player close one; a closed door already passes fire at exactly the wall rate, and every pair of neighbouring rooms also spreads fire through their shared wall in parallel (`HazardSim`, `Ship._find_walls`), so this row needs its own closed-door factor and a wall path that does not bypass a door (Gemini audit, checked).
 - Evidence: E-DOR-01 (documented), wiki and reimplementation notes agree
 - Test: scenario `ledger_doors` (`test_ledger_doors.gd::test_l_dor_01`) and the real-input self-test for the toggle.
 - Wrong value: closed-door fire spread equal to open must fail.
@@ -167,7 +167,7 @@ Current Inner Sun values are quoted where they exist, so the gap is visible.
 ### L-DOR-02: Purging a room kills its fire, at a price
 - Kind: rule
 - Behavior: Inner Sun's take on venting (heat is our air). Opening a room's purge to the rock puts its fire out within seconds; while the purge stays open the room fills with rock heat (and, deeper down, gas), hurting any crew inside; closing it lets coolant win the room back. A fire with burning neighbours takes longer to die.
-- Target: a full fire alone in a purged room is out in under half the time two crew need (L-FIRE-01), about twice that with burning neighbours; at row 7 rock temperature the purged room reaches crew-harm heat (`crew.heat_safe_c`) in 10 to 20 s. Needs a design decision (a D-number) when picked.
+- Target: a full fire alone in a purged room is out in under half the time two crew need (L-FIRE-01), about twice that with burning neighbours; at a row where the rock is at least 8 C above crew-harm heat (`crew.heat_safe_c`; row 9 or deeper with today's layer data, since above about row 4 the rock is cooler than that threshold), the purged room reaches crew-harm heat in 10 to 20 s. Needs a design decision (a D-number) when picked.
 - Evidence: E-DOR-02 (assumed), wiki for venting; the heat translation is Inner Sun's
 - Test: scenario `ledger_purge`, `test_ledger_doors.gd::test_l_dor_02`.
 - Wrong value: purge that leaves the fire burning must fail.
@@ -177,10 +177,10 @@ Current Inner Sun values are quoted where they exist, so the gap is visible.
 ### L-FIRE-01: One pair of hands barely keeps up with a spreading fire
 - Kind: shape
 - Behavior: One crew member at base skill needs about as long to put out a fully burning room as the fire takes to cross an open door into the next room; each extra hand adds about the same again, so two crew comfortably beat it and closed doors buy the time a lone firefighter needs.
-- Target: time for one base-skill crew to put out a full fire in a 4 x 3 m room, divided by the time fire takes to cross an open door: 0.7 to 1.5; two crew take 0.4 to 0.6 of one crew's time.
+- Target: time for one base-skill crew to put out a full fire in a 4 x 3 m room, divided by the time fire takes to cross an open door: 0.7 to 1.5; two crew take 0.4 to 0.6 of one crew's time. Today (Gemini audit, checked): about 0.33 (one crew about 11 s, unfought spread across an open door about 33 s), so meeting it means slower firefighting or faster spread; two crew about 0.46.
 - Evidence: E-FIRE-01 (documented), reimplementation notes cited by the wiki
 - Test: scenario `ledger_fire` (`test_ledger_fire.gd::test_l_fire_01`).
-- Wrong value: crew firefighting rate x3 must fail.
+- Wrong value: crew firefighting rate x3 must fail the first clause; letting only one crew member fight a room's fire must fail the second.
 - Core: yes
 - Status: open
 

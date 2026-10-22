@@ -551,3 +551,27 @@ their stock, node environments. Ledger rows L-UPG, L-RWD, L-MAN, L-DOR, L-STO an
 L-PUR, L-EVT and L-FIRE stay as format examples (L-FIRE-01 is still used as a yardstick by
 L-DOR-02). Purging (L-DOR-02) is a new Inner Sun rule and gets its own decision in step P2. Revert:
 Stewart widens or narrows the pick; update the inventory marks and the ledger scope line.
+
+## D057 (S asked, AI decided): Gemini 4 Argon is kept as a long-context numeric auditor
+Stewart (2026-10-22) asked for one exploratory consult of Google's new `gemini-4-argon` on the whole
+project. It got 298k tokens of committed state (`review/consults/2026-10-22_gemini-4-argon.md`) and
+was asked where it adds value and to prove its number-checking. Of 11 findings, 8 held up when the
+lead checked them against the code, including real bugs the build sessions missed (the blast
+planner ignores the 50% blast yield, the greedy bot buys a weapon it cannot power, a balance-report
+anomaly, the state hash leaving out max hull and weapons) and real errors in this session's ledger
+rows; 2 were overstated; 1 was false and stated with high confidence; one had a 10x unit slip. Kept,
+in three places only, always as leads that the lead verifies before acting: (1) a math audit of
+ledger rows and builder specs before dispatch (parity step P2 to P3), (2) a whole-repo cross-layer
+audit before a milestone gate, (3) an anomaly read of balance reports. Not for code, writing, taste
+or design. Tool: `python tools/gemini_audit.py` (about 1 USD a run, logged in `docs/SPEND.md`).
+Revert: stop running it; nothing depends on it.
+
+## D058 (S asked, AI decided): the parity workstream starts now, on its own branch
+Stewart (2026-10-22) cannot playtest build 6 until the evening and wants the most done meanwhile,
+with the next session opening the parity work as a child session. Build 6 is already exported
+(`m1d-playtest-6`), so his playtest is unaffected by anything on a branch. So the next session starts
+the parity session at once (a separate session in its own worktree and branch) instead of waiting
+for M1d to close (amends D055). Rules: parity merges into main only after M1d has triaged and
+replayed his build 6 runs; nobody exports over `builds/InnerSun.exe` before he has played it; the
+files M1d splits (`docs/plans/M1d.md`, "Ready to dispatch") are left alone by the parity session
+until the split is on main. Revert: the parity session stops and its branch waits.

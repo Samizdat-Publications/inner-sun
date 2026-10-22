@@ -165,6 +165,8 @@ documents plus watching the game, then become Inner Sun's own on that base (D052
 | P4 | Differential checks | Lead, critics, Stewart | Coverage report 80% or more per system, balance measures in band, Stewart's A/B scores 4 or more |
 | P5 | Make it ours | Lead and Stewart | Deliberate changes logged as "waived by design" rows with D-numbers |
 
-Order: after M1d closes (it is still changing `game/sim`), first inside M2. Cheap data-only systems
-first (upgrade prices, rewards, store stock), then crew and stations, then new verbs. Checklist:
+Order (D058): runs from 2026-10-22 alongside M1d, in its own session, worktree and branch; it merges
+into main only after M1d has triaged Stewart's build 6 runs. Stewart picked inventory 1 to 6 (D056).
+Cheap data-only systems first (upgrade prices, rewards, store stock), then crew and stations, then new
+verbs. A Gemini math audit of the rows and specs runs before each builder dispatch (D057). Checklist:
 `docs/plans/M2_parity.md`.
