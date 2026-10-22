@@ -23,7 +23,7 @@
         {
           "text": "Strip the capsule for steel.",
           "outcomes": [
-            {"weight": 1, "page": "strip", "effects": [{"type": "res_range", "res": "ore", "min": 6, "max": 10}]}
+            {"weight": 1, "page": "strip", "effects": [{"type": "reward", "res": "ore", "tier": "high"}]}
           ]
         },
         {

@@ -24,8 +24,7 @@ const COMMANDS: Array[String] = ["target", "flee"]
 const TUNING_KEYS: Array[String] = [
 	"combat.rock_gap_m", "combat.unpowered_decay_s_per_s", "combat.burst_gap_s", "combat.beam_show_s",
 	"combat.hit_fire_level", "combat.flee_s", "combat.flee_drill_bars",
-	"combat.loot_ore_min_units", "combat.loot_ore_max_units", "combat.loot_gems_min_units",
-	"combat.loot_gems_max_units", "combat.loot_cells_chance", "combat.loot_cells_max_units",
+	"combat.loot_cells_chance", "combat.loot_cells_max_units",
 	"combat.loot_charges_chance", "combat.loot_charges_max_units", "combat.loot_weapon_chance",
 	"combat.loot_boss_scale",
 ]

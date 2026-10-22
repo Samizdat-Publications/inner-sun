@@ -2,6 +2,8 @@
   "id": "thermal_lance",
   "name": "Thermal Lance",
   "blurb": "A plasma cutter built for granite, turned sideways. It sweeps down through the target and cooks whatever it crosses.",
+  "price": 70,
+  "currency": "gems",
   "kind": "beam",
   "power": 2,
   "charge_s": 16.0,

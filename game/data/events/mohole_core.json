@@ -15,14 +15,14 @@
         {
           "text": "Send {crew} out to recover the canister.",
           "outcomes": [
-            {"weight": 3, "page": "recovered", "effects": [{"type": "codex", "id": "mohole"}, {"type": "res_range", "res": "gems", "min": 6, "max": 10}]},
-            {"weight": 1, "page": "gas", "effects": [{"type": "codex", "id": "mohole"}, {"type": "crew_damage", "target": "picked", "amount": 25}, {"type": "res", "res": "gems", "amount": 3}]}
+            {"weight": 3, "page": "recovered", "effects": [{"type": "codex", "id": "mohole"}, {"type": "reward", "res": "gems", "tier": "medium"}]},
+            {"weight": 1, "page": "gas", "effects": [{"type": "codex", "id": "mohole"}, {"type": "crew_damage", "target": "picked", "amount": 25}, {"type": "reward", "res": "gems", "tier": "low"}]}
           ]
         },
         {
           "text": "Mine the glittering walls with the crown.",
           "outcomes": [
-            {"weight": 1, "page": "mined", "effects": [{"type": "res_range", "res": "gems", "min": 4, "max": 8}, {"type": "pursuer", "rows": 0.3}]}
+            {"weight": 1, "page": "mined", "effects": [{"type": "reward", "res": "gems", "tier": "low"}, {"type": "pursuer", "rows": 0.3}]}
           ]
         },
         {

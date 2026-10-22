@@ -3,5 +3,7 @@
   "name": "Hull plating",
   "max_owned": 2,
   "text": "Armour plate bolted over the outer skin. Five more points of hull, fitted whole.",
+  "price": 200,
+  "currency": "ore",
   "effects": {"max_hull_add": 5, "hull_add": 5}
 }

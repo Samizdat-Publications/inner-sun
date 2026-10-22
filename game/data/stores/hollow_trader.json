@@ -2,10 +2,15 @@
   "id": "hollow_trader",
   "name": "The Hollow Lamp",
   "blurb": "A lamp on a ledge above the pool, burning on no fuel you can name. Beside it sits a trader in an oilskin coat, salvage laid out on a blanket. There is no rig, no tunnel and no rope. The prices are high, and the trader seems sure you will pay them.",
-  "stock": [
-    {"item": "res", "res": "coolant", "amount": 5, "price": 8, "text": "Coolant, five drums, cold from the pool."},
-    {"item": "res", "res": "bits", "amount": 1, "price": 13, "text": "A drill bit, sharpened by hand on a crystal."},
-    {"item": "res", "res": "charges", "amount": 2, "price": 10, "text": "Two shaped charges in oiled paper."},
-    {"item": "crew", "pool": "survivors", "price": 55, "limit": 1, "text": "Passage for someone who has waited down here too long."}
+  "supplies": [
+    {"item": "res", "res": "coolant", "amount": 5, "price": 8, "stock": [2, 6], "text": "Coolant, five drums, cold from the pool."},
+    {"item": "res", "res": "bits", "amount": 1, "price": 13, "stock": [2, 6], "text": "A drill bit, sharpened by hand on a crystal."},
+    {"item": "res", "res": "charges", "amount": 2, "price": 10, "stock": [2, 6], "text": "Two shaped charges in oiled paper."}
+  ],
+  "sections_shown": [1, 1],
+  "sections": [
+    {"id": "crew", "weight": 1, "offers": [1, 1], "pool": [
+      {"item": "crew", "pool": "survivors", "price": 55, "rarity": 1, "text": "Passage for someone who has waited down here too long."}
+    ]}
   ]
 }

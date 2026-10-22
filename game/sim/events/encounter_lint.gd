@@ -36,9 +36,8 @@ static func lint(db: DataDB, errs: PackedStringArray) -> void:
 	var pools: Dictionary = db.table("crew")
 	for id: Variant in pools.keys():
 		_lint_pool(pools[id], db.source_of("crew", str(id)), errs)
-	var stores: Dictionary = db.table("stores")
-	for id: Variant in stores.keys():
-		_lint_store(db, stores[id], db.source_of("stores", str(id)), errs)
+	StoreRoll.lint(db, errs)  # Stores, the system price ladders and the weapon list prices.
+	Rewards.lint(db, errs)
 	var events: Dictionary = db.table("events")
 	for id: Variant in events.keys():
 		_lint_event(db, events[id], db.source_of("events", str(id)), errs)
@@ -111,58 +110,6 @@ static func _lint_pool(d: Dictionary, file: String, errs: PackedStringArray) -> 
 		if not _text(m, "name"):
 			errs.append("%s: needs a name" % where)
 		_lint_skills(m.get("skills", {}), where, errs)
-
-
-static func _lint_store(db: DataDB, d: Dictionary, file: String, errs: PackedStringArray) -> void:
-	if not _text(d, "name"):
-		errs.append("%s: store needs a name" % file)
-	var stock: Variant = d.get("stock", [])
-	if not (stock is Array) or (stock as Array).is_empty():
-		errs.append("%s: store needs a non-empty \"stock\" list" % file)
-		return
-	var arr: Array = stock
-	for i: int in range(arr.size()):
-		if not (arr[i] is Dictionary):
-			errs.append("%s: stock[%d] must be an object" % [file, i])
-			continue
-		var s: Dictionary = arr[i]
-		var item: String = str(s.get("item", ""))
-		var where: String = "%s: stock[%d] (%s)" % [file, i, item]
-		if not EncounterStore.ITEMS.has(item):
-			errs.append("%s: unknown item (known: %s)" % [where, ", ".join(EncounterStore.ITEMS)])
-			continue
-		if not (s.get("price") is int or (s.get("price") is float and float(s["price"]) == floorf(float(s["price"])))) or int(s.get("price", 0)) <= 0:
-			errs.append("%s: price must be a whole number above zero" % where)
-		var currency: String = str(s.get("currency", "gems"))
-		if not RunState.RESOURCES.has(currency) or currency == "hull":
-			errs.append("%s: currency \"%s\" is not a spendable resource" % [where, currency])
-		if int(s.get("limit", 0)) < 0:
-			errs.append("%s: limit must be zero (none) or more" % where)
-		match item:
-			"res":
-				var res: String = str(s.get("res", ""))
-				if not RunState.RESOURCES.has(res) or res == "hull" or res == currency:
-					errs.append("%s: res \"%s\" must be a resource other than hull and the currency" % [where, res])
-				if int(s.get("amount", 0)) <= 0:
-					errs.append("%s: amount must be above zero" % where)
-			"hull":
-				if int(s.get("amount", 0)) <= 0:
-					errs.append("%s: amount must be above zero" % where)
-			"weapon":
-				var w: String = str(s.get("weapon", ""))
-				if not db.table("weapons").has(w) and not PENDING_WEAPONS.has(w):
-					errs.append("%s: weapon \"%s\" does not exist" % [where, w])
-			"crew":
-				if not db.table("crew").has(str(s.get("pool", ""))):
-					errs.append("%s: crew pool \"%s\" does not exist" % [where, str(s.get("pool", ""))])
-				if int(s.get("limit", 0)) != 1:
-					errs.append("%s: a crew hire needs \"limit\": 1 (one candidate is rolled per visit)" % where)
-			"upgrade":
-				var sys: String = str(s.get("system", ""))
-				if sys == "none" or not DataDB.KNOWN_SYSTEMS.has(sys):
-					errs.append("%s: unknown system \"%s\"" % [where, sys])
-				if int(s.get("max_bars", 0)) < 1:
-					errs.append("%s: max_bars must be 1 or more" % where)
 
 
 static func _lint_event(db: DataDB, d: Dictionary, file: String, errs: PackedStringArray) -> void:
@@ -324,10 +271,19 @@ static func _lint_effect(db: DataDB, v: Variant, where: String, errs: PackedStri
 			_need_res(e, where, errs)
 			if not (e.get("amount") is int or e.get("amount") is float) or int(e["amount"]) == 0:
 				errs.append("%s: res needs a non-zero whole \"amount\"" % where)
+			elif Rewards.RESOURCES.has(str(e.get("res", ""))) and int(e["amount"]) > 0:
+				errs.append("%s: a fixed %s payout: use a reward tier ({\"type\": \"reward\"}, L-RWD-04)" % [where, str(e["res"])])
 		"res_range":
 			_need_res(e, where, errs)
 			if not _num(e.get("min")) or not _num(e.get("max")) or int(e["min"]) > int(e["max"]):
 				errs.append("%s: res_range needs numbers min <= max" % where)
+			elif Rewards.RESOURCES.has(str(e.get("res", ""))) and int(e["max"]) > 0:
+				errs.append("%s: a fixed %s payout: use a reward tier ({\"type\": \"reward\"}, L-RWD-04)" % [where, str(e["res"])])
+		"reward":
+			if not Rewards.RESOURCES.has(str(e.get("res", ""))):
+				errs.append("%s: reward res must be one of %s" % [where, ", ".join(Rewards.RESOURCES)])
+			if not Rewards.TIERS.has(str(e.get("tier", ""))):
+				errs.append("%s: reward tier must be one of %s" % [where, ", ".join(Rewards.TIERS)])
 		"hull":
 			if not _num(e.get("amount")) or int(e["amount"]) == 0:
 				errs.append("%s: hull needs a non-zero \"amount\"" % where)

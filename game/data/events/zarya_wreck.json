@@ -29,7 +29,7 @@
         {
           "text": "Cut the bit rack loose with the torch.",
           "outcomes": [
-            {"weight": 2, "page": "bits", "effects": [{"type": "res", "res": "bits", "amount": 1}, {"type": "res_range", "res": "ore", "min": 4, "max": 6}, {"type": "pursuer", "rows": 0.4}]},
+            {"weight": 2, "page": "bits", "effects": [{"type": "res", "res": "bits", "amount": 1}, {"type": "reward", "res": "ore", "tier": "medium"}, {"type": "pursuer", "rows": 0.4}]},
             {"weight": 1, "page": "derrick", "effects": [{"type": "res", "res": "bits", "amount": 1}, {"type": "hull", "amount": -4}]}
           ]
         }

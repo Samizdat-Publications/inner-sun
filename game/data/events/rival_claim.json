@@ -37,8 +37,8 @@
         {
           "text": "Ram their outrigger with the crown.",
           "outcomes": [
-            {"weight": 2, "page": "rammed", "effects": [{"type": "res_range", "res": "ore", "min": 6, "max": 10}, {"type": "hull", "amount": -3}, {"type": "fight", "enemy": "rival_light"}]},
-            {"weight": 1, "page": "rammed_bad", "effects": [{"type": "res_range", "res": "ore", "min": 6, "max": 10}, {"type": "hull", "amount": -5}, {"type": "system_damage", "system": "drill", "bars": 1}, {"type": "fight", "enemy": "rival_light"}]}
+            {"weight": 2, "page": "rammed", "effects": [{"type": "reward", "res": "ore", "tier": "high"}, {"type": "hull", "amount": -3}, {"type": "fight", "enemy": "rival_light"}]},
+            {"weight": 1, "page": "rammed_bad", "effects": [{"type": "reward", "res": "ore", "tier": "high"}, {"type": "hull", "amount": -5}, {"type": "system_damage", "system": "drill", "bars": 1}, {"type": "fight", "enemy": "rival_light"}]}
           ]
         }
       ]

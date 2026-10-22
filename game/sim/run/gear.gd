@@ -15,6 +15,7 @@ extends RefCounted
 
 const MULTIPLIERS: Array[String] = ["cut_speed_x", "wear_x", "hard_rock_x", "pump_x"]
 const ADDS: Array[String] = ["max_hull_add", "hull_add"]
+const DRILL_MULTIPLIERS: Array[String] = ["cut_speed_x", "wear_x", "hard_rock_x"]  ## Read by DrillSim per segment.
 
 
 ## Multipliers of a list of owned gear, keys in MULTIPLIERS order (all 1.0 for no gear).
@@ -86,6 +87,33 @@ static func fit(sim: Sim, id: String) -> void:
 	sim.emit("gear_fitted", {"gear": id, "replaced": replaced})
 
 
+## Why this fitted gear cannot be sold now ("" = it can, L-STO-05): it must be fitted, must not have
+## one-time adds (they were applied whole and cannot be undone), and gear that changes the drill
+## cannot come off while a segment is under way (DrillSim reads gear only when a segment begins).
+static func sale_refusal(sim: Sim, id: String) -> String:
+	var def: Dictionary = sim.db.table("gear").get(id, {})
+	if def.is_empty() or not sim.run.gear.has(id):
+		return "no %s fitted" % str(def.get("name", id))
+	var eff: Dictionary = def.get("effects", {})
+	for k: String in ADDS:
+		if eff.has(k):
+			return "%s is bolted on whole" % str(def.get("name", id))
+	for k: String in DRILL_MULTIPLIERS:
+		if eff.has(k) and sim.drill.active:
+			return "not while the drill is cutting"
+	return ""
+
+
+## Take one fitted item off (the caller checked sale_refusal) and recompute the multipliers, so its
+## effect is undone exactly. Emits "gear_removed" {"gear"}.
+static func remove(sim: Sim, id: String) -> void:
+	var owned: PackedStringArray = sim.run.gear.duplicate()  # Packed arrays are values: build, then store.
+	owned.remove_at(owned.rfind(id))
+	sim.run.gear = owned
+	sim.run.gear_mult = multipliers(sim.db, sim.run.gear)
+	sim.emit("gear_removed", {"gear": id})
+
+
 ## Checks data/gear and every store line that sells gear.
 static func lint(db: DataDB, errs: PackedStringArray) -> void:
 	var table: Dictionary = db.table("gear")
@@ -117,11 +145,24 @@ static func lint(db: DataDB, errs: PackedStringArray) -> void:
 					errs.append("%s: slotted gear cannot have %s (a replaced item could not undo it)" % [file, key])
 			else:
 				errs.append("%s: unknown effect \"%s\" (known: %s, %s)" % [file, key, ", ".join(MULTIPLIERS), ", ".join(ADDS)])
+		var price: Variant = d.get("price", null)
+		if not (price is float or price is int) or float(price) != floorf(float(price)) or int(price) <= 0:
+			errs.append("%s: gear needs a \"price\", a whole number above zero" % file)
+		var cur: String = str(d.get("currency", ""))
+		if not RunState.RESOURCES.has(cur) or cur == "hull":
+			errs.append("%s: gear currency \"%s\" is not a spendable resource" % [file, cur])
 	var stores: Dictionary = db.table("stores")
 	for sid: String in stores.keys():
-		var stock: Array = (stores[sid] as Dictionary).get("stock", [])
-		for i: int in range(stock.size()):
-			if stock[i] is Dictionary and str((stock[i] as Dictionary).get("item", "")) == "gear":
-				var g: String = str((stock[i] as Dictionary).get("gear", ""))
-				if not table.has(g):
-					errs.append("%s: stock[%d]: gear \"%s\" does not exist in data/gear" % [db.source_of("stores", sid), i, g])
+		var sections: Variant = (stores[sid] as Dictionary).get("sections", [])
+		if not (sections is Array):
+			continue
+		for sv: Variant in (sections as Array):
+			if not (sv is Dictionary) or not ((sv as Dictionary).get("pool", []) is Array):
+				continue
+			var pool: Array = (sv as Dictionary).get("pool", [])
+			for i: int in range(pool.size()):
+				if pool[i] is Dictionary and str((pool[i] as Dictionary).get("item", "")) == "gear":
+					var g: String = str((pool[i] as Dictionary).get("gear", ""))
+					if not table.has(g):
+						errs.append("%s: section \"%s\" pool[%d]: gear \"%s\" does not exist in data/gear" % [
+							db.source_of("stores", sid), str((sv as Dictionary).get("id", "")), i, g])

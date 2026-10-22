@@ -2,6 +2,8 @@
   "id": "charge_launcher",
   "name": "Charge Launcher",
   "blurb": "Fires a shaped mining charge that burrows in before it goes off. Bracing does nothing against it. Each shot costs a charge.",
+  "price": 55,
+  "currency": "gems",
   "kind": "charge",
   "power": 1,
   "charge_s": 12.0,

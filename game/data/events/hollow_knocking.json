@@ -15,7 +15,7 @@
         {
           "text": "Knock back, three times.",
           "outcomes": [
-            {"weight": 1, "page": "answer", "effects": [{"type": "res_range", "res": "gems", "min": 6, "max": 12}]},
+            {"weight": 1, "page": "answer", "effects": [{"type": "reward", "res": "gems", "tier": "medium"}]},
             {"weight": 1, "page": "wall", "effects": [{"type": "hull", "amount": -3}, {"type": "pursuer", "rows": 0.3}]}
           ]
         },

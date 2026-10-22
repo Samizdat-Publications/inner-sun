@@ -22,15 +22,15 @@
         {
           "text": "Send {crew} down on a line for the lamp.",
           "outcomes": [
-            {"weight": 2, "page": "lamp", "effects": [{"type": "res", "res": "cells", "amount": 1}, {"type": "res_range", "res": "gems", "min": 5, "max": 9}]},
+            {"weight": 2, "page": "lamp", "effects": [{"type": "res", "res": "cells", "amount": 1}, {"type": "reward", "res": "gems", "tier": "medium"}]},
             {"weight": 1, "page": "deep", "effects": [{"type": "crew_damage", "target": "picked", "amount": 30.0}]}
           ]
         },
         {
           "text": "Chip crystal from the walls.",
           "outcomes": [
-            {"weight": 2, "page": "crystal", "effects": [{"type": "res_range", "res": "gems", "min": 4, "max": 8}, {"type": "pursuer", "rows": 0.3}]},
-            {"weight": 1, "page": "shatter", "effects": [{"type": "res", "res": "gems", "amount": 2}, {"type": "crew_damage", "target": "picked", "amount": 20.0}]}
+            {"weight": 2, "page": "crystal", "effects": [{"type": "reward", "res": "gems", "tier": "low"}, {"type": "pursuer", "rows": 0.3}]},
+            {"weight": 1, "page": "shatter", "effects": [{"type": "reward", "res": "gems", "tier": "low"}, {"type": "crew_damage", "target": "picked", "amount": 20.0}]}
           ]
         }
       ]

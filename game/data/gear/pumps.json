@@ -2,5 +2,7 @@
   "id": "pumps",
   "name": "High-volume pumps",
   "text": "Twin impeller pumps for the bilges. Water leaves twice as fast.",
+  "price": 120,
+  "currency": "ore",
   "effects": {"pump_x": 2.0}
 }

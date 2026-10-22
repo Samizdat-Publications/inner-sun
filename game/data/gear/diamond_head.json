@@ -4,5 +4,7 @@
   "slot": "drill_head",
   "tier": 2,
   "text": "Industrial diamond set in a steel matrix. Half again as fast, the bit barely wears, and basalt cuts like granite.",
+  "price": 450,
+  "currency": "ore",
   "effects": {"cut_speed_x": 1.5, "wear_x": 0.35, "hard_rock_x": 0.5}
 }

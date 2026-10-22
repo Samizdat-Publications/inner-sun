@@ -28,7 +28,7 @@
         {
           "text": "Punch through at full power.",
           "outcomes": [
-            {"weight": 1, "page": "punched", "effects": [{"type": "res_range", "res": "ore", "min": 5, "max": 8}]},
+            {"weight": 1, "page": "punched", "effects": [{"type": "reward", "res": "ore", "tier": "medium"}]},
             {"weight": 2, "page": "flash", "effects": [{"type": "hazard", "kind": "fire", "room": "system:drill", "level": 0.6}, {"type": "hull", "amount": -4}, {"type": "crew_damage", "target": "picked", "amount": 20}]}
           ]
         }

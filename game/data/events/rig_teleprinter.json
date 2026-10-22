@@ -29,7 +29,7 @@
         {
           "text": "Cut the cable and strip the set.",
           "outcomes": [
-            {"weight": 2, "page": "salvage", "effects": [{"type": "res", "res": "cells", "amount": 2}, {"type": "res", "res": "ore", "amount": 6}]},
+            {"weight": 2, "page": "salvage", "effects": [{"type": "res", "res": "cells", "amount": 2}, {"type": "reward", "res": "ore", "tier": "medium"}]},
             {"weight": 1, "page": "shock", "effects": [{"type": "crew_damage", "target": "picked", "amount": 30.0}, {"type": "res", "res": "cells", "amount": 1}]}
           ]
         }
