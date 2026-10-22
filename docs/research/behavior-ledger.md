@@ -46,28 +46,28 @@ Each row is a level-3 heading followed by the same eight fields, in this order, 
   feel rows' scores. A system is at rough parity at 80% with no failing core row
   (`ftl-difftest-plan.md`).
 
-## Example rows (2026-10-22, proposed, for the top of the inventory)
+## Rows (P2, 2026-10-22)
 
-These show the format on the systems that rank highest in `ftl-reference.md`. **Scope (D056,
-2026-10-22):** Stewart picked inventory 1 to 6, so the L-UPG, L-RWD, L-MAN, L-DOR, L-STO and L-ENV rows
-are in scope; L-PUR, L-EVT and L-FIRE stay as format examples. Targets get their final values in
-step P2.
+**Scope (D056, 2026-10-22):** Stewart picked inventory 1 to 6, so the L-UPG, L-RWD, L-MAN, L-DOR, L-STO
+and L-ENV rows are in scope; L-PUR, L-EVT and L-FIRE stay as format examples (L-FIRE-01 is a
+yardstick for L-DOR-02). The economy rows (L-UPG, L-RWD, L-STO) were finalised by the parity session
+on 2026-10-22; the rest are finalised before their build round.
 Current Inner Sun values are quoted where they exist, so the gap is visible.
 
 ### L-UPG-01: Each further bar of a system costs more than the last
 - Kind: shape
-- Behavior: Buying the next bar of a system always costs more than the bar before it, so taking one system toward its top is an expensive commitment that competes with gear, crew and repairs. Short systems roughly double from their first upgrade to their last; longer ones climb steadily to several times their first price.
-- Target: for every upgradeable system, price(next bar) is greater than price(previous bar); the top bar costs 3 to 6 times the first upgrade on systems of 4 or more bars, 1.6 to 2.2 times on 3-bar systems. Today: one flat price per system (helm 120, bracing 140, weapons 160, drill 150, coolant 120 ore).
+- Behavior: Buying the next bar of a system always costs more than the bar before it, so taking one system toward its top is a commitment that competes with gear, crew and repairs. Every main system has room for at least two more bars on the light drill, so there is a ladder to climb, not one purchase.
+- Target: every system's price ladder except the reactor's (L-UPG-02) (one ore price per bar, in the system's own data) rises strictly bar by bar; on the light drill every system except the reactor can buy at least 2 bars past its starting bars; each step adds 0.4 to 0.9 times the price of the ship's first purchasable step of that system (a straight, steady climb); the first purchasable step costs 0.5 to 1.0 times today's flat price (anchor: helm 120, bracing 140, weapons 160, drill 150, coolant 120 ore). Today: one flat price per system and one bar to buy (bracing two).
 - Evidence: E-UPG-01 (documented), game data
-- Test: rule test `game/tests/test_ledger_economy.gd::test_l_upg_01` over every system's price table.
-- Wrong value: a flat price table (every step equal) must fail.
+- Test: rule test `game/tests/test_ledger_economy.gd::test_l_upg_01` over every system's ladder and the light drill's purchasable steps.
+- Wrong value: a flat ladder (every step equal) must fail.
 - Core: yes
 - Status: open
 
 ### L-UPG-02: Reactor bars get dearer in steps
 - Kind: shape
-- Behavior: The reactor's next bar costs the same for a short run of bars, then steps up, so early power is cheap and late power is a real expense.
-- Target: reactor bar prices hold flat for 2 bars, then rise by a third to a half per step (steeper than a long reactor would need, because Inner Sun's reactor grows by only four bars). Today: 200 ore for one bar, one per store.
+- Behavior: The reactor's next bar costs the same for a short run of bars, then steps up, so early power is cheap and late power is a real expense. A reactor bar is cheaper than a system bar, because a bar of power is only worth something once a system can use it.
+- Target: the light drill can buy at least 6 reactor bars; prices hold flat in pairs and each pair costs 20 to 50% more than the pair before; the first reactor bar costs 0.4 to 0.8 times the mean first purchasable step of the other systems. Today: 200 ore for one bar, one per store, dearer than any system bar.
 - Evidence: E-UPG-02 (documented), wiki
 - Test: rule test `test_ledger_economy.gd::test_l_upg_02`.
 - Wrong value: every reactor bar at one price must fail.
@@ -76,42 +76,122 @@ Current Inner Sun values are quoted where they exist, so the gap is visible.
 
 ### L-UPG-03: Upgrades are where most money goes
 - Kind: shape
-- Behavior: Over a run, buying bars takes the biggest share of what the player spends, ahead of gear, supplies and repairs, so every store visit is a trade-off between getting stronger and staying alive.
-- Target: balanced bot, 300 runs: upgrades 40 to 60% of all ore and gems spent by the gate row; median 6 to 10 bars bought per run.
+- Behavior: Over a run, buying bars takes the biggest share of the ore the player spends, ahead of gear and repairs, so every store visit is a trade-off between getting stronger and staying alive.
+- Target: balanced bot, 300 runs: system and reactor bars take 40 to 65% of all ore spent; median 5 to 10 bars bought per run.
 - Evidence: E-UPG-03 (assumed), to observe in O-10 (what Stewart buys in his recorded FTL runs)
-- Test: balance measure `spend_share` in `python tools/balance.py`.
-- Wrong value: upgrade prices x3 must push the share out of band.
+- Test: balance measure `spend_share` in `python tools/balance.py` (needs the balance tooling, after M1d's split lands).
+- Wrong value: every ladder price x3 must push the share out of band.
 - Core: no
+- Status: open
+
+### L-UPG-04: The price is the only brake on upgrades
+- Kind: rule
+- Behavior: A store that offers a system sells as many of its bars as the player can pay for, each at the next price on the ladder, and always shows the price of the next bar; no per-visit cap.
+- Target: an offered system line has no per-visit limit; buying n bars at once costs exactly the sum of the next n ladder prices; after a purchase the line shows the next bar's price; a system at the top of its ladder is refused with a reason. Today: one bar per visit (two for bracing).
+- Evidence: E-UPG-01 (documented), game data
+- Test: rule test `test_ledger_economy.gd::test_l_upg_04`.
+- Wrong value: charging n x the first price for n bars must fail.
+- Core: yes
 - Status: open
 
 ### L-RWD-01: A won fight pays more the deeper it is
 - Kind: shape
 - Behavior: The haul from a won fight grows steadily row by row, so a fight late in the layer is worth taking even when it hurts. A harder difficulty would shift the whole line later, not flatten it.
-- Target: mean fight haul (ore plus gems at store value) at row 13 is 3 to 5 times row 1, and rises with every 3-row band. Today: flat at every row (3 to 8 ore, 5 to 12 gems; the gate fight x3).
+- Target: mean medium-tier haul value (ore plus gems x 6, D025's exchange of about six ore to a gem) at row 13 is 3 to 5 times row 1, and the mean rises across every band of 3 rows. Today: flat at every row (3 to 8 ore, 5 to 12 gems; the gate fight x3).
 - Evidence: E-RWD-01 (documented), wiki tables built on the game's code, a second guide agrees
-- Test: balance measure `fight_haul_by_row` (300 balanced runs) and a rule test on the loot roll per row.
-- Wrong value: loot ranges equal at every row must fail.
+- Test: rule test on 2,000 seeded loot rolls per row, `test_ledger_economy.gd::test_l_rwd_01` (the run-level balance measure is L-RWD-05).
+- Wrong value: the per-row growth set to zero must fail.
 - Core: yes
 - Status: open
 
 ### L-RWD-02: Rewards roll in three overlapping tiers
 - Kind: number
-- Behavior: Every reward (a fight, an event outcome, a crate) is low, medium or high, each a spread around the row's base, and a high roll at one row can beat a medium at the next. Events name a tier instead of a fixed amount.
-- Target: low about two thirds of the row base (mean 0.6 to 0.75), medium at the base (0.95 to 1.05), high about one and a half times (1.4 to 1.6); each tier's spread is wide enough that its top reaches the bottom of the next.
+- Behavior: Every reward that pays ore or gems is low, medium or high, each a spread around the row's base, and a high roll at one row can beat a medium at the next. Events name a tier instead of a fixed amount.
+- Target: over 10,000 seeded rolls per tier: low mean 0.6 to 0.75 of the row base, medium 0.95 to 1.05, high 1.35 to 1.6; the top of low reaches at least the bottom of medium and the top of medium at least the bottom of high.
 - Evidence: E-RWD-02 (documented), wiki
-- Test: rule test on 10,000 seeded rolls per tier, `test_ledger_economy.gd::test_l_rwd_02`.
-- Wrong value: a single tier for everything must fail.
+- Test: rule test `test_ledger_economy.gd::test_l_rwd_02`.
+- Wrong value: one spread for all three tiers must fail.
+- Core: no
+- Status: open
+
+### L-RWD-03: The first fight is worth about what it is today
+- Kind: number
+- Behavior: A won fight near the top of the layer pays about what it pays now, so the opening of a run keeps its pace; the growth comes later.
+- Target: mean medium-tier haul value (ore plus gems x 6) at row 1 is 45 to 70 (anchor: today's mean, about 56).
+- Evidence: E-RWD-03 (assumed), Inner Sun's own anchor; the shape is from E-RWD-01
+- Test: rule test `test_ledger_economy.gd::test_l_rwd_03`.
+- Wrong value: the row-1 base halved must fail.
+- Core: no
+- Status: open
+
+### L-RWD-04: Ore and gems from events and fights scale; supplies do not
+- Kind: rule
+- Behavior: Every event outcome or fight that pays ore or gems pays by tier and row; payouts of coolant, cells, bits and charges stay the same at every depth. Costs the player pays (negative amounts) stay fixed.
+- Target: the data lint rejects a positive fixed ore or gems payout in an event outcome (it must be a tier reward); supply payouts are equal at rows 1 and 13 in the loot roll.
+- Evidence: E-RWD-01 (documented), wiki
+- Test: `DataDB.lint()` rule with `test_ledger_economy.gd::test_l_rwd_04`, and the loot-roll check.
+- Wrong value: a fixed `res` payout of ore left in an event must fail the lint; cells scaled by row must fail the loot check.
+- Core: yes
+- Status: open
+
+### L-RWD-05: Fights and events are a real share of income, the dig still the most
+- Kind: shape
+- Behavior: Over a run, what fights and events pay matters next to the dig, but digging stays the main income (D024).
+- Target: balanced bot, 300 runs: fights plus events earn 15 to 35% of all ore-plus-gems value gained (gems x 6). Today: under 10%.
+- Evidence: E-RWD-05 (assumed), Inner Sun's own design (D024) on the shape of E-RWD-01
+- Test: balance measure `income_share` in `python tools/balance.py` (after M1d's split lands).
+- Wrong value: every reward base halved must push the share out of band.
 - Core: no
 - Status: open
 
 ### L-STO-01: A store rolls a few sections of offers
 - Kind: rule
-- Behavior: Each store shows a few sections (gear, weapons, systems, crew), each with a few random offers from that category, weighted by rarity and depth, never the same item twice in one store. Supplies and hull repair are always sold; the price of hull repair rises with depth in steps. Gear can be sold back for part of its price.
-- Target: 2 or 3 sections of 3 or 4 offers (Inner Sun has fewer item kinds, so fewer, fuller sections); no duplicates; supplies and repair always present; hull repair per point at rows 10 to 14 costs as many times rows 1 to 4 as the rock there is richer (D025's depth richness, about 1.5 to 2); sell-back a third to a half of the price. The same seed rolls the same stock.
+- Behavior: Each store shows its supplies (always) and a few rolled sections (systems, gear, weapons, crew), each holding a few random offers from that category. Two visits to stores rarely look the same. The same seed rolls the same stock.
+- Target: a crust trader shows 2 or 3 of its 4 sections; the systems section holds 3 offers (all eligible systems if fewer remain), gear 2, weapons 1 or 2, crew 1; no item twice in one store; systems shown in 55 to 90% of visits; over 1,000 seeded pairs of visits, at least 70% differ in their offers; the same seed and visit give the same stock. The hollow trader keeps its own short character list (supplies and a hire). Today: two fixed lists, the same every visit.
 - Evidence: E-STO-01 (documented), wiki and reimplementation notes agree
 - Test: rule test over 1,000 seeded store rolls, `test_ledger_store.gd::test_l_sto_01`; a replay check for the same stock.
-- Wrong value: a fixed stock list must fail.
+- Wrong value: a fixed stock list (no roll) must fail.
 - Core: yes
+- Status: open
+
+### L-STO-02: Rare offers are rarer near the surface
+- Kind: shape
+- Behavior: Each offer has a rarity; common things show up most visits, rare ones seldom, and rare ones get more common the deeper the store.
+- Target: over 1,000 seeded stores per band: the rarest gear (rarity 4 or 5) appears at rows 10 to 13 at least 1.6 times as often as at rows 1 to 4 (a store shows only two gear offers, so frequencies saturate); a rarity-1 offer appears in at least half of the stores whose section rolled.
+- Evidence: E-STO-02 (partly), wiki (rarity weights); the depth rise is the reimplementation notes' loot table by region
+- Test: rule test `test_ledger_store.gd::test_l_sto_02`.
+- Wrong value: rarity ignored (all weights equal) must fail.
+- Core: no
+- Status: open
+
+### L-STO-03: Supplies are limited on the shelf
+- Kind: rule
+- Behavior: Coolant, cells, bits and charges are always on sale at a fixed price, but each store has only a few units of each; running short is a matter of what is on the shelf, not only of money.
+- Target: each supply line rolls a stock of 2 to 6 units per visit (units as the line sells them); buying more than the stock is refused with a reason; prices stay today's. Today: unlimited.
+- Evidence: E-STO-01 (documented), wiki
+- Test: rule test `test_ledger_store.gd::test_l_sto_03`.
+- Wrong value: an unlimited supply line must fail.
+- Core: no
+- Status: open
+
+### L-STO-04: Hull repair costs more the deeper you are
+- Kind: shape
+- Behavior: Welding hull plate is cheap near the surface and dearer deep down, in steps.
+- Target: per-point hull repair price at rows 10 to 13 is 1.5 to 2.0 times rows 1 to 4, in at most three steps, never falling. Today: 2 ore a point at every row.
+- Evidence: E-STO-01 (documented), wiki
+- Test: rule test `test_ledger_store.gd::test_l_sto_04`.
+- Wrong value: one price at every row must fail.
+- Core: no
+- Status: open
+
+### L-STO-05: Gear and weapons sell back for part of their price
+- Kind: rule
+- Behavior: At any store the player can sell a weapon or a piece of gear back for part of its list price. The last weapon aboard cannot be sold, and gear that was bolted on whole (hull plating) cannot come off.
+- Target: sell-back pays 33 to 50% of the item's list price, rounded down, in the item's own currency; selling removes the item and its effect exactly (a sold drill head gives back the drill's old speed); selling the last weapon or hull plating is refused with a reason; a sale is a command in the replay. Today: no selling.
+- Evidence: E-STO-01 (documented), wiki
+- Test: rule test `test_ledger_store.gd::test_l_sto_05`.
+- Wrong value: sell-back at the full price must fail.
+- Core: no
 - Status: open
 
 ### L-PUR-01: The pursuer leaves room for about one more route's worth of digging
