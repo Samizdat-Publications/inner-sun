@@ -3,6 +3,13 @@
 His words outrank everything except CLAUDE.md's hard rules. Newest first. Playtest notes go at the
 top under a dated heading.
 
+## 2026-10-22: FTL parity picks (side track, D056)
+Verbatim: "Pick the top 6 from the inventory as ranked (upgrade prices, rewards by depth, manned stations, doors and purge, rolling stores, node environments). Log my pick."
+- In scope: inventory 1 to 6 in `docs/research/ftl-reference.md` (rising upgrade prices, rewards
+  that grow with depth in tiers, manned stations, doors and purging, stores that roll their stock,
+  node environments). Everything else stays available for later.
+- The work starts after M1d closes (PLAN.md section 10).
+
 ## 2026-10-17: playtest build 5c (live notes while playing)
 Verbatim, with two screenshots (row 1, 13 m, T+00:59; Vasquez sent out with the drill at 0 bars and
 the heading at -90, an old mine works on the scanner below and to the left):

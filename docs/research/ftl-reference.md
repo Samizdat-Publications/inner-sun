@@ -139,17 +139,19 @@ notes (`docs/STEWART_FEEDBACK.md`).
 | **Docs** D, P, O | Documentation coverage (D: documented, P: partly, O: needs observation); worth 3, 2, 1 |
 
 **Value** = Fit x Fun x (4 - Close) / 4 (0 to 25). **Effort** = Cost + (3 - Docs) (1 to 7).
+**Stewart's pick (2026-10-22, D056): rows 1 to 6, marked PICKED.**
+
 **Rank** = value / effort, highest first. Ties inside the top 11 go to the bigger gap (lower Close),
 then to systems Stewart's notes already mention; below that, tied rows are in no particular order.
 
 | # | System (Inner Sun terms; FTL counterpart in brackets) | Inner Sun today | Fit | Fun | Close | Cost | Docs | Value / effort |
 |---|---|---|---|---|---|---|---|---|
-| 1 | **Rising upgrade prices** (system and reactor upgrade cost curves) | One flat ore price per system per store, 120 to 200, one or two buys | 5 | 4 | 1 | 1 | D | **15.0** |
-| 2 | **Rewards that grow with depth, in tiers** (scrap by sector and difficulty, low/medium/high reward tiers) | Fight loot flat at every row (3 to 8 ore, 5 to 12 gems; the gate x3); event rewards fixed per event | 5 | 4 | 1 | 1 | D | **15.0** |
-| 3 | **Manned stations and their bonuses** (manning bonuses on every station, growing with skill) | Drill and weapons +15% when manned, helm needs a crew member; bracing, coolant and reactor give nothing; skill does not count | 5 | 4 | 2 | 1 | D | **10.0** |
-| 4 | **Doors, hatches and purging a room** (door control and venting) | The sim honours closed doors for water, heat and fire, but the player cannot open or close anything; no way to starve a fire | 4 | 5 | 1 | 2 | D | **7.5** |
-| 5 | **Stores that roll their stock** (store sections, random offers by rarity, sell-back at half) | Two fixed stock lists, the same every visit | 5 | 4 | 1 | 2 | D | **7.5** |
-| 6 | **Node environments** (environmental hazards that change a whole beacon: falling debris, heat, blinding, power loss) | Hazard nodes exist but hold only two events, often empty; nothing changes a fight's conditions | 5 | 4 | 1 | 2 | D (note 1) | **7.5** |
+| 1 | PICKED **Rising upgrade prices** (system and reactor upgrade cost curves) | One flat ore price per system per store, 120 to 200, one or two buys | 5 | 4 | 1 | 1 | D | **15.0** |
+| 2 | PICKED **Rewards that grow with depth, in tiers** (scrap by sector and difficulty, low/medium/high reward tiers) | Fight loot flat at every row (3 to 8 ore, 5 to 12 gems; the gate x3); event rewards fixed per event | 5 | 4 | 1 | 1 | D | **15.0** |
+| 3 | PICKED **Manned stations and their bonuses** (manning bonuses on every station, growing with skill) | Drill and weapons +15% when manned, helm needs a crew member; bracing, coolant and reactor give nothing; skill does not count | 5 | 4 | 2 | 1 | D | **10.0** |
+| 4 | PICKED **Doors, hatches and purging a room** (door control and venting) | The sim honours closed doors for water, heat and fire, but the player cannot open or close anything; no way to starve a fire | 4 | 5 | 1 | 2 | D | **7.5** |
+| 5 | PICKED **Stores that roll their stock** (store sections, random offers by rarity, sell-back at half) | Two fixed stock lists, the same every visit | 5 | 4 | 1 | 2 | D | **7.5** |
+| 6 | PICKED **Node environments** (environmental hazards that change a whole beacon: falling debris, heat, blinding, power loss) | Hazard nodes exist but hold only two events, often empty; nothing changes a fight's conditions | 5 | 4 | 1 | 2 | D (note 1) | **7.5** |
 | 7 | **More ships, and layouts per ship** (unlockable ships with variant layouts) | One ship; requisitions carry over, ship unlocks are planned for M2 | 5 | 4 | 0 | 3 | D | **6.7** |
 | 8 | **Pursuit shaped like FTL's** (fleet advance per jump, slack before the exit falls, overtaken beacons, delays) | The pursuer moves with time, noise and depth and strikes when it catches you; events can push it back | 5 | 5 | 2 | 2 | D | **6.25** |
 | 9 | **Deeper events** (requirement-gated choices, quests marked on the map, reward tiers, pursuit delays) | 17 dossier events with choices gated by system, resource or skill; no map quests, no tiers | 5 | 5 | 2 | 2 | D | **6.25** |

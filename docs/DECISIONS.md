@@ -543,3 +543,11 @@ the systems he cares about from the top 10; nothing is built before that. The wo
 when M1d closes (it touches `game/sim`, which M1d is still changing), observes with his recorded
 FTL runs first and computer use second, and runs as builder rounds from ledger rows (`PLAN.md`
 section 10, `docs/plans/M2_parity.md`). Revert: drop section 10; the research files stay as notes.
+
+## D056 (S): FTL parity scope is inventory 1 to 6
+Stewart (2026-10-22): "Pick the top 6 from the inventory as ranked." In scope: rising upgrade
+prices, rewards that grow with depth in tiers, manned stations, doors and purging, stores that roll
+their stock, node environments. Ledger rows L-UPG, L-RWD, L-MAN, L-DOR, L-STO and L-ENV are in scope;
+L-PUR, L-EVT and L-FIRE stay as format examples (L-FIRE-01 is still used as a yardstick by
+L-DOR-02). Purging (L-DOR-02) is a new Inner Sun rule and gets its own decision in step P2. Revert:
+Stewart widens or narrows the pick; update the inventory marks and the ledger scope line.
