@@ -2,6 +2,18 @@
 
 Updated: 2026-10-17, M1d playtest build 6 ready (fixes from Stewart's first build 5c run).
 
+## Parity branch status (2026-10-22, branch `claude/blissful-neumann-c52d9b`, not on main)
+- Ledger rows for all six picks (28 rows); three builder rounds merged on this branch, each spec
+  audited by Gemini first (D057; every finding checked): round 1 economy (upgrade ladders, tiered
+  rewards, rolled stores, sell-back; D081), round 2 doors and purging in the sim (D080), round 3
+  manned stations with a station skill. `check: ok` (387 tests).
+- Coverage (`python tools/ledger.py`, `docs/research/parity_report.md`): stores 5/5, manning 3/3,
+  rewards 4/5, upgrades 3/4, doors 2/3, environments 0/2.
+- Waiting for M1d's split on main: bot updates (reward values, stock clamps, ladder sums), the balance
+  measures (L-UPG-03, L-RWD-05), environments (they act through the drill and run code), door and
+  purge clicks, the crew card's station skill, a look at the power panel at the higher bar counts.
+  Determinism hash to re-record after rebasing onto main. No export.
+
 ## Side track (2026-10-22): FTL parity planned, nothing built
 - FTL (1.6.14, owned on Steam) is now a reference behind a firewall (D052 to D055): community survey
   and a scored inventory of 35 systems (`docs/research/ftl-reference.md`), a behavior-ledger format
