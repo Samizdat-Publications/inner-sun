@@ -114,10 +114,19 @@ func _process(delta: float) -> void:
 		if str(e.get("kind", "")) == "doused":
 			_spray(str(e.get("room", "")))
 	_seen = n
-	if not burning(sim).is_empty() or _was_burning:
-		if _pacer.due():
-			queue_redraw()
-	_was_burning = not burning(sim).is_empty()
+	var now_burning: bool = not burning(sim).is_empty()
+	if needs_redraw(now_burning, _was_burning, _pacer):
+		queue_redraw()
+	_was_burning = now_burning
+
+
+## Whether the buttons redraw this frame. A change between burning and not is never paced: when the
+## last fire dropped under FIRE_MIN on a frame the pacer skipped, the old button stayed on screen
+## while clicks and F found no fire (M1d; likely Stewart's "douse isn't doing anything").
+static func needs_redraw(now_burning: bool, was_burning: bool, pacer: RedrawPacer) -> bool:
+	if now_burning != was_burning:
+		return true
+	return now_burning and pacer.due()
 
 
 func _spray(room_id: String) -> void:

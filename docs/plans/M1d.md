@@ -86,7 +86,14 @@ Written by the lead at extra effort so the M1d session (effort high, Stewart's w
 4. **A critic capture that shows the miner**: Gemini 008 never saw it. Find a seed where the balanced
    bot sends a miner in the first 4 minutes (the balance runs' per-seed `sorties` counter, or add
    `sortie_first_s` to the summary), then capture that seed.
-5. **Known, unreachable today:** a fight started mid-dig returns the run to "idle"
+5. **Regenerate the drill crown art** (Stewart, 2026-10-22, with a screenshot): the painted crown
+   under the tower "looks really cool" but has generation errors, two stray cone-shaped pieces
+   among the cutter teeth right of centre. `game/assets/ship/drill_crown_{albedo,normal,emission}.png`
+   (Gemini art pass, `docs/SPEND.md` "fit_crown"). An asset-smith round: about 8 candidates from the
+   same prompt and style reference, each with its normal and emission maps, a contact sheet; the
+   lead drops any with stray parts and shows Stewart the best two or three to pick from. Same size
+   and anchor so `ship_view.gd` needs no change. About 1 to 2 USD; log it in `docs/SPEND.md`.
+6. **Known, unreachable today:** a fight started mid-dig returns the run to "idle"
    (`game/sim/combat/combat_sim.gd:114`, `_return_phase`); only matters once structure events may
    start fights (D042 forbids it). Fix it in the same change that allows them.
 
