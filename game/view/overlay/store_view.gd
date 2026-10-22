@@ -1,11 +1,14 @@
 class_name StoreView
 extends Control
-## The store overlay: a requisition form on a dimmed screen. Each stock line shows what it is, what it
-## does for this ship right now, its price in gems or ore, how many may still be bought, and a BUY
-## button ({"type": "buy", "item": i, "qty": 1}); a line that cannot be bought is greyed with the
-## reason from EncounterStore.refusal. The hire candidate (if the store has one) is named on its
-## line. Leave pushes {"type": "leave"} (Escape does too). Current gems and ore sit in the corner.
-## Shows only while a store is open (Encounter.store_id and the "store" phase).
+## The store overlay: a requisition form on a dimmed screen. The visit's lines are grouped under
+## their sections (Supplies, then the rolled Systems, Gear, Weapons, Crew); each shows what it is,
+## what it does for this ship right now (a system line names its next bar and that bar's price), its
+## price in gems or ore, the units left on the shelf, and a BUY button ({"type": "buy", "item": i,
+## "qty": 1}); a line that cannot be bought is greyed with the reason from EncounterStore.refusal.
+## Below them a Sell list names what the ship owns that the trader would take, with the sale price
+## and a SELL button ({"type": "sell", "what", "id"}), greyed with the reason when it cannot go.
+## Leave pushes {"type": "leave"} (Escape does too). Current gems and ore sit in the corner.
+## Shows only while a store is open (Encounter.store_id and the "store" phase). Widgets: StoreParts.
 ##
 ## Mount (main.gd, as a child of the HUD CanvasLayer, above the panels):
 ##   var store: StoreView = StoreView.build(layer, sim)   # one call to build
@@ -16,13 +19,15 @@ const DESIGN_SIZE: Vector2 = Vector2(1920, 1080)
 const PAGE_W: float = 1240.0
 const TAG: Dictionary = {"res": "SUPPLY", "hull": "HULL", "weapon": "ARMS", "crew": "CREW", "upgrade": "REFIT", "gear": "GEAR"}
 const FADE_S: float = 0.2
+const ROW_H: float = 34.0
 
 var sim: Sim = null
 var _sig: String = ""
 var _sheet: Dossier.DossierSheet = null
 var _center: CenterContainer = null
 var _age: float = 0.0
-var _buy_buttons: Array[Button] = []
+var _buy_buttons: Array[Button] = []  ## One per visit line, in visit order.
+var _sell_buttons: Array[Button] = []  ## One per EncounterStore.sellable entry, in that order.
 
 
 static func build(parent: Control, p_sim: Sim) -> StoreView:
@@ -74,11 +79,13 @@ func _refresh() -> void:
 		_rebuild()
 
 
-## Everything the form depends on (purchases, money, what the ship has); a change rebuilds it.
+## Everything the form depends on (the visit, money, what the ship has); a change rebuilds it.
 func signature() -> String:
 	var enc: Encounter = sim.encounter
 	var parts: PackedStringArray = PackedStringArray([enc.store_id, str(Array(enc.purchases)), enc.hire_member,
-			str(sim.ship.weapons.size()), str(sim.run.state())])
+			str(sim.ship.weapons), str(sim.run.gear), str(sim.run.state()), str(sim.drill.active)])
+	for d: Dictionary in enc.visit:
+		parts.append("%d:%d" % [int(d["price"]), int(d["stock"])])
 	for r: Room in sim.ship.rooms:
 		parts.append(str(r.sys_max))
 	return "|".join(parts)
@@ -87,6 +94,11 @@ func signature() -> String:
 func buy(line: int, qty: int = 1) -> void:
 	if sim != null and is_open():
 		sim.push({"type": "buy", "item": line, "qty": qty})
+
+
+func sell(what: String, id: String) -> void:
+	if sim != null and is_open():
+		sim.push({"type": "sell", "what": what, "id": id})
 
 
 func leave() -> void:
@@ -109,7 +121,8 @@ func _draw() -> void:
 
 # The text under each line ---------------------------------------------------------------------
 
-## What this line does for the ship as it stands ("HELM 2 > 3 BARS", "ON HAND 20", the candidate).
+## What this line does for the ship as it stands ("DRILL BAR 5 OF 6: 100 ORE", "ON HAND 20", the
+## candidate).
 static func info_text(s: Sim, line: Dictionary) -> String:
 	match str(line.get("item", "")):
 		"res":
@@ -131,9 +144,10 @@ static func info_text(s: Sim, line: Dictionary) -> String:
 				return "NO SUCH SYSTEM"
 			var r: Room = s.ship.rooms[ri]
 			var sys_name: String = str(s.db.table("systems").get(r.system, {}).get("name", r.system)).to_upper()
-			if r.sys_max >= int(line.get("max_bars", 0)):
-				return "%s AT MAXIMUM" % sys_name
-			return "%s %d > %d BARS" % [sys_name, r.sys_max, r.sys_max + 1]
+			var top: int = StoreRoll.ladder(s.db, r.system).size()
+			if r.sys_max >= top:
+				return "%s AT ITS TOP (%d BARS)" % [sys_name, r.sys_max]
+			return "%s BAR %d OF %d: %d ORE" % [sys_name, r.sys_max + 1, top, StoreRoll.next_bar_price(s, r.system)]
 	return ""
 
 
@@ -181,11 +195,18 @@ static func candidate_text(s: Sim) -> String:
 	return enc.hire_member.to_upper()
 
 
+## The display name of an owned weapon or piece of gear.
+static func item_name(db: DataDB, what: String, id: String) -> String:
+	var def: Dictionary = db.table("weapons" if what == "weapon" else "gear").get(id, {})
+	return str(def.get("name", id))
+
+
 # Building -------------------------------------------------------------------------------------
 
 func _rebuild() -> void:
 	_age = 0.0
 	_buy_buttons.clear()
+	_sell_buttons.clear()
 	if _sheet != null:
 		_center.remove_child(_sheet)
 		_sheet.free()
@@ -199,25 +220,35 @@ func _rebuild() -> void:
 	var margin := MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 58)
 	margin.add_theme_constant_override("margin_right", 58)
-	margin.add_theme_constant_override("margin_top", 36)
-	margin.add_theme_constant_override("margin_bottom", 34)
+	margin.add_theme_constant_override("margin_top", 32)
+	margin.add_theme_constant_override("margin_bottom", 30)
 	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_sheet.add_child(margin)
 	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 4)
+	box.add_theme_constant_override("separation", 3)
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	margin.add_child(box)
 	box.add_child(_header(st))
-	box.add_child(_rule())
+	box.add_child(StoreParts.rule())
 	var stock: Array = st.get("stock", [])
+	var section: String = ""
 	for i: int in range(stock.size()):
-		box.add_child(_stock_row(i, stock[i]))
-		if i < stock.size() - 1:
-			box.add_child(_dotted())
+		var line: Dictionary = stock[i]
+		if str(line.get("section", "")) != section:
+			section = str(line.get("section", ""))
+			box.add_child(StoreParts.section_header(section))
+		elif i > 0:
+			box.add_child(StoreParts.dotted())
+		box.add_child(_stock_row(i, line))
+	box.add_child(_sell_block())
+	var gap := Control.new()  # Room for the stamp between the Sell list and the foot.
+	gap.custom_minimum_size = Vector2(0, 16)
+	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_child(gap)
 	var foot := HBoxContainer.new()
 	foot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	foot.alignment = BoxContainer.ALIGNMENT_END
-	var out: Button = _button("Leave", 20)
+	var out: Button = StoreParts.button("Leave", 20)
 	out.custom_minimum_size = Vector2(200, 0)
 	out.pressed.connect(leave)
 	foot.add_child(out)
@@ -233,11 +264,11 @@ func _header(st: Dictionary) -> Control:
 	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	left.add_theme_constant_override("separation", 4)
 	left.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	left.add_child(_label("REQUISITION // TRADER", 16, UiTheme.INK_RED))
-	left.add_child(_label(str(st.get("name", "")), 42, UiTheme.INK))
-	var blurb: Label = _label(str(st.get("blurb", "")), 18, Color(UiTheme.INK, 0.85))
+	left.add_child(StoreParts.label("REQUISITION // TRADER", 16, UiTheme.INK_RED))
+	left.add_child(StoreParts.label(str(st.get("name", "")), 40, UiTheme.INK))
+	var blurb: Label = StoreParts.label(str(st.get("blurb", "")), 17, Color(UiTheme.INK, 0.85))
 	blurb.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	blurb.custom_minimum_size = Vector2(700, 0)
+	blurb.custom_minimum_size = Vector2(760, 0)
 	left.add_child(blurb)
 	row.add_child(left)
 	# Money, as a steel plate pasted on the form.
@@ -252,7 +283,7 @@ func _header(st: Dictionary) -> Control:
 		var cell := HBoxContainer.new()
 		cell.add_theme_constant_override("separation", 8)
 		cell.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		cell.add_child(CurrencyIcon.new().with_kind(cur, 30.0))
+		cell.add_child(StoreParts.CurrencyIcon.new().with_kind(cur, 30.0))
 		var v := Label.new()
 		v.text = "%d" % sim.run.get_res(cur)
 		v.add_theme_font_size_override("font_size", 32)
@@ -273,56 +304,50 @@ func _header(st: Dictionary) -> Control:
 func _stock_row(i: int, line: Dictionary) -> Control:
 	var enc: Encounter = sim.encounter
 	var why: String = EncounterStore.refusal(sim, enc, i, 1)
-	var limit: int = int(line.get("limit", 0))
+	var left: int = int(line.get("stock", -1))
 	var bought: int = enc.purchases[i] if i < enc.purchases.size() else 0
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 14)
-	row.custom_minimum_size = Vector2(0, 38)
+	row.custom_minimum_size = Vector2(0, ROW_H)
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var tag: Label = _label(str(TAG.get(str(line.get("item", "")), "")), 15, UiTheme.INK_RED)
+	var tag: Label = StoreParts.label(str(TAG.get(str(line.get("item", "")), "")), 15, UiTheme.INK_RED)
 	tag.custom_minimum_size = Vector2(78, 0)
 	tag.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	row.add_child(tag)
-	var text: Label = _label(str(line.get("text", "")), 19, UiTheme.INK if why.is_empty() else Color(UiTheme.INK, 0.62))
+	var text: Label = StoreParts.label(str(line.get("text", "")), 18, UiTheme.INK if why.is_empty() else Color(UiTheme.INK, 0.62))
 	text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	text.custom_minimum_size = Vector2(560, 0)
+	text.custom_minimum_size = Vector2(540, 0)
 	text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	row.add_child(text)
 	var info := VBoxContainer.new()
-	info.custom_minimum_size = Vector2(240, 0)
+	info.custom_minimum_size = Vector2(260, 0)
 	info.alignment = BoxContainer.ALIGNMENT_CENTER
 	info.add_theme_constant_override("separation", 0)
 	info.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var is_gear: bool = str(line.get("item", "")) == "gear"
-	info.add_child(_mono_label(info_text(sim, line), 13 if is_gear else 15, UiTheme.STEEL_LIGHT))
+	info.add_child(StoreParts.mono_label(info_text(sim, line), 13 if is_gear else 14, UiTheme.STEEL_LIGHT))
 	if is_gear:
 		var rep: String = gear_replaces(sim, str(line.get("gear", "")))
 		if not rep.is_empty() and why.is_empty():
-			info.add_child(_mono_label(rep, 13, UiTheme.INK_RED))
+			info.add_child(StoreParts.mono_label(rep, 13, UiTheme.INK_RED))
 	if not why.is_empty():
-		info.add_child(_mono_label(why.to_upper(), 13, UiTheme.INK_RED))
+		info.add_child(StoreParts.mono_label(why.to_upper(), 13, UiTheme.INK_RED))
 	row.add_child(info)
-	var price := HBoxContainer.new()
-	price.custom_minimum_size = Vector2(96, 0)
-	price.alignment = BoxContainer.ALIGNMENT_END
-	price.add_theme_constant_override("separation", 6)
-	price.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var short: bool = sim.run.get_res(str(line.get("currency", "gems"))) < int(line.get("price", 0))
-	price.add_child(_label("%d" % int(line.get("price", 0)), 24, UiTheme.INK_RED if short else UiTheme.INK))
-	price.add_child(CurrencyIcon.new().with_kind(str(line.get("currency", "gems")), 24.0))
-	row.add_child(price)
+	var cur: String = str(line.get("currency", "gems"))
+	var short: bool = sim.run.get_res(cur) < int(line.get("price", 0))
+	row.add_child(StoreParts.price_box(int(line.get("price", 0)), cur, short, 96.0, 24))
 	var left_txt: String = ""
-	if limit > 0:
-		left_txt = "%d LEFT" % maxi(0, limit - bought)
+	if left >= 0:
+		left_txt = "%d LEFT" % left
 	elif bought > 0:
 		left_txt = "BOUGHT %d" % bought
-	var lim: Label = _mono_label(left_txt, 14, UiTheme.STEEL_LIGHT)
+	var lim: Label = StoreParts.mono_label(left_txt, 14, UiTheme.STEEL_LIGHT)
 	lim.custom_minimum_size = Vector2(82, 0)
 	lim.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lim.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	row.add_child(lim)
-	var b: Button = _button("BUY", 19)
-	b.custom_minimum_size = Vector2(96, 36)
+	var b: Button = StoreParts.button("BUY", 19)
+	b.custom_minimum_size = Vector2(96, 32)
 	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	b.disabled = not why.is_empty()
 	b.pressed.connect(buy.bind(i, 1))
@@ -331,63 +356,40 @@ func _stock_row(i: int, line: Dictionary) -> Control:
 	return row
 
 
-func _label(s: String, font_size: int, color: Color) -> Label:
-	var l := Label.new()
-	l.text = s
-	l.add_theme_font_override("font", UiTheme.typewriter())
-	l.add_theme_font_size_override("font_size", font_size)
-	l.add_theme_color_override("font_color", color)
-	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	return l
-
-
-func _mono_label(s: String, font_size: int, color: Color) -> Label:
-	var l := Label.new()
-	l.text = s
-	l.add_theme_font_size_override("font_size", font_size)
-	l.add_theme_color_override("font_color", color)
-	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	return l
-
-
-func _button(text: String, font_size: int) -> Button:
-	var b := Button.new()
-	b.theme_type_variation = &"PaperButton"
-	b.text = text
-	b.add_theme_font_size_override("font_size", font_size)
-	b.focus_mode = Control.FOCUS_NONE
-	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	return b
-
-
-func _rule() -> Control:
-	var r := ColorRect.new()
-	r.color = Color(UiTheme.INK, 0.55)
-	r.custom_minimum_size = Vector2(0, 2)
-	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	return r
-
-
-func _dotted() -> Control:
-	var r := ColorRect.new()
-	r.color = Color(UiTheme.INK, 0.18)
-	r.custom_minimum_size = Vector2(0, 1)
-	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	return r
-
-
-## A currency icon as a Control (gems or ore), so it sits in a container row.
-class CurrencyIcon extends Control:
-	var kind: String = "gems"
-	var px: float = 24.0
-
-	func with_kind(k: String, p: float) -> CurrencyIcon:
-		kind = k
-		px = p
-		custom_minimum_size = Vector2(p, p)
-		mouse_filter = Control.MOUSE_FILTER_IGNORE
-		size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		return self
-
-	func _draw() -> void:
-		UiTheme.icon(self, kind, Vector2(px, px) * 0.5, px * 0.85)
+## The Sell list: what the ship owns that the trader would take, packed into a flowing row of
+## small cards (name, sale price, SELL), each greyed with its reason when it cannot go now.
+func _sell_block() -> Control:
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 3)
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_child(StoreParts.section_header("sell"))
+	var flow := HFlowContainer.new()
+	flow.add_theme_constant_override("h_separation", 26)
+	flow.add_theme_constant_override("v_separation", 4)
+	flow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for e: Dictionary in EncounterStore.sellable(sim, sim.encounter):
+		var why: String = str(e["why"])
+		var card := HBoxContainer.new()
+		card.add_theme_constant_override("separation", 8)
+		card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var nm: Label = StoreParts.label(item_name(sim.db, str(e["what"]), str(e["id"])), 17,
+				UiTheme.INK if why.is_empty() else Color(UiTheme.INK, 0.62))
+		nm.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		card.add_child(nm)
+		card.add_child(StoreParts.price_box(int(e["price"]), str(e["currency"]), false, 64.0, 19))
+		if not why.is_empty():
+			var r: Label = StoreParts.mono_label(why.to_upper(), 12, UiTheme.INK_RED)
+			r.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+			card.add_child(r)
+		var b: Button = StoreParts.button("SELL", 16)
+		b.custom_minimum_size = Vector2(76, 28)
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		b.disabled = not why.is_empty()
+		b.pressed.connect(sell.bind(str(e["what"]), str(e["id"])))
+		_sell_buttons.append(b)
+		card.add_child(b)
+		flow.add_child(card)
+	if flow.get_child_count() == 0:
+		flow.add_child(StoreParts.mono_label("NOTHING ABOARD TO SELL", 13, UiTheme.STEEL_LIGHT))
+	box.add_child(flow)
+	return box

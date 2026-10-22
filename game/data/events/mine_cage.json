@@ -16,14 +16,14 @@
         {
           "text": "Send {crew} down the ladder to unload it.",
           "outcomes": [
-            {"weight": 3, "page": "haul", "effects": [{"type": "res", "res": "charges", "amount": 2}, {"type": "res_range", "res": "ore", "min": 10, "max": 18}]},
-            {"weight": 1, "page": "fall", "effects": [{"type": "crew_damage", "target": "picked", "amount": 35.0}, {"type": "res", "res": "ore", "amount": 6}]}
+            {"weight": 3, "page": "haul", "effects": [{"type": "res", "res": "charges", "amount": 2}, {"type": "reward", "res": "ore", "tier": "high"}]},
+            {"weight": 1, "page": "fall", "effects": [{"type": "crew_damage", "target": "picked", "amount": 35.0}, {"type": "reward", "res": "ore", "tier": "medium"}]}
           ]
         },
         {
           "text": "Release the brake and winch the cage up.",
           "outcomes": [
-            {"weight": 2, "page": "winched", "effects": [{"type": "res_range", "res": "coolant", "min": 3, "max": 5}, {"type": "res", "res": "bits", "amount": 1}, {"type": "res", "res": "ore", "amount": 8}]},
+            {"weight": 2, "page": "winched", "effects": [{"type": "res_range", "res": "coolant", "min": 3, "max": 5}, {"type": "res", "res": "bits", "amount": 1}, {"type": "reward", "res": "ore", "tier": "high"}]},
             {"weight": 1, "page": "dropped", "effects": [{"type": "hull", "amount": -5}, {"type": "pursuer", "rows": 0.3}]}
           ]
         },

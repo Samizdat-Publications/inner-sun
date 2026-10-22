@@ -1,0 +1,26 @@
+{
+  "economy": {
+    "reward_ore_row1": 20,
+    "reward_ore_per_row": 6,
+    "reward_gems_row1": 6,
+    "reward_gems_per_row": 1.5,
+    "tier_low_min": 0.55,
+    "tier_low_max": 0.8,
+    "tier_medium_min": 0.8,
+    "tier_medium_max": 1.2,
+    "tier_high_min": 1.2,
+    "tier_high_max": 1.7,
+    "gem_ore_value": 6,
+    "sell_back_frac": 0.5,
+    "store_rarity_weight_1": 10,
+    "store_rarity_weight_2": 6,
+    "store_rarity_weight_3": 3,
+    "store_rarity_weight_4": 1,
+    "store_rarity_weight_5": 0.5,
+    "store_rarity_depth_gain_1": 0,
+    "store_rarity_depth_gain_2": 0,
+    "store_rarity_depth_gain_3": 1,
+    "store_rarity_depth_gain_4": 4,
+    "store_rarity_depth_gain_5": 6
+  }
+}

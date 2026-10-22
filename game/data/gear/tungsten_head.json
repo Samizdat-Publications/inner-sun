@@ -4,5 +4,7 @@
   "slot": "drill_head",
   "tier": 1,
   "text": "Tungsten carbide teeth on a forged crown. Cuts a quarter faster and the bit lasts far longer.",
+  "price": 180,
+  "currency": "ore",
   "effects": {"cut_speed_x": 1.25, "wear_x": 0.6}
 }

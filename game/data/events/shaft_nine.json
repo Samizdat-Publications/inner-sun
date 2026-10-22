@@ -15,7 +15,7 @@
         {
           "text": "Tip the ore carts onto the conveyor.",
           "outcomes": [
-            {"weight": 1, "page": "carts", "effects": [{"type": "res_range", "res": "ore", "min": 6, "max": 10}]}
+            {"weight": 1, "page": "carts", "effects": [{"type": "reward", "res": "ore", "tier": "high"}]}
           ]
         },
         {
@@ -28,7 +28,7 @@
         {
           "text": "Send {crew} down in the cage.",
           "outcomes": [
-            {"weight": 3, "page": "cage", "effects": [{"type": "codex", "id": "shaft_nine"}, {"type": "res", "res": "cells", "amount": 1}, {"type": "res_range", "res": "ore", "min": 8, "max": 12}]},
+            {"weight": 3, "page": "cage", "effects": [{"type": "codex", "id": "shaft_nine"}, {"type": "res", "res": "cells", "amount": 1}, {"type": "reward", "res": "ore", "tier": "high"}]},
             {"weight": 1, "page": "cable", "effects": [{"type": "codex", "id": "shaft_nine"}, {"type": "crew_lose", "target": "picked"}]}
           ]
         }

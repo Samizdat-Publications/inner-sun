@@ -10,9 +10,11 @@ extends SimModule
 ## break-in (DrillStructures) calls pick_structure_event, start_event and open_store mid-segment:
 ## when that store is left or that event ends the run goes back to "drill", not "idle" (the drill is
 ## still active), and the segment carries on where it was.
-## Commands: {"type": "choose", "option": i}, {"type": "buy", "item": i, "qty": n}, {"type": "leave"}.
+## Commands: {"type": "choose", "option": i}, {"type": "buy", "item": i, "qty": n},
+## {"type": "sell", "what": "weapon" | "gear", "id": id}, {"type": "leave"}.
+## A store visit's stock is rolled when it opens (StoreRoll, "store" stream) at the ship's map row.
 
-const COMMANDS: Array[String] = ["choose", "buy", "leave"]
+const COMMANDS: Array[String] = ["choose", "buy", "sell", "leave"]
 const NODE_EVENT_KINDS: Array[String] = ["event", "cavern", "hazard"]
 const DEFAULT_STORE: String = "crust_trader"
 
@@ -27,7 +29,8 @@ var pending_boss: bool = false
 var pending_store: String = ""  ## Store id a store effect queued for when the event ends.
 # Store state (one visit).
 var store_id: String = ""
-var purchases: PackedInt32Array = PackedInt32Array()  ## Units bought per stock line this visit.
+var visit: Array[Dictionary] = []  ## This visit's lines (StoreRoll.line format), rolled at open.
+var purchases: PackedInt32Array = PackedInt32Array()  ## Units bought per visit line this visit.
 var hire_member: String = ""  ## Pool member id the store's crew hire offers this visit.
 # Crew that joined this run.
 var joined: PackedStringArray = PackedStringArray()  ## Pool member ids that came aboard, in order.
@@ -155,17 +158,32 @@ func open_store(sim: Sim, p_store_id: String) -> void:
 		push_error("Encounter.open_store: \"%s\" while something else is open" % p_store_id)
 		return
 	store_id = p_store_id
-	var stock: Array = st.get("stock", [])
+	visit = StoreRoll.roll(sim, st, sim.run.current_row(), sim.run.map.size())
 	purchases = PackedInt32Array()
-	purchases.resize(stock.size())
+	purchases.resize(visit.size())
 	hire_member = ""
-	for line: Variant in stock:
-		var d: Dictionary = line
-		if str(d.get("item", "")) == "crew":
-			hire_member = EventEffects.roll_member(sim, self, str(d.get("pool", "")), "store")
-			break
+	# The hire is rolled for the store's first crew pool whether or not its section showed, so the
+	# number of draws does not depend on the section roll.
+	var crew_pool: String = _crew_pool(st)
+	if not crew_pool.is_empty():
+		hire_member = EventEffects.roll_member(sim, self, crew_pool, "store")
 	sim.run.set_phase(sim, "store")
 	sim.emit("store_opened", {"store": p_store_id})
+
+
+static func _crew_pool(st: Dictionary) -> String:
+	for sv: Variant in st.get("sections", []):
+		for line: Variant in ((sv as Dictionary).get("pool", []) as Array):
+			if str((line as Dictionary).get("item", "")) == "crew":
+				return str((line as Dictionary).get("pool", ""))
+	return ""
+
+
+func _close_store() -> void:
+	store_id = ""
+	visit = []
+	purchases = PackedInt32Array()
+	hire_member = ""
 
 
 func is_busy() -> bool:
@@ -181,14 +199,14 @@ func apply(sim: Sim, cmd: Dictionary) -> void:
 			_choose(sim, int(cmd.get("option", -1)))
 		"buy":
 			EncounterStore.buy(sim, self, int(cmd.get("item", -1)), int(cmd.get("qty", 1)))
+		"sell":
+			EncounterStore.sell(sim, self, str(cmd.get("what", "")), str(cmd.get("id", "")))
 		"leave":
 			if store_id.is_empty() or sim.run.phase != "store":
 				_bad(sim, "leave", "no store is open")
 				return
 			sim.emit("store_closed", {"store": store_id})
-			store_id = ""
-			purchases = PackedInt32Array()
-			hire_member = ""
+			_close_store()
 			_to_idle(sim)
 
 
@@ -280,9 +298,7 @@ func step(sim: Sim) -> void:
 		event_id = ""
 		page = ""
 		picked = -1
-		store_id = ""
-		purchases = PackedInt32Array()
-		hire_member = ""
+		_close_store()
 
 
 # Reading (for the view and bots) ---------------------------------------------------------------
@@ -296,8 +312,13 @@ func current_page() -> Dictionary:
 	return pages.get(page, {})
 
 
+## The open store: {"id", "name", "blurb", "stock": this visit's lines} ({} when none is open).
+## "stock" is the live visit array (read it, never change it: buy and sell are commands).
 func current_store() -> Dictionary:
-	return db.table("stores").get(store_id, {})
+	var st: Dictionary = db.table("stores").get(store_id, {})
+	if st.is_empty():
+		return {}
+	return {"id": store_id, "name": str(st.get("name", "")), "blurb": str(st.get("blurb", "")), "stock": visit}
 
 
 ## Why option i on the open page cannot be chosen right now ("" = it can).
@@ -338,8 +359,12 @@ func _pick_crew(sim: Sim, rule: String) -> int:
 
 
 func state() -> Array:
+	var lines: Array = []
+	for d: Dictionary in visit:
+		lines.append([str(d["section"]), str(d["item"]), str(d["res"]), str(d["system"]), str(d["gear"]),
+			str(d["weapon"]), str(d["pool"]), int(d["price"]), str(d["currency"]), int(d["stock"])])
 	return [event_id, page, picked, Array(used), pending_fight, pending_boss, pending_store,
-		store_id, Array(purchases), hire_member, Array(joined)]
+		store_id, Array(purchases), hire_member, Array(joined), lines]
 
 
 static func lint(p_db: DataDB, errs: PackedStringArray) -> void:

@@ -6,6 +6,7 @@
   "recover_c": 60.0,
   "priority": 4,
   "needs_crew": true,
+  "bar_prices": [30, 60, 90, 150],
   "manned_bonus": 0.0,
   "manned_dodge": 0.03
 }

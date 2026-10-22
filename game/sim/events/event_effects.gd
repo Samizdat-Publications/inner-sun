@@ -5,7 +5,7 @@ extends RefCounted
 ## only through run.add, heat only through hazards.add_heat (exact integer joules).
 
 const TYPES: Array[String] = [
-	"res", "res_range", "hull", "crew_damage", "crew_join", "crew_lose", "fight", "hazard",
+	"res", "res_range", "reward", "hull", "crew_damage", "crew_join", "crew_lose", "fight", "hazard",
 	"system_damage", "codex", "pursuer", "reveal", "store",
 ]
 const SKILLS: Array[String] = ["fire", "repair", "station"]
@@ -20,6 +20,10 @@ static func apply(sim: Sim, enc: Encounter, e: Dictionary) -> void:
 		"res_range":
 			var n: int = sim.rng.get_stream("events").randi_range(int(e.get("min", 0)), int(e.get("max", 0)))
 			sim.run.add(sim, str(e.get("res", "")), n)
+		"reward":
+			# A tiered ore or gem reward at the ship's map row (Rewards; one draw, "reward" stream).
+			var res: String = str(e.get("res", ""))
+			sim.run.add(sim, res, Rewards.roll(sim, res, str(e.get("tier", "")), sim.run.current_row()))
 		"hull":
 			sim.run.add(sim, "hull", int(e.get("amount", 0)))
 		"crew_damage":
@@ -184,6 +188,8 @@ static func skill_of(c: CrewMember, skill: String) -> float:
 		return c.skill_fire
 	if skill == "repair":
 		return c.skill_repair
+	if skill == "station":
+		return c.skill_station
 	return 0.0
 
 

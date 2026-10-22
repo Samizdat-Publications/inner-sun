@@ -15,21 +15,21 @@
         {
           "text": "Pry the amber from the near wall.",
           "outcomes": [
-            {"weight": 1, "page": "amber", "effects": [{"type": "res_range", "res": "gems", "min": 4, "max": 7}]}
+            {"weight": 1, "page": "amber", "effects": [{"type": "reward", "res": "gems", "tier": "low"}]}
           ]
         },
         {
           "text": "Send {crew} to the end of the gallery.",
           "outcomes": [
-            {"weight": 3, "page": "deep", "effects": [{"type": "codex", "id": "green_gallery"}, {"type": "res_range", "res": "gems", "min": 6, "max": 9}]},
-            {"weight": 1, "page": "spores", "effects": [{"type": "codex", "id": "green_gallery"}, {"type": "crew_damage", "target": "picked", "amount": 20}, {"type": "res", "res": "gems", "amount": 3}]}
+            {"weight": 3, "page": "deep", "effects": [{"type": "codex", "id": "green_gallery"}, {"type": "reward", "res": "gems", "tier": "medium"}]},
+            {"weight": 1, "page": "spores", "effects": [{"type": "codex", "id": "green_gallery"}, {"type": "crew_damage", "target": "picked", "amount": 20}, {"type": "reward", "res": "gems", "tier": "low"}]}
           ]
         },
         {
           "text": "Bring the whole wall down with a charge.",
           "requires": {"res": {"charges": 1}},
           "outcomes": [
-            {"weight": 1, "page": "blast", "effects": [{"type": "res", "res": "charges", "amount": -1}, {"type": "res_range", "res": "gems", "min": 9, "max": 12}, {"type": "hull", "amount": -3}, {"type": "pursuer", "rows": 0.8}]}
+            {"weight": 1, "page": "blast", "effects": [{"type": "res", "res": "charges", "amount": -1}, {"type": "reward", "res": "gems", "tier": "medium"}, {"type": "hull", "amount": -3}, {"type": "pursuer", "rows": 0.8}]}
           ]
         }
       ]

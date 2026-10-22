@@ -2,23 +2,36 @@
   "id": "crust_trader",
   "name": "The Lamp Room",
   "blurb": "A pressure door in the shaft wall, a hand-painted sign, and a man who weighs your ore on a brass scale and takes gems for the rest. His prices are fair. His shelves are stocked from wrecks.",
-  "stock": [
-    {"item": "res", "res": "coolant", "amount": 5, "price": 6, "text": "Coolant, five drums."},
-    {"item": "res", "res": "cells", "amount": 1, "price": 8, "text": "One power cell, still sealed."},
-    {"item": "res", "res": "bits", "amount": 1, "price": 10, "text": "A drill bit, barely chipped."},
-    {"item": "res", "res": "charges", "amount": 2, "price": 8, "text": "Two shaped charges."},
-    {"item": "hull", "amount": 1, "price": 2, "currency": "ore", "text": "Hull plate, welded on while you wait."},
-    {"item": "weapon", "weapon": "thermal_lance", "price": 70, "limit": 1, "text": "A thermal lance off a rig that did not need it any more."},
-    {"item": "crew", "pool": "survivors", "price": 45, "limit": 1, "text": "Passage for a survivor who wants to go deeper."},
-    {"item": "upgrade", "system": "helm", "price": 120, "currency": "ore", "limit": 1, "max_bars": 3, "text": "Scanner coils for the helm."},
-    {"item": "upgrade", "system": "bracing", "price": 140, "currency": "ore", "limit": 2, "max_bars": 4, "text": "Bracing struts. Two make another layer."},
-    {"item": "upgrade", "system": "reactor", "price": 200, "currency": "ore", "limit": 1, "max_bars": 12, "text": "A reactor bar, hot from the bench."},
-    {"item": "upgrade", "system": "weapons", "price": 160, "currency": "ore", "limit": 1, "max_bars": 4, "text": "Heavier weapon mounts."},
-    {"item": "upgrade", "system": "drill", "price": 150, "currency": "ore", "limit": 1, "max_bars": 5, "text": "A fifth bar for the drill motor."},
-    {"item": "upgrade", "system": "coolant", "price": 120, "currency": "ore", "limit": 1, "max_bars": 4, "text": "A second coolant loop."},
-    {"item": "gear", "gear": "tungsten_head", "price": 180, "currency": "ore", "limit": 1, "text": "A tungsten carbide head for the drill."},
-    {"item": "gear", "gear": "diamond_head", "price": 450, "currency": "ore", "limit": 1, "text": "A diamond head. He wants it gone before someone asks where it came from."},
-    {"item": "gear", "gear": "hull_plating", "price": 200, "currency": "ore", "limit": 1, "text": "Armour plate, cut to fit your hull."},
-    {"item": "gear", "gear": "pumps", "price": 120, "currency": "ore", "limit": 1, "text": "High-volume bilge pumps."}
+  "supplies": [
+    {"item": "res", "res": "coolant", "amount": 5, "price": 6, "stock": [2, 6], "text": "Coolant, five drums."},
+    {"item": "res", "res": "cells", "amount": 1, "price": 8, "stock": [2, 6], "text": "One power cell, still sealed."},
+    {"item": "res", "res": "bits", "amount": 1, "price": 10, "stock": [2, 6], "text": "A drill bit, barely chipped."},
+    {"item": "res", "res": "charges", "amount": 2, "price": 8, "stock": [2, 6], "text": "Two shaped charges."},
+    {"item": "hull", "amount": 1, "currency": "ore", "price_by_row": [{"from_row": 0, "price": 2}, {"from_row": 5, "price": 3}, {"from_row": 10, "price": 4}], "text": "Hull plate, welded on while you wait."}
+  ],
+  "sections_shown": [2, 3],
+  "sections": [
+    {"id": "systems", "weight": 3, "offers": [3, 3], "pool": [
+      {"item": "upgrade", "system": "helm", "rarity": 1, "text": "Scanner coils for the helm."},
+      {"item": "upgrade", "system": "bracing", "rarity": 1, "text": "Bracing struts. Two make another layer."},
+      {"item": "upgrade", "system": "reactor", "rarity": 1, "text": "A reactor bar, hot from the bench."},
+      {"item": "upgrade", "system": "weapons", "rarity": 1, "text": "Heavier weapon mounts."},
+      {"item": "upgrade", "system": "drill", "rarity": 1, "text": "Another bar for the drill motor."},
+      {"item": "upgrade", "system": "coolant", "rarity": 1, "text": "Another coolant loop."}
+    ]},
+    {"id": "gear", "weight": 2, "offers": [2, 2], "pool": [
+      {"item": "gear", "gear": "pumps", "rarity": 1, "text": "High-volume bilge pumps."},
+      {"item": "gear", "gear": "tungsten_head", "rarity": 2, "text": "A tungsten carbide head for the drill."},
+      {"item": "gear", "gear": "hull_plating", "rarity": 3, "text": "Armour plate, cut to fit your hull."},
+      {"item": "gear", "gear": "diamond_head", "rarity": 4, "text": "A diamond head. He wants it gone before someone asks where it came from."}
+    ]},
+    {"id": "weapons", "weight": 1, "offers": [1, 2], "pool": [
+      {"item": "weapon", "weapon": "borer_turret", "rarity": 1, "text": "A borer turret, pulled off a rig that lost the argument."},
+      {"item": "weapon", "weapon": "charge_launcher", "rarity": 2, "text": "A charge launcher, cleaned and oiled, no questions."},
+      {"item": "weapon", "weapon": "thermal_lance", "rarity": 2, "text": "A thermal lance off a rig that did not need it any more."}
+    ]},
+    {"id": "crew", "weight": 1, "offers": [1, 1], "pool": [
+      {"item": "crew", "pool": "survivors", "price": 45, "rarity": 1, "text": "Passage for a survivor who wants to go deeper."}
+    ]}
   ]
 }

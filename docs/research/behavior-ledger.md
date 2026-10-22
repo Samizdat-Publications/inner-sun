@@ -62,7 +62,7 @@ Current Inner Sun values are quoted where they exist, so the gap is visible.
 - Test: rule test `game/tests/test_ledger_economy.gd::test_l_upg_01` over every system's ladder and the light drill's purchasable steps.
 - Wrong value: a flat ladder (every step equal) must fail.
 - Core: yes
-- Status: open
+- Status: passing
 
 ### L-UPG-02: Reactor bars get dearer in steps
 - Kind: shape
@@ -72,7 +72,7 @@ Current Inner Sun values are quoted where they exist, so the gap is visible.
 - Test: rule test `test_ledger_economy.gd::test_l_upg_02`.
 - Wrong value: every reactor bar at one price must fail.
 - Core: no
-- Status: open
+- Status: passing
 
 ### L-UPG-03: Upgrades are where most money goes
 - Kind: shape
@@ -92,7 +92,7 @@ Current Inner Sun values are quoted where they exist, so the gap is visible.
 - Test: rule test `test_ledger_economy.gd::test_l_upg_04`.
 - Wrong value: charging n x the first price for n bars must fail.
 - Core: yes
-- Status: open
+- Status: passing
 
 ### L-RWD-01: A won fight pays more the deeper it is
 - Kind: shape
@@ -102,7 +102,7 @@ Current Inner Sun values are quoted where they exist, so the gap is visible.
 - Test: rule test on 2,000 seeded loot rolls per row, `test_ledger_economy.gd::test_l_rwd_01` (the run-level balance measure is L-RWD-05).
 - Wrong value: the per-row growth set to zero must fail.
 - Core: yes
-- Status: open
+- Status: passing
 
 ### L-RWD-02: Rewards roll in three overlapping tiers
 - Kind: number
@@ -112,7 +112,7 @@ Current Inner Sun values are quoted where they exist, so the gap is visible.
 - Test: rule test `test_ledger_economy.gd::test_l_rwd_02`.
 - Wrong value: one spread for all three tiers must fail.
 - Core: no
-- Status: open
+- Status: passing
 
 ### L-RWD-03: The first fight is worth about what it is today
 - Kind: number
@@ -122,7 +122,7 @@ Current Inner Sun values are quoted where they exist, so the gap is visible.
 - Test: rule test `test_ledger_economy.gd::test_l_rwd_03`.
 - Wrong value: the row-1 base halved must fail.
 - Core: no
-- Status: open
+- Status: passing
 
 ### L-RWD-04: Ore and gems from events and fights scale; supplies do not
 - Kind: rule
@@ -132,7 +132,7 @@ Current Inner Sun values are quoted where they exist, so the gap is visible.
 - Test: `DataDB.lint()` rule with `test_ledger_economy.gd::test_l_rwd_04`, and the loot-roll check.
 - Wrong value: a fixed `res` payout of ore left in an event must fail the lint; cells scaled by row must fail the loot check.
 - Core: yes
-- Status: open
+- Status: passing
 
 ### L-RWD-05: Fights and events are a real share of income, the dig still the most
 - Kind: shape
@@ -152,7 +152,7 @@ Current Inner Sun values are quoted where they exist, so the gap is visible.
 - Test: rule test over 1,000 seeded store rolls, `test_ledger_store.gd::test_l_sto_01`; a replay check for the same stock.
 - Wrong value: a fixed stock list (no roll) must fail.
 - Core: yes
-- Status: open
+- Status: passing
 
 ### L-STO-02: Rare offers are rarer near the surface
 - Kind: shape
@@ -162,7 +162,7 @@ Current Inner Sun values are quoted where they exist, so the gap is visible.
 - Test: rule test `test_ledger_store.gd::test_l_sto_02`.
 - Wrong value: rarity ignored (all weights equal) must fail.
 - Core: no
-- Status: open
+- Status: passing
 
 ### L-STO-03: Supplies are limited on the shelf
 - Kind: rule
@@ -172,7 +172,7 @@ Current Inner Sun values are quoted where they exist, so the gap is visible.
 - Test: rule test `test_ledger_store.gd::test_l_sto_03`.
 - Wrong value: an unlimited supply line must fail.
 - Core: no
-- Status: open
+- Status: passing
 
 ### L-STO-04: Hull repair costs more the deeper you are
 - Kind: shape
@@ -182,7 +182,7 @@ Current Inner Sun values are quoted where they exist, so the gap is visible.
 - Test: rule test `test_ledger_store.gd::test_l_sto_04`.
 - Wrong value: one price at every row must fail.
 - Core: no
-- Status: open
+- Status: passing
 
 ### L-STO-05: Gear and weapons sell back for part of their price
 - Kind: rule
@@ -192,7 +192,7 @@ Current Inner Sun values are quoted where they exist, so the gap is visible.
 - Test: rule test `test_ledger_store.gd::test_l_sto_05`.
 - Wrong value: sell-back at the full price must fail.
 - Core: no
-- Status: open
+- Status: passing
 
 ### L-PUR-01: The pursuer leaves room for about one more route's worth of digging
 - Kind: shape
