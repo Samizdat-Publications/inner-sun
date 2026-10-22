@@ -2,6 +2,17 @@
 
 Updated: 2026-10-17, M1d playtest build 6 ready (fixes from Stewart's first build 5c run).
 
+## Side track (2026-10-22): FTL parity planned, nothing built
+- FTL (1.6.14, owned on Steam) is now a reference behind a firewall (D052 to D055): community survey
+  and a scored inventory of 35 systems (`docs/research/ftl-reference.md`), a behavior-ledger format
+  with 15 example rows (`docs/research/behavior-ledger.md`), observation and differential-test plans,
+  `PLAN.md` section 10 (an M2 workstream) and its checklist `docs/plans/M2_parity.md`. No REA install.
+- FTL's data folder is unpacked privately in `research_private/` (git-ignored;
+  `python tools/ftl_unpack.py` regenerates it). Nothing from it is committed.
+- **Waiting on Stewart:** his pick of systems from the inventory's top 10. The workstream starts
+  after M1d closes; the paste prompt is in `HANDOFF.md` ("Side track: FTL parity").
+- `game/sim`, `game/view` and the M1d plan were not touched; `check: ok` (368 tests).
+
 ## M1d status: playtest build 6 ready (Stewart's first build 5c notes)
 - **Build:** `builds/InnerSun.exe`, launched by `Play Inner Sun.bat`: `m1d-playtest-6` (milestone zip
   `builds/milestones/m1d-playtest-6/`): build 5c plus the fixes below.

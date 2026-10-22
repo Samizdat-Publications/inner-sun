@@ -8,7 +8,7 @@ session at effort **high** (his choice) with his weekly quota at about 80%, to s
 plan is ready in `docs/plans/M1d.md`: the start protocol (`python tools/run_report.py --since
 2026-10-17` first), a triage table to fill, the questions build 5b asked him with the levers behind
 each answer, a decision tree for the likely notes, work that needs no notes, the bridge to M2, and
-budget pacing. Specs ready to dispatch: `specs/m2_burrowers.md` (the onboarding hints are built).
+budget pacing. Specs ready to dispatch: `docs/plans/specs/m2_burrowers.md` (the onboarding hints are built).
 **Already started (2026-10-17):** Stewart played build 5c for 15 minutes (his notes and what the run
 record shows are at the top of `docs/STEWART_FEEDBACK.md`); build 6 (`m1d-playtest-6`) fixes the
 miner's exit (D051), the miner drawn twice, adds the miner's aim estimate and the onboarding hints.
@@ -19,6 +19,19 @@ Paste this into a new session (folder `C:\Users\stewa\Documents\Claude\Inner Sun
 high, Auto):
 ```
 Continue Inner Sun: M1d. Read CLAUDE.md, PROGRESS.md, HANDOFF.md (the "Next session" section) and docs/plans/M1d.md, then my notes at the top of docs/STEWART_FEEDBACK.md. Run python tools/run_report.py --since 2026-10-17, fill the triage table in M1d.md, then work autonomously per CLAUDE.md: specs to builders, verify every still yourself, keep what is fun. I will approve computer use if I am here, so play it by hand. Republish the making-of page (https://claude.ai/artifact/UJjDA4PJkSXMKjpg2zxQpc) when something visible lands. Stop with a new playtest build when my weekly usage reaches about 90%, or earlier for "checkpoint" or a decision that is genuinely mine.
+```
+
+## Side track: FTL parity (planned 2026-10-22, not started; does not replace M1d)
+A planning session (D052 to D055) turned FTL into a reference behind a firewall: the community
+survey and scored inventory (`docs/research/ftl-reference.md`), the ledger format with example rows
+(`behavior-ledger.md`), the observation and differential-test plans, `PLAN.md` section 10 and the
+checklist `docs/plans/M2_parity.md`. FTL's data folder is unpacked, private and git-ignored, in
+`research_private/` (regenerate with `python tools/ftl_unpack.py`; never commit anything from it).
+Nothing is built. It starts after M1d closes, once Stewart has picked systems from the top 10.
+Paste this into a new session (folder `C:\Users\stewa\Documents\Claude\Inner Sun`, Opus 5.5, effort
+high, Auto), after adding the pick:
+```
+Start the Inner Sun FTL parity workstream (PLAN.md section 10, docs/plans/M2_parity.md). Read CLAUDE.md, PROGRESS.md, HANDOFF.md, then docs/research/ftl-reference.md, behavior-ledger.md, ftl-observation-plan.md and ftl-difftest-plan.md, and D052 to D055 in docs/DECISIONS.md. My picks: <list the systems from the top 10>. You are the observer: you may read research_private/ (run python tools/ftl_unpack.py first if it is missing) and the sources in ftl-reference.md; write ledger rows for my picks in our own words with Inner Sun targets, exact FTL values only in research_private/ledger_evidence.md. Builders work in worktrees from ledger rows alone and never see FTL material. Build data-only systems first, every row closes with its test and its wrong-value check. Ask me for a recorded FTL run when OBSERVE rows need it; I will approve computer use if I am here. Stop with a parity report and a playtest build, or earlier for "checkpoint" or a decision that is genuinely mine.
 ```
 
 ## Build 5 in one paragraph (2026-10-17)

@@ -503,3 +503,43 @@ Douse: his 15-minute run logged no douse command although he tried, yet the real
 input diary in the run record (`summary.ui`: each raw left click with the UI control under the mouse
 and whether it hit a DOUSE button, each F press with the worst fire), and `tools/run_report.py`
 prints it, so the next run shows where the input died. F also accepts the physical key.
+
+## D052 (S brief, AI details): FTL is a reference behind a firewall
+Stewart (2026-10-22, side track): use FTL, which he owns, as a reference so chosen systems reach rough
+parity of feel without working each one out from scratch; no one else's code, art, text or names in
+Inner Sun; mechanics, systems, pacing and tuning shapes are fair game. How: `research_private/` is
+git-ignored and holds everything taken from FTL (the unpacked data folder, exact numbers, recordings,
+frames, evidence notes). `tools/ftl_unpack.py` reads the installed `ftl.dat` read-only and writes
+only there. Committed files describe behavior in our own words with Inner Sun's names, and carry
+Inner Sun's own target values, set from shapes and ratios, never copied numbers. The install folder
+is never written to or modded. Revert: nothing to undo in the game; delete `research_private/` to
+drop the material.
+
+## D053 (AI): A behavior ledger, with observers and builders kept apart
+Parity work runs through `docs/research/behavior-ledger.md`: numbered rows (ID, kind, behavior,
+Inner Sun target band, evidence ID, test, a wrong value that must fail the test, status). The exact
+FTL evidence behind each row sits in `research_private/ledger_evidence.md` under the row's evidence
+ID. Observers (the lead, or an observer agent in the main checkout) read FTL material and write rows;
+builders work in worktrees, where the git-ignored folder does not exist, from the rows alone, and
+never open `docs/research/ftl-*.md` or its links. A row closes only when a test of its own kind
+passes (scenario, replay, balance measure, critic still or Stewart's A/B); coverage per system is
+passing rows over rows in scope (`ftl-difftest-plan.md`). The method is borrowed from the REA
+reconstruction ledgers, without the tool. Revert: plain specs as before.
+
+## D054 (AI): No REA install
+REA (github.com/morluto/rea, npm `rea-agents`) is real and popular, but it is a wrapper around
+disassemblers we would have to install (Ghidra with JDK 21, Windows support marked experimental),
+adds about 200 tools to the agent's context, puts decompiled FTL code in the same context that
+writes our game, and its browser and HAR tools have nothing to capture in FTL. The community docs,
+the game's own data and watching the game cover the systems in the inventory. Revisit only for one
+constant that cannot be watched, and then as a one-off, human-run, read-only look that writes down
+the number and the rule. Revert: install it in a separate folder for that one look.
+
+## D055 (AI, Stewart picks the systems): FTL parity is an M2 workstream, gated on his pick
+The inventory in `docs/research/ftl-reference.md` scores each FTL system on fit with the dig, how
+much of FTL's fun it carries, how close Inner Sun already is, build cost and documentation, as
+value over effort: value = fit x fun x (4 - closeness) / 4, effort = cost + (3 - docs). Stewart picks
+the systems he cares about from the top 10; nothing is built before that. The workstream starts
+when M1d closes (it touches `game/sim`, which M1d is still changing), observes with his recorded
+FTL runs first and computer use second, and runs as builder rounds from ledger rows (`PLAN.md`
+section 10, `docs/plans/M2_parity.md`). Revert: drop section 10; the research files stay as notes.

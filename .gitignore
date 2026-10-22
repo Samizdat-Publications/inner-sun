@@ -27,6 +27,9 @@ __pycache__/
 .claude/worktrees/
 .claude/settings.local.json
 
+# FTL reference material: exact numbers, unpacked data and observation frames stay local (D052)
+research_private/
+
 # Landing page build output (tools/site_build.py)
 site-dist/
 .wrangler/

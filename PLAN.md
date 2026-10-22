@@ -81,7 +81,7 @@ hot spot to Rust through gdext (Cut & Fill proved that toolchain on this PC).
 | M0 | Prove the loop | Done 2026-10-15. Evidence in `docs/research/godot-loop.md`. |
 | M1a | Find the fun: autonomous slice | Stewart can play start to death to codex in an exported build; bots run 1,000+ runs with a report; systems tests pass; a blind critic loop has run; 60 fps on the 5070 Ti. **Then stop for Stewart's playtest.** |
 | M1b | Find the fun: iterate | Iterate on Stewart's playtest notes until he says the core loop is fun. |
-| M2 | The Crust, complete | Art pass in the chosen style; burrowers that latch onto the hull and Soviet automata; away teams through the airlock; gas; sonic emitters; about 30 events; 2 store types; a layer-gate boss; codex and meta v1 with the heavy borer unlock and layout variants; mid-run save; settings; audio pass; voiced radio. |
+| M2 | The Crust, complete | Art pass in the chosen style; burrowers that latch onto the hull and Soviet automata; away teams through the airlock; gas; sonic emitters; about 30 events; 2 store types; a layer-gate boss; codex and meta v1 with the heavy borer unlock and layout variants; mid-run save; settings; audio pass; voiced radio; the FTL parity workstream for the systems Stewart picks (section 10). |
 | M3 | The Deep Crust | Magma breaches (fire and flood together), crystal caverns, extreme heat, the thermal lance ship. |
 | M4 | The Abyssal Sea | The submarine, a design for how drill ships cross the sea, pressure and flooding. |
 | M5 | The Mantle Wilds | Fungal forests, fauna that board, first Agarthan contact, Agarthan guides as crew. |
@@ -150,3 +150,21 @@ possible but is not built.
 | Older Godot knowledge in models | Local 4.7.2 API dump, scout agent, strict typing, every script compiled in tests. |
 | Two Godot projects on one PC | Side-by-side rules; contention flagged; job objects; no fixed ports. |
 | Godot's 2D light cap (about 15 per canvas item) | Small per-room nodes, idle lights disabled; watch it as rooms and lights grow. |
+
+## 10. M2 workstream P: FTL parity on chosen systems (planned 2026-10-22, not started)
+
+Goal: chosen systems reach rough parity with FTL's feel quickly, using what the community already
+documents plus watching the game, then become Inner Sun's own on that base (D052 to D055).
+
+| Step | What | Who | Done when |
+|---|---|---|---|
+| P0 | Reference survey, scored inventory, ledger format, observation and differential-test plans | Lead (done 2026-10-22) | `docs/research/ftl-reference.md`, `behavior-ledger.md`, `ftl-observation-plan.md`, `ftl-difftest-plan.md` committed |
+| P1 | Stewart picks systems from the inventory's top 10 | Stewart | His pick is in `docs/STEWART_FEEDBACK.md` |
+| P2 | Ledger rows for the picked systems; observation for the OBSERVE rows | Lead as observer, main checkout only | Every picked system has number, shape, rule and feel rows with Inner Sun targets and tests named |
+| P3 | Build from the rows | Builders in worktrees (Sonnet for data, store, UI; Opus for sim rules) | Ledger tests pass in `python tools/check.py`, each with its wrong-value check failing as it should |
+| P4 | Differential checks | Lead, critics, Stewart | Coverage report 80% or more per system, balance measures in band, Stewart's A/B scores 4 or more |
+| P5 | Make it ours | Lead and Stewart | Deliberate changes logged as "waived by design" rows with D-numbers |
+
+Order: after M1d closes (it is still changing `game/sim`), first inside M2. Cheap data-only systems
+first (upgrade prices, rewards, store stock), then crew and stations, then new verbs. Checklist:
+`docs/plans/M2_parity.md`.

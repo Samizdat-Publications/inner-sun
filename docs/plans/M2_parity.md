@@ -1,0 +1,44 @@
+# M2 workstream P: FTL parity on chosen systems (checklist)
+
+Plan: `PLAN.md` section 10. Decisions: D052 to D055. Research: `docs/research/ftl-reference.md`
+(sources and the scored inventory), `behavior-ledger.md` (rows), `ftl-observation-plan.md`,
+`ftl-difftest-plan.md`. Starts after M1d closes.
+
+## Firewall, every step
+- Observers (the lead, in the main checkout) may read `research_private/` and the links in
+  `ftl-reference.md`. Builders may not: they work in worktrees from ledger rows only, and their specs
+  say "do not open `docs/research/ftl-*.md`, `research_private/` or any FTL page".
+- Committed files hold behavior in our words and Inner Sun targets. Exact FTL values go to
+  `research_private/ledger_evidence.md` under the row's evidence ID.
+- No FTL names, text, art, audio or data files in the repo. The data lint already rejects em dashes;
+  reviewers also check new data for borrowed names.
+
+## P1: Stewart's pick
+- [ ] Stewart picks systems from the top 10 (and any lower row he wants). Log it in
+      `docs/STEWART_FEEDBACK.md` and mark the picked rows in the inventory.
+
+## P2: rows and observation
+- [ ] Back up `C:\Users\stewa\Documents\My Games\FasterThanLight\` to `research_private\` before any FTL session.
+- [ ] For each picked system: number, shape, rule and feel rows in `behavior-ledger.md`, each with an
+      evidence ID, an Inner Sun target band, a named test and a wrong value.
+- [ ] Ask Stewart for one recorded FTL run (observation method A); sample it; fill the OBSERVE rows
+      and O-06 to O-08 (pacing, crises, decisions per minute).
+- [ ] Method B sessions only for rows A could not settle, with Stewart present.
+
+## P3: build from the rows
+- [ ] `tools/ledger.py` (parser and coverage report) with its own test.
+- [ ] Per system, one builder spec in `docs/plans/specs/m2p_<system>.md` that quotes only ledger
+      rows; scenarios `game/data/scenarios/ledger_<system>.json`; tests `game/tests/test_ledger_<system>.gd`.
+- [ ] Data-only systems first (upgrade prices, rewards, store stock), then crew and stations, then
+      new verbs (doors and venting, disruption, node hazards).
+- [ ] Each round: `python tools/check.py` says `check: ok`, determinism hash recorded, a balance run
+      with the new measures.
+
+## P4: differential checks
+- [ ] `tools/parity.py` (local only) compares the picked rows against the private reference.
+- [ ] Balance report measures in band (`ftl-difftest-plan.md`, layer 4).
+- [ ] Critic rubric run on the feel rows; Stewart's A/B per system (three questions, 1 to 5).
+- [ ] `docs/research/parity_report.md` committed with the coverage per system.
+
+## P5: make it ours
+- [ ] Deliberate divergences logged as "waived by design" rows with D-numbers.
