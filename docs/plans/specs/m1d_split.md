@@ -29,17 +29,18 @@ Each round works in its own worktree from the commit named in the dispatch messa
 - Commit the `.uid` files Godot writes next to new scripts. Files under about 400 lines each.
 - No new features, no tuning, no comment rewrites beyond what the move needs.
 
-## The oracle (both must hold before you report)
+## The oracle (must hold before you report)
 1. `python tools/check.py` prints `check: ok`.
-2. `python tools/determinism.py` gives the hash recorded in the dispatch message (headless and
-   Movie Maker must agree; this is one batched windowed run, the only one allowed).
-3. A full balance run on the same seeds as the baseline:
-   `python tools/balance.py --full --runs 60 --procs 6`, then
-   `python tools/balance_compare.py <baseline results.jsonl> <your results.jsonl>` must print
-   `compare: ok` (the baseline path is in the dispatch message).
-The view round needs only 1 and 2 plus `python tools/shots.py --names start,fire,arrive --out
-harness/out/shots_split_view` (look at the three stills: they must match the baseline stills named
-in the dispatch message).
+2. `python tools/determinism.py` gives `e30883214e637d19` at tick 1200 (the hash at the dispatch
+   commit; headless and Movie Maker must agree; this is one windowed run, the only one allowed for
+   the sim round).
+3. The lead then runs the seed-by-seed balance oracle after merging (`python tools/balance.py --full
+   --runs 60 --procs 6`, then `python tools/balance_compare.py <baseline> <new>` must print
+   `compare: ok`). Do not run balance yourself: the lead's runs use the PC's six batch slots.
+The view round also takes `python tools/shots.py --names start,fire,arrive --out
+harness/out/shots_split_view` in the same windowed batch and looks at the three stills: nothing may
+look different from before the split (compare with the same command run at the dispatch commit
+before your first edit, `--out harness/out/shots_split_before`).
 
 ## Hard rules for this round
 - Touch only the files you own and the new files you create. Stage explicit paths; never

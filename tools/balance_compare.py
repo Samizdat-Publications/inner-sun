@@ -1,9 +1,11 @@
 """Compare two full balance runs seed by seed: the oracle for refactors that must change nothing.
 
-    python tools/balance_compare.py <results.jsonl or its folder> <results.jsonl or its folder>
+    python tools/balance_compare.py <baseline results.jsonl or folder> <new results.jsonl or folder>
 
-Each line of results.jsonl (tools/balance_full.py) carries bot, seed and final_hash. Prints how many
-(bot, seed) pairs match, the first mismatches, and `compare: ok` or `compare: FAIL`. Exit 0 or 1.
+Each line of results.jsonl (tools/balance_full.py) carries bot, seed and final_hash. Both runs must
+come from the same command (same --runs, --procs and seed base): each part carries its own profile,
+so a different split into parts can change what the bots know. Every (bot, seed) must match. Prints
+how many match, the first mismatches, and `compare: ok` or `compare: FAIL`. Exit 0 or 1.
 """
 import json
 import os
