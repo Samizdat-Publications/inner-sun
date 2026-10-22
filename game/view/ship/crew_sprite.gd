@@ -203,7 +203,7 @@ func update(delta: float, t: float) -> void:
 	_body.modulate = tint * flash_c * BODY_GAIN
 	_marks.update(delta, selected, c.alive, _face)
 	if not c.alive:
-		_work_fx(false, t)
+		CrewWorkFx.apply(self, false, t)
 		_lie_down()
 		return
 	_body.rotation = 0.0
@@ -237,7 +237,7 @@ func update(delta: float, t: float) -> void:
 		_body.rotation = _face * glance * (0.05 + 0.012 * sin(t * 1.3))
 	if working:
 		_work_pose(t)
-	_work_fx(working, t)
+	CrewWorkFx.apply(self, working, t)
 	if puppet:
 		_pose_puppet(t, climbing, working, glance < 0.0)
 	else:
@@ -296,86 +296,6 @@ func _hammer_hit(t: float) -> float:
 	return pow(maxf(0.0, sin(t * 6.5 + float(crew.index))), 3.0)
 
 
-## Foam from the extinguisher, hammer sparks and a welder's spark stream with a hot white spot. The
-## emitters are made the first time a job needs them and switched off otherwise.
-func _work_fx(working: bool, t: float) -> void:
-	var job: String = crew.job_kind if working else ""
-	var h: float = FIGURE_H_ART * _k
-	if job == "extinguish":
-		if _spray == null:
-			_spray = _make_spray(h)
-		_spray.position = Vector2(_face * 0.4 * h, -0.55 * h)
-		_spray.direction = Vector2(_face, -0.12)
-		_spray.emitting = true
-	elif _spray != null:
-		_spray.emitting = false
-	if job == "repair" or job == "patch":
-		if _sparks == null:
-			_sparks = _make_sparks(h)
-		_sparks.position = Vector2(_face * 0.34 * h, -0.36 * h if job == "repair" else -0.5 * h)
-		_sparks.direction = Vector2(_face * 0.5, -1.0)
-		_sparks.emitting = job == "repair" or _hammer_hit(t) > 0.55
-	elif _sparks != null:
-		_sparks.emitting = false
-	if job == "repair":
-		if _weld == null:
-			_weld = Sprite2D.new()
-			_weld.texture = ShipView.radial_texture(32)
-			_weld.material = ArtLib.additive_unshaded()
-			_weld.z_index = 2
-			add_child(_weld)
-		_weld.visible = true
-		_weld.position = Vector2(_face * 0.34 * h, -0.36 * h)
-		var flick: float = 0.8 + 0.4 * sin(t * 47.0) * sin(t * 31.0)
-		var sc: float = ppm / 80.0 * 0.55 * flick
-		_weld.scale = Vector2(sc, sc)
-		_weld.modulate = Color(1.8, 2.0, 2.4, 1.0)
-	elif _weld != null:
-		_weld.visible = false
-
-
-func _make_spray(h: float) -> CPUParticles2D:
-	var p := CPUParticles2D.new()
-	p.texture = ShipView.radial_texture(24)
-	p.material = ArtLib.additive_unshaded()
-	p.amount = 70
-	p.lifetime = 0.55
-	p.spread = 14.0
-	p.gravity = Vector2(0.0, 90.0)
-	p.initial_velocity_min = 0.9 * h
-	p.initial_velocity_max = 1.5 * h
-	p.scale_amount_min = 0.5 * ppm / 80.0
-	p.scale_amount_max = 1.1 * ppm / 80.0
-	var ramp := Gradient.new()
-	ramp.set_color(0, Color(1.5, 1.7, 1.9, 0.9))
-	ramp.set_color(1, Color(0.7, 0.85, 1.0, 0.0))
-	p.color_ramp = ramp
-	p.emitting = false
-	p.z_index = 2
-	add_child(p)
-	return p
-
-
-func _make_sparks(h: float) -> CPUParticles2D:
-	var p := CPUParticles2D.new()
-	p.texture = ShipView.radial_texture(8)
-	p.material = ArtLib.additive_unshaded()
-	p.amount = 30
-	p.lifetime = 0.5
-	p.spread = 70.0
-	p.gravity = Vector2(0.0, 520.0)
-	p.initial_velocity_min = 0.7 * h
-	p.initial_velocity_max = 1.6 * h
-	p.scale_amount_min = 0.5 * ppm / 80.0
-	p.scale_amount_max = 1.1 * ppm / 80.0
-	var ramp := Gradient.new()
-	ramp.set_color(0, Color(2.0, 1.8, 1.1, 1.0))
-	ramp.set_color(1, Color(1.0, 0.25, 0.05, 0.0))
-	p.color_ramp = ramp
-	p.emitting = false
-	p.z_index = 2
-	add_child(p)
-	return p
 
 
 func _lie_down() -> void:
