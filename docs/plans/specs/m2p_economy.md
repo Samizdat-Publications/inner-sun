@@ -71,8 +71,12 @@ through `tools/`. Stage explicit paths; never `git add -A`.
   Tuning in `game/data/tuning/economy.json`, starting values:
   `reward_ore_row1 20`, `reward_ore_per_row 6`, `reward_gems_row1 6`, `reward_gems_per_row 1.5`
   (base = row1 + per_row x (row - 1), with row clamped to at least 1); tier spreads as uniform
-  multipliers `tier_low [0.55, 0.8]`, `tier_medium [0.8, 1.2]`, `tier_high [1.2, 1.7]`. Amount =
-  `roundi(base x multiplier)`. The row is `sim.run.current_row()`.
+  multipliers `tier_low_min 0.55`, `tier_low_max 0.8`, `tier_medium_min 0.8`, `tier_medium_max 1.2`,
+  `tier_high_min 1.2`, `tier_high_max 1.7`. Tuning files accept only plain numbers
+  (`DataDB._load_tuning`), so every key here is a scalar. Amount = `roundi(base x multiplier)`.
+  The row is always `sim.run.current_row()` (0 to 13 on the crust), never the `row` argument of
+  `Encounter.start_node`, which is the event-content row (`RunState.event_row`, squeezed onto 10 rows).
+  The same holds for the store roll and the hull price steps.
 - Fights (`CombatLoot.roll`): one tier draw per fight (medium for a normal won fight), and that one
   multiplier applies to both the ore and the gems base; the gate boss keeps `combat.loot_boss_scale`
   on top. Cells, charges and the weapon roll are unchanged (supplies do not scale). Move the loot
@@ -86,22 +90,23 @@ through `tools/`. Stage explicit paths; never `git add -A`.
   they are. Leave every other effect and all text untouched.
 - Lint rule (L-RWD-04): a positive fixed `res` or `res_range` payout of ore or gems in an event is an
   error ("use a reward tier"). Bots: `game/bots/policy_choices.gd` does not know `reward` yet and you
-  must not edit it; the lead adds it after the other session's split lands. Note in your report which
-  bot tests, if any, changed outcome because of it.
+  must not edit it; the lead adds it after the other session's split lands. The bots will also, until
+  then, under-price a two-bar bracing buy (they multiply the shown price) and skip a supply line whose
+  stock is below what they want; the sim must refuse such buys cleanly (it does, through
+  `EncounterStore.refusal`), nothing more. Note in your report which bot tests, if any, changed outcome.
 
 ### 3. Rolled stores (L-STO-01 to L-STO-05)
 - Store data v2 (`game/data/stores/<id>.json`): keep `id`, `name`, `blurb`; replace `stock` with
   - `"supplies"`: lines as today (`res` and `hull` items) plus, for `res` lines, `"stock": [lo, hi]`
     (units rolled per visit, L-STO-03: 2 to 6); `hull` lines take `"price_by_row"`:
-    `[{"from_row": 0, "price": 2}, {"from_row": 5, "price": 3}, {"from_row": 10, "price": 3}]` or
-    whatever steps meet L-STO-04 (1.5 to 2.0 times by rows 10 to 13, at most three steps), and no
-    stock limit.
+    `[{"from_row": 0, "price": 2}, {"from_row": 5, "price": 3}, {"from_row": 10, "price": 4}]`
+    (L-STO-04: 1.5 to 2.0 times by rows 10 to 13, at most three steps), and no stock limit.
   - `"sections_shown": [lo, hi]` and `"sections"`: `[{"id": "systems" | "gear" | "weapons" | "crew",
     "weight": w, "offers": [lo, hi], "pool": [lines]}]`. Pool lines carry `"rarity"` 1 to 5 and the
     item fields as today (`upgrade` with `system`; `gear` with `gear`; `weapon` with `weapon`; `crew`
     with `pool` and `price`). Gear and weapon prices come from their own data (below) unless the line
     overrides `price`.
-  - Crust trader: supplies (coolant, cells, bits, charges, hull); sections systems (weight 4, 3 offers,
+  - Crust trader: supplies (coolant, cells, bits, charges, hull); sections systems (weight 3, 3 offers,
     all six systems, rarity 1), gear (weight 2, 2 offers: pumps rarity 1, tungsten head 2, hull plating
     3, diamond head 4), weapons (weight 1, offers [1, 2]: borer turret rarity 1, charge launcher 2,
     thermal lance 2), crew (weight 1, 1 offer); `sections_shown [2, 3]`. Keep the existing line texts;
@@ -116,10 +121,12 @@ through `tools/`. Stage explicit paths; never `git add -A`.
   offer is replaced by another while any remain), and picks each section's offers weighted by rarity
   and depth, without replacement, never the same item twice in one store. Eligible: an upgrade whose
   system the ship has and is below its ladder top; gear that `Gear.refusal` would allow now; any
-  weapon (slots are checked at purchase); the crew hire as today. Rarity weight, tuning in
-  `economy.json`: `store_rarity_weight [10, 6, 3, 1, 0.5]` (rarity 1 to 5) times
-  `1 + store_rarity_depth_gain[r] x row / (rows - 1)` with `store_rarity_depth_gain [0, 0, 1, 4, 6]`;
-  tune these only as far as L-STO-02 needs and report the final values.
+  weapon (slots are checked at purchase); the crew hire as today. Rarity weight, scalar tuning keys in
+  `economy.json`: `store_rarity_weight_1` to `_5` = 10, 6, 3, 1, 0.5, times
+  `1 + store_rarity_depth_gain_<r> x row / (rows - 1)` with `store_rarity_depth_gain_1` to `_5` = 0, 0,
+  1, 4, 6 (rows: the layer's row count); tune these only as far as L-STO-02 needs and report the final
+  values. (The lead's check: these give the diamond head about 1.86 times as often at rows 10 to 13 as
+  at rows 1 to 4, and the systems section, at weight 3, about 83% of visits.)
 - The rolled visit is stored on the `Encounter` (lines with their section id, rolled stock and current
   price) and `current_store()` returns `{"id", "name", "blurb", "stock": [those lines]}`, so the
   existing readers of `current_store()["stock"]` (the bots, the view, tests) keep working. Each line
@@ -130,7 +137,10 @@ through `tools/`. Stage explicit paths; never `git add -A`.
   only while a store is open: pays `floor(list price x economy.sell_back_frac)` (start 0.5) through
   `run.add` in the item's currency, removes one such weapon from `ship.weapons` or the gear from
   `run.gear` (recomputing the gear multipliers so the effect is undone exactly). Refused with a reason:
-  the last weapon aboard; gear with one-time adds (`max_hull_add`, `hull_add`); an item not owned.
+  the last weapon aboard; gear with one-time adds (`max_hull_add`, `hull_add`); an item not owned; gear
+  with a drill multiplier (`cut_speed_x`, `wear_x`, `hard_rock_x`) while `sim.drill.active` (a
+  mid-dig trader: `DrillSim` reads gear only when a segment begins, and you must not edit it).
+  Test the undo across segments: drill speed in a segment begun before the sale and one begun after.
   Check that nothing keyed by weapon index (combat state, power per weapon) is left pointing at a
   removed weapon; a store is never open during a fight.
 - Store view (`store_view.gd`): group lines under their section names (Supplies, Systems, Gear,
