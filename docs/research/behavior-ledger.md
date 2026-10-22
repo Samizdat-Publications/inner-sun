@@ -282,7 +282,7 @@ Current Inner Sun values are quoted where they exist, so the gap is visible.
 - Test: `test_ledger_doors.gd::test_l_dor_03`.
 - Wrong value: pressure doors that change nothing must fail.
 - Core: no
-- Status: open
+- Status: passing
 
 ### L-DOR-F1: Doors and purges read and work at a glance
 - Kind: feel

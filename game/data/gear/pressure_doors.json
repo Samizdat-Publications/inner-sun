@@ -1,0 +1,8 @@
+{
+  "id": "pressure_doors",
+  "name": "Pressure doors",
+  "text": "Gasketed steel doors and hatch lids, dogged shut by hand. Closed, they hold a fire back like a solid wall.",
+  "price": 150,
+  "currency": "ore",
+  "effects": {"door_seal_x": 0.35}
+}

@@ -9,11 +9,12 @@ extends RefCounted
 ##   many may be fitted at once (default 1), "effects": {key: number}}.
 ## Effects: multipliers (product over owned gear, read when they apply):
 ##   cut_speed_x (drill speed), wear_x (bit wear per meter), hard_rock_x (hardness of rock at or
-##   above drill.hard_rock_min_hardness: speed, heat, wear and noise there), pump_x (pump rate);
+##   above drill.hard_rock_min_hardness: speed, heat, wear and noise there), pump_x (pump rate),
+##   door_seal_x (fire through the player's closed doors and hatches, L-DOR-03);
 ## and whole-number adds applied once when fitted (never on slotted gear, so nothing is undone):
 ##   max_hull_add (the ship's maximum hull), hull_add (repairs the hull by this much).
 
-const MULTIPLIERS: Array[String] = ["cut_speed_x", "wear_x", "hard_rock_x", "pump_x"]
+const MULTIPLIERS: Array[String] = ["cut_speed_x", "wear_x", "hard_rock_x", "pump_x", "door_seal_x"]
 const ADDS: Array[String] = ["max_hull_add", "hull_add"]
 const DRILL_MULTIPLIERS: Array[String] = ["cut_speed_x", "wear_x", "hard_rock_x"]  ## Read by DrillSim per segment.
 

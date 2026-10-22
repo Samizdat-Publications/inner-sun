@@ -23,6 +23,7 @@
       {"item": "gear", "gear": "pumps", "rarity": 1, "text": "High-volume bilge pumps."},
       {"item": "gear", "gear": "tungsten_head", "rarity": 2, "text": "A tungsten carbide head for the drill."},
       {"item": "gear", "gear": "hull_plating", "rarity": 3, "text": "Armour plate, cut to fit your hull."},
+      {"item": "gear", "gear": "pressure_doors", "rarity": 3, "text": "Pressure doors off a flooded rig. Shut, they hold a fire like bulkhead."},
       {"item": "gear", "gear": "diamond_head", "rarity": 4, "text": "A diamond head. He wants it gone before someone asks where it came from."}
     ]},
     {"id": "weapons", "weight": 1, "offers": [1, 2], "pool": [

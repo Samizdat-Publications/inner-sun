@@ -57,6 +57,42 @@ func test_l_dor_01() -> void:
 	_door_replays()
 
 
+# L-DOR-03 ---------------------------------------------------------------------------------------
+
+## Closed over open spread through door_low with pressure doors fitted (Gear.fit in the scenario).
+func _sealed_ratio(d: DataDB) -> float:
+	var rates: Array[float] = []
+	for closed: bool in [false, true]:
+		var r := ScenarioRun.from_scenario(d, "ledger_doors", SEED)
+		Gear.fit(r.sim, "pressure_doors")
+		if closed:
+			r.sim.push({"type": "door", "link": "door_low", "open": false})
+		for i: int in range(5 * Sim.TICK_HZ):
+			r.step()
+		var s: Sim = r.sim
+		rates.append(s.hazards.spread_exposure(s.ship.room_index("drill"), s.ship.room_index("coolant")))
+	return rates[1] / maxf(rates[0], 1e-9)
+
+
+func _sealed_ok(d: DataDB) -> bool:
+	return _sealed_ratio(d) <= d.tune("fire.spread_wall_factor")
+
+
+func test_l_dor_03() -> void:
+	var ratio: float = _sealed_ratio(db())
+	print("    closed/open fire spread with pressure doors: %.3f (wall factor %.3f)" % [ratio, db().tune("fire.spread_wall_factor")])
+	check(_sealed_ok(db()), "pressure doors: a closed door passes fire no faster than a wall (got %.3f)" % ratio)
+	var wrong: DataDB = db()
+	((wrong.table("gear")["pressure_doors"] as Dictionary)["effects"] as Dictionary)["door_seal_x"] = 1.0
+	check(not _sealed_ok(wrong), "Wrong value: pressure doors that change nothing must fail")
+	var offered: bool = false
+	for sec: Variant in (db().table("stores")["crust_trader"] as Dictionary).get("sections", []):
+		for line: Variant in (sec as Dictionary).get("pool", []):
+			if str((line as Dictionary).get("gear", "")) == "pressure_doors" and int((line as Dictionary).get("rarity", 0)) == 3:
+				offered = str((sec as Dictionary).get("id", "")) == "gear"
+	check(offered, "pressure doors are a rarity-3 offer in the crust trader's gear section")
+
+
 func _hatch_exposure(d: DataDB, closed: bool) -> float:
 	var r := ScenarioRun.from_scenario(d, "ledger_doors", SEED)
 	if closed:

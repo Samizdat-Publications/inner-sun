@@ -272,6 +272,8 @@ func _fire(sim: Sim, world: ShipWorld, dt: float) -> void:
 		var li: int = _adj_link[j]
 		if li >= 0 and not ship.links[li].open:
 			factor *= _k("fire.spread_closed_factor")
+			if world.is_player():
+				factor *= sim.run.gear_x("door_seal_x")  # Pressure doors (L-DOR-03).
 		_spread_acc[j] += _k("fire.spread_per_s") * src.fire * factor * dt
 		if _spread_acc[j] >= 1.0:
 			_spread_acc[j] = 0.0
