@@ -101,3 +101,4 @@ Session total (2026-10-15 to 16, M1a): about 15 USD (logged 11.96 plus the 3.00 
 | 2026-10-22 | Gemini (gemini-4-argon) | whole-repo consult -> review/consults/2026-10-22_gemini-4-argon.md | 0.75 (est at Pro rates, 297937 in / 12724 out tokens; this model's price unconfirmed) |
 | 2026-10-22 | Gemini (gemini-4-argon) | audit -> 20261022-172426 | 0.81 (est at Pro rates, 299297 in / 17707 out tokens) |
 | 2026-10-22 | Gemini (gemini-4-argon) | audit -> 20261022-173543 | 0.71 (est at Pro rates, 299167 in / 9529 out tokens) |
+| 2026-10-22 | Gemini (gemini-4-argon) | audit -> 20261022-174313 | 0.76 (est at Pro rates, 299176 in / 13108 out tokens) |

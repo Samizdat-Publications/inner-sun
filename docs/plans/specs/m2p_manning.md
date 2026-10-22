@@ -92,3 +92,22 @@ branch with explicit paths, messages without em dashes, ending with
 ## Report (short)
 Measured values for every band, final tuning values, tests changed, the new determinism hash, your
 branch and final commit, and anything you could not do and why.
+
+## Notes from the Gemini audit (checked by the lead)
+- Measure the weapon bonus by ticks to a full charge with a fixed power (the light drill starts with
+  weapons at 0 bars; power them in the scenario), not by charge after 600 ticks: a charge stops at
+  its weapon's `charge_s` (9, 12 or 16 s), which would clip the ratio. Measure the drill bonus through
+  `drill_bonus` or the cut speed on uniform rock at the same depth, not by distance, so harder rock met
+  sooner by the faster drill does not distort it.
+- Bracing: divide the recharge in ticks, `roundi(_recharge_ticks / multiplier)`, then count in hazard
+  steps as today (360 ticks becomes about 318 at skill 1.0 and 288 at 2.0, both in band). Do not round
+  the seconds first.
+- `evasion()` must still be 0 when the helm has no effective bars (unpowered, broken, failed), even
+  when manned.
+- Keep `Systems.is_manned(world, ri) -> bool` working: `CombatSim` (fleeing) and the bots call it. Add
+  the operator-skill lookup beside it. Rival rigs have crew at their stations with skill 1.0, so they
+  gain the same bonuses; that is intended (both sides alike).
+- Lint `manned_dodge` as an optional key (only the helm has it), and lint ship crew skills (including
+  `station`) in the ship lint, which does not call the event lint's skill check today.
+- Wrong-value overrides must be applied to the `DataDB` before `Sim.new`, because `Systems` caches its
+  tuning and definitions when it is built.
