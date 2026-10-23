@@ -18,6 +18,17 @@ pay ore and gems through a new effect `{"type": "reward", "res", "tier"}` (`Rewa
 tiers); fights pay a medium-tier reward. Gear and weapons can be sold (`{"type": "sell", ...}`).
 Crew have a station skill and stations a manned bonus (round 3).
 
+## Lead's math check (the Gemini audit was skipped: its credits are used up, 2026-10-22)
+From the last balance report (about 1,700 ore and 200 gems gained a run) and the round 1 bases, a
+balanced run should now gain about 2,150 ore: fights about 3 x 56 and events about 5 x 56 at a mid
+row. Fights plus events then come to about 790 of about 3,500 value (gems x 6), about 23%, inside
+L-RWD-05's 15 to 35%; the halved bases give about 12%, out of band as the wrong value needs. For
+L-UPG-03, maxing every system costs about 2,100 ore, so bars can plausibly take 40 to 65% of ore spent;
+the wrong value (ladders x3) is not certain to leave the band (fewer bars, but gear spending stays),
+so if it does not, report it and the lead will choose a stronger wrong value. Files after M1d's
+split: `game/bots/policy_choices.gd` still holds `effect_value`, `next_purchase` and
+`_can_power_weapon`; the per-run stats are `game/tools/full_run_stats.gd`.
+
 ## Files you own
 - `game/bots/policy_choices.gd` and, only if needed, `game/bots/policy_bot.gd` (or the file the split
   moved the store or event logic into; read `git log` for the split)
@@ -42,9 +53,11 @@ Crew have a station skill and stations a manned bonus (round 3).
 3. **Stats per run** (in `FullRunStats.add_to`, from the event list only):
    - `ore_spent_by` and `gems_spent_by`: totals by line kind (`upgrade`, `gear`, `res`, `hull`,
      `weapon`, `crew`), from the `bought` events; `bars_bought`: upgrade units bought.
-   - `gained_by`: ore and gems gained by source: `fight` (the `fight_won` loot), `event` (resource
-     changes while a dossier is open), `sale`, and `dig` (everything else that is positive: drilling,
-     crates, the miner, blasts). Name the rule in the doc comment.
+   - `gained_by`: ore and gems gained by source: `fight` (the ore and gems in `fight_won`'s loot),
+     `event` (positive ore and gems changes while a dossier is open), `sale` (sell-back), and `dig`
+     = all positive ore and gems changes minus those three, so nothing is counted twice (drilling,
+     crates, the miner, blasts). Name the rule in the doc comment and test that the four add up to
+     the total gained.
 4. **Report lines** (`balance_full.py`), per bot: `spend_share` = upgrade ore over all ore spent
    (summed over runs), median `bars_bought`, `income_share` = (fight + event) value over all value
    gained, value = ore + 6 x gems (`economy.gem_ore_value`). Show the bands from the two rows beside
