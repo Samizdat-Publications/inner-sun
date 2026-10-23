@@ -177,6 +177,7 @@ func _spawn_enemy() -> void:
 	enemy_view.set_backdrop_visible(false)
 	enemy_view.set_floodlights(true)
 	player_view.set_floodlights(true)
+	enemy_view.frozen = frozen
 	enemy_view.position = player_view.position + _origin_px()
 	_build_fill()
 	_fx.clear()
@@ -288,9 +289,18 @@ func _draw_strata(n: Node2D, area: Rect2) -> void:
 		y += th + ppm * (1.0 + float((h >> 4) % 30) / 10.0)
 
 
+var frozen: bool = false: set = set_frozen  ## The visible pause: no time passes in the fight's animations.
+
+
+func set_frozen(on: bool) -> void:
+	frozen = on
+	if enemy_view != null:
+		enemy_view.frozen = on
+
+
 func _process(delta: float) -> void:
 	var t0: int = Time.get_ticks_usec()
-	_update(delta)
+	_update(WorldFreeze.dt(frozen, delta))
 	PerfRecorder.span(PerfRecorder.SPAN_COMBAT, Time.get_ticks_usec() - t0)
 
 

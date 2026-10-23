@@ -168,8 +168,11 @@ func pending() -> int:
 	return _dirty_total + _gdirty_total + (1 if _mosaic_dirty else 0)
 
 
+var frozen: bool = false  ## The visible pause: the glints stop twinkling (painting goes on).
+
+
 func _process(delta: float) -> void:
-	_time += delta
+	_time += WorldFreeze.dt(frozen, delta)
 	if drill == null:
 		return
 	var t0: int = Time.get_ticks_usec()
