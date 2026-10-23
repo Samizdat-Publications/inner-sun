@@ -90,9 +90,13 @@ func _draw() -> void:
 		draw_rect(pip, UiTheme.BRASS_DARK, false, 1.0)
 	var eva: int = roundi(sim.systems.evasion(sim.enemy) * 100.0)
 	UiTheme.text(self, Vector2(br_x + 120.0, 62.0), "EVADE %d%%" % eva, 19, UiTheme.TEXT if eva > 0 else UiTheme.TEXT_DIM)
-	# Weapons, charging.
+	# Weapons, charging (or, in the magnetite snow, unreadable).
 	var wv: Array[Dictionary] = c.weapons_view(sim, true)
 	var wx: float = 780.0
+	if sim.run.rival_rooms_hidden():
+		UiTheme.bold_text(self, Vector2(wx, 30.0), "SYSTEMS UNREADABLE", 18, UiTheme.ALARM)
+		UiTheme.text(self, Vector2(wx, 62.0), "MAGNETITE: NO SIGNAL FROM ITS ROOMS", 16, UiTheme.TEXT_DIM)
+		return
 	var avail: float = size.x - wx - 14.0
 	var ww: float = minf(250.0, avail / float(maxi(1, wv.size())) - 10.0)
 	for i: int in range(wv.size()):

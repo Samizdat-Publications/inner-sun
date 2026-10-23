@@ -174,6 +174,12 @@ func _build_links(ship: Ship) -> void:
 			if rim != null:
 				rim.z_index = 2
 				add_child(rim)
+			var lid := HatchLid.new()
+			var sz: Vector2 = ShipHits.rim_size(l, ppm)
+			lid.setup(l, sz)
+			lid.position = Vector2(x, rect_px.size.y - floor_h_px * 0.55)
+			add_child(lid)
+			_lids.append(lid)
 		else:
 			var s: Sprite2D = ArtLib.prop("ship", "door_closed", Vector2(x, floor_line_y() + floor_h_px * 0.25), ppm)
 			if s != null:
@@ -189,16 +195,63 @@ func _build_links(ship: Ship) -> void:
 
 
 var _door_nodes: Array[Sprite2D] = []
+var _lids: Array[HatchLid] = []
+var _vent: RoomVent
+
+
+## A shut hatch: a dark steel plate over the rim, drawn with plain shapes (there is no painted lid art):
+## brass border, corner bolts and hazard-stripe bars, so a closed hatch reads at a glance. Feet-centred
+## on the rim like the rim sprite.
+class HatchLid extends Node2D:
+	var link: Link
+	var size: Vector2 = Vector2(60.0, 20.0)
+	var _closed: bool = false
+
+	func setup(l: Link, sz: Vector2) -> void:
+		link = l
+		size = sz
+		z_index = 3
+		visible = false
+
+	func set_closed(on: bool) -> void:
+		if on != _closed:
+			_closed = on
+			visible = on
+			queue_redraw()
+
+	func _draw() -> void:
+		var r := Rect2(-size.x * 0.5 - 2.0, -size.y - 2.0, size.x + 4.0, size.y + 4.0)
+		draw_rect(r, Color(0.2, 0.21, 0.24), true)
+		draw_rect(r.grow(-3.0), Color(0.13, 0.14, 0.16), true)
+		var stripe: float = 7.0
+		var x: float = r.position.x + 5.0
+		while x < r.end.x - 9.0:
+			draw_colored_polygon(PackedVector2Array([Vector2(x, r.end.y - 4.0), Vector2(x + stripe, r.end.y - 4.0), Vector2(x + stripe + 4.0, r.position.y + 4.0), Vector2(x + 4.0, r.position.y + 4.0)]), Color(0.78, 0.55, 0.12, 0.85))
+			x += stripe * 2.2
+		draw_rect(r, Color(0.7, 0.55, 0.28), false, 2.0)
+		for p: Vector2 in [r.position + Vector2(3, 3), Vector2(r.end.x - 3, r.position.y + 3), r.end - Vector2(3, 3), Vector2(r.position.x + 3, r.end.y - 3)]:
+			draw_circle(p, 1.8, Color(0.85, 0.8, 0.65))
+
+
+## Add the purge vent button and its draught (the player's tower only).
+func set_vents(world: ShipWorld) -> void:
+	_vent = RoomVent.new()
+	_vent.setup(world.ship, room, ppm)
+	add_child(_vent)
 
 
 ## Per frame: door art follows Link.open, glows breathe with the system's power.
-func update(ship: Ship, r: Room, t: float, lamp_k: float) -> void:
+func update(ship: Ship, r: Room, t: float, lamp_k: float, hz: HazardSim = null) -> void:
 	for s: Sprite2D in _door_nodes:
 		var l: Link = ship.links[int(s.get_meta("link"))]
 		var name_key: String = "door_open" if l.open else "door_closed"
 		var tex: Texture2D = ArtLib.lit("ship", name_key)
 		if tex != null and s.texture != tex:
 			s.texture = tex
+	for lid: HatchLid in _lids:
+		lid.set_closed(not ship.links[lid.link.index].open)
+	if _vent != null:
+		_vent.update(t, hz)
 	var power: float = 1.0
 	if r.sys_max > 0:
 		power = clampf(float(r.sys_power) / float(r.sys_max), 0.0, 1.0)

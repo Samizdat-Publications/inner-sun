@@ -50,6 +50,7 @@ var _band: Layer
 var _fills: Layer  ## Glowing fills (shell flash, aiming highlights): additive, plain colours.
 var _unshaded: CanvasItemMaterial
 var _fill: Node2D = null
+var _veil: Layer = null  ## Over the rival's rooms while the scanner is blind (magnetite): a dark silhouette.
 var _fx: Array[Dictionary] = []
 var _landed: Array[Dictionary] = []
 var _prev: Dictionary = {}
@@ -150,6 +151,7 @@ func _clear() -> void:
 	if enemy_view != null:
 		enemy_view.queue_free()
 		enemy_view = null
+	_veil = null
 	if _fill != null:
 		_fill.queue_free()
 		_fill = null
@@ -177,6 +179,11 @@ func _spawn_enemy() -> void:
 	enemy_view.set_backdrop_visible(false)
 	enemy_view.set_floodlights(true)
 	player_view.set_floodlights(true)
+	_veil = Layer.new()
+	_veil.fn = _draw_veil
+	_veil.z_index = 15
+	_veil.material = ArtLib.unshaded()
+	enemy_view.add_child(_veil)
 	enemy_view.position = player_view.position + _origin_px()
 	_build_fill()
 	_fx.clear()
@@ -309,6 +316,11 @@ func _update(delta: float) -> void:
 	position = player_view.position
 	if enemy_view == null:
 		return
+	if _veil != null:
+		var hidden: bool = sim.run.rival_rooms_hidden()
+		_veil.visible = hidden
+		if hidden:
+			_veil.queue_redraw()
 	_track_landed()
 	_consume_events()
 	_landed.clear()
@@ -412,6 +424,23 @@ func _draw() -> void:
 	_draw_targets()
 	_draw_shots()
 	_draw_fx()
+
+
+## The rival's interior as a dark silhouette: hull outline only, no rooms, fires or crew, and snow.
+func _draw_veil(n: Node2D) -> void:
+	if enemy_view == null:
+		return
+	var box := Rect2(Vector2.ZERO, enemy_view.ship_size_m() * ppm)
+	n.draw_rect(box, Color(0.015, 0.02, 0.025, 1.0), true)
+	n.draw_rect(box, Color(0.30, 0.26, 0.2, 1.0), false, 4.0)
+	var step: int = int(_t * 12.0)
+	for i: int in range(90):
+		var h: int = ((step * 2654435761 + i * 40503 + i * i * 977) & 0xffffff)
+		var x: float = box.position.x + 6.0 + float(h % maxi(1, int(box.size.x - 12.0)))
+		var y: float = box.position.y + 6.0 + float((h >> 9) % maxi(1, int(box.size.y - 12.0)))
+		var v: float = 0.1 + 0.25 * float((h >> 4) % 100) / 100.0
+		n.draw_rect(Rect2(x, y, 4.0, 2.0), Color(v, v * 1.2, v * 1.1, 0.8))
+	n.draw_string(UiTheme.mono(), box.get_center() + Vector2(-150.0, 6.0), "UNREADABLE", HORIZONTAL_ALIGNMENT_CENTER, 300.0, 22, Color(0.55, 0.75, 0.62))
 
 
 ## The rock between the hulls: a dark band with strata and cracks, behind the ships.

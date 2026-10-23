@@ -369,5 +369,7 @@ func _draw() -> void:
 		ScannerDraw.draw_no_signal(self)
 	else:
 		ScannerDraw.draw_rock(self)
+	if sim.run.scanner_blind:
+		ScannerDraw.draw_snow(self)
 	ScannerDraw.draw_glass(self)
 	ScannerDraw.draw_readout(self)

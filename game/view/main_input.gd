@@ -18,6 +18,13 @@ static func unhandled(m: Main, event: InputEvent) -> void:
 			on_key(m, key)
 		return
 	var mb: InputEventMouseButton = event as InputEventMouseButton
+	var mm: InputEventMouseMotion = event as InputEventMouseMotion
+	if mm != null and not m.screen.overlay_open():
+		ShipPick.of(m).motion(mm)
+		return
+	if mb != null and not mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
+		ShipPick.of(m).release(mb)  # a box select ends, or a plain click on a room sends the crew
+		return
 	if mb == null or not mb.pressed or m.screen.overlay_open():
 		return
 	# The wheel over the world area zooms the drilling camera (the choice lasts for the run).
@@ -54,6 +61,11 @@ static func unhandled(m: Main, event: InputEvent) -> void:
 			m.run.sim.push({"type": "douse", "room": burning_id})
 			m.get_viewport().set_input_as_handled()
 			return
+	# The cutaway: a door, hatch or vent toggles, a figure selects, a press on a room starts a click or a box
+	# (ShipPick); these come before any crew order.
+	if mb.button_index == MOUSE_BUTTON_LEFT and ShipPick.of(m).press(mb):
+		m.get_viewport().set_input_as_handled()
+		return
 	# In a fight, a left click on an enemy room with a weapon armed aims it (a command, like all orders).
 	var wc: WeaponCards = m.screen.weapons
 	if mb.button_index == MOUSE_BUTTON_LEFT and wc.armed >= 0 and m.combat_view.active():
@@ -63,18 +75,11 @@ static func unhandled(m: Main, event: InputEvent) -> void:
 			wc.disarm()
 			m.get_viewport().set_input_as_handled()
 			return
-	# The player's click goes through the same command chain the bots use: left sends the selected
-	# crew member to the room, right releases them back to their own judgement.
-	var c: CrewMember = m.screen.selected_crew()
-	if c == null:
-		return
-	if mb.button_index == MOUSE_BUTTON_LEFT:
-		var p: Vector2 = (m.view.get_global_transform_with_canvas().affine_inverse() * mb.position) / Main.PPM
-		var room: int = m.run.sim.ship.room_at(p + Vector2(0, 0.06), -1)
-		if room >= 0:
-			m.run.sim.push({"type": "assign", "crew": c.id, "room": m.run.sim.ship.rooms[room].id})
-	elif mb.button_index == MOUSE_BUTTON_RIGHT:
-		m.run.sim.push({"type": "release", "crew": c.id})
+	# Right click releases the selected crew back to their own judgement (the left click is ShipPick's:
+	# a room click sends them, through the same command chain the bots use).
+	if mb.button_index == MOUSE_BUTTON_RIGHT:
+		for id: String in ShipPick.of(m).current():
+			m.run.sim.push({"type": "release", "crew": id})
 
 
 ## F puts out the worst fire (one command, like a click on its button); the callouts say why not.
@@ -88,6 +93,9 @@ static func douse_worst(m: Main) -> void:
 
 static func on_key(m: Main, key: InputEventKey) -> void:
 	var code: Key = key.keycode
+	if key.pressed and code == KEY_ESCAPE and not m.screen.overlay_open() and m.screen.weapons.armed < 0 and not m.screen.blast.armed and not m.screen.miner.armed:
+		ShipPick.of(m).clear()
+		return
 	if key.pressed and (code == KEY_F or key.physical_keycode == KEY_F) and not m.screen.overlay_open() and not key.shift_pressed:
 		douse_worst(m)
 		return
