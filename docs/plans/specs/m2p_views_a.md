@@ -92,3 +92,13 @@ new still is needed (`game/view/ui_gallery.gd`). Do not touch `game/sim/**`, `ga
 What each still shows (paths), what you changed, tests added, anything you could not do and why,
 branch and final commit. Commit with explicit paths, messages without em dashes, ending with
 `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`. Do not push or merge.
+
+## Addition (2026-10-22, from Stewart's build 6 notes via the M1d session)
+Crew selection on the ship: a click on a crew figure selects it (Shift+click adds or removes), a drag
+from empty floor draws a box that selects every figure inside, and a click on a room then sends every
+selected crew member there with one existing `assign` command each (no new sim command, so replays
+stay plain commands). Selected figures get a ring; Esc or a click off the ship clears it. Door, hatch
+and vent clicks keep priority. Real-input self-test and one still. The M1d session is changing
+`ship_view*.gd`, `main.gd`, the scanner files, `run_screen.gd`, `alerts_strip.gd`,
+`hint_director.gd` and `crew_sprite.gd` on main at the same time: keep edits there small and new code
+in new helper files; `douse_layer.gd` and `room_fire.gd` are off limits.
