@@ -590,3 +590,16 @@ multiply blend so it darkens dark floors instead of fading into them. Balance ru
 run's final hash, and `tools/balance_compare.py` compares two runs seed by seed (the oracle for the
 file split). Build 6 is untouched: nothing here is exported before Stewart plays it (D058). Revert:
 `git revert` the commit; the bot fixes are independent of each other.
+
+## D060 (S asked, AI details): a short scanner and capped steering until the helm is upgraded
+Stewart (build 6, 2026-10-22): "slightly higher ore density but the scanner shows much less (it can be
+upgraded later)... I don't know that the horizontal maintain depth should even be possible until an
+upgrade is unlocked. It's too powerfull from the start." He swept whole segments sideways at hold
+depth because the scanner showed all 30 m ahead and the full 32 m width. Now: the seismic scanner
+shows rock only within a range of the drill head that grows with the helm's installed bars
+(`drill.scanner_range_m_by_helm`, start about 10 m, 16 m at 3 bars); beyond it the screen is static.
+The heading is capped at 45 degrees until the helm has 3 installed bars (the existing helm upgrade,
+120 ore), then reaches 90 (hold depth) as before (`drill.max_heading_deg_by_helm`). Ore richness rises
+about 20% so a shorter, choosier dig still pays. Bots keep reading the whole grid (they are not
+judged on what they can see) but obey the heading cap; balance is re-run. Revert: set both tables to
+their old single values (30 m and 90 degrees) and the richness factor to 1.
