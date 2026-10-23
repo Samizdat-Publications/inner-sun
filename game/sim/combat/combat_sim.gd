@@ -42,6 +42,7 @@ var player_side: CombatSide = CombatSide.new()
 var enemy_side: CombatSide = CombatSide.new()
 var shots: Projectiles = Projectiles.new()
 var last_result: String = ""  ## "won", "fled", "lost" or "" (for bots and the view).
+var rockfall_ticks: PackedInt32Array = PackedInt32Array([-1, -1])  ## Rockfall seam: ticks to the next fall, [player, rival] (-1: none drawn).
 
 var _db: DataDB
 var _ai: EnemyAI = null
@@ -54,9 +55,16 @@ var _fire_level: float = 0.25
 var _flee_total: int = 1
 var _flee_bars: int = 2
 var _seg: PackedVector2Array = PackedVector2Array()
+var _rf_serial: int = -1  ## RunState.env_serial the rockfall rhythm was drawn for.
+var _rf_warn: int = 72  ## The drill's rockfall tuning, reused: warning, hull and system damage.
+var _rf_hull: int = 1
+var _rf_bars: float = 0.5
 
 
 func _init(db: DataDB) -> void:
+	_rf_warn = maxi(1, roundi(db.tune("drill.rockfall_warn_s") * Sim.TICK_HZ))
+	_rf_hull = maxi(0, roundi(db.tune("drill.rockfall_hull_pts")))
+	_rf_bars = maxf(0.0, db.tune("drill.rockfall_sys_bars"))
 	_db = db
 	_gap_m = db.tune("combat.rock_gap_m")
 	_decay_s = db.tune("combat.unpowered_decay_s_per_s") * Sim.DT
@@ -129,8 +137,11 @@ func start_fight(sim: Sim, p_enemy_id: String, p_boss: bool) -> void:
 	started_tick = sim.tick
 	last_result = ""
 	active = true
+	sim.enemy.ship.rock_temp_c += sim.run.rock_add_c(sim.enemy)  # The same rock for both hulls (magma).
+	rockfall_ticks = PackedInt32Array([-1, -1])
+	_rf_serial = sim.run.env_serial
 	sim.run.set_phase(sim, "combat")
-	sim.emit("fight_start", {"enemy": enemy_id, "boss": boss, "side": "right" if enemy_on_right else "left"})
+	sim.emit("fight_start",{"enemy": enemy_id, "boss": boss, "side": "right" if enemy_on_right else "left"})
 
 
 func step(sim: Sim) -> void:
@@ -144,6 +155,8 @@ func step(sim: Sim) -> void:
 	_step_guns(sim, player_side, sim.player, sim.enemy, false)
 	_step_guns(sim, enemy_side, sim.enemy, sim.player, true)
 	_step_shots(sim)
+	_step_rockfalls(sim, 0, sim.player)
+	_step_rockfalls(sim, 1, sim.enemy)
 	if flee_ticks >= 0 and _can_flee(sim):
 		flee_ticks += 1
 		if flee_ticks >= _flee_total:
@@ -161,7 +174,7 @@ func step(sim: Sim) -> void:
 func state() -> Array:
 	return [active, enemy_id, boss, enemy_hull, enemy_hull_max, enemy_on_right, enemy_origin.x,
 		enemy_origin.y, flee_ticks, started_tick, last_result, _return_phase, player_side.state(),
-		enemy_side.state(), shots.state()]
+		enemy_side.state(), shots.state(), rockfall_ticks, _rf_serial]
 
 
 static func lint(db: DataDB, errs: PackedStringArray) -> void:
@@ -274,6 +287,30 @@ func _step_shots(sim: Sim) -> void:
 			var dmg: int = CombatHits.projectile(sim, other, shots.room[i], sd.defs[shots.slot[i]], own.stream(sim, "combat"), _fire_level)
 			_hurt(sim, not from_enemy, dmg)
 		shots.remove_at(i)
+
+
+## A rockfall seam in force (RunState.rockfall_band for that ship): each ship on its own rhythm, the
+## intervals drawn from its side's "env/rockfall" stream, a warning rockfall_warn_s before each fall
+## (CombatHits.rockfall).
+func _step_rockfalls(sim: Sim, i: int, w: ShipWorld) -> void:
+	if _rf_serial != sim.run.env_serial:
+		_rf_serial = sim.run.env_serial
+		rockfall_ticks[0] = -1
+		rockfall_ticks[1] = -1
+	var band: Vector2 = sim.run.rockfall_band(w)
+	if band.y <= 0.0:
+		rockfall_ticks[i] = -1
+		return
+	var rng: RandomNumberGenerator = w.stream(sim, "env/rockfall")
+	if rockfall_ticks[i] < 0:
+		rockfall_ticks[i] = Environments.next_rockfall_ticks(band, rng)
+	rockfall_ticks[i] -= 1
+	if rockfall_ticks[i] == _rf_warn:
+		w.emit(sim, "rockfall_warn", {"in_s": snappedf(float(_rf_warn) / Sim.TICK_HZ, 0.01), "cause": "seam"})
+	if rockfall_ticks[i] > 0:
+		return
+	rockfall_ticks[i] = Environments.next_rockfall_ticks(band, rng)
+	_hurt(sim, not w.is_player(), CombatHits.rockfall(sim, w, rng, _rf_hull, _rf_bars))
 
 
 ## Take hull damage off the enemy (enemy_hit) or the player (run.resources.hull).

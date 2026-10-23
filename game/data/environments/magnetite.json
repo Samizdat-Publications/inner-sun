@@ -1,0 +1,8 @@
+{
+  "id": "magnetite",
+  "name": "Magnetite",
+  "blurb": "A lode of black iron ore. The scanner shows snow, the compass spins, and whatever follows you loses the scent.",
+  "weight": 2,
+  "from_row": 3,
+  "effects": {"scanner_blind": true, "pursuer_x": 0.6}
+}

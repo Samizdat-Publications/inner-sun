@@ -11,6 +11,8 @@ extends RefCounted
 ##   impact a bracing layer soaks it (Systems.absorb_hit); otherwise the run loses rockfall_hull_pts
 ##   hull (run mode only) and one top-deck room (the smallest rect y, picked with the stream
 ##   "drill/rockfall") takes rockfall_sys_bars of damage. A run killed by it ends with cause "rockfall".
+## - Rockfall seam (an environment, Environments): while one is in force, rockfalls also come on a
+##   rhythm through the same warning and hit (_seam_rhythm); events carry "cause": "faults" or "seam".
 ## - Blast: the charge launcher fires a charge into the rock (fire_blast; blast_ready says why not).
 ##   It spends one charge at once and goes off blast_fuse_s later: every non-air cell whose centre is
 ##   within blast_radius_m is cut (counted in mined; blast_yield_pct of each material's yield is paid,
@@ -21,7 +23,7 @@ extends RefCounted
 ##   off at arrival.
 ##
 ## Events: "pocket_burst" {"room", "cells"}, "gas_burst" {"room", "cells", "x_m", "y_m"},
-## "rockfall_warn" {"in_s"}, "rockfall" {"absorbed", "room", "hull"}, "blast_fired" {"x_m", "y_m",
+## "rockfall_warn" {"in_s", "cause"}, "rockfall" {"absorbed", "room", "hull", "cause"}, "blast_fired" {"x_m", "y_m",
 ## "from_x_m", "from_y_m", "fuse_s"}, "blast" {"x_m", "y_m", "cells", "yield", "ore", "gems",
 ## "drained", "burned"}, "bad_command" {"type": "blast", "why"}.
 
@@ -37,6 +39,11 @@ var blast_cooldown_ticks: int = 0
 var blast_cooldown_left_s: float = 0.0
 var blasts: int = 0  ## Blasts set off this segment.
 var drained_cells: int = 0  ## Water pocket cells drained by blasts this segment (in mined, no water).
+var seam_rockfalls: int = 0  ## Rockfalls scheduled by a rockfall seam (environment), whole run.
+
+var _env_ticks: int = -1  ## Ticks to the seam's next rockfall (-1: none drawn).
+var _env_serial: int = -1  ## RunState.env_serial the rhythm was drawn for.
+var _pending_cause: String = ""  ## "faults" or "seam": what the scheduled rockfall came from.
 
 var _weapons: Dictionary = {}  ## The weapons table (data), to find the charge launcher.
 var _strain_max: int = 80
@@ -102,8 +109,33 @@ func step(sim: Sim, d: DrillSim) -> void:
 			_rockfall(sim)
 	if rockfall_ticks == 0 and strain >= _strain_max and not sim.run.is_over():
 		strain -= _strain_max
-		rockfall_ticks = _warn_ticks
-		sim.emit("rockfall_warn", {"in_s": snappedf(float(_warn_ticks) / Sim.TICK_HZ, 0.01)})
+		_schedule(sim, "faults")
+	_seam_rhythm(sim)
+
+
+## A rockfall seam in force (RunState.rockfall_band): a rockfall on a rhythm, the next interval drawn
+## from the stream "env/rockfall" when one is scheduled (and afresh whenever the environment
+## changes). If a fault rockfall is already on its way, the seam's waits for it to land.
+func _seam_rhythm(sim: Sim) -> void:
+	var band: Vector2 = sim.run.rockfall_band(sim.player)
+	if band.y <= 0.0 or sim.run.is_over():
+		_env_ticks = -1
+		return
+	if _env_ticks < 0 or _env_serial != sim.run.env_serial:
+		_env_serial = sim.run.env_serial
+		_env_ticks = Environments.next_rockfall_ticks(band, sim.rng.get_stream("env/rockfall"))
+	if _env_ticks > 0:
+		_env_ticks -= 1
+	if _env_ticks == 0 and rockfall_ticks == 0:
+		_schedule(sim, "seam")
+		seam_rockfalls += 1
+		_env_ticks = Environments.next_rockfall_ticks(band, sim.rng.get_stream("env/rockfall"))
+
+
+func _schedule(sim: Sim, cause: String) -> void:
+	rockfall_ticks = _warn_ticks
+	_pending_cause = cause
+	sim.emit("rockfall_warn", {"in_s": snappedf(float(_warn_ticks) / Sim.TICK_HZ, 0.01), "cause": cause})
 
 
 ## The segment ended: a charge in flight goes off now, a rockfall still to come is dropped.
@@ -161,7 +193,7 @@ func _rockfall(sim: Sim) -> void:
 		if ri >= 0:
 			room_id = sim.ship.rooms[ri].id
 			sim.systems.damage_room(sim, sim.player, ri, _rf_bars)
-	sim.emit("rockfall", {"absorbed": absorbed, "room": room_id, "hull": lost})
+	sim.emit("rockfall", {"absorbed": absorbed, "room": room_id, "hull": lost, "cause": _pending_cause})
 	if lost > 0 and sim.run.mode == "run" and sim.run.get_res("hull") <= 0:
 		sim.run.end_run(sim, "dead", "rockfall")
 
@@ -322,4 +354,4 @@ static func _rect_distance(r: Rect2, p: Vector2) -> float:
 
 func state() -> Array:
 	return [strain, rockfall_ticks, rockfalls, blast_pending, blast_point, blast_from, blast_fuse_ticks,
-		blast_cooldown_ticks, blasts, drained_cells]
+		blast_cooldown_ticks, blasts, drained_cells, seam_rockfalls, _env_ticks, _env_serial, _pending_cause]

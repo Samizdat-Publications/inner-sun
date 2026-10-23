@@ -11,7 +11,8 @@ extends RefCounted
 ##    "enemy": ship id for "fight" and "gate" nodes, else ""}
 ## Fight enemies come from the layer's "enemies", or from "enemy_tiers" ([{"from_row", "ships"}, ...]
 ## in ascending from_row) so rivals get tougher deeper down (enemies_for_row).
-## RunState adds "survey" (Survey.add_to_map) before the map is used. Node dictionaries are fixed
+## RunState adds "env" (assign_envs: an environment id or "") and "survey" (Survey.add_to_map)
+## before the map is used. Node dictionaries are fixed
 ## from then on; visited and overtaken live in RunState.
 ##
 ## Guarantees (tests in test_map.gd): every node has a way in and a way out, so every node is reached
@@ -105,6 +106,25 @@ static func generate(layer: Dictionary, rng: RandomNumberGenerator) -> Array:
 			index += 1
 		map.append(row)
 	return map
+
+
+## Give every node an "env" (an environment id or ""; Environments): the nodes of the layer's
+## environments.node_types roll, in map order, from their own stream (the run passes "map/env"),
+## after the map is complete, so the map is otherwise exactly what generate() made. The start, a
+## store and the gate never carry one. Two draws per eligible node (Environments.roll).
+static func assign_envs(map: Array, layer: Dictionary, table: Dictionary, rng: RandomNumberGenerator) -> void:
+	var block: Dictionary = layer.get("environments", {})
+	var chance: float = float(block.get("chance", 0.0)) if not table.is_empty() else 0.0
+	var types: Array = block.get("node_types", [])
+	var order: PackedStringArray = Environments.ids(table)
+	for row: Variant in map:
+		for nv: Variant in (row as Array):
+			var n: Dictionary = nv
+			var t: String = str(n["type"])
+			n["env"] = ""
+			if chance <= 0.0 or t == "start" or t == "store" or t == "gate" or not types.has(t):
+				continue
+			n["env"] = Environments.roll(table, order, int(n["row"]), chance, rng)
 
 
 ## The rival ships a fight in this row may meet: the ships of the last "enemy_tiers" entry whose

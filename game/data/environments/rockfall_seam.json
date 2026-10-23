@@ -1,0 +1,7 @@
+{
+  "id": "rockfall_seam",
+  "name": "Rockfall seam",
+  "blurb": "The roof here is cracked through. Slabs come down every few seconds, on you and on anyone else.",
+  "weight": 3,
+  "effects": {"rockfall_every_s": [8.0, 15.0]}
+}

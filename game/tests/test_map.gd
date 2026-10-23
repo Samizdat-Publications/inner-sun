@@ -226,10 +226,11 @@ func test_same_seed_same_map_and_run_uses_map_stream() -> void:
 	var sim := Sim.new(db(), 5, "light_drill", {"mode": "run"})
 	var want: Array = _gen(layer, 5)
 	var streams := RngStreams.new(5)
+	MapGen.assign_envs(want, layer, db().table("environments"), streams.get_stream("map/env"))
 	Survey.add_to_map(want, layer, db().table("rock")["crust"], streams.get_stream("survey"),
 			streams.get_stream("survey/structure"))
 	check_eq(var_to_str(sim.run.map), var_to_str(want),
-			"the run's map comes from the \"map\" stream, its surveys from \"survey\" and \"survey/structure\"")
+			"the run's map comes from the \"map\" stream, its environments from \"map/env\", its surveys from \"survey\" and \"survey/structure\"")
 	check_eq(sim.run.current_node, "r0c0", "the run starts at the start node")
 	check(sim.run.is_visited(sim.run.node("r0c0")), "the start node is visited")
 	check_eq(sim.run.nodes.size(), sim.run.visited.size(), "one visited flag per node")

@@ -322,7 +322,7 @@ Current Inner Sun values are quoted where they exist, so the gap is visible.
 - Test: map rule test over 1,000 seeds and one scenario per environment, `test_ledger_env.gd::test_l_env_01`.
 - Wrong value: an environment that hits only the player must fail.
 - Core: yes
-- Status: open
+- Status: passing (sim; view pending)
 
 ### L-ENV-02: Each environment has one clear effect
 - Kind: rule
@@ -332,4 +332,4 @@ Current Inner Sun values are quoted where they exist, so the gap is visible.
 - Test: one scenario per environment, `test_ledger_env.gd::test_l_env_02`.
 - Wrong value: each environment's strength at zero must fail its scenario.
 - Core: no
-- Status: open
+- Status: passing

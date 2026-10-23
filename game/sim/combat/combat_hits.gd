@@ -44,6 +44,21 @@ static func beam(sim: Sim, tw: ShipWorld, rooms: PackedInt32Array, w: WeaponDef,
 	return total
 
 
+## A rockfall seam's falling rock on a ship in a fight: a light hit on a random room (one draw from
+## the side's "env/rockfall" stream, always taken first), soaked by a bracing layer like a shot;
+## otherwise the room takes sys_bars of system damage. Returns the hull damage (hull_pts or 0).
+## Emits "rockfall" {"absorbed", "room", "hull", "cause": "seam"} (side-tagged).
+static func rockfall(sim: Sim, tw: ShipWorld, rng: RandomNumberGenerator, hull_pts: int, sys_bars: float) -> int:
+	var ri: int = rng.randi_range(0, tw.ship.rooms.size() - 1)
+	var r: Room = tw.ship.rooms[ri]
+	if sim.systems.absorb_hit(sim, tw):
+		tw.emit(sim, "rockfall", {"absorbed": true, "room": r.id, "hull": 0, "cause": "seam"})
+		return 0
+	sim.systems.damage_room(sim, tw, ri, sys_bars)
+	tw.emit(sim, "rockfall", {"absorbed": false, "room": r.id, "hull": hull_pts, "cause": "seam"})
+	return hull_pts
+
+
 ## The rooms a beam aimed at room ri crosses, in room order, and the sweep segment in ship space
 ## (written into seg: start, end). The sweep runs straight down from the target room's center for
 ## beam_len_m, shifted up if it would leave the bottom of the ship.
@@ -95,7 +110,7 @@ static func _strike(sim: Sim, tw: ShipWorld, ri: int, w: WeaponDef, dmg: int, rn
 	harm_crew(sim, tw, ri, w.crew_damage)
 	var fire_roll: float = rng.randf()
 	var breach_roll: float = rng.randf()
-	if fire_roll < w.fire_chance:
+	if fire_roll < minf(1.0, w.fire_chance * sim.run.fire_x(tw)):  # The environment's fire chance (gas, magma).
 		tw.hazards.ignite(sim, tw, r, fire_level)
 	if breach_roll < w.breach_chance and w.breach_m2 > 0.0:
 		r.breach_m2 += w.breach_m2

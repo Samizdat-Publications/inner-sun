@@ -1,0 +1,10 @@
+{
+  "id": "ledger_env_fight",
+  "name": "Ledger L-ENV-01 and L-ENV-02: the light drill with its weapons unpowered, so a fight the tests start shows only what the environment does to both ships",
+  "ship": "light_drill",
+  "duration_s": 400,
+  "bot": "idle",
+  "timeline": [
+    {"at_s": 0.0, "cmd": {"type": "power", "room": "weapons", "bars": 0}}
+  ]
+}

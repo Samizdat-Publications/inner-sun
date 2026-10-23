@@ -1,0 +1,11 @@
+{
+  "id": "ledger_env_drill",
+  "name": "Ledger L-ENV-01 and L-ENV-02: a long, quiet drilling segment (no faults, pockets or gems) for the tests to put an environment in force on, to measure rockfalls and rock heat",
+  "ship": "light_drill",
+  "duration_s": 400,
+  "bot": "idle",
+  "timeline": [
+    {"at_s": 0.0, "cmd": {"type": "begin_segment", "segment": "ledger_env", "depth_m": 900.0, "lateral_m": 0.0,
+      "survey": {"faults": false, "gas": false, "water": false, "gems": false}}}
+  ]
+}
