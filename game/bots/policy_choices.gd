@@ -131,6 +131,8 @@ static func effect_value(sim: Sim, bot: PolicyBot, e: Dictionary) -> float:
 			return _res_value(bot, str(e.get("res", "")), float(e.get("amount", 0)))
 		"res_range":
 			return _res_value(bot, str(e.get("res", "")), 0.5 * float(int(e.get("min", 0)) + int(e.get("max", 0))))
+		"reward":
+			return _res_value(bot, str(e.get("res", "")), reward_mean(sim, str(e.get("res", "")), str(e.get("tier", ""))))
 		"hull":
 			return float(e.get("amount", 0)) * hull_w
 		"crew_damage":
@@ -165,6 +167,15 @@ static func effect_value(sim: Sim, bot: PolicyBot, e: Dictionary) -> float:
 	return 0.0
 
 
+## The expected amount of a tiered reward at the ship's row: the row's base times the tier's mean
+## multiplier (0 for an unknown tier or resource, which the data lint rules out).
+static func reward_mean(sim: Sim, res: String, tier: String) -> float:
+	if not Rewards.TIERS.has(tier) or not Rewards.RESOURCES.has(res):
+		return 0.0
+	var sp: Vector2 = Rewards.spread(sim.db, tier)
+	return Rewards.base(sim.db, res, sim.run.current_row()) * 0.5 * (sp.x + sp.y)
+
+
 static func _res_value(bot: PolicyBot, res: String, amount: float) -> float:
 	var v: float = float(RES_VALUE.get(res, 1.0)) * amount
 	return v * (bot.gain_scale if amount > 0.0 else 1.0)
@@ -174,7 +185,10 @@ static func _res_value(bot: PolicyBot, res: String, amount: float) -> float:
 
 ## The next purchase as [stock line, quantity], or [] to leave. Order: hull repairs, then stocking
 ## resources up to the policy's levels (cells cover the rows left), then extras (gear, upgrades,
-## weapons) in policy order while the currency stays above the policy's gem or ore reserve.
+## weapons) in policy order while the currency stays above the policy's gem or ore reserve. Every
+## quantity is clamped to what the line has left (its "stock", when 0 or more; a sold-out line is
+## skipped) and to the ladder's top for an upgrade, and an upgrade of n bars is priced at the exact
+## sum of the next n ladder entries (EncounterStore.cost_of), reserve check included. Bots never sell.
 static func next_purchase(sim: Sim, bot: PolicyBot) -> Array:
 	var enc: Encounter = sim.encounter
 	var run: RunState = sim.run
@@ -190,7 +204,7 @@ static func next_purchase(sim: Sim, bot: PolicyBot) -> Array:
 		var price: int = maxi(1, int(d.get("price", 1)))
 		var qty: int = mini(ceili(float(want_hull - run.get_res("hull")) / float(per)),
 				run.get_res(str(d.get("currency", "gems"))) / price)
-		qty = mini(qty, (sim.ship.hull_max - run.get_res("hull")) / per)
+		qty = _on_shelf(d, mini(qty, (sim.ship.hull_max - run.get_res("hull")) / per))
 		if qty > 0 and _ok(sim, enc, i, qty):
 			return [i, qty]
 	# Resources, in a fixed order.
@@ -207,7 +221,7 @@ static func next_purchase(sim: Sim, bot: PolicyBot) -> Array:
 			var per: int = maxi(1, int(d.get("amount", 1)))
 			var qty: int = ceili(float(target - run.get_res(res)) / float(per))
 			var price: int = maxi(1, int(d.get("price", 1)))
-			qty = mini(qty, run.get_res(str(d.get("currency", "gems"))) / price)
+			qty = _on_shelf(d, mini(qty, run.get_res(str(d.get("currency", "gems"))) / price))
 			if qty > 0 and _ok(sim, enc, i, qty):
 				return [i, qty]
 	# Extras.
@@ -216,8 +230,10 @@ static func next_purchase(sim: Sim, bot: PolicyBot) -> Array:
 			var d: Dictionary = stock[i]
 			if not _matches(d, want):
 				continue
-			var units: int = _units_worth_buying(sim, d)
-			var cost: int = int(d.get("price", 0)) * units
+			var units: int = _on_shelf(d, _units_worth_buying(sim, d))
+			if units < 1:
+				continue
+			var cost: int = EncounterStore.cost_of(sim, d, units)
 			var cur: String = str(d.get("currency", "gems"))
 			if run.get_res(cur) - cost < (bot.gem_reserve if cur == "gems" else bot.ore_reserve if cur == "ore" else 0):
 				continue
@@ -228,15 +244,26 @@ static func next_purchase(sim: Sim, bot: PolicyBot) -> Array:
 	return []
 
 
-## Bracing bars only help in whole layers: buy as many units as complete the next layer.
+## `qty` clamped to the units the line has left (a line with "stock" -1 is unlimited).
+static func _on_shelf(d: Dictionary, qty: int) -> int:
+	var left: int = int(d.get("stock", -1))
+	return mini(qty, left) if left >= 0 else qty
+
+
+## Bracing bars only help in whole layers: buy as many units as complete the next layer, never past
+## the top of the system's ladder (0 when it is at the top).
 static func _units_worth_buying(sim: Sim, d: Dictionary) -> int:
-	if str(d.get("item", "")) != "upgrade" or str(d.get("system", "")) != "bracing":
+	if str(d.get("item", "")) != "upgrade":
 		return 1
-	var ri: int = sim.ship.room_with_system("bracing")
+	var sys: String = str(d.get("system", ""))
+	var ri: int = sim.ship.room_with_system(sys)
 	if ri < 0:
 		return 1
+	var room_left: int = StoreRoll.ladder(sim.db, sys).size() - sim.ship.rooms[ri].sys_max
+	if sys != "bracing":
+		return mini(1, room_left)
 	var per: int = maxi(1, roundi(sim.db.tune("systems.bracing_bars_per_layer")))
-	return per - sim.ship.rooms[ri].sys_max % per
+	return mini(per - sim.ship.rooms[ri].sys_max % per, room_left)
 
 
 static func _ok(sim: Sim, enc: Encounter, line: int, qty: int) -> bool:

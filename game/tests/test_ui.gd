@@ -151,7 +151,8 @@ func test_store_info_text() -> void:
 	var stock: Array = s.encounter.current_store()["stock"]
 	check_eq(StoreView.info_text(s, stock[0]), "ON HAND %d" % s.run.get_res("coolant"), "supply lines show stock on hand")
 	var drill: Dictionary = StoreRoll.line(s, {"item": "upgrade", "system": "drill"}, "systems", 0, -1)
-	check_eq(StoreView.info_text(s, drill), "DRILL BAR 5 OF 6: 100 ORE", "refits name the system, the next bar and its price")
+	var price: int = int(StoreRoll.ladder(s.db, "drill")[4])  # From data: the ladders were retuned in parity round 4.
+	check_eq(StoreView.info_text(s, drill), "DRILL BAR 5 OF 6: %d ORE" % price, "refits name the system, the next bar and its price")
 	var hire: Dictionary = StoreRoll.line(s, {"item": "crew", "pool": "survivors", "price": 45}, "crew", 0, 1)
 	check(StoreView.info_text(s, hire).length() > 0, "the hire line names the candidate or says none")
 
