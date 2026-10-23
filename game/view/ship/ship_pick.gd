@@ -200,6 +200,14 @@ func release(mb: InputEventMouseButton) -> bool:
 	return true
 
 
+## Dev only (MainPoke): show a drag box over `rect` (ship pixels) and select the figures in it.
+func demo_box(rect: Rect2) -> void:
+	box = rect
+	_dragging = true
+	select_ids(ShipHits.crew_in(_ship(), rect, Main.PPM))
+	queue_redraw()
+
+
 func _cancel() -> void:
 	_down = false
 	_dragging = false

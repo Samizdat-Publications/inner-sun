@@ -188,6 +188,9 @@ func describe(n: Dictionary) -> PackedStringArray:
 	var out: PackedStringArray = PackedStringArray([title, detail, note])
 	if run.is_revealed(n) and str(n.get("type", "")) != "start":
 		out.append_array(SurveyMarks.words(n.get("survey", {}), _tier_count(), _materials(), str(n["type"]) == "deposit"))
+		var env_id: String = str(n.get("env", ""))
+		if not env_id.is_empty():
+			out.append_array(SurveyMarks.env_words(sim.db.table("environments").get(env_id, {})))
 	return out
 
 
@@ -452,6 +455,8 @@ func _draw_node(n: Dictionary) -> void:
 		_glyph(kind, c, NODE_R * 0.62, glyph, st == "overtaken")
 	if st == "overtaken":
 		_crack(c, str(n["id"]))
+	if st != "unknown" and not str(n.get("env", "")).is_empty():
+		SurveyMarks.draw_env(self, c + Vector2(-NODE_R - 10.0, -NODE_R + 2.0), str(n["env"]), 0.6 if st in ["visited", "overtaken"] else 1.0)
 	if (st == "open" or st == "seen") and SurveyMarks.has_reading(n):
 		SurveyMarks.draw(self, c + Vector2(NODE_R + 8.0, -12.0), n["survey"], _tier_count(), _materials(), 1.0 if st == "open" else 0.75)
 
@@ -637,7 +642,10 @@ func _draw_tooltip() -> void:
 	if not d[2].is_empty():
 		lines.append(d[2])
 	var survey_from: int = lines.size()
+	var env_from: int = 1000
 	for i: int in range(3, d.size()):
+		if d[i].begins_with("ENVIRONMENT"):
+			env_from = lines.size()
 		lines.append(d[i])
 	var w: float = 0.0
 	for s: String in lines:
@@ -652,4 +660,6 @@ func _draw_tooltip() -> void:
 		var col: Color = UiTheme.AMBER if i == 0 else (UiTheme.CRT if i == 1 else UiTheme.BRASS_LIGHT)
 		if i >= survey_from:
 			col = UiTheme.CRT
+		if i >= env_from:
+			col = UiTheme.AMBER if i == env_from else UiTheme.BRASS_LIGHT
 		UiTheme.text(self, box.position + Vector2(14.0, 26.0 + 22.0 * float(i)), lines[i], 16, col)

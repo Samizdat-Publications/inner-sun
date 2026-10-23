@@ -92,6 +92,8 @@ func _ready() -> void:
 	if DisplayServer.get_name() == "headless" and not build_headless:
 		return
 	MainWorld.build(self)
+	if args.has("poke") and not run_mode:
+		MainPoke.apply(self, args.get_list("poke"))  # dev: a state for a still
 	if args.has("shots") or args.has("capture"):
 		var director := CaptureDirector.new()
 		director.setup(self, args)

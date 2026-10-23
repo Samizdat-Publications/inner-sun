@@ -10,6 +10,7 @@ extends Control
 ## Mount (RunScreen, on the HUD layer, above the dig tally):  DigCallouts.build(layer, sim)
 
 const POS_Y: float = 142.0
+const ENV_CHIP_Y: float = 186.0
 const LIFE_S: float = 3.0
 const MAX_LINES: int = 3
 const FONT: int = 22
@@ -69,6 +70,13 @@ static func message_for(s: Sim, e: Dictionary) -> Dictionary:
 		"fire_out":
 			if str(e.get("by", "")) == "douse":
 				return {"text": "FIRE OUT", "kind": "good"}
+			if str(e.get("by", "")) == "purge":
+				var pn: String = _room_name(s, str(e.get("room", "")))
+				return {"text": "PURGED: %s" % pn if not pn.is_empty() else "PURGED", "kind": "good"}
+		"env_entered":
+			var en: String = env_name(s, str(e.get("env", "")))
+			if not en.is_empty():
+				return {"text": en, "kind": "info"}
 		"bad_command":
 			var t: String = str(e.get("type", ""))
 			var why: String = str(e.get("why", ""))
@@ -83,6 +91,13 @@ static func message_for(s: Sim, e: Dictionary) -> Dictionary:
 static func _room_name(s: Sim, id: String) -> String:
 	var ri: int = s.ship.room_index(id)
 	return s.ship.rooms[ri].name.to_upper() if ri >= 0 else ""
+
+
+## An environment's name in capitals ("ROCKFALL SEAM"), "" for none.
+static func env_name(s: Sim, id: String) -> String:
+	if id.is_empty():
+		return ""
+	return str((s.db.table("environments").get(id, {}) as Dictionary).get("name", id)).to_upper()
 
 
 ## "ROCKFALL IN 1.2 S" while one is on its way, else "".
@@ -119,8 +134,9 @@ func _process(delta: float) -> void:
 
 
 func _draw() -> void:
-	if sim == null or not sim.drill.active:
+	if sim == null:
 		return
+	_draw_env_chip()
 	var cx: float = RunScreen.WORLD_RECT.get_center().x
 	var y: float = POS_Y
 	var warn: String = warn_text(sim)
@@ -144,3 +160,17 @@ func _draw() -> void:
 		draw_rect(r2, Color(col, a), false, 2.0)
 		UiTheme.bold_text(self, Vector2(r2.position.x + 18.0, r2.position.y + 25.0), text, FONT, Color(col.lerp(UiTheme.TEXT, 0.35), a))
 		y += 40.0
+
+
+## The environment in force, a small chip under the enemy panel's row at the world area's left, until it ends.
+func _draw_env_chip() -> void:
+	var run: RunState = sim.run
+	if run.env_id.is_empty():
+		return
+	var text: String = "IN FORCE: " + env_name(sim, run.env_id)
+	var w: float = UiTheme.text_width(text, 17) + 52.0
+	var r := Rect2(RunScreen.WORLD_RECT.position.x + 12.0, ENV_CHIP_Y, w, 32.0)
+	draw_rect(r, Color(0.03, 0.04, 0.05, 0.88), true)
+	draw_rect(r, Color(UiTheme.AMBER, 0.85), false, 1.5)
+	SurveyMarks.draw_env(self, r.position + Vector2(19.0, 16.0), run.env_id)
+	UiTheme.bold_text(self, Vector2(r.position.x + 38.0, r.position.y + 23.0), text, 17, UiTheme.AMBER)

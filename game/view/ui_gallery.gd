@@ -6,7 +6,7 @@ extends Control
 ## The states are set up with test helpers (direct pokes at the sim). This is not the game.
 
 const STATES: Array[String] = ["hud_calm", "hud_crisis", "hud_combat", "hud_drill", "dossier_page", "dossier_known", "dossier_greyed", "store",
-		"map_start", "map_mid", "death_dead", "death_won", "codex", "requisitions"]
+		"map_start", "map_mid", "death_dead", "death_won", "codex", "requisitions", "hud_tops", "map_env"]
 const SETTLE_S: float = 0.9
 
 var db: DataDB
@@ -98,6 +98,11 @@ func show_state(i: int) -> void:
 	codex.close()  # The codex state leaves it open; the next state must not sit under it.
 	if STATES[i].begins_with("map_"):
 		map.open()
+		if STATES[i] == "map_env":
+			for n: Dictionary in sim.run.nodes:
+				if not str(n.get("env", "")).is_empty() and sim.run.is_revealed(n) and sim.run.current_node != str(n["id"]):
+					map._hover = str(n["id"])
+					break
 	elif STATES[i] == "codex":
 		codex.open()
 	elif STATES[i] == "requisitions":
@@ -180,6 +185,15 @@ func make_state(state_name: String) -> Sim:
 	match state_name:
 		"map_start":
 			s = _run_sim()
+		"map_env":
+			s = _run_sim()
+			s.run.scanner_rows = 3
+			var kinds: Array = ["rockfall_seam", "magma_heat", "magnetite", "gas_seam"]
+			var k: int = 0
+			for n: Dictionary in s.run.nodes:
+				if int(n["row"]) >= 1 and int(n["row"]) <= 4 and str(n.get("type", "")) != "start":
+					n["env"] = kinds[k % kinds.size()]
+					k += 1
 		"map_mid":
 			s = _run_sim()
 			_play_nodes(s, 4)
@@ -201,6 +215,8 @@ func make_state(state_name: String) -> Sim:
 
 		"hud_calm":
 			_run(s, 8.0)
+		"hud_tops":
+			_tops(s)
 		"hud_crisis":
 			_crisis(s)
 		"hud_combat":
@@ -233,6 +249,20 @@ func make_state(state_name: String) -> Sim:
 			s.encounter.open_store(s, "crust_trader")
 			_run(s, 0.1)
 	return s
+
+
+## Every system at its top (helm 4, bracing 6, weapons 5, drill 6, coolant 5, reactor 14), as far as the
+## 14 reactor bars reach: a look at the power panel and the room art with the longest rows.
+func _tops(s: Sim) -> void:
+	var defs: Dictionary = s.db.table("systems")
+	var want: Dictionary = {"helm": 4, "bracing": 2, "weapons": 3, "drill": 3, "coolant": 2}
+	for r: Room in s.ship.rooms:
+		var def: Dictionary = defs.get(r.system, {})
+		var prices: Array = def.get("bar_prices", [])
+		if not prices.is_empty():
+			r.sys_max = prices.size()
+		r.sys_power = mini(int(want.get(r.system, 0)), r.sys_max) if r.system != "reactor" else r.sys_max
+	_run(s, 2.0)
 
 
 func _room(s: Sim, id: String) -> Room:

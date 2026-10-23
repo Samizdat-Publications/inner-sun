@@ -16,6 +16,27 @@ static func draw_no_signal(p: ScannerPanel) -> void:
 	UiTheme.glow_text(p, Vector2(ScannerPanel.SCREEN.position.x, ScannerPanel.SCREEN.get_center().y + 10.0), "NO SIGNAL", 36, Color(UiTheme.CRT, blink), null, HORIZONTAL_ALIGNMENT_CENTER, ScannerPanel.SCREEN.size.x)
 
 
+## Magnetite (RunState.scanner_blind): snow over the picture and a plain "NO SIGNAL: <ENV>" line.
+static func draw_snow(p: ScannerPanel) -> void:
+	var sc: Rect2 = ScannerPanel.SCREEN
+	p.draw_rect(sc, Color(0.02, 0.05, 0.04, 0.72), true)
+	var step: int = int(p._t * 16.0)
+	for i: int in range(300):
+		var h: int = ((step * 2654435761 + i * 40503 + i * i * 977) & 0xffffff)
+		var x: float = sc.position.x + float(h % int(sc.size.x - 4.0))
+		var y: float = sc.position.y + float((h >> 9) % int(sc.size.y - 2.0))
+		var v: float = 0.35 + 0.6 * float((h >> 4) % 100) / 100.0
+		p.draw_rect(Rect2(x, y, 3.0 + float(h % 3), 2.0), Color(0.6 * v, 1.0 * v, 0.75 * v, 0.55))
+	for i: int in range(5):
+		var yy: float = sc.position.y + fposmod(p._t * 90.0 + float(i) * 61.0, sc.size.y)
+		p.draw_line(Vector2(sc.position.x, yy), Vector2(sc.end.x, yy), Color(UiTheme.CRT, 0.18), 3.0)
+	var name_text: String = str(p.sim.run.env.get("name", "static")).to_upper()
+	var blink: float = 0.7 + 0.3 * UiTheme.pulse(p._t, 0.9)
+	var band := Rect2(sc.position.x, sc.get_center().y - 26.0, sc.size.x, 42.0)
+	p.draw_rect(band, Color(0.0, 0.03, 0.02, 0.85), true)
+	UiTheme.glow_text(p, Vector2(sc.position.x, sc.get_center().y + 6.0), "NO SIGNAL: " + name_text, 26, Color(UiTheme.CRT, blink), null, HORIZONTAL_ALIGNMENT_CENTER, sc.size.x)
+
+
 static func draw_rock(p: ScannerPanel) -> void:
 	var d: DrillSim = p.sim.drill
 	p.draw_texture_rect_region(p._tex, ScannerPanel.SCREEN, Rect2(0.0, p._frac, float(d.cols), float(p._rows_shown)), Color(1, 1, 1, 1))

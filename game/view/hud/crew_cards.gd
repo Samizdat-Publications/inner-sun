@@ -20,6 +20,7 @@ const TOP: float = 512.0
 const JOB_LABEL: Dictionary = {"": "IDLE", "extinguish": "EXTINGUISH", "patch": "PATCH", "repair": "REPAIR", "go": "GO TO", "sortie": "TO HATCH"}
 const JOB_ICON: Dictionary = {"": "", "extinguish": "flame", "patch": "hammer", "repair": "hammer", "go": "", "sortie": ""}
 const FLASH_S: float = 0.8
+const SKILL_BAR_W: float = 34.0
 
 var sim: Sim = null
 var selected_id: String = ""
@@ -207,11 +208,15 @@ func _draw_card(i: int, c: CrewMember) -> void:
 	elif c.job_room >= 0 and c.job_room != c.room and c.job_room < sim.ship.rooms.size():
 		place += "  > %s" % sim.ship.rooms[c.job_room].name.to_upper()
 	UiTheme.text(self, Vector2(left, rect.position.y + 84.0), place, 17, UiTheme.TEXT, null, HORIZONTAL_ALIGNMENT_LEFT, rect.size.x - 24.0)
-	# Skills.
-	UiTheme.text(self, Vector2(left, rect.position.y + 106.0), "FIRE %.1f" % c.skill_fire, 16, UiTheme.TEXT)
-	_draw_skill_bar(Vector2(left + 84.0, rect.position.y + 96.0), c.skill_fire)
-	UiTheme.text(self, Vector2(left + 164.0, rect.position.y + 106.0), "REPAIR %.1f" % c.skill_repair, 16, UiTheme.TEXT)
-	_draw_skill_bar(Vector2(left + 270.0, rect.position.y + 96.0), c.skill_repair)
+	# Skills: FIRE, REPAIR and STATION side by side, a label and a short bar each.
+	var sx: float = left
+	var skills: Array = [["FIRE", c.skill_fire], ["REPAIR", c.skill_repair], ["STATION", c.skill_station]]
+	for sk: Array in skills:
+		var label_text: String = "%s %.1f" % [str(sk[0]), float(sk[1])]
+		UiTheme.text(self, Vector2(sx, rect.position.y + 106.0), label_text, 14, UiTheme.TEXT)
+		sx += UiTheme.text_width(label_text, 14) + 5.0
+		_draw_skill_bar(Vector2(sx, rect.position.y + 97.0), float(sk[1]))
+		sx += SKILL_BAR_W + 11.0
 
 
 ## The place line of the away miner: "DIGGING +12 ORE +2 GEMS".
@@ -230,7 +235,7 @@ func job_text_for(c: CrewMember) -> String:
 
 
 func _draw_skill_bar(at: Vector2, skill: float) -> void:
-	var r := Rect2(at, Vector2(64, 10))
+	var r := Rect2(at, Vector2(SKILL_BAR_W, 10))
 	draw_rect(r, UiTheme.STEEL_DEEP, true)
 	draw_rect(Rect2(r.position, Vector2(r.size.x * clampf(skill / 2.0, 0.0, 1.0), r.size.y)), UiTheme.BRASS, true)
 	draw_rect(r, UiTheme.BRASS_DARK, false, 1.0)

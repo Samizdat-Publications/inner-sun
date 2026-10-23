@@ -154,6 +154,61 @@ static func draw_last_dig(ci: CanvasItem, x: float, y: float, s: Dictionary) -> 
 	UiTheme.text(ci, Vector2(x, y), "LAST DIG", 15, UiTheme.AMBER)
 	UiTheme.text(ci, Vector2(x, y + 22.0), DigLog.summary_line(s), 14, UiTheme.TEXT)
 
+# Environments (a node's "env", data/environments): one small icon per kind, and the words for the tooltip.
+
+const ENV_R: float = 11.0
+const ENV_COLORS: Dictionary = {
+	"rockfall_seam": Color(0.88, 0.74, 0.5), "magma_heat": Color(1.0, 0.5, 0.18),
+	"magnetite": Color(0.62, 0.8, 1.0), "gas_seam": Color(0.82, 0.9, 0.25),
+}
+
+
+## The environment's icon centred on c: a dark disc with a symbol, falling slabs (rockfall), a heat
+## shimmer (magma), a compass needle (magnetite), a gas cloud (gas), a diamond for anything new.
+static func draw_env(ci: CanvasItem, c: Vector2, env_id: String, dim: float = 1.0) -> void:
+	var col: Color = ENV_COLORS.get(env_id, Color(0.95, 0.8, 0.4)) as Color
+	col = Color(col, dim)
+	ci.draw_circle(c, ENV_R, Color(0.02, 0.03, 0.035, 0.92 * dim))
+	ci.draw_arc(c, ENV_R, 0.0, TAU, 20, col, 1.6, true)
+	match env_id:
+		"rockfall_seam":
+			for i: int in range(3):
+				var p: Vector2 = c + Vector2(-5.0 + 5.0 * float(i), -4.0 + 3.0 * float(i % 2))
+				ci.draw_colored_polygon(PackedVector2Array([p + Vector2(-2.6, -2.2), p + Vector2(2.6, -2.8), p + Vector2(2.2, 2.4), p + Vector2(-2.4, 2.8)]), col)
+			ci.draw_line(c + Vector2(-6.0, 7.0), c + Vector2(6.0, 7.0), col, 1.5)
+		"magma_heat":
+			for i: int in range(3):
+				var x: float = c.x - 4.5 + 4.5 * float(i)
+				ci.draw_polyline(PackedVector2Array([Vector2(x, c.y + 6.0), Vector2(x + 2.2, c.y + 2.0), Vector2(x - 2.2, c.y - 2.0), Vector2(x, c.y - 6.0)]), col, 1.8)
+		"magnetite":
+			ci.draw_colored_polygon(PackedVector2Array([c + Vector2(0.0, -7.5), c + Vector2(2.6, 0.0), c + Vector2(-2.6, 0.0)]), col)
+			ci.draw_colored_polygon(PackedVector2Array([c + Vector2(0.0, 7.5), c + Vector2(2.6, 0.0), c + Vector2(-2.6, 0.0)]), Color(col, 0.4 * dim))
+			ci.draw_circle(c, 1.4, Color(0.02, 0.03, 0.035, dim))
+		"gas_seam":
+			ci.draw_circle(c + Vector2(-3.8, 1.6), 3.6, col)
+			ci.draw_circle(c + Vector2(0.8, -2.2), 4.4, col)
+			ci.draw_circle(c + Vector2(4.2, 2.0), 3.4, col)
+		_:
+			ci.draw_colored_polygon(PackedVector2Array([c + Vector2(0, -6), c + Vector2(6, 0), c + Vector2(0, 6), c + Vector2(-6, 0)]), col)
+
+
+## The environment in words for the tooltip: its name, then its blurb broken into short lines.
+static func env_words(def: Dictionary, wrap: int = 40) -> PackedStringArray:
+	var out := PackedStringArray()
+	if def.is_empty():
+		return out
+	out.append("ENVIRONMENT: " + str(def.get("name", def.get("id", ""))).to_upper())
+	var line: String = ""
+	for word: String in str(def.get("blurb", "")).split(" ", false):
+		if not line.is_empty() and line.length() + word.length() + 1 > wrap:
+			out.append(line)
+			line = word
+		else:
+			line = word if line.is_empty() else line + " " + word
+	if not line.is_empty():
+		out.append(line)
+	return out
+
 
 static func _names(ids: Array, info: Dictionary) -> String:
 	if ids.is_empty():
