@@ -10,7 +10,8 @@ Work from this spec and the rows it names in `docs/research/behavior-ledger.md` 
 
 ## Rows this round serves
 L-DOR-01 (the toggle and its real-input self-test), L-DOR-F1 (doors and purges read at a glance),
-L-MAN-03 (the crew card shows the station skill). Leave their Status lines to the lead.
+L-MAN-03 (the crew card shows the station skill), L-ENV-01 (environments shown on the map before the
+player chooses). Leave their Status lines to the lead.
 
 ## What the sim already offers (do not change any of it)
 - Command `{"type": "door", "link": <link id>, "open": bool}`: refused with `bad_command`
@@ -21,12 +22,20 @@ L-MAN-03 (the crew card shows the station skill). Leave their Status lines to th
   "by": "purge". While purged the room takes rock heat (it can hurt crew deep down).
 - `CrewMember.skill_station` (0.9 to 1.7 in the data), next to `skill_fire` and `skill_repair`.
 - System tops are now higher: helm 4 bars, bracing 6, weapons 5, drill 6, coolant 5, reactor 14.
+- Environments (round 5): each map node may carry `"env"` (an id in `game/data/environments/*.json`,
+  with `name` and `blurb`); `RunState.env_id` and `env` are the one in force; `scanner_blind` hides
+  nodes past the current row (`RunState.is_revealed` already applies it);
+  `RunState.rival_rooms_hidden()` says the combat view must hide the rival's rooms; events
+  "env_entered" {"env", "node"} and "env_left" {"env"}.
 
 ## Files you own (touch nothing else)
 `game/view/ship/room_art.gd` (doors already swap `door_open` and `door_closed` art; add a closed hatch
 lid and the purge look), `game/view/ship_view.gd` and `game/view/ship_view_build.gd` (hit targets),
 `game/view/main_input.gd` (the clicks), `game/view/hud/crew_cards.gd`, `game/view/hud/power_panel.gd`
-(only if bars do not fit), the help page (find it under `game/view/overlay/` or `game/view/hud/`), a new
+(only if bars do not fit), `game/view/overlay/map_view.gd` and `game/view/overlay/survey_marks.gd` (the
+environment marker), the scanner files under `game/view/hud/` (`scanner_panel.gd`, `scanner_draw.gd`,
+`scanner_extras.gd`: the blind look), `game/view/combat_view.gd` and `game/view/hud/enemy_panel.gd`
+(the hidden rooms), `game/view/hud/dig_callouts.gd` (the entered callout), the help page (find it under `game/view/overlay/` or `game/view/hud/`), a new
 helper file under `game/view/ship/` if a file would pass 400 lines, `game/tests/ui_selftest.gd` (the
 real-input self-test), `game/tests/test_ui.gd` or a new view test, and the gallery state list if a
 new still is needed (`game/view/ui_gallery.gd`). Do not touch `game/sim/**`, `game/bots/**`,
@@ -56,6 +65,15 @@ new still is needed (`game/view/ui_gallery.gd`). Do not touch `game/sim/**`, `ga
    overlapping a sell price; it was never re-rendered. Include the store in your gallery batch and
    look at it.
 
+7. **Environments.** On the map, a node with an environment shows a small marker (one simple icon per
+   kind: falling slabs, a heat shimmer or flame, a compass needle or static, a gas cloud) and its
+   name and blurb in the node's hover or detail text, before the player chooses. On "env_entered" a
+   callout in the existing style names it ("ROCKFALL SEAM"), and the HUD shows the one in force
+   until "env_left". While `scanner_blind`, the scanner shows static or snow over its picture with
+   "NO SIGNAL: MAGNETITE" instead of the survey; while `rival_rooms_hidden()`, the rival's room
+   interiors in the combat view are drawn as a dark silhouette (hull outline only, no rooms, fires or
+   crew) and the enemy panel says its systems are unreadable.
+
 ## Tests and checks
 - `ui_selftest.gd`: a real-input click on `door_low` closes it (Link.open false on the next step),
   a second click opens it; a click on a room's vent purges it and a second click stops it; both
@@ -64,7 +82,8 @@ new still is needed (`game/view/ui_gallery.gd`). Do not touch `game/sim/**`, `ga
 - Stills (at most two windowed batches in total, `python tools/gallery.py` and/or
   `python tools/shots.py --names <...> --out harness/out/shots_m2p_views_a`): (a) doors closed around
   a burning room, one hatch closed; (b) a purging room; (c) the crew cards; (d) the power panel with
-  every system at its top; (e) the store. Look at every still yourself and say what you saw.
+  every system at its top; (e) the store; (f) the map with environment markers; (g) a blind scanner
+  and a hidden rival in a fight (a scenario with `set_env`, which works in scenario mode only). Look at every still yourself and say what you saw.
 
 ## Commands that must pass
 `python tools/check.py` prints `check: ok` (full run with import, first); `SELFTEST ok`.
