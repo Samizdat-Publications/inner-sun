@@ -53,3 +53,24 @@ func has_event(s: Sim, kind: String) -> bool:
 func crew_auto_off(s: Sim) -> void:
 	for c: CrewMember in s.ship.crew:
 		s.push({"type": "auto", "crew": c.id, "on": false})
+
+
+## A store that shows every section with every offer (an in-memory data change; the stock is rolled
+## per visit since parity round 1, so tests that need a given line use this).
+func full_store(d: DataDB, store_id: String = "crust_trader") -> DataDB:
+	var st: Dictionary = d.table("stores")[store_id]
+	st["sections_shown"] = [(st["sections"] as Array).size(), (st["sections"] as Array).size()]
+	for sec: Variant in (st["sections"] as Array):
+		var n: int = ((sec as Dictionary)["pool"] as Array).size()
+		(sec as Dictionary)["offers"] = [n, n]
+	return d
+
+
+## The open store's line selling this (`key` is the line field to match: "weapon", "gear", "system",
+## "res"), or -1.
+func store_line(s: Sim, key: String, value: String) -> int:
+	var stock: Array = s.encounter.current_store().get("stock", [])
+	for i: int in range(stock.size()):
+		if str((stock[i] as Dictionary).get(key, "")) == value:
+			return i
+	return -1

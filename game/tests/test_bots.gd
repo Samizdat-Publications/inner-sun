@@ -83,18 +83,18 @@ func test_policy_run_replays() -> void:
 ## and still affordable after the lance.
 func test_greedy_buys_no_weapon_it_cannot_power() -> void:
 	var bot: PolicyBot = PolicyBot.make_policy("greedy")
-	var lance: int = 5  # crust_trader stock line: the thermal lance (70 gems).
-	var s := Sim.new(db(), 7, "light_drill", {"mode": "run"})
+	var s := Sim.new(full_store(db()), 7, "light_drill", {"mode": "run"})
 	s.run.add(s, "gems", 200 - s.run.get_res("gems"))
 	s.run.add(s, "ore", -s.run.get_res("ore"))
 	s.encounter.open_store(s, "crust_trader")
+	var lance: int = store_line(s, "weapon", "thermal_lance")  # The thermal lance (70 gems).
+	check(lance >= 0, "the full store offers the lance")
 	var line: Dictionary = (s.encounter.current_store()["stock"] as Array)[lance]
-	check_eq(str(line.get("weapon", "")), "thermal_lance", "line 5 is the lance")
 	check(not PolicyChoices._can_power_weapon(s, line), "no ore for the weapons upgrade: the lance cannot be powered")
 	var buy: Array = PolicyChoices.next_purchase(s, bot)
 	check(buy.is_empty() or int(buy[0]) != lance, "greedy does not buy the lance with no ore")
 	s.run.add(s, "ore", 160)
-	check(PolicyChoices._can_power_weapon(s, line), "160 ore pays the fourth weapons bar: the lance counts")
+	check(PolicyChoices._can_power_weapon(s, line), "160 ore pays the fourth weapons bar (110 on the ladder): the lance counts")
 	s.ship.rooms[s.ship.room_with_system("weapons")].sys_max = 4
 	s.run.add(s, "ore", -160)
 	check(PolicyChoices._can_power_weapon(s, line), "four bars already feed all three guns")
