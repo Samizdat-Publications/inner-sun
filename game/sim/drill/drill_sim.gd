@@ -220,90 +220,10 @@ func apply(sim: Sim, cmd: Dictionary) -> void:
 ## Start a segment: generate the rock and switch the run to the "drill" phase. Allowed from "idle"
 ## (a run between nodes) or "scenario" (tests and captures). On arrival a scenario returns to
 ## "scenario" and a run calls RunState.arrive (which goes back to idle when no node was chosen).
+## The work is in DrillSegment.begin.
 func begin_segment(sim: Sim, p_segment_id: String, p_depth_m: float, lateral_m: float,
 		p_rock_id: String = DEFAULT_ROCK, p_survey: Dictionary = {}) -> bool:
-	var phase: String = sim.run.phase
-	if active or (phase != "idle" and phase != "scenario"):
-		sim.emit("bad_command", {"type": "begin_segment", "why": "not idle (phase %s)" % phase})
-		return false
-	var table: Dictionary = _db.table("rock").get(p_rock_id, {})
-	if table.is_empty() or p_segment_id.is_empty():
-		sim.emit("bad_command", {"type": "begin_segment", "why": "no rock table \"%s\" or no segment id" % p_rock_id})
-		return false
-	_cut_x = sim.run.gear_x("cut_speed_x")
-	_wear_x = sim.run.gear_x("wear_x")
-	_hard_x = sim.run.gear_x("hard_rock_x")
-	DrillMaterials.load_into(self, table, _hard_x, _hard_min)
-	segment_id = p_segment_id
-	rock_id = p_rock_id
-	survey = RockGen.options_of(p_survey)
-	ship_size = _ship_footprint(sim.ship)
-	cols = roundi(_db.tune("drill.width_m") / cell_m)
-	var width: float = float(cols) * cell_m
-	depth_m = maxf(cell_m, p_depth_m)
-	var max_lat: float = minf(_db.tune("drill.max_lateral_m"), maxf(0.0, width - ship_size.x))
-	var lat: float = clampf(lateral_m, -max_lat, max_lat)
-	var x0: float = clampf(snappedf(width * 0.5 - lat * 0.5 - ship_size.x * 0.5, cell_m), 0.0, width - ship_size.x)
-	var y0: float = snappedf(_db.tune("drill.top_air_m"), cell_m)
-	start_center_x = x0 + ship_size.x * 0.5
-	start_y = y0
-	target_y = y0 + ship_size.y + depth_m
-	target_x = clampf(start_center_x + lat, ship_size.x * 0.5, width - ship_size.x * 0.5)
-	rows = ceili((target_y + _db.tune("drill.bottom_margin_m")) / cell_m)
-	var rng: RandomNumberGenerator = sim.rng.get_stream("drill/" + p_segment_id)
-	grid = RockGen.generate(table, rng, cols, rows, cell_m, Rect2(x0, y0, ship_size.x, ship_size.y), target_x,
-			depth_m, sim.run.depth_m, _db.tune("drill.shaft_margin_m"), _db.tune("drill.top_air_m"), survey)
-	structure_marks = PackedByteArray()
-	structure_marks.resize(grid.size())
-	structures.begin_segment(sim, self, _db.table("structures").get(str(survey.get("structure", "")), {}),
-			RockGen.codes_of(table), rng, Rect2(x0, y0, ship_size.x, ship_size.y), _stamp_tune)
-	generated = PackedInt32Array()
-	generated.resize(MAX_CODES)
-	for i: int in range(grid.size()):
-		generated[grid[i]] += 1
-	mined = PackedInt32Array()
-	mined.resize(MAX_CODES)
-	yielded.fill(0)
-	yield_mat.fill(0)
-	_pend_amt.fill(0)
-	_pend_n = 0
-	burst_marks = PackedByteArray()
-	burst_marks.resize(grid.size())
-	chunk_cols = ceili(float(cols) / CHUNK_CELLS)
-	chunk_rows = ceili(float(rows) / CHUNK_CELLS)
-	chunk_changes = PackedInt32Array()
-	chunk_changes.resize(chunk_cols * chunk_rows)
-	_px = x0
-	_py = y0
-	ship_pos = Vector2(_px, _py)
-	heading_deg = 0.0
-	target_heading_deg = 0.0
-	speed_m_s = 0.0
-	cutting = false
-	at_wall = false
-	parked = false
-	verbs.begin_segment()
-	distance_m = 0.0
-	segment_ticks = 0
-	noise_segment = 0.0
-	water_in_ml = 0
-	lost_water_ml = 0
-	heat_added_j = 0
-	pockets_burst = 0
-	gas_bursts = 0
-	start_depth_m = sim.run.depth_m
-	_return_phase = phase
-	drill_room = sim.ship.room_with_system("drill")
-	water_cell_ml = 0
-	if drill_room >= 0:
-		water_cell_ml = roundi(cell_m * cell_m * sim.ship.rooms[drill_room].depth_m * Room.ML_PER_M3)
-	_set_footprint()
-	_band_dirty = true
-	active = true
-	grid_serial += 1
-	sim.emit("segment_begin", {"segment": segment_id, "depth_m": depth_m, "lateral_m": lat, "rock": rock_id})
-	sim.run.set_phase(sim, "drill")
-	return true
+	return DrillSegment.begin(sim, self, p_segment_id, p_depth_m, lateral_m, p_rock_id, p_survey)
 
 
 ## Spend a drill bit (run resource "bits") and stop drilling while it is fitted.
@@ -368,7 +288,7 @@ func step(sim: Sim) -> void:
 	cutting = false
 	at_wall = false
 	if pf > 0.0 and _bit_change_ticks == 0 and not parked:
-		_drive(sim, bars, pf)
+		DrillCutting.drive(sim, self, bars, pf)
 	verbs.step(sim, self)
 	miner.step(sim, self)
 	structures.resolve(sim, self, not sim.run.is_over())
@@ -382,75 +302,10 @@ func step(sim: Sim) -> void:
 		per_m = float(sim.run.layer.get("rock_temp_c_per_m", per_m))
 	sim.ship.rock_temp_c = base_c + per_m * sim.run.depth_m
 	if sim.run.phase == "drill" and not parked and _py + ship_size.y >= target_y - EPS:
-		_arrive(sim)  # Not while a break-in has a store or an event open: the segment waits for it.
+		DrillSegment.arrive(sim, self)  # Not while a break-in has a store or an event open: the segment waits for it.
 
 
-func _drive(sim: Sim, bars: int, pf: float) -> void:
-	if _band_dirty:
-		_compute_band()
-	var rad: float = deg_to_rad(heading_deg)
-	var s: float = sin(rad)
-	var co: float = cos(rad)
-	var a: float = absf(s) * side_scale
-	# Leading band: bottom cells weighted by the downward share of the motion, side cells by the
-	# sideways share (cells entered per second). Air counts as hardness 0.
-	var num: float = _bb_sum * co
-	var den: float = float(_bb_n) * co
-	if s > EPS and _br_n > 0:
-		num += _br_sum * a
-		den += float(_br_n) * a
-	elif s < -EPS and _bl_n > 0:
-		num += _bl_sum * a
-		den += float(_bl_n) * a
-	var h_cut: float = num / den if den > EPS else 0.0
-	var bit_factor: float = _broken_factor if bit_broken else 1.0 - _bit_slow * bit_wear
-	speed_m_s = minf(_max_speed, _base_speed * _cut_x * pf * bit_factor / maxf(h_cut, _air_floor)) * speed_scale
-	var width: float = float(cols) * cell_m
-	var nx: float = clampf(_px + speed_m_s * s * side_scale * Sim.DT, 0.0, width - ship_size.x)
-	var ny: float = _py + speed_m_s * co * Sim.DT
-	at_wall = absf(heading_deg) > _wall_deg and ((s > 0.0 and nx >= width - ship_size.x - EPS) or (s < 0.0 and nx <= EPS))
-	var moved: float = sqrt((nx - _px) * (nx - _px) + (ny - _py) * (ny - _py))
-	_px = nx
-	_py = ny
-	ship_pos = Vector2(_px, _py)
-	distance_m += moved
-	_advance_footprint(sim)
-	cutting = h_cut > 0.0
-	if not cutting:
-		return
-	var joules: int = roundi(_heat_kw_per_bar * float(bars) * h_cut * 1000.0 * Sim.DT)
-	if joules > 0 and drill_room >= 0:
-		sim.hazards.add_heat(sim.ship.rooms[drill_room], joules)
-		heat_added_j += joules
-	var noise: float = _noise_k * moved * pf * pf * h_cut  # Grinding through hard rock is louder.
-	noise_segment += noise
-	noise_total += noise
-	if not bit_broken:
-		bit_wear = minf(1.0, bit_wear + _wear_k * _wear_x * moved * h_cut)
-		if bit_wear >= 1.0:
-			bit_broken = true
-			if not _bit_broken_said:
-				_bit_broken_said = true
-				sim.emit("bit_broken", {"segment": segment_id})
-
-
-func _arrive(sim: Sim) -> void:
-	miner.end_segment(sim, self)
-	verbs.end_segment(sim, self)
-	structures.resolve(sim, self, false)
-	sim.emit("segment_done", DrillReport.segment_done(self))
-	active = false
-	speed_m_s = 0.0
-	cutting = false
-	if _return_phase == "scenario":
-		sim.run.set_phase(sim, "scenario")
-	elif sim.run.mode == "run":
-		sim.run.arrive(sim)  # The run hands the node to its module (or back to idle).
-	else:
-		sim.run.set_phase(sim, "idle")
-
-
-# Footprint and cutting ---------------------------------------------------------------------------
+# Footprint and cutting (the work is in DrillCutting) ----------------------------------------------
 
 func _set_footprint() -> void:
 	_c0 = clampi(floori(_px / cell_m + EPS), 0, cols - 1)
@@ -459,126 +314,24 @@ func _set_footprint() -> void:
 	_r1 = clampi(ceili((_py + ship_size.y) / cell_m - EPS) - 1, 0, rows - 1)
 
 
-## Cut every cell the footprint newly overlaps (only when the covered cell rectangle changes).
-func _advance_footprint(sim: Sim) -> void:
-	var oc0: int = _c0
-	var oc1: int = _c1
-	var or0: int = _r0
-	var or1: int = _r1
-	_set_footprint()
-	if _c0 == oc0 and _c1 == oc1 and _r0 == or0 and _r1 == or1:
-		return
-	for r: int in range(_r0, _r1 + 1):
-		var row: int = r * cols
-		var in_old_row: bool = r >= or0 and r <= or1
-		for c: int in range(_c0, _c1 + 1):
-			if in_old_row and c >= oc0 and c <= oc1:
-				continue
-			if grid[row + c] != 0:
-				cut(sim, row + c, DrillMiner.CUT_DRILL)
-	flush_yields(sim, snappedf(_px + ship_size.x * 0.5, 0.01), snappedf(_py + ship_size.y, 0.01))
-	_band_dirty = true
-
-
-## Cut cell i (not air) by a cutter: the drill's crown (DrillMiner.CUT_DRILL) or the away miner
-## (CUT_MINER). Both book the cell the same way (take_cell); the miner's pocket, strain and noise
-## effects are its own (DrillMiner.on_cut). Blasts call take_cell directly.
+## Cut cell i (not air) by a cutter: DrillMiner.CUT_DRILL (the crown) or CUT_MINER (DrillCutting.cut).
 func cut(sim: Sim, i: int, cutter: int) -> void:
-	var m: int = take_cell(i, cutter)
-	if cutter == DrillMiner.CUT_MINER:
-		miner.on_cut(sim, self, i, m)
-		return
-	if unstable_of[m] == 1:
-		verbs.strain += 1
-	if water_of[m] == 1:
-		if burst_marks[i] == 0:
-			verbs.burst_pocket(sim, self, i, drill_room)
-		if drill_room >= 0:
-			var put: int = sim.hazards.add_water(sim.ship.rooms[drill_room], water_cell_ml)
-			water_in_ml += put
-			lost_water_ml += water_cell_ml - put
-		else:
-			lost_water_ml += water_cell_ml
-	elif gas_of[m] == 1 and burst_marks[i] == 0:
-		verbs.burst_gas(sim, self, i, drill_room, Vector2(_px + ship_size.x * 0.5, _py + ship_size.y))
+	DrillCutting.cut(sim, self, i, cutter)
 
 
-## Turn cell i into air and book it: mined, its chunk's change counter, and its yield (pending until
-## the next flush_yields; for the miner, into its haul). Returns the material code it had. Pocket and
-## strain effects are the caller's (cut, or a blast).
+## Turn cell i into air and book it; returns the material code it had (DrillCutting.take_cell).
 func take_cell(i: int, cutter: int = DrillMiner.CUT_DRILL) -> int:
-	var m: int = grid[i]
-	if structure_marks[i] == StructureStamp.MARK_INTERIOR:
-		structures.note(self, i, m, cutter == DrillMiner.CUT_MINER)
-	grid[i] = 0
-	mined[m] += 1
-	chunk_changes[((i / cols) / CHUNK_CELLS) * chunk_cols + (i % cols) / CHUNK_CELLS] += 1
-	if cutter == DrillMiner.CUT_MINER:
-		miner.book(self, m)
-	elif yield_res_of[m] >= 0:
-		if _pend_amt[m] == 0:
-			_pend_codes[_pend_n] = m
-			_pend_n += 1
-		_pend_amt[m] += yield_amount_of[m]
-	_band_dirty = true
-	return m
+	return DrillCutting.take_cell(self, i, cutter)
 
 
-## Pay what was cut since the last flush: one exact run.add and one "mined" event per material, at
-## (x, y) in segment meters (the crown, or a blast point).
+## Pay what was cut since the last flush, "mined" events at (x, y) (DrillCutting.flush_yields).
 func flush_yields(sim: Sim, x: float, y: float) -> void:
-	if _pend_n == 0:
-		return
-	for k: int in range(_pend_n):
-		var m: int = _pend_codes[k]
-		var ri: int = yield_res_of[m]
-		if _pend_amt[m] <= 0:  # A blast's shattered share can round a small yield down to nothing.
-			continue
-		var got: int = sim.run.add(sim, RunState.RESOURCES[ri], _pend_amt[m])
-		_pend_amt[m] = 0
-		yielded[ri] += got
-		yield_mat[m] += got
-		sim.emit("mined", {"material": str(materials[m].get("id", "")), "res": RunState.RESOURCES[ri], "amount": got,
-				"x_m": x, "y_m": y})
-	_pend_n = 0
+	DrillCutting.flush_yields(sim, self, x, y)
 
 
-## Keep pct percent of every pending yield, per material, rounded down (a blast shatters the rest).
+## Keep pct percent of every pending yield, rounded down (DrillCutting.scale_pending).
 func scale_pending(pct: int) -> void:
-	for k: int in range(_pend_n):
-		var m: int = _pend_codes[k]
-		_pend_amt[m] = _pend_amt[m] * pct / 100
-
-
-## Sum the hardness of the cells just beyond the footprint: below it and on each side.
-func _compute_band() -> void:
-	_band_dirty = false
-	_bb_sum = 0.0
-	_bb_n = 0
-	_bl_sum = 0.0
-	_bl_n = 0
-	_br_sum = 0.0
-	_br_n = 0
-	for r: int in range(_r1 + 1, mini(rows, _r1 + 1 + _band)):
-		var row: int = r * cols
-		for c: int in range(_c0, _c1 + 1):
-			_bb_sum += hardness_of[grid[row + c]]
-			_bb_n += 1
-	for r: int in range(_r0, _r1 + 1):
-		var row2: int = r * cols
-		for c: int in range(maxi(0, _c0 - _band), _c0):
-			_bl_sum += hardness_of[grid[row2 + c]]
-			_bl_n += 1
-		for c: int in range(_c1 + 1, mini(cols, _c1 + 1 + _band)):
-			_br_sum += hardness_of[grid[row2 + c]]
-			_br_n += 1
-
-
-static func _ship_footprint(ship: Ship) -> Vector2:
-	var box := Rect2()
-	for i: int in range(ship.rooms.size()):
-		box = ship.rooms[i].rect if i == 0 else box.merge(ship.rooms[i].rect)
-	return box.end
+	DrillCutting.scale_pending(self, pct)
 
 
 ## Everything this module owns, in a fixed order, for the state hash (the grid bytes included).

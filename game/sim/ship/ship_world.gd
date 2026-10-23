@@ -56,4 +56,5 @@ func state() -> Array:
 	var links: Array = []
 	for l: Link in ship.links:
 		links.append(l.open)
-	return [side, ship.id, rooms, crew, links, hazards.state()]
+	# hull_max and weapons change mid-run (gear, requisitions, stores, loot): hashed since the Gemini audit.
+	return [side, ship.id, ship.hull_max, Array(ship.weapons), rooms, crew, links, hazards.state()]

@@ -3,6 +3,15 @@
 His words outrank everything except CLAUDE.md's hard rules. Newest first. Playtest notes go at the
 top under a dated heading.
 
+## 2026-10-22: the drill crown art (during the M1d interim round)
+Verbatim, with a screenshot of the crown under the tower (two cone-shaped pieces circled among the
+cutter teeth): "the drill portion at the bottom of the vehicle looks really cool, but it has some
+obviously AI generated error where there are some pieces in places they shouldn't be, maybe we regen
+a bunch of them until we get one that looks correct and then select the best one. Add that to our
+plan wherever it fits in."
+- Planned: `docs/plans/M1d.md`, "Ready to dispatch" item 5 (about 8 candidates, he picks from the
+  best two or three).
+
 ## 2026-10-22: FTL parity picks (side track, D056)
 Verbatim: "Pick the top 6 from the inventory as ranked (upgrade prices, rewards by depth, manned stations, doors and purge, rolling stores, node environments). Log my pick."
 - In scope: inventory 1 to 6 in `docs/research/ftl-reference.md` (rising upgrade prices, rewards

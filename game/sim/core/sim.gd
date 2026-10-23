@@ -65,6 +65,7 @@ func _init(p_db: DataDB, p_seed: int, p_ship_id: String, p_options: Dictionary =
 			_dispatch[kind] = m
 	run.begin(self)
 	Requisitions.apply(self)
+	run.start_resources = run.resources.duplicate()
 
 
 ## Every command type any part of the sim understands (the data lint checks timelines against it).

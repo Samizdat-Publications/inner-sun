@@ -1,0 +1,10 @@
+{
+  "id": "scorch_demo",
+  "name": "Scorch: a big reactor fire the crew put out, then its scorch on the dark floor (stills for the scorch view)",
+  "ship": "light_drill",
+  "duration_s": 45,
+  "bot": "scripted_fire_drill",
+  "timeline": [
+    {"at_s": 1.0, "cmd": {"type": "ignite", "room": "reactor", "level": 0.9}}
+  ]
+}

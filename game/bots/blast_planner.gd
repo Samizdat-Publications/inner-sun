@@ -46,13 +46,20 @@ static func loot_target(sim: Sim, d: DrillSim, value_ore: float, value_gem: floa
 	var pc0: int = floori(d.ship_pos.x / cell + 0.000001)
 	var pc1: int = ceili((d.ship_pos.x + d.ship_size.x) / cell - 0.000001) - 1
 	var crown_r: int = floori(ship.end.y / cell)
-	var value_of := PackedFloat64Array()
+	var pct: int = clampi(roundi(sim.db.tune("drill.blast_yield_pct")), 0, 100)
+	var value_of := PackedFloat64Array()  # Full value of one cell: only picks which cells are worth aiming at.
 	value_of.resize(DrillSim.MAX_CODES)
+	var unit_of := PackedFloat64Array()  # Value of one unit of a material's yield.
+	unit_of.resize(DrillSim.MAX_CODES)
+	var amt := PackedInt32Array()  # Yield units per material inside the circle being scored.
+	amt.resize(DrillSim.MAX_CODES)
+	var touched := PackedInt32Array()
 	var ore_i: int = RunState.RESOURCES.find("ore")
 	for m: int in range(DrillSim.MAX_CODES):
 		var yr: int = d.yield_res_of[m]
 		if yr >= 0:
-			value_of[m] = float(d.yield_amount_of[m]) * (value_ore if yr == ore_i else value_gem)
+			unit_of[m] = value_ore if yr == ore_i else value_gem
+			value_of[m] = float(d.yield_amount_of[m]) * unit_of[m]
 		elif d.loot_of[m] == 1 and d.structures.crates_opened < d.structures.crates_total:
 			value_of[m] = value_crate
 	var c_lo: int = maxi(0, floori((centre.x - range_m) / cell))
@@ -75,6 +82,7 @@ static func loot_target(sim: Sim, d: DrillSim, value_ore: float, value_gem: floa
 				continue
 			var v: float = 0.0
 			var gas: bool = false
+			touched.clear()
 			for rr: int in range(maxi(0, r - rc), mini(d.rows - 1, r + rc) + 1):
 				var dy: float = (float(rr) + 0.5) * cell - p.y
 				var row2: int = rr * d.cols
@@ -82,10 +90,18 @@ static func loot_target(sim: Sim, d: DrillSim, value_ore: float, value_gem: floa
 					var dx: float = (float(cc) + 0.5) * cell - p.x
 					if dx * dx + dy * dy <= r2:
 						var m: int = d.grid[row2 + cc]
-						if d.loot_of[m] == 0 or d.burst_marks[row2 + cc] == 0:  # An opened crate pays nothing more.
+						if d.yield_res_of[m] >= 0:
+							if amt[m] == 0:
+								touched.append(m)
+							amt[m] += d.yield_amount_of[m]
+						elif d.loot_of[m] == 0 or d.burst_marks[row2 + cc] == 0:  # An opened crate pays nothing more.
 							v += value_of[m]
 						if d.gas_of[m] == 1:
 							gas = true
+			# A blast pays blast_yield_pct of each material's total, rounded down (D039); crates in full.
+			for m: int in touched:
+				v += float(amt[m] * pct / 100) * unit_of[m]
+				amt[m] = 0
 			if gas and _rect_distance(ship, p) <= fire_m + radius:
 				continue
 			if v > best_v:

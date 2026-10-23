@@ -335,3 +335,17 @@ func test_glow_targets_sit_on_the_screen() -> void:
 	check(row.size.y < 120.0 and row.position.x >= 0.0, "bracing glows its own power row, not the whole panel")
 	check(rs.hints.target_rect("pause").position.x > 1300.0, "the pause hint points at the top bars clock")
 	rs.free()
+
+
+## M1d: parking is a choice, so the PARKED notice draws in amber; every other stop stays alarm red.
+func test_parked_notice_is_amber() -> void:
+	var s: Sim = _sim()
+	var rs := RunScreen.new()
+	rs.build(s, Profile.load_from(_scratch("notice")))
+	rs.set_notice("PARKED: OKAFOR IS OUTSIDE. G recalls.", "miner")
+	check(rs.notice_is_calm(), "a parked drill's notice is calm (amber)")
+	rs.set_notice("DRILL HAS NO POWER. Press 4.", "power")
+	check(not rs.notice_is_calm(), "no power is an alarm (red)")
+	rs.set_notice("", "")
+	check(not rs.notice_is_calm(), "an empty notice falls back to red")
+	rs.free()

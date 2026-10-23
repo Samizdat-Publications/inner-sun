@@ -99,6 +99,30 @@ Session total (2026-10-15 to 16, M1a): about 15 USD (logged 11.96 plus the 3.00 
 | 2026-10-17 | Gemini (gemini-3.1-pro-preview) | video critic -> 008_gemini.md | 0.13 (est, 44052 in / 3583 out tokens) |
 | 2026-10-17 | Gemini (gemini-3.1-pro-preview) | video critic -> 009_gemini.md | 0.08 (est, 21914 in / 2851 out tokens) |
 | 2026-10-22 | Gemini (gemini-4-argon) | whole-repo consult -> review/consults/2026-10-22_gemini-4-argon.md | 0.75 (est at Pro rates, 297937 in / 12724 out tokens; this model's price unconfirmed) |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen candidate 01 (stray cones fix) | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen candidate 02 (stray cones fix) | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen candidate 03 (stray cones fix) | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen candidate 04 (stray cones fix) | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen candidate 05 (stray cones fix) | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen candidate 06 (stray cones fix) | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen candidate 07 (stray cones fix) | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen candidate 08 (stray cones fix) | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen round2 track B #01 | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen round2 track A #01 | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen round2 track A #02 | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen round2 track B #02 | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen round2 track A #03 | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen round2 track B #03 | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen round2 track A #04 | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen round2 track B #04 | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen round2 track A #05 | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen round2 track B #05 | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen round2 track A #06 | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen round2 track B #06 | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen round2 track A #07 | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen round2 track A #08 | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen round2 track A #09 | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen round2 track A #10 | 0.14 |
 | 2026-10-22 | Gemini (gemini-4-argon) | audit -> 20261022-172426 | 0.81 (est at Pro rates, 299297 in / 17707 out tokens) |
 | 2026-10-22 | Gemini (gemini-4-argon) | audit -> 20261022-173543 | 0.71 (est at Pro rates, 299167 in / 9529 out tokens) |
 | 2026-10-22 | Gemini (gemini-4-argon) | audit -> 20261022-174313 | 0.76 (est at Pro rates, 299176 in / 13108 out tokens) |

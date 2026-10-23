@@ -210,6 +210,8 @@ func test_full_sortie_pays_the_exact_haul_on_return() -> void:
 	check_eq(d.yielded[ore_i], 0, "the drill's own yield books stay clean")
 	var sm: Dictionary = s.run.summary(s)
 	check_eq(int(sm["sorties"]), 1, "summary: one sortie")
+	var out_t: int = int(_last(s, "miner_out")["t"])
+	check_eq(int(sm["sortie_first_s"]), floori(float(out_t) / float(Sim.TICK_HZ)), "summary: when the first sortie left")
 	check_eq(int(sm["haul_ore"]), want[ore_i], "summary: haul ore")
 	check_eq(_count(s, "miner_out"), 1, "one miner_out event")
 
@@ -312,6 +314,7 @@ func test_segment_end_while_boarding_calls_the_sortie_off() -> void:
 	check(bool(_last(s, "miner_back").get("called_off", false)), "called off, nothing carried")
 	check(not s.ship.crew_by_id("vasquez").away, "vasquez never left")
 	check_eq(int(s.run.summary(s)["sorties"]), 0, "no sortie counted")
+	check_eq(int(s.run.summary(s)["sortie_first_s"]), -1, "and no first sortie time")
 
 
 # Away crew ---------------------------------------------------------------------------------------

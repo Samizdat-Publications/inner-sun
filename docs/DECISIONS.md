@@ -576,6 +576,21 @@ replayed his build 6 runs; nobody exports over `builds/InnerSun.exe` before he h
 files M1d splits (`docs/plans/M1d.md`, "Ready to dispatch") are left alone by the parity session
 until the split is on main. Revert: the parity session stops and its branch waits.
 
+## D059 (AI): Gemini audit fixes, and two M1d view items before build 6 is played
+The verified Gemini audit bugs (D057) are fixed on main, each with a test (`docs/BACKLOG.md`, "Gemini
+audit"): the bots' blast planner now scores what a blast pays (half of each material, rounded
+down); the greedy bot counts a weapons upgrade toward a new gun only if it can buy it; balance
+reports take row 0 from the run's real start (`RunState.start_resources`, set after requisitions)
+instead of the end-of-run maximum hull; `ShipWorld.state()` hashes `hull_max` and the weapon list;
+scenario rock heat matches the Crust (0.033 C per m). The rival power finding was tested and is not
+a bug. The determinism hash changes (state shape and scenario heat); balance moves because the bots
+blast less and buy fewer dead guns; both are re-recorded. Two view items from the M1d plan: the
+PARKED notice draws in amber (a choice, not an emergency), and the scorch after a fire uses a
+multiply blend so it darkens dark floors instead of fading into them. Balance runs now record each
+run's final hash, and `tools/balance_compare.py` compares two runs seed by seed (the oracle for the
+file split). Build 6 is untouched: nothing here is exported before Stewart plays it (D058). Revert:
+`git revert` the commit; the bot fixes are independent of each other.
+
 ## Parity branch numbering
 The FTL parity branch (`claude/blissful-neumann-c52d9b`) numbers its decisions from D080, so they
 never collide with the decisions M1d adds on main at the same time (D059 onward).

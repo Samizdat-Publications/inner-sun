@@ -67,3 +67,19 @@ func _scripts(dir: String) -> PackedStringArray:
 	for d: String in DirAccess.get_directories_at(dir):
 		out.append_array(_scripts(dir.path_join(d)))
 	return out
+
+
+## Gemini audit: the state hash left out the ship's maximum hull and its weapon list, so a
+## divergence there surfaced only indirectly. Each now changes the hash on its own.
+func test_state_hash_covers_max_hull_and_weapons() -> void:
+	var a := Sim.new(db(), 42, "light_drill", {"mode": "run"})
+	var b := Sim.new(db(), 42, "light_drill", {"mode": "run"})
+	a.step()
+	b.step()
+	check_eq(a.state_hash(), b.state_hash(), "same seed, same state")
+	b.ship.hull_max += 5
+	check(a.state_hash() != b.state_hash(), "a different maximum hull changes the hash")
+	b.ship.hull_max -= 5
+	check_eq(a.state_hash(), b.state_hash(), "back to equal")
+	b.ship.weapons.append("thermal_lance")
+	check(a.state_hash() != b.state_hash(), "a different weapon list changes the hash")

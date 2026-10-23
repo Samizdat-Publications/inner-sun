@@ -72,7 +72,7 @@ func _ready() -> void:
 	for p: String in problems:
 		push_error("data: " + p)
 	if args.has("selftest"):
-		await _selftest(problems)
+		await MainSelftest.run(self, problems)
 		return
 	if args.has("print-window-settings"):
 		# Diagnostic (works headless, also in the exported build): does normal play get keyboard focus?
@@ -91,7 +91,7 @@ func _ready() -> void:
 	run_ticks = args.get_int("run-ticks", -1)
 	if DisplayServer.get_name() == "headless" and not build_headless:
 		return
-	_build_world()
+	MainWorld.build(self)
 	if args.has("shots") or args.has("capture"):
 		var director := CaptureDirector.new()
 		director.setup(self, args)
@@ -233,10 +233,11 @@ func _process(delta: float) -> void:
 		_fight_banner = false
 	screen.set_banner(FIGHT_BANNER if _fight_banner and paused else "")
 	# The stop notice waits NOTICE_GRACE_S: a drill powered a moment after a segment starts never flashes it.
-	var stop_notice: String = str(AlertsStrip.drill_stop(run.sim).get("notice", ""))
+	var stop: Dictionary = AlertsStrip.drill_stop(run.sim)
+	var stop_notice: String = str(stop.get("notice", ""))
 	_stop_s = _stop_s + delta if not stop_notice.is_empty() else 0.0
 	var show_notice: bool = _stop_s >= NOTICE_GRACE_S and not (_fight_banner and paused) and not screen.overlay_open()
-	screen.set_notice(stop_notice if show_notice else "")
+	screen.set_notice(stop_notice if show_notice else "", str(stop.get("kind", "")))
 
 
 ## The camera eases to its framing: the drill rock while there is one, the cutaway otherwise, and in a
@@ -362,217 +363,12 @@ func _input(event: InputEvent) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if replaying and run != null:
-		var k: InputEventKey = event as InputEventKey
-		if k != null and k.pressed and not k.echo and k.keycode == KEY_SPACE:
-			paused = not paused
-		return
-	if bot_driven or run == null or view == null:
-		return
-	var key: InputEventKey = event as InputEventKey
-	if key != null:
-		if not key.echo:
-			_key(key)
-		return
-	var mb: InputEventMouseButton = event as InputEventMouseButton
-	if mb == null or not mb.pressed or screen.overlay_open():
-		return
-	# The wheel over the world area zooms the drilling camera (the choice lasts for the run).
-	var wheel: int = 1 if mb.button_index == MOUSE_BUTTON_WHEEL_UP else (-1 if mb.button_index == MOUSE_BUTTON_WHEEL_DOWN else 0)
-	if wheel != 0:
-		if rock_view != null and RunScreen.WORLD_RECT.has_point(mb.position):
-			drill_zoom = DigCamera.stepped(drill_zoom, wheel)
-			get_viewport().set_input_as_handled()
-		return
-	# Armed, a left click on the rock fires the charge launcher there (right click or Esc disarms).
-	if screen.blast.armed and rock_view != null and RunScreen.WORLD_RECT.has_point(mb.position):
-		if mb.button_index == MOUSE_BUTTON_LEFT:
-			screen.blast.aim(world_to_m(mb.position))
-			get_viewport().set_input_as_handled()
-			return
-		if mb.button_index == MOUSE_BUTTON_RIGHT:
-			screen.blast.disarm()
-			get_viewport().set_input_as_handled()
-			return
-	# Armed, a left click on the rock sends the selected crew member out as the miner.
-	if screen.miner.armed and rock_view != null and RunScreen.WORLD_RECT.has_point(mb.position):
-		if mb.button_index == MOUSE_BUTTON_LEFT:
-			screen.miner.aim(world_to_m(mb.position))
-			get_viewport().set_input_as_handled()
-			return
-		if mb.button_index == MOUSE_BUTTON_RIGHT:
-			screen.miner.disarm()
-			get_viewport().set_input_as_handled()
-			return
-	# A click on a burning room's DOUSE button.
-	if mb.button_index == MOUSE_BUTTON_LEFT and douse != null:
-		var burning_id: String = douse.room_at(mb.position)
-		if not burning_id.is_empty():
-			run.sim.push({"type": "douse", "room": burning_id})
-			get_viewport().set_input_as_handled()
-			return
-	# In a fight, a left click on an enemy room with a weapon armed aims it (a command, like all orders).
-	var wc: WeaponCards = screen.weapons
-	if mb.button_index == MOUSE_BUTTON_LEFT and wc.armed >= 0 and combat_view.active():
-		var er: int = combat_view.enemy_room_at(mb.position)
-		if er >= 0:
-			run.sim.push({"type": "target", "weapon": wc.armed, "room": run.sim.enemy.ship.rooms[er].id})
-			wc.disarm()
-			get_viewport().set_input_as_handled()
-			return
-	# The player's click goes through the same command chain the bots use: left sends the selected
-	# crew member to the room, right releases them back to their own judgement.
-	var c: CrewMember = screen.selected_crew()
-	if c == null:
-		return
-	if mb.button_index == MOUSE_BUTTON_LEFT:
-		var p: Vector2 = (view.get_global_transform_with_canvas().affine_inverse() * mb.position) / PPM
-		var room: int = run.sim.ship.room_at(p + Vector2(0, 0.06), -1)
-		if room >= 0:
-			run.sim.push({"type": "assign", "crew": c.id, "room": run.sim.ship.rooms[room].id})
-	elif mb.button_index == MOUSE_BUTTON_RIGHT:
-		run.sim.push({"type": "release", "crew": c.id})
+	MainInput.unhandled(self, event)
 
 
 ## A screen point over the rock as segment meters (what a blast click aims at).
 func world_to_m(screen_pos: Vector2) -> Vector2:
 	return (rock_view.get_global_transform_with_canvas().affine_inverse() * screen_pos) / PPM
-
-
-## F puts out the worst fire (one command, like a click on its button); the callouts say why not.
-func _douse_worst() -> void:
-	var id: String = DouseLayer.worst(run.sim)
-	if id.is_empty():
-		screen.callouts.push_line("NO FIRE TO DOUSE", "info")
-		return
-	run.sim.push({"type": "douse", "room": id})
-
-
-func _key(key: InputEventKey) -> void:
-	var code: Key = key.keycode
-	if key.pressed and (code == KEY_F or key.physical_keycode == KEY_F) and not screen.overlay_open() and not key.shift_pressed:
-		_douse_worst()
-		return
-	if key.pressed and code == KEY_H and screen.help.is_open():
-		screen.help.close_help()
-		return
-	if key.pressed and code == KEY_H and not screen.codex.is_open() and not screen.death.is_open():
-		screen.help.open()
-		return
-	if key.pressed and code == KEY_SPACE and not screen.overlay_open():
-		paused = not paused
-		return
-	if key.pressed and code >= KEY_1 and code <= KEY_3 and not screen.overlay_open():
-		screen.cards.select_index(int(code - KEY_1))
-		return
-	_drill_key(key)
-
-
-## Steering while drilling (SteerControl): A and D step the heading 15 degrees and repeat while held, S
-## points straight down, Shift plus A or D holds depth. Drill power is on the power panel. Commands, like
-## the bots use.
-func _drill_key(key: InputEventKey) -> void:
-	var d: DrillSim = run.sim.drill
-	if not d.active:
-		return
-	if not key.pressed:
-		_steer.release(key.keycode)
-		return
-	var a: float = _steer.press(key.keycode, key.shift_pressed, screen.scanner.target_heading(), run.sim.db.tune("drill.max_heading_deg"))
-	if not is_nan(a):
-		screen.scanner.queue_steer(a)
-
-
-func _build_world() -> void:
-	var env := WorldEnvironment.new()
-	var e := Environment.new()
-	e.background_mode = Environment.BG_CANVAS
-	e.glow_enabled = true
-	e.glow_intensity = 0.7
-	e.glow_strength = 1.0
-	e.glow_bloom = 0.0
-	e.glow_hdr_threshold = 1.0
-	e.glow_blend_mode = Environment.GLOW_BLEND_MODE_SCREEN
-	env.environment = e
-	add_child(env)
-	var dark := CanvasModulate.new()
-	dark.color = RockView.AMBIENT
-	add_child(dark)
-	view = ShipView.new()
-	view.setup(run.sim, run.sim.player, PPM)
-	add_child(view)
-	combat_view = CombatView.new()
-	combat_view.setup(run.sim, view, PPM, func() -> bool: return rock_view != null)
-	add_child(combat_view)
-	cam = Camera2D.new()
-	cam.zoom = Vector2(CUTAWAY_ZOOM, CUTAWAY_ZOOM)
-	cam.position = _framed(view.center_px(), CUTAWAY_ZOOM)
-	add_child(cam)
-	cam.make_current()
-	screen = RunScreen.new()
-	add_child(screen)
-	screen.build(run.sim, profile)
-	screen.new_run_requested.connect(_start_run)
-	douse = DouseLayer.new()
-	douse.setup(run.sim, view, PPM)
-	view.add_child(douse)
-	fx = DigFx.new()
-	fx.setup(run.sim, screen.blast, PPM)
-	add_child(fx)
-	structures = StructureLayer.new()
-	structures.setup(run.sim, PPM)
-	add_child(structures)
-	miner_layer = MinerLayer.new()
-	miner_layer.setup(run.sim, screen.miner, PPM)
-	add_child(miner_layer)
-	look_structure = args.get_str("look", "") == "structure"
-	if args.has("aim"):
-		var aim: PackedStringArray = args.get_str("aim", "").split(",")
-		if aim.size() == 2:
-			fx.aim_override = Vector2(float(aim[0]), float(aim[1]))
-			miner_layer.aim_override = fx.aim_override
-	var pickups := PickupLayer.new()
-	pickups.setup(screen.tally.digs, PPM)
-	add_child(pickups)
-	if run_mode and _is_human() and profile != null and profile.runs == 0:
-		screen.help.open()  # A fresh profile sees the help page first (never in bot captures).
-	_arm_hints()
-	if args.has("arm-miner"):
-		screen.miner.dev_arm = true  # Dev only: look at the miner's aim ring.
-	if args.has("arm"):
-		screen.weapons.armed = args.get_int("arm", -1)  # Dev only: look at the aiming highlights.
-		screen.blast.armed = args.get_int("arm", -1) == BlastCard.launcher_slot(run.sim)  # ... and the blast ring.
-	if args.has("debug-hud"):
-		hud = Hud.new()
-		add_child(hud)
-		hud.bind(run)
-	audio = AudioDirector.new()
-	add_child(audio)
-	audio.setup(func() -> Sim: return run.sim if run != null else null)
-
-
-func _selftest(problems: PackedStringArray) -> void:
-	var why: String = "" if problems.is_empty() else "data lint: " + problems[0]
-	if why.is_empty():
-		var r := ScenarioRun.from_scenario(db, "fire_drill", 1)
-		for i: int in range(600):
-			r.step()
-		if r.sim.state_hash().length() != 16 or r.sim.events.is_empty():
-			why = "the fire drill did not run"
-	if why.is_empty():
-		var fr: FullRun = FullRun.start(db, 1, "run", {})
-		for i: int in range(600):
-			fr.step()
-		if fr.sim.run.phase == "scenario" or fr.sim.tick != 600:
-			why = "a full run did not start"
-	if why.is_empty():
-		# Real input against the run screen (tests/ is not in the export: skipped there).
-		var ui: GDScript = load("res://tests/ui_selftest.gd") as GDScript
-		if ui != null:
-			var ui_why: Variant = await ui.call("run", self)
-			why = str(ui_why)
-	print("SELFTEST ok" if why.is_empty() else "SELFTEST FAIL: " + why)
-	get_tree().quit(0 if why.is_empty() else 1)
 
 
 ## The free area while the combat panels show: the world rect minus the enemy panel and weapon cards.

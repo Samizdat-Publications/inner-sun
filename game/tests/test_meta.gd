@@ -205,3 +205,23 @@ func test_death_screen_shows_research() -> void:
 	check_eq(ds.requisitions.profile, p, "bound to the profile")
 	check(ds.requisitions.db != null, "and the data")
 	host.free()
+
+
+## Gemini audit: balance reports showed hull 40 at row 0 on a 30-hull ship, because the stats read
+## the end-of-run maximum hull. Row 0 is now the run's start, requisitions included.
+func test_run_stats_row_zero_is_the_start() -> void:
+	var s: Sim = _run_sim(db(), ["field_plating", "spare_bits"])
+	var hull0: int = s.run.get_res("hull")
+	var bits0: int = s.run.get_res("bits")
+	check_eq(hull0, int(s.ship.source_def["hull"]) + 5, "field plating adds 5 to the start hull")
+	s.encounter.open_store(s, "crust_trader")
+	s.run.add(s, "ore", 1000)
+	s.push({"type": "buy", "item": 15, "qty": 1})  # crust_trader line 15: hull plating gear.
+	s.step()
+	check_eq(s.ship.hull_max, hull0 + 5, "the plating raised the maximum hull mid-run")
+	var sum: Dictionary = {}
+	FullRunStats.add_to(s, sum)
+	var row0: Array = (sum["rows"] as Array)[0]
+	check_eq(int(row0[0]), 0, "row 0")
+	check_eq(int(row0[2]), hull0, "row 0 hull is the start hull, not the later maximum")
+	check_eq(int(row0[2 + RunState.RESOURCES.find("bits")]), bits0, "row 0 bits include the requisition")

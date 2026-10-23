@@ -368,3 +368,16 @@ func test_dig_fx_kicks_the_camera_on_blasts_and_rockfalls() -> void:
 	fx._process(0.8)
 	check_eq(fx._shots.size(), 0, "and gone after its fuse")
 	fx.free()
+
+
+## M1d: the last redraw when the fires go out is never skipped by the pacer, so no dead DOUSE button
+## is left on screen (clicks and F find no fire under FIRE_MIN).
+func test_douse_buttons_clear_when_the_fire_goes_out() -> void:
+	var pacer := RedrawPacer.new()
+	pacer._next = Time.get_ticks_usec() + 60000000  # Not due for a minute.
+	check(DouseLayer.needs_redraw(false, true, pacer), "fire just went out: redraw at once, pacer or not")
+	check(DouseLayer.needs_redraw(true, false, pacer), "fire just started: redraw at once")
+	check(not DouseLayer.needs_redraw(true, true, pacer), "still burning: wait for the pacer")
+	check(not DouseLayer.needs_redraw(false, false, pacer), "nothing burning: no redraws")
+	pacer._next = 0
+	check(DouseLayer.needs_redraw(true, true, pacer), "still burning and due: redraw")

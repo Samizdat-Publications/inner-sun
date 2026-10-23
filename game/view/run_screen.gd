@@ -35,6 +35,7 @@ var structure_banner: StructureBanner  ## The break-in plaque for a buried struc
 var hints: HintDirector  ## One-time TOPSIDE hints that teach a verb (off in bot, capture and replay runs).
 var _banner: Label
 var _notice: Label  ## The line at the top of the world when the drill is stopped and why.
+var _notice_calm: bool = false  ## The notice is drawn in amber (parking is a choice, not an emergency).
 var _req_toast: Label  ## "TOPSIDE REQUISITIONS LOADED" with what each owned requisition put aboard.
 var _req_left: float = 0.0  ## Seconds of the toast left (counts only while no overlay is open).
 var _root: Control
@@ -150,10 +151,26 @@ func set_banner(text: String) -> void:
 
 
 ## The notice low over the world area (AlertsStrip.drill_stop); an empty text hides it.
-func set_notice(text: String) -> void:
+## `kind` is AlertsStrip.drill_stop's: "miner" (parked on purpose, a choice) draws in amber, every
+## other stop in alarm red.
+func set_notice(text: String, kind: String = "") -> void:
 	if _notice.text != text:
 		_notice.text = text
+	var calm: bool = kind == "miner"
+	if calm != _notice_calm:
+		_notice_calm = calm
+		_notice.add_theme_stylebox_override("normal", _notice_box(calm))
 	_notice.visible = not text.is_empty()
+
+
+static func _notice_box(calm: bool) -> StyleBoxFlat:
+	if calm:
+		return UiTheme.box(Color(0.22, 0.15, 0.05, 0.94), UiTheme.AMBER, 4, 2, 18)
+	return UiTheme.box(Color(0.32, 0.06, 0.04, 0.94), UiTheme.ALARM, 4, 2, 18)
+
+
+func notice_is_calm() -> bool:
+	return _notice_calm
 
 
 ## True while a human has the map or the help page open: the world holds still (main.gd).
@@ -246,7 +263,7 @@ func _build_banner() -> void:
 	_notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_notice.add_theme_font_size_override("font_size", 23)
 	_notice.add_theme_color_override("font_color", UiTheme.TEXT)
-	_notice.add_theme_stylebox_override("normal", UiTheme.box(Color(0.32, 0.06, 0.04, 0.94), UiTheme.ALARM, 4, 2, 18))
+	_notice.add_theme_stylebox_override("normal", _notice_box(false))
 	_notice.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_notice.visible = false
 	_layer.add_child(_notice)

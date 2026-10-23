@@ -11,11 +11,10 @@ extends RefCounted
 
 
 static func add_to(sim: Sim, sum: Dictionary) -> void:
+	# Row 0 is the run's start, requisitions included (it once read the end-of-run maximum hull).
 	var res := {}
-	var start: Dictionary = sim.ship.source_def.get("start_resources", {})
 	for r: String in RunState.RESOURCES:
-		res[r] = int(start.get(r, 0))
-	res["hull"] = sim.ship.hull_max
+		res[r] = int(sim.run.start_resources.get(r, 0))
 	var rows: Array = [_snap(0, 0.0, res)]
 	var segs: Array = []
 	var types: Array = []

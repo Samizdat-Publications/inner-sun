@@ -44,6 +44,7 @@ const TUNING_KEYS: Array[String] = [
 var mode: String = "scenario"  ## "scenario" or "run".
 var phase: String = "scenario"
 var resources: Dictionary = {}
+var start_resources: Dictionary = {}  ## Resources once the run has begun and requisitions are aboard (set by Sim).
 var depth_m: float = 0.0
 var known_codex: PackedStringArray = PackedStringArray()  ## What the profile knew at the start (sorted).
 var learned: PackedStringArray = PackedStringArray()  ## Codex entries learned this run, in order.
@@ -122,33 +123,8 @@ func begin(sim: Sim) -> void:
 	if layer.is_empty():
 		push_error("RunState: no layer \"%s\" in data/layers" % layer_id)
 	else:
-		_build_map(sim)
+		RunMapMoves.build_map(sim, self)
 	set_phase(sim, "idle")
-
-
-func _build_map(sim: Sim) -> void:
-	map = MapGen.generate(layer, sim.rng.get_stream("map"))
-	var rock: Dictionary = sim.db.table("rock").get(str(layer.get("rock", DrillSim.DEFAULT_ROCK)), {})
-	Survey.add_to_map(map, layer, rock, sim.rng.get_stream("survey"), sim.rng.get_stream("survey/structure"))
-	for row: Array in map:
-		for n: Dictionary in row:
-			_index_of[str(n["id"])] = nodes.size()
-			nodes.append(n)
-			_map_state.append([n["id"], n["type"], n["x_m"], n["enemy"], Array(n["links"] as PackedStringArray),
-					(n["survey"] as Dictionary).values()])
-	visited.resize(nodes.size())
-	overtaken.resize(nodes.size())
-	_current = 0
-	current_node = str(nodes[0]["id"])
-	visited[0] = 1
-	var pd: Dictionary = layer.get("pursuer", {})
-	pursuer_row = float(pd.get("start_row", -1.5))
-	_rate_per_tick = float(pd.get("rows_per_s", 0.0)) / Sim.TICK_HZ
-	_rate_per_row_tick = float(pd.get("rows_per_s_per_row", 0.0)) / Sim.TICK_HZ
-	_rows_per_noise = float(pd.get("rows_per_noise", 0.0))
-	_overtaken_row = floori(pursuer_row)
-	_last_noise = sim.drill.noise_total
-	scanner_rows = _scanner(sim)
 
 
 # Queries -----------------------------------------------------------------------------------------
@@ -293,64 +269,13 @@ func apply(sim: Sim, cmd: Dictionary) -> void:
 
 ## Start the drilling segment to a node linked from the current one. Returns false if refused.
 func choose_node(sim: Sim, id: String) -> bool:
-	var why: String = ""
-	if mode != "run" or nodes.is_empty():
-		why = "not a run"
-	elif phase != "idle":
-		why = "not idle (phase %s)" % phase
-	elif not links_from_current().has(id):
-		why = "\"%s\" is not linked from %s" % [id, current_node]
-	if not why.is_empty():
-		sim.emit("bad_command", {"type": "choose_node", "why": why})
-		return false
-	var from: Dictionary = nodes[_current]
-	var to: Dictionary = node(id)
-	var reserve: bool = get_res("cells") <= 0
-	sim.drill.speed_scale = _reserve_factor if reserve else 1.0
-	var rows: int = int(to["row"]) - int(from["row"])
-	var ok: bool = sim.drill.begin_segment(sim, "%s-%s" % [from["id"], to["id"]],
-			float(layer.get("row_depth_m", 36.0)) * float(rows), float(to["x_m"]) - float(from["x_m"]),
-			str(layer.get("rock", DrillSim.DEFAULT_ROCK)), to.get("survey", {}) as Dictionary)
-	if not ok:
-		return false
-	_target = int(to["index"])
-	target_node = id
-	if not reserve:
-		add(sim, "cells", -1)
-	sim.emit("travel", {"from": from["id"], "to": id, "reserve": reserve})
-	return true
+	return RunMapMoves.choose_node(sim, self, id)
 
 
 ## Called by the drill when a segment ends in run mode. The node becomes current and visited, then
 ## goes to the module for its type (or, if overtaken, the pursuer strikes instead).
 func arrive(sim: Sim) -> void:
-	if _target < 0:
-		set_phase(sim, "idle")  # A segment begun directly (tests): no node to arrive at.
-		return
-	_current = _target
-	_target = -1
-	target_node = ""
-	var n: Dictionary = nodes[_current]
-	current_node = str(n["id"])
-	visited[_current] = 1
-	depth_m = float(layer.get("row_depth_m", 36.0)) * float(int(n["row"]))
-	scanner_rows = _scanner(sim)
-	var kind: String = str(n["type"])
-	sim.emit("arrived", {"node": current_node, "type": kind, "row": int(n["row"])})
-	if overtaken[_current] == 1:
-		sim.emit("node_lost", {"node": current_node, "type": kind})
-		_strike(sim, "overtaken")
-		set_phase(sim, "idle")
-		return
-	match kind:
-		"event", "cavern", "hazard", "store":
-			sim.encounter.start_node(sim, kind, event_row(int(n["row"])))
-		"fight":
-			sim.combat.start_fight(sim, str(n["enemy"]), false)
-		"gate":
-			sim.combat.start_fight(sim, str(n["enemy"]), true)
-	if phase == "drill":
-		set_phase(sim, "idle")  # No module took the node.
+	RunMapMoves.arrive(sim, self)
 
 
 # Stepping ----------------------------------------------------------------------------------------
@@ -447,106 +372,10 @@ func _strike(sim: Sim, why: String) -> void:
 
 # Summary and state -------------------------------------------------------------------------------
 
-## The run's results for the death screen, balance reports and Profile.merge_run (result, cause,
-## depth_m). gained and spent sum the positive and negative resource events per resource. Dig verb
-## counters (M1c): rockfalls_hit, rockfalls_absorbed, rockfall_hull (hull lost to them), blasts,
-## blast_ore and blast_gems (paid by blasts), douses, steep_s (drilling seconds past 60 degrees).
-## Structure counters (M1c round C): structures_placed (segments that held one), structures_entered,
-## crates_opened, loot_units (resource units paid by crates into the run), traders_met, structure_events.
-## Away miner counters (M1c round E): sorties (miners out), miner_backs (came back aboard),
-## miner_deaths, haul_ore and haul_gems (paid on return), haul_lost (units lost with dead miners).
+## The run's results for the death screen, balance reports and Profile.merge_run (RunSummary.build
+## lists every key).
 func summary(sim: Sim) -> Dictionary:
-	var gained: Dictionary = {}
-	var spent: Dictionary = {}
-	for r: String in RESOURCES:
-		gained[r] = 0
-		spent[r] = 0
-	var fights_won: int = 0
-	var verbs: Dictionary = {"rockfalls_hit": 0, "rockfalls_absorbed": 0, "rockfall_hull": 0, "blasts": 0,
-		"blast_ore": 0, "blast_gems": 0, "douses": 0, "structures_placed": 0, "structures_entered": 0,
-		"crates_opened": 0, "loot_units": 0, "traders_met": 0, "structure_events": 0, "sorties": 0, "miner_backs": 0,
-		"miner_deaths": 0, "haul_ore": 0, "haul_gems": 0, "haul_lost": 0}
-	for e: Dictionary in sim.events:
-		var kind: String = str(e["kind"])
-		if kind == "resource":
-			var res: String = str(e["res"])
-			var amt: int = int(e["amount"])
-			if amt > 0:
-				gained[res] = int(gained[res]) + amt
-			else:
-				spent[res] = int(spent[res]) - amt
-		elif kind == "fight_won":
-			fights_won += 1
-		elif kind == "rockfall":
-			if bool(e["absorbed"]):
-				verbs["rockfalls_absorbed"] += 1
-			else:
-				verbs["rockfalls_hit"] += 1
-				verbs["rockfall_hull"] += int(e["hull"])
-		elif kind == "blast":
-			verbs["blasts"] += 1
-			verbs["blast_ore"] += int(e["ore"])
-			verbs["blast_gems"] += int(e["gems"])
-		elif kind == "doused":
-			verbs["douses"] += 1
-		elif kind == "structure_placed":
-			verbs["structures_placed"] += 1
-		elif kind == "structure_entered":
-			verbs["structures_entered"] += 1
-		elif kind == "loot":
-			verbs["crates_opened"] += 1
-			if not bool(e.get("miner", false)):
-				verbs["loot_units"] += int(e["amount"])
-		elif kind == "structure_outcome":
-			if str(e["outcome"]) == "trader":
-				verbs["traders_met"] += 1
-			elif str(e["outcome"]) == "event":
-				verbs["structure_events"] += 1
-		elif kind == "miner_out":
-			verbs["sorties"] += 1
-		elif kind == "miner_back":
-			var paid: Dictionary = e["haul"]
-			if not bool(e.get("called_off", false)):
-				verbs["miner_backs"] += 1
-			verbs["haul_ore"] += int(paid.get("ore", 0))
-			verbs["haul_gems"] += int(paid.get("gems", 0))
-		elif kind == "miner_lost":
-			verbs["miner_deaths"] += 1
-			var lost: Dictionary = e["haul"]
-			for n: Variant in lost.values():
-				verbs["haul_lost"] += int(n)
-	var crew_lost: int = 0
-	for c: CrewMember in sim.ship.crew:
-		if not c.alive:
-			crew_lost += 1
-	var n_visited: int = 0
-	var n_overtaken: int = 0
-	for i: int in range(nodes.size()):
-		n_visited += visited[i]
-		n_overtaken += overtaken[i]
-	var out: Dictionary = {
-		"result": phase if is_over() else "unfinished",
-		"cause": end_cause,
-		"depth_m": snappedf(depth_m, 0.1),
-		"rows_reached": current_row(),
-		"rows_total": map.size(),
-		"time_s": snappedf(sim.seconds(), 0.1),
-		"gained": gained,
-		"spent": spent,
-		"fights_won": fights_won,
-		"codex": Array(learned),
-		"crew_lost": crew_lost,
-		"nodes_visited": n_visited,
-		"nodes_overtaken": n_overtaken,
-		"strikes": strikes,
-		"gear": Array(gear),
-		"seed": sim.run_seed,
-		"ship": sim.ship_id,
-		"layer": layer_id,
-		"steep_s": snappedf(float(sim.drill.steep_ticks) / Sim.TICK_HZ, 0.1),
-	}
-	out.merge(verbs)
-	return out
+	return RunSummary.build(sim, self)
 
 
 func state() -> Array:

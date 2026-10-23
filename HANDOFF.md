@@ -2,6 +2,16 @@
 
 From the M1c session (2026-10-16) to the next round, which starts after Stewart plays build 5.
 
+## Where the interim round stands (2026-10-22 evening)
+Done on main and pushed: the Gemini audit fixes, the amber PARKED notice, the multiply scorch, the
+dead DOUSE button fix, and the zero-change file split (D059; `PROGRESS.md` has the details and
+hashes). Open: Stewart's crown pick (Repair A or B in `harness/out/crown_candidates/round2/`), the
+critic capture of seed 1061 (the miner goes out at about 85 s), and his build 6 notes. The parity
+session works on `claude/blissful-neumann-c52d9b`; it may edit the split files on its branch and
+merges into main only when the M1d session says the build 6 triage is done. Gotcha found this round:
+after merging a branch that adds `class_name` scripts, run a full `python tools/check.py` (it
+re-imports) before any balance run, or `balance.py` hangs to its timeout on a stale class cache.
+
 ## Next session (start now, 2026-10-22): M1d interim round, then build 6 notes tonight
 Stewart cannot play build 6 until the evening and wants the most done meanwhile (D058). This session:
 starts the FTL parity workstream at once as a separate session in its own worktree (the side-track
