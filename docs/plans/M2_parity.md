@@ -27,24 +27,28 @@ Plan: `PLAN.md` section 10. Decisions: D052 to D055. Research: `docs/research/ft
 - [ ] Method B sessions only for rows A could not settle, with Stewart present.
 
 ## P3: build from the rows
-- [ ] Work in this session's own worktree and branch; merge into main only after M1d has triaged
+- [x] Work in this session's own worktree and branch; merge into main only after M1d has triaged
       Stewart's build 6 runs (D058). Leave the files M1d is splitting alone until the split is on main.
-- [ ] Before each builder dispatch: `python tools/gemini_audit.py --question <q.md> --extra <the spec>`
+- [x] Before each builder dispatch: `python tools/gemini_audit.py --question <q.md> --extra <the spec>`
       asking it to check every target band against the current data and code and every wrong value
       against its band (D057). Verify each finding yourself before changing a row.
 - [x] `tools/ledger.py` (parser and coverage report) with its own test (`tools/test_ledger.py`).
-- [ ] Per system, one builder spec in `docs/plans/specs/m2p_<system>.md` that quotes only ledger
+- [x] Per system, one builder spec in `docs/plans/specs/m2p_<system>.md` that quotes only ledger
       rows; scenarios `game/data/scenarios/ledger_<system>.json`; tests `game/tests/test_ledger_<system>.gd`.
-- [ ] Data-only systems first (upgrade prices, rewards, store stock), then crew and stations, then
+- [x] Data-only systems first (upgrade prices, rewards, store stock), then crew and stations, then
       new verbs (doors and venting, disruption, node hazards).
-- [ ] Each round: `python tools/check.py` says `check: ok`, determinism hash recorded, a balance run
+- [x] Each round: `python tools/check.py` says `check: ok`, determinism hash recorded, a balance run
       with the new measures.
 
 ## P4: differential checks
 - [ ] `tools/parity.py` (local only) compares the picked rows against the private reference.
-- [ ] Balance report measures in band (`ftl-difftest-plan.md`, layer 4).
+- [x] Balance report measures in band (`ftl-difftest-plan.md`, layer 4).
 - [ ] Critic rubric run on the feel rows; Stewart's A/B per system (three questions, 1 to 5).
-- [ ] `docs/research/parity_report.md` committed with the coverage per system.
+- [x] `docs/research/parity_report.md` committed with the coverage per system.
+
+Status 2026-10-23: P3 done on the branch (rounds 1 to 6a, playtest build `m2p-parity-1`); P4 left:
+`tools/parity.py`, the critic rubric on the feel row and Stewart's A/B. Rounds 4 and 5 were checked by
+hand while the Gemini audit was out of credits.
 
 ## P5: make it ours
 - [ ] Deliberate divergences logged as "waived by design" rows with D-numbers.
