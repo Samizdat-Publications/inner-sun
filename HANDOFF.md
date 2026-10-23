@@ -27,7 +27,7 @@ after merging a branch that adds `class_name` scripts, run a full `python tools/
 re-imports) before any balance run, or `balance.py` hangs to its timeout on a stale class cache.
 
 ## Parity branch (2026-10-23): all six picks built, waiting to merge
-Branch `claude/blissful-neumann-c52d9b` (worktree `.claude\worktreeslissful-neumann-c52d9b`) holds the
+Branch `claude/blissful-neumann-c52d9b` (worktree `C:\Users\stewa\Documents\Claude\Inner Sun\.claude\worktrees\blissful-neumann-c52d9b`) holds the
 FTL parity work: ledger rows for all six picks, every sim row passing (`python tools/ledger.py`), the
 views, the bots and balance measures, main merged in through M1d's build 6 triage. Playtest build
 `m2p-parity-1` sits in that worktree's `builds\`, apart from main's build. Next:
