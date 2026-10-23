@@ -170,3 +170,23 @@ into main only after M1d has triaged Stewart's build 6 runs. Stewart picked inve
 Cheap data-only systems first (upgrade prices, rewards, store stock), then crew and stations, then new
 verbs. A Gemini math audit of the rows and specs runs before each builder dispatch (D057). Checklist:
 `docs/plans/M2_parity.md`.
+
+## 11. M2 workstream S: the spine tower ship (Stewart's pick, D061; not started)
+
+Goal: replace the 2 x 3 block of big rooms with Option A of `docs/plans/ship_redesign/README.md`: a
+ladder spine with small pods off both sides in a tapered hull, a door on every room, two airlocks that
+vent a room to the rock, a medbay and a dive lock (the away miner's exit). Same six systems and
+controls. Checklist: `docs/plans/M2_ship.md`.
+
+| Step | What | Who | Done when |
+|---|---|---|---|
+| S0 | Layout picked | Stewart (done 2026-10-22, Option A) | D061 |
+| S1 | Spec: room list and sizes, links, airlocks, crew starts, the hull outline as data | Lead | `docs/plans/specs/m2_spine_ship.md`, Gemini math audit if credit allows |
+| S2 | Sim: hull outline instead of a rectangle (cut footprint, rock-facing walls), the medbay, the dive lock as the miner's exit, airlocks reusing parity purge | builder-opus | check ok; heat, water and fire conservation tests unchanged; replays of old records still load or are versioned |
+| S3 | Data: the new light drill ship file (or a new ship beside it while both exist) | Lead plus builder | Lint ok; bots finish runs; balance in band |
+| S4 | View: painted pods at the new sizes, the spine and its ladder, the tapered hull outline, airlock and door art | asset-smith plus builder | Stills judged by the lead and a critic; Stewart's look |
+| S5 | Playtest build | Lead | Stewart plays it |
+
+Order: after the parity workstream merges (it brings the doors and purge this reuses) and after the
+Gemini credit is topped up (the art pass). It replaces the M2 item "layout variants" for the light
+drill; the heavy borer unlock gets its own layout later.

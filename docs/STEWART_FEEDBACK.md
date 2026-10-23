@@ -3,6 +3,10 @@
 His words outrank everything except CLAUDE.md's hard rules. Newest first. Playtest notes go at the
 top under a dated heading.
 
+## 2026-10-22 night: ship redesign pick (D061)
+Verbatim: "Go with A, the spine tower, for the M2 ship redesign. Log it as a decision and plan it; don't
+build it yet." Planned as M2 workstream S (`PLAN.md` section 11).
+
 ## 2026-10-22 evening: playtest build 6 (one run, seed 721713)
 Verbatim:
 - "Note that pausing does not stop the animations of everything on ship etc, I did not realize it was
