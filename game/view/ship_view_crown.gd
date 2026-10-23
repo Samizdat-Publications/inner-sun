@@ -6,10 +6,13 @@ extends RefCounted
 ## The painted drill crown under the whole tower (the teeth glow brighter while cutting), the hull
 ## floodlights, sparks and dust. Rock lights use light mask 2 (RockView.LIGHT_MASK); the crown parts
 ## use 3 so those lights shade them too.
+const TOP_Y: float = 2.0  ## Crown top below the hull's bottom edge, px: its hub sits under the hull, not over its rail (Stewart, 2026-10-22).
+
+
 static func build(v: ShipView) -> void:
 	var size: Vector2 = v.ship_size_m() * v.ppm
 	v._crown = Node2D.new()
-	v._crown.position = Vector2(0.0, size.y - 6.0)
+	v._crown.position = Vector2(0.0, size.y + TOP_Y)
 	v._crown.z_index = 6
 	v.add_child(v._crown)
 	var tex: Texture2D = ArtLib.lit("ship", "drill_crown")
@@ -45,7 +48,7 @@ static func build(v: ShipView) -> void:
 				v._crown.add_child(g)
 				v._crown_glow.append(g)
 		v._set_crown_glow(0.5)
-	var tip_y: float = size.y - 6.0 + maxf(crown_h, 60.0) - 14.0
+	var tip_y: float = size.y + TOP_Y + maxf(crown_h, 60.0) - 14.0
 	v._crown_light = v._light(Vector2(size.x * 0.5, tip_y - 4.0), Color(1.0, 0.55, 0.22), 0.3, v.ppm * 6.0, false, 110.0)
 	v._crown_light.texture = RockView.light_texture(128, 0.0, 0.3, 0.6)
 	v._crown_light.texture_scale = v.ppm * 6.0 * 2.0 / 128.0 / 0.4
