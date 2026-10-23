@@ -107,3 +107,19 @@ Session total (2026-10-15 to 16, M1a): about 15 USD (logged 11.96 plus the 3.00 
 | 2026-10-22 | Gemini gemini-3-pro-image | crown regen candidate 06 (stray cones fix) | 0.14 |
 | 2026-10-22 | Gemini gemini-3-pro-image | crown regen candidate 07 (stray cones fix) | 0.14 |
 | 2026-10-22 | Gemini gemini-3-pro-image | crown regen candidate 08 (stray cones fix) | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen round2 track B #01 | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen round2 track A #01 | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen round2 track A #02 | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen round2 track B #02 | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen round2 track A #03 | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen round2 track B #03 | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen round2 track A #04 | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen round2 track B #04 | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen round2 track A #05 | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen round2 track B #05 | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen round2 track A #06 | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen round2 track B #06 | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen round2 track A #07 | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen round2 track A #08 | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen round2 track A #09 | 0.14 |
+| 2026-10-22 | Gemini gemini-3-pro-image | crown regen round2 track A #10 | 0.14 |
