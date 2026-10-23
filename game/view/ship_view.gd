@@ -61,6 +61,7 @@ var _last_px: float = 0.0
 var _last_vx: float = 0.0
 var _last_heading: float = 0.0
 var selected_crew_id: String = ""  ## Set by Main: that crew member gets the selection ring.
+var selected_ids: Array[String] = []  ## Set by ShipPick: every selected crew member gets the ring.
 
 
 func setup(p_sim: Sim, p_world: ShipWorld, p_ppm: float) -> void:
@@ -175,6 +176,8 @@ func _build_rooms() -> void:
 		_room_art.append(art)
 		if _enemy:
 			art.modulate = Color(0.9, 0.96, 1.1)
+		else:
+			art.set_vents(world)
 		var ri: int = r.index
 		_fn(0, func(n: Node2D) -> void: RoomFx.draw_heat(n, world.ship.rooms[ri], room_rect_px(world.ship.rooms[ri]), _time), 2, 2.0)
 		_fn(3, func(n: Node2D) -> void: RoomFx.draw_frame(n, room_rect_px(world.ship.rooms[ri])))
@@ -362,12 +365,12 @@ func _update(delta: float) -> void:
 		_sprays[i].speed_scale = clampf(0.8 + r.breach_m2 * 8.0, 0.8, 1.6)
 		var lamp_k: float = 1.0 - clampf(r.level_m() / r.rect.size.y, 0.0, 0.7)
 		_lamps[i].energy = LAMP_ENERGY * lamp_k
-		_room_art[i].update(ship, r, _time, lamp_k)
+		_room_art[i].update(ship, r, _time, lamp_k, world.hazards)
 	_fire.update(ship, _time, delta)
 	for c: CrewMember in ship.crew:
 		var spr: CrewSprite = _crew[c.index]
 		spr.crew = c
-		spr.selected = c.alive and c.id == selected_crew_id
+		spr.selected = c.alive and (c.id == selected_crew_id or c.id in selected_ids)
 		spr.station_system = ship.rooms[c.room].system if c.room >= 0 and c.room < ship.rooms.size() else "none"
 		spr.position = c.pos * ppm + Vector2(0.0, -_foot_lift)
 		spr.update(delta, _time)

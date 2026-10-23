@@ -27,6 +27,7 @@ func _all() -> void:
 	await _scenario_dossier()
 	await _scenario_fight()
 	await _scenario_dig_verbs()
+	await _scenario_ship_clicks()
 
 
 # Helpers -----------------------------------------------------------------------------------------
@@ -84,6 +85,33 @@ func _click(pos: Vector2, button: MouseButton = MOUSE_BUTTON_LEFT) -> void:
 		e.button_index = button
 		e.pressed = down
 		_tree().root.push_input(e, true)
+
+
+## A left drag: press at `a`, move to `b` with the button down, release.
+func _drag(a: Vector2, b: Vector2, shift: bool = false) -> void:
+	var mv := InputEventMouseMotion.new()
+	mv.position = a
+	mv.global_position = a
+	_tree().root.push_input(mv, true)
+	var down := InputEventMouseButton.new()
+	down.position = a
+	down.global_position = a
+	down.button_index = MOUSE_BUTTON_LEFT
+	down.pressed = true
+	down.shift_pressed = shift
+	_tree().root.push_input(down, true)
+	for step: int in range(1, 5):
+		var m2 := InputEventMouseMotion.new()
+		m2.position = a.lerp(b, float(step) / 4.0)
+		m2.global_position = m2.position
+		m2.button_mask = MOUSE_BUTTON_MASK_LEFT
+		_tree().root.push_input(m2, true)
+	var up := InputEventMouseButton.new()
+	up.position = b
+	up.global_position = b
+	up.button_index = MOUSE_BUTTON_LEFT
+	up.pressed = false
+	_tree().root.push_input(up, true)
 
 
 ## The last order of a kind that is queued and not yet stepped.
@@ -370,3 +398,113 @@ func _aim_every_room(m: Main) -> void:
 			check_eq(str(_queued(s, "target").get("room", "")), s.enemy.ship.rooms[ri].id, "slot %d aims at enemy room %d (clicked %s)" % [slot, ri, str(at)])
 			check_eq(int(_queued(s, "target").get("weapon", -1)), slot, "the order names slot %d" % slot)
 			await _frames(1)
+
+
+## Clicks on the cutaway itself: doors, hatches and vents toggle (paused too), figures and boxes select,
+## a room click sends every selected crew member, Esc and an empty click clear.
+func _scenario_ship_clicks() -> void:
+	var m: Main = await _boot()
+	await _into_drill(m)
+	var s: Sim = m.run.sim
+	_tree().root.size = Vector2i(1920, 1080)
+	await _frames(1)
+	for i: int in range(4):
+		m._ease_camera(s.drill, 10.0)
+	var xf: Transform2D = m.view.get_global_transform_with_canvas()
+	var ppm: float = Main.PPM
+	var door: Link = null
+	for l: Link in s.ship.links:
+		if l.id == "door_low":
+			door = l
+	s._pending.clear()
+	_click(xf * ShipHits.door_rect(s.ship, door, ppm).get_center())
+	check_eq(bool(_queued(s, "door").get("open", true)), false, "a click on an open door queues a close")
+	check(_queued(s, "assign").is_empty(), "and is not a crew order")
+	await _frames(1)
+	check(not door.open, "the door is shut on the next step")
+	m.paused = true
+	_click(xf * ShipHits.door_rect(s.ship, door, ppm).get_center())
+	check_eq(bool(_queued(s, "door").get("open", false)), true, "a second click, paused, queues the open")
+	m.paused = false
+	await _frames(1)
+	check(door.open, "the door is open again")
+	var hatch: Link = null
+	for l: Link in s.ship.links:
+		if l.kind == Link.Kind.HATCH:
+			hatch = l
+			break
+	s._pending.clear()
+	_click(xf * ShipHits.hatch_rect(s.ship, hatch, ppm).get_center())
+	check_eq(bool(_queued(s, "door").get("open", true)), false, "a click on a hatch shuts it")
+	await _frames(1)
+	check(not hatch.open, "the hatch is shut")
+	_click(xf * ShipHits.hatch_rect(s.ship, hatch, ppm).get_center())
+	await _frames(1)
+	check(hatch.open, "and opens again")
+	# Vents.
+	var vr: int = s.ship.room_index("coolant")
+	var vat: Vector2 = xf * ShipHits.vent_rect(s.ship, s.ship.rooms[vr], ppm).get_center()
+	s._pending.clear()
+	_click(vat)
+	check_eq(str(_queued(s, "purge").get("room", "")), "coolant", "a click on a vent queues a purge")
+	await _frames(1)
+	check(s.hazards.is_purged(vr), "the room is purging")
+	m.paused = true
+	_click(vat)
+	check_eq(bool(_queued(s, "purge").get("open", true)), false, "a second click, paused, queues the stop")
+	m.paused = false
+	await _frames(1)
+	check(not s.hazards.is_purged(vr), "the purge has stopped")
+	# Crew: a figure click selects, Shift adds, a box selects what is inside, a room click sends them all.
+	var bridge: Room = s.ship.rooms[s.ship.room_index("bridge")]
+	var a: CrewMember = s.ship.crew[0]
+	var b: CrewMember = s.ship.crew[1]
+	var far: CrewMember = s.ship.crew[2]
+	a.pos = Vector2(bridge.rect.position.x + 1.5, bridge.floor_y())
+	b.pos = Vector2(bridge.rect.position.x + 2.6, bridge.floor_y())
+	far.pos = Vector2(s.ship.rooms[s.ship.room_index("reactor")].rect.position.x + 2.0, s.ship.rooms[s.ship.room_index("reactor")].floor_y())
+	var pick: ShipPick = ShipPick.of(m)
+	s._pending.clear()
+	_click(xf * ShipHits.figure_rect(b, ppm).get_center())
+	check_eq(m.screen.cards.selected_id, b.id, "a click on a figure selects that crew member")
+	check_eq(pick.current(), [b.id] as Array[String], "and only them")
+	var shift_click := func(pos: Vector2) -> void:
+		var e := InputEventMouseButton.new()
+		e.position = pos
+		e.global_position = pos
+		e.button_index = MOUSE_BUTTON_LEFT
+		e.shift_pressed = true
+		for down: bool in [true, false]:
+			e.pressed = down
+			_tree().root.push_input(e.duplicate(), true)
+	shift_click.call(xf * ShipHits.figure_rect(a, ppm).get_center())
+	check_eq(pick.current().size(), 2, "Shift plus a click adds a second")
+	shift_click.call(xf * ShipHits.figure_rect(a, ppm).get_center())
+	check_eq(pick.current(), [b.id] as Array[String], "and again takes them out")
+	pick.clear()
+	var tl: Vector2 = bridge.rect.position * ppm + Vector2(44.0, 30.0)
+	var br: Vector2 = Vector2(bridge.rect.position.x + 3.3, bridge.floor_y() + 0.05) * ppm
+	_drag(xf * tl, xf * br)
+	var got: Array[String] = pick.current()
+	got.sort()
+	check_eq(got, [a.id, b.id] as Array[String] if a.id < b.id else [b.id, a.id] as Array[String], "a box over two figures selects both (not the one in the next room)")
+	await _frames(1)
+	check_eq(m.view.selected_ids.size(), 2, "both carry the selection ring")
+	s._pending.clear()
+	var wroom: Room = s.ship.rooms[s.ship.room_index("weapons")]
+	_click(xf * ((wroom.rect.get_center() + Vector2(0.0, 0.3)) * ppm))
+	var assigned: Array[String] = []
+	for cmd: Dictionary in s._pending:
+		if str(cmd.get("type", "")) == "assign":
+			check_eq(str(cmd.get("room", "")), "weapons", "each goes to the clicked room")
+			assigned.append(str(cmd.get("crew", "")))
+	assigned.sort()
+	check_eq(assigned, got, "a room click sends both with one assign each")
+	# Esc and an empty click clear the selection.
+	_key(KEY_ESCAPE)
+	check(pick.current().is_empty(), "Esc clears the selection")
+	_click(xf * ShipHits.figure_rect(a, ppm).get_center())
+	check_eq(pick.current().size(), 1, "a click picks again")
+	_click(RunScreen.WORLD_RECT.position + Vector2(30.0, 30.0))
+	check(pick.current().is_empty(), "a click on empty space outside the ship clears it")
+	await _drop()
