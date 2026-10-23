@@ -252,7 +252,7 @@ Current Inner Sun values are quoted where they exist, so the gap is visible.
 - Test: data rule in `test_ledger_crew.gd::test_l_man_03`.
 - Wrong value: every station skill at 1.0 must fail.
 - Core: no
-- Status: passing (data; card pending)
+- Status: passing
 
 ### L-DOR-01: Closed doors hold hazards back, and the player works them
 - Kind: rule
@@ -262,7 +262,7 @@ Current Inner Sun values are quoted where they exist, so the gap is visible.
 - Test: scenario `ledger_doors` (`test_ledger_doors.gd::test_l_dor_01`); the real-input self-test for the toggle once the view lands.
 - Wrong value: closed-door fire spread equal to open must fail.
 - Core: yes
-- Status: passing (sim; view pending)
+- Status: passing
 
 ### L-DOR-02: Purging a room kills its fire, at a price
 - Kind: rule
@@ -322,7 +322,7 @@ Current Inner Sun values are quoted where they exist, so the gap is visible.
 - Test: map rule test over 1,000 seeds and one scenario per environment, `test_ledger_env.gd::test_l_env_01`.
 - Wrong value: an environment that hits only the player must fail.
 - Core: yes
-- Status: passing (sim; view pending)
+- Status: passing
 
 ### L-ENV-02: Each environment has one clear effect
 - Kind: rule

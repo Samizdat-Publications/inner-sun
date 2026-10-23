@@ -35,10 +35,10 @@ Feel rows (judged by critics and Stewart, not counted in coverage):
 | L-STO-05 | rule | no | passing | Gear and weapons sell back for part of their price |
 | L-MAN-01 | shape | yes | passing | A crewed station does more, and more again with skill |
 | L-MAN-02 | rule | no | passing | One station, one operator |
-| L-MAN-03 | shape | no | passing (data; card pending) | Crew differ in how well they run a station |
-| L-DOR-01 | rule | yes | passing (sim; view pending) | Closed doors hold hazards back, and the player works them |
+| L-MAN-03 | shape | no | passing | Crew differ in how well they run a station |
+| L-DOR-01 | rule | yes | passing | Closed doors hold hazards back, and the player works them |
 | L-DOR-02 | rule | no | passing | Purging a room kills its fire, at a price |
 | L-DOR-03 | rule | no | passing | Pressure doors hold fire like a wall |
 | L-DOR-F1 | feel | no | open | Doors and purges read and work at a glance |
-| L-ENV-01 | rule | yes | passing (sim; view pending) | Some nodes sit in an environment that changes everything there |
+| L-ENV-01 | rule | yes | passing | Some nodes sit in an environment that changes everything there |
 | L-ENV-02 | rule | no | passing | Each environment has one clear effect |
