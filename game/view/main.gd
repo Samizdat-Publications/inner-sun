@@ -41,6 +41,10 @@ var rock_view: RockView
 var depth_layers: DepthLayers  ## Far wall, silhouettes and dust, rebuilt with the rock.
 var combat_view: CombatView
 var paused: bool = false
+var pause_layer: PauseLayer  ## The veil and the big PAUSED line over the world area.
+var pause_demo: bool = false  ## Captures only (--pause-at=<s>): pause at that second and show the frozen world.
+var _pause_at_tick: int = -1
+var _pause_done: bool = false
 var drill_zoom: float = 0.74  ## The mouse wheel sets it while drilling; kept for the run (DigCamera).
 var bot_driven: bool = false
 var replaying: bool = false
@@ -81,6 +85,8 @@ func _ready() -> void:
 		return
 	bot_driven = args.has("shots") or args.has("capture") or args.has("perf") or args.has("run-ticks")
 	replaying = args.has("replay")
+	pause_demo = args.has("pause-at")
+	_pause_at_tick = roundi(args.get_float("pause-at", 0.0) * Sim.TICK_HZ) if pause_demo else -1
 	run_mode = not replaying and (args.get_str("mode", "") == "run" or (not args.has("scenario") and not bot_driven))
 	if run_mode:
 		profile = Profile.load_from(Profile.dir_from_args(args))
@@ -217,7 +223,7 @@ func _process(delta: float) -> void:
 		_begin_drill_view(d)
 	_ease_camera(d, delta)
 	if depth_layers != null:
-		depth_layers.follow(cam.position, cam.zoom.x, view.center_px() + view.position, combat_view.active(), delta)
+		depth_layers.follow(cam.position, cam.zoom.x, view.center_px() + view.position, combat_view.active(), WorldFreeze.dt(world_frozen(), delta))
 	if fx != null:
 		cam.offset = fx.shake_offset()
 	if d.active and not screen.overlay_open():
@@ -229,6 +235,7 @@ func _process(delta: float) -> void:
 	combat_view.cam_zoom = cam.zoom.x
 	var held: bool = _world_held()
 	screen.set_paused(paused or held, screen.hold_label() if held and not paused else "PAUSED")
+	MainWorld.set_frozen(self, world_frozen())
 	if not paused:
 		_fight_banner = false
 	screen.set_banner(FIGHT_BANNER if _fight_banner and paused else "")
@@ -282,6 +289,9 @@ func _begin_drill_view(d: DrillSim) -> void:
 func _physics_process(_delta: float) -> void:
 	if run == null or _finished:
 		return
+	if _pause_at_tick >= 0 and not _pause_done and run.sim.tick >= _pause_at_tick:
+		_pause_done = true
+		paused = true
 	if run.done() or (run_mode and run.sim.run.is_over()):
 		_on_run_over()
 		if args.has("loop"):
@@ -307,6 +317,13 @@ func _is_human() -> bool:
 ## True while a human has the node map or the help page open: time stops (orders still apply).
 func _world_held() -> bool:
 	return _is_human() and screen != null and screen.holds_world()
+
+
+## The visible pause: while the sim is paused or a page holds the world, the whole world view stands
+## still and dims (WorldFreeze, PauseLayer). Bots are never frozen, except a capture that asks for it
+## (--pause-at). Replays freeze too, so a paused replay looks paused. View only; the sim is untouched.
+func world_frozen() -> bool:
+	return (paused or _world_held()) and (_is_human() or replaying or pause_demo)
 
 
 ## When a fight begins a human's game pauses, so the weapons and bracing can be powered and aimed

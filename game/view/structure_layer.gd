@@ -272,7 +272,23 @@ func _apply_room() -> void:
 		_tex_glow.update(imgs[1])
 
 
+var frozen: bool = false: set = set_frozen  ## The visible pause: no time passes in this node's animations.
+
+
+func set_frozen(on: bool) -> void:
+	if frozen == on:
+		return
+	frozen = on
+	WorldFreeze.apply(self, on)
+
+
 func _process(delta: float) -> void:
+	_update(WorldFreeze.dt(frozen, delta))
+	if frozen:
+		WorldFreeze.apply(self, true)
+
+
+func _update(delta: float) -> void:
 	_t += delta
 	if sim == null:
 		return

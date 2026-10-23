@@ -66,6 +66,20 @@ static func build(m: Main) -> void:
 		m.hud = Hud.new()
 		m.add_child(m.hud)
 		m.hud.bind(m.run)
+	m.pause_layer = PauseLayer.new()
+	m.add_child(m.pause_layer)
 	m.audio = AudioDirector.new()
 	m.add_child(m.audio)
 	m.audio.setup(func() -> Sim: return m.run.sim if m.run != null else null)
+
+
+## The visible pause: freeze or thaw every world view node, and dim the world area. HUD untouched.
+static func set_frozen(m: Main, on: bool) -> void:
+	m.view.frozen = on
+	m.combat_view.frozen = on
+	m.fx.frozen = on
+	m.structures.frozen = on
+	m.miner_layer.frozen = on
+	if m.rock_view != null:
+		m.rock_view.frozen = on
+	m.pause_layer.set_state(on, m.paused and not m.screen.overlay_open())
