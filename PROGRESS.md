@@ -36,10 +36,11 @@ Updated: 2026-10-22 evening, M1d interim round done; waiting for Stewart's build
   manned stations with a station skill. `check: ok` (387 tests).
 - Coverage (`python tools/ledger.py`, `docs/research/parity_report.md`): stores 5/5, manning 3/3,
   rewards 4/5, upgrades 3/4, doors 2/3, environments 0/2.
-- Waiting for M1d's split on main: bot updates (reward values, stock clamps, ladder sums), the balance
+- Rounds 4 (bots, balance measures) and 5 (environments) building; then 6a (views). Was waiting for M1d's split: bot updates (reward values, stock clamps, ladder sums), the balance
   measures (L-UPG-03, L-RWD-05), environments (they act through the drill and run code), door and
   purge clicks, the crew card's station skill, a look at the power panel at the higher bar counts.
-  Determinism hash to re-record after rebasing onto main. No export.
+  Main (with M1d's split) merged into this branch 2026-10-22: `check: ok` (397 tests), determinism ok,
+  hash 84b72d0b949b6d7b at tick 1200 (main alone: e30883214e637d19). No export.
 
 ## Side track (2026-10-22): FTL parity planned, nothing built
 - FTL (1.6.14, owned on Steam) is now a reference behind a firewall (D052 to D055): community survey
