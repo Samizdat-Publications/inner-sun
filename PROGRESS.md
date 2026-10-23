@@ -1,6 +1,33 @@
 # Progress
 
-Updated: 2026-10-17, M1d playtest build 6 ready (fixes from Stewart's first build 5c run).
+Updated: 2026-10-22 evening, M1d interim round done; waiting for Stewart's build 6 notes.
+
+## M1d interim round (2026-10-22), before build 6 is played
+- **Build 6 untouched:** `builds/InnerSun.exe` is still `m1d-playtest-6`; nothing exported (D058).
+- **Gemini audit fixes, each with a test (D059, `docs/BACKLOG.md` "Gemini audit"):** the bots' blast
+  planner scores what a blast pays; the greedy bot no longer buys a gun it cannot power; balance row 0
+  is the run's real start; the state hash covers max hull and weapons; scenario rock heat matches the
+  Crust. Rival power vs restore was tested and is not a bug.
+- **View:** the PARKED notice is amber (seen in a still, `harness/out/shots_d059_miner/t20.png`); the
+  scorch uses a multiply blend (a loud-colour debug still shows it draws where it should; on the
+  darkest room art it still reads subtly); a dead DOUSE button could stay on screen after a fire
+  dropped under the douse floor, so clicks and F did nothing: fixed (likely part of Stewart's "douse
+  isn't doing anything"; build 6's input diary will tell).
+- **Oversized files split, zero behaviour change** (spec `docs/plans/specs/m1d_split.md`): drill_sim,
+  run_state, drill_miner, policy_bot, ship_view, main, scanner_panel, crew_sprite are all under 400
+  lines. Oracle: check ok, same determinism hash, and 60 of 60 balance seeds end in the same final
+  hash (`python tools/balance_compare.py`; balance runs now record `final_hash` per run).
+- **Hashes:** determinism `e30883214e637d19` at tick 1200 (headless and Movie Maker); changed from
+  e4c82e3d6d55a625 because the state now hashes max hull and weapons and scenario rock heat changed.
+- **Balance after the fixes (100 per bot, `docs/research/m1-evidence/balance_m1d_audit.md`):**
+  balanced 47%, cautious 24%, greedy 12% wins (balanced was 38%: the band is 10 to 30%, held high on
+  purpose until Stewart has played, D039, D044). Balanced sends a miner in 58% of runs.
+- **Drill crown art (Stewart's note):** round 1 (8 fresh candidates) all had the same defect; round 2
+  repaired the original's cutter row only (`harness/out/crown_candidates/round2/pick_round2.png`).
+  Waiting for his pick between Repair A (R2-01) and B (R2-03); not fitted yet. About 3.36 USD spent.
+- **Checks:** `check: ok` (377 tests).
+- **FTL parity** runs as its own session on branch `claude/blissful-neumann-c52d9b` (rounds 1 to 3
+  merged there, 388 tests); it merges into main only after the build 6 triage.
 
 ## Side track (2026-10-22): FTL parity planned, nothing built
 - FTL (1.6.14, owned on Steam) is now a reference behind a firewall (D052 to D055): community survey
