@@ -21,6 +21,11 @@ Open (design, not a bug): two event options no bot picks (`cold_spring` option 0
 when the second coolant loop is down; `byrd_signal` option 0 trades the front for three rows of
 map). Kept for players; revisit only if Stewart's runs show nobody picks them either.
 
+## Tools
+- `balance.py --full` sat for its whole 2-hour timeout when every part hit script errors (a stale class
+  cache after a merge; a single `full_runs.gd` run with the same errors ends in 2 s). Make it fail fast
+  on `SCRIPT ERROR` lines in a part's first output, or run an import first when classes changed.
+
 ## Events and writing
 - A `{joined}` placeholder for the crew member who just joined (recruit pages now say "the survivor").
 - A requirement "crew pool not empty" so recruit text never lies when the pool is exhausted.
