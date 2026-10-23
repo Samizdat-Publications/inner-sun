@@ -82,7 +82,7 @@ Current Inner Sun values are quoted where they exist, so the gap is visible.
 - Test: balance measure `spend_share` in `python tools/balance.py` (needs the balance tooling, after M1d's split lands).
 - Wrong value: every ladder price x3 must push the share out of band.
 - Core: no
-- Status: open
+- Status: passing on the measure (parity round 4, ladders retuned x0.8): balanced bot 300 runs, spend_share 63.7%, median 8 bars. Wrong value NOT confirmed as written: ladders x3 keep spend_share in band (63.7%) and fail only the bars part (median 3). The lead to choose a stronger wrong value. Report `docs/research/m1-evidence/balance_parity_r4.md`.
 
 ### L-UPG-04: The price is the only brake on upgrades
 - Kind: rule
@@ -142,7 +142,7 @@ Current Inner Sun values are quoted where they exist, so the gap is visible.
 - Test: balance measure `income_share` in `python tools/balance.py` (after M1d's split lands).
 - Wrong value: every reward base halved must push the share out of band.
 - Core: no
-- Status: open
+- Status: passing (parity round 4): balanced bot 300 runs, income_share 24.2%; wrong value (reward bases halved) 12.9%, out of band. Report `docs/research/m1-evidence/balance_parity_r4.md`.
 
 ### L-STO-01: A store rolls a few sections of offers
 - Kind: rule
