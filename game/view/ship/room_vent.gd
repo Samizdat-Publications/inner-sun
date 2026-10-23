@@ -79,7 +79,7 @@ func _draw_button(b: Rect2, on: bool) -> void:
 ## Soft particles drifting from across the room into the vent, with short trails, over a faint chill.
 func _draw_draught(b: Rect2, size: Vector2) -> void:
 	var target: Vector2 = b.get_center()
-	draw_rect(Rect2(Vector2.ZERO, size), Color(COLD.r, COLD.g, COLD.b, 0.07), true)
+	draw_rect(Rect2(Vector2.ZERO, size), Color(COLD.r, COLD.g, COLD.b, 0.12), true)
 	for i: int in range(STREAKS):
 		var sx: float = size.x * (0.08 + 0.84 * fposmod(float(i) * 0.618034, 1.0))
 		var sy: float = size.y * (0.22 + 0.62 * fposmod(float(i) * 0.381966 + 0.17, 1.0))
@@ -87,8 +87,8 @@ func _draw_draught(b: Rect2, size: Vector2) -> void:
 		var e: float = f * f
 		var at: Vector2 = Vector2(sx, sy).lerp(target, e)
 		var back: Vector2 = Vector2(sx, sy).lerp(target, maxf(0.0, e - 0.12))
-		var a: float = sin(PI * f) * 0.55
-		draw_line(back, at, Color(COLD.r, COLD.g, COLD.b, a * 0.6), 2.0)
+		var a: float = sin(PI * f) * 0.85
+		draw_line(back, at, Color(COLD.r, COLD.g, COLD.b, a * 0.7), 3.0)
 		draw_circle(at, 4.5, Color(COLD.r, COLD.g, COLD.b, a * 0.35))
 		draw_circle(at, 2.2, Color(0.85, 0.95, 1.0, a))
 
