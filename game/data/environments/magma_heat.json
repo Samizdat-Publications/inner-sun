@@ -1,0 +1,7 @@
+{
+  "id": "magma_heat",
+  "name": "Magma heat",
+  "blurb": "Something molten runs close under this rock. The hull ticks as it warms, and sparks catch fast.",
+  "weight": 3,
+  "effects": {"rock_temp_add_c": 25.0, "fire_chance_x": 1.3}
+}

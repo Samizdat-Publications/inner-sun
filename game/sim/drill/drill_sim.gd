@@ -13,8 +13,9 @@ extends SimModule
 ## Systems.side_cut_scale (both helm bars, when manned): per second (v sin h * side, v cos h), with v
 ## from power, gear, the bit and the leading band (side cells weighted |sin h| * side, bottom cells
 ## cos h). at_wall: pressed against the segment wall at a heading past at_wall_heading_deg.
-## Pocket hazards, fault rock strain and rockfalls, and blasts by the charge launcher live in
-## DrillVerbs (verbs); the "blast" command goes there. The away miner (D046) lives in DrillMiner
+## Pocket hazards, fault rock strain and rockfalls (and a rockfall seam's, RunState.rockfall_band),
+## and blasts by the charge launcher live in DrillVerbs (verbs); the environment in force adds its
+## rock_temp_add_c to the rock heat; the "blast" command goes there. The away miner (D046) lives in DrillMiner
 ## (miner; "send_miner", "recall_miner"): while one is out the drill is parked (no motion, cutting,
 ## heat, noise or wear; the segment cannot end) and the miner's cells go through cut() with
 ## CUT_MINER, so their yield is carried home instead of paid at once. A buried structure named by the survey (old
@@ -300,7 +301,7 @@ func step(sim: Sim) -> void:
 	if not sim.run.layer.is_empty():  # In a run the layer owns rock heat; drill tuning is the scenario fallback.
 		base_c = float(sim.run.layer.get("rock_temp_base_c", base_c))
 		per_m = float(sim.run.layer.get("rock_temp_c_per_m", per_m))
-	sim.ship.rock_temp_c = base_c + per_m * sim.run.depth_m
+	sim.ship.rock_temp_c = base_c + per_m * sim.run.depth_m + sim.run.rock_add_c(sim.player)  # Plus the environment's (magma).
 	if sim.run.phase == "drill" and not parked and _py + ship_size.y >= target_y - EPS:
 		DrillSegment.arrive(sim, self)  # Not while a break-in has a store or an event open: the segment waits for it.
 

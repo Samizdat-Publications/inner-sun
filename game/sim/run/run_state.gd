@@ -15,6 +15,8 @@ extends SimModule
 ## - current_node / target_node: node ids ("" when none). links_from_current().
 ## - is_revealed(node), is_visited(node), is_overtaken(node); scanner_rows (rows seen ahead).
 ## - pursuer_row (float map row of the pursuer's front), caught, ship_row_f(sim).
+## - env_id / env (the environment in force and its definition, Environments), scanner_blind; each
+##   map node's "env". env_x(key, default) reads an effect of the one in force.
 ##
 ## Travel: {"type": "choose_node", "node": id} in phase "idle", to a node linked from the current one.
 ## It spends one power cell (none left: the segment runs at reserve_speed_factor) and starts a drilling
@@ -33,7 +35,7 @@ extends SimModule
 const PHASES: Array[String] = ["scenario", "idle", "drill", "dialog", "store", "combat", "dead", "won"]
 const WORLD_PHASES: Array[String] = ["scenario", "idle", "drill", "combat"]
 const RESOURCES: Array[String] = ["hull", "ore", "gems", "coolant", "cells", "bits", "charges"]
-const COMMANDS: Array[String] = ["choose_node"]
+const COMMANDS: Array[String] = ["choose_node", "set_env"]
 const FLOOD_LIMIT_S: float = 10.0
 const DEFAULT_LAYER: String = "crust"
 const TUNING_KEYS: Array[String] = [
@@ -65,6 +67,18 @@ var overtaken: PackedByteArray = PackedByteArray()  ## By node index.
 var scanner_rows: int = 0
 var caught: bool = false
 var strikes: int = 0
+# The environment in force (Environments.put_in_force sets all of these): the target node's while
+# drilling toward it, the current node's while there, "" otherwise.
+var env_id: String = ""
+var env_node: String = ""
+var env: Dictionary = {}  ## Its definition (data/environments), {} for none.
+var env_serial: int = 0  ## Bumped on every change (the drill and combat restart their rockfall rhythm).
+var env_fire_x: float = 1.0
+var env_rock_add: float = 0.0
+var env_pursuer_x: float = 1.0
+var env_rockfall_s: Vector2 = Vector2.ZERO  ## [lo, hi] s between rockfalls; zero for none.
+var scanner_blind: bool = false  ## Magnetite: nothing beyond the current row is revealed; the view hides the rival's rooms.
+var env_both_sides: bool = true  ## Tests only: false applies environments to the player alone (the ledger's Wrong value).
 
 var _index_of: Dictionary = {}  ## node id -> index (lookup only, never iterated).
 var _current: int = -1
@@ -182,9 +196,40 @@ func is_overtaken(n: Dictionary) -> bool:
 	return overtaken[int(n["index"])] == 1
 
 
-## The node's type is known: visited, or within scanner range of the current row.
+## The node's type is known: visited, within scanner range of the current row, or the node being
+## drilled toward. While the scanner is blind (magnetite) the range is the current row alone.
 func is_revealed(n: Dictionary) -> bool:
-	return is_visited(n) or int(n["row"]) <= current_row() + scanner_rows
+	return is_visited(n) or int(n["index"]) == _target or int(n["row"]) <= current_row() + (0 if scanner_blind else scanner_rows)
+
+
+## An effect of the environment in force (Environments.EFFECTS), or `default` when it has none.
+func env_x(key: String, default: float) -> float:
+	var fx: Dictionary = env.get("effects", {})
+	var v: Variant = fx.get(key, default)
+	return float(v) if v is float or v is int or v is bool else default
+
+
+## The environment's effects as they reach one ship (null: the player). With env_both_sides off
+## (a test's Wrong value) the rival gets none.
+func _env_on(world: ShipWorld) -> bool:
+	return env_both_sides or world == null or world.is_player()
+
+
+func fire_x(world: ShipWorld) -> float:
+	return env_fire_x if _env_on(world) else 1.0
+
+
+func rock_add_c(world: ShipWorld) -> float:
+	return env_rock_add if _env_on(world) else 0.0
+
+
+func rockfall_band(world: ShipWorld) -> Vector2:
+	return env_rockfall_s if _env_on(world) else Vector2.ZERO
+
+
+## The view hides the rival's rooms: a blind scanner (magnetite) around the rival too.
+func rival_rooms_hidden() -> bool:
+	return scanner_blind and env_both_sides
 
 
 func world_running() -> bool:
@@ -261,10 +306,21 @@ func end_run(sim: Sim, p_phase: String, cause: String) -> void:
 	sim.emit("run_over", {"result": p_phase, "cause": cause})
 
 
-## {"type": "choose_node", "node": id}
+## {"type": "choose_node", "node": id} | {"type": "set_env", "env": id or ""} (scenario mode only:
+## the ledger scenarios put an environment in force without a map).
 func apply(sim: Sim, cmd: Dictionary) -> void:
-	if str(cmd.get("type", "")) == "choose_node":
-		choose_node(sim, str(cmd.get("node", "")))
+	match str(cmd.get("type", "")):
+		"choose_node":
+			choose_node(sim, str(cmd.get("node", "")))
+		"set_env":
+			var id: String = str(cmd.get("env", ""))
+			var table: Dictionary = sim.db.table("environments")
+			if mode != "scenario":
+				sim.emit("bad_command", {"type": "set_env", "why": "scenarios only"})
+			elif not id.is_empty() and not table.has(id):
+				sim.emit("bad_command", {"type": "set_env", "why": "no such environment"})
+			else:
+				Environments.put_in_force(sim, self, id, "", table)
 
 
 ## Start the drilling segment to a node linked from the current one. Returns false if refused.
@@ -308,12 +364,13 @@ func step(sim: Sim) -> void:
 	if not world_running():
 		return
 	scanner_rows = _scanner(sim)
-	pursuer_row += _rate_per_tick + _rate_per_row_tick * float(current_row()) + _rows_per_noise * new_noise
+	pursuer_row += (_rate_per_tick + _rate_per_row_tick * float(current_row()) + _rows_per_noise * new_noise) * env_pursuer_x
 	_cap_pursuer(sim)
 	_sweep_overtaken(sim)
 	_check_caught(sim)
 	if phase == "idle":
-		sim.ship.rock_temp_c = float(layer.get("rock_temp_base_c", 40.0)) + float(layer.get("rock_temp_c_per_m", 0.0)) * depth_m
+		sim.ship.rock_temp_c = float(layer.get("rock_temp_base_c", 40.0)) + float(layer.get("rock_temp_c_per_m", 0.0)) * depth_m \
+				+ rock_add_c(sim.player)
 
 
 func _scanner(sim: Sim) -> int:
@@ -359,7 +416,7 @@ func _strike(sim: Sim, why: String) -> void:
 	var rng: RandomNumberGenerator = sim.rng.get_stream("pursuer")
 	var rooms: Array[Room] = sim.ship.rooms
 	var r: Room = rooms[rng.randi_range(0, rooms.size() - 1)]
-	var fire: bool = rng.randf() < _strike_fire_chance
+	var fire: bool = rng.randf() < minf(1.0, _strike_fire_chance * fire_x(sim.player))
 	strikes += 1
 	var lost: int = add(sim, "hull", -_strike_hull)
 	r.breach_m2 += _strike_breach
@@ -384,7 +441,8 @@ func state() -> Array:
 		res.append(int(resources[r]))
 	return [mode, phase, res, depth_m, Array(known_codex), Array(learned), end_cause, pursuer_row, reveal_bonus,
 		layer_id, _map_state, _current, _target, visited, overtaken, scanner_rows, caught, strikes,
-		_last_noise, _overtaken_row, _strike_ticks, Array(gear), gear_mult.values()]
+		_last_noise, _overtaken_row, _strike_ticks, Array(gear), gear_mult.values(), env_id, env_node, env_serial,
+		env_both_sides]
 
 
 ## Checks the layer tables and the run tuning (run_lint.gd).

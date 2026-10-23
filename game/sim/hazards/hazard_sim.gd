@@ -256,7 +256,7 @@ func _fire(sim: Sim, world: ShipWorld, dt: float) -> void:
 			if r.fire <= 0.0:
 				r.fire = 0.0
 				world.emit(sim, "fire_out", {"room": r.id, "by": "water"})
-		elif r.temp_c() >= _k("fire.autoignite_c") and rng.randf() < _k("fire.autoignite_per_s") * dt:
+		elif r.temp_c() >= _k("fire.autoignite_c") and rng.randf() < minf(1.0, _k("fire.autoignite_per_s") * dt * sim.run.fire_x(world)):
 			ignite(sim, world, r, _k("fire.start_level"))
 	# Spread: each neighbour accumulates exposure; at 1.0 it catches. Deterministic and testable.
 	for j: int in range(_adj_from.size()):

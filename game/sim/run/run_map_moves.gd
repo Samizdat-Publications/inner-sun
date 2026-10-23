@@ -8,6 +8,7 @@ extends RefCounted
 
 static func build_map(sim: Sim, run: RunState) -> void:
 	run.map = MapGen.generate(run.layer, sim.rng.get_stream("map"))
+	MapGen.assign_envs(run.map, run.layer, sim.db.table("environments"), sim.rng.get_stream("map/env"))
 	var rock: Dictionary = sim.db.table("rock").get(str(run.layer.get("rock", DrillSim.DEFAULT_ROCK)), {})
 	Survey.add_to_map(run.map, run.layer, rock, sim.rng.get_stream("survey"), sim.rng.get_stream("survey/structure"))
 	for row: Array in run.map:
@@ -15,7 +16,7 @@ static func build_map(sim: Sim, run: RunState) -> void:
 			run._index_of[str(n["id"])] = run.nodes.size()
 			run.nodes.append(n)
 			run._map_state.append([n["id"], n["type"], n["x_m"], n["enemy"], Array(n["links"] as PackedStringArray),
-					(n["survey"] as Dictionary).values()])
+					(n["survey"] as Dictionary).values(), n["env"]])
 	run.visited.resize(run.nodes.size())
 	run.overtaken.resize(run.nodes.size())
 	run._current = 0
@@ -58,6 +59,7 @@ static func choose_node(sim: Sim, run: RunState, id: String) -> bool:
 	if not reserve:
 		run.add(sim, "cells", -1)
 	sim.emit("travel", {"from": from["id"], "to": id, "reserve": reserve})
+	Environments.put_in_force(sim, run, str(to.get("env", "")), id, sim.db.table("environments"))
 	return true
 
 
@@ -76,6 +78,7 @@ static func arrive(sim: Sim, run: RunState) -> void:
 	run.scanner_rows = run._scanner(sim)
 	var kind: String = str(n["type"])
 	sim.emit("arrived", {"node": run.current_node, "type": kind, "row": int(n["row"])})
+	Environments.put_in_force(sim, run, str(n.get("env", "")), run.current_node, sim.db.table("environments"))
 	if run.overtaken[run._current] == 1:
 		sim.emit("node_lost", {"node": run.current_node, "type": kind})
 		run._strike(sim, "overtaken")
