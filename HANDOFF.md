@@ -26,6 +26,22 @@ merges into main only when the M1d session says the build 6 triage is done. Gotc
 after merging a branch that adds `class_name` scripts, run a full `python tools/check.py` (it
 re-imports) before any balance run, or `balance.py` hangs to its timeout on a stale class cache.
 
+## Parity branch (2026-10-23): all six picks built, waiting to merge
+Branch `claude/blissful-neumann-c52d9b` (worktree `.claude\worktreeslissful-neumann-c52d9b`) holds the
+FTL parity work: ledger rows for all six picks, every sim row passing (`python tools/ledger.py`), the
+views, the bots and balance measures, main merged in through M1d's build 6 triage. Playtest build
+`m2p-parity-1` sits in that worktree's `builds\`, apart from main's build. Next:
+1. Stewart plays it and answers, per system (upgrades, rewards, manning, doors and purging, stores,
+   environments), the three A/B questions from `docs/research/ftl-difftest-plan.md` layer 5 (as
+   tense? as readable? as many real choices? 1 to 5), at the top of `docs/STEWART_FEEDBACK.md`.
+   His view on difficulty decides D082 (the balanced bot wins 58%).
+2. When the M1d session says M1d is closed: merge main into the branch once more, full check, then
+   merge the branch into main (`git merge --no-ff`), re-record determinism, and only then export over
+   `builds\InnerSun.exe`. D061 (the spine tower ship) is planned to start after that merge.
+3. Open on the ledger: the feel row L-DOR-F1 (a critic still with the rubric, and Stewart's A/B).
+   Known gaps: the shut-door close-up and the drilling-phase scanner snow were never seen in a still;
+   the map's environment icons are small; crew stay selected after an order.
+
 ## Next session (start now, 2026-10-22): M1d interim round, then build 6 notes tonight
 Stewart cannot play build 6 until the evening and wants the most done meanwhile (D058). This session:
 starts the FTL parity workstream at once as a separate session in its own worktree (the side-track

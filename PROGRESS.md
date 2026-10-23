@@ -54,18 +54,23 @@ Updated: 2026-10-22 night, playtest build 7 (`m1d-playtest-7`) from Stewart's bu
 - **FTL parity** runs as its own session on branch `claude/blissful-neumann-c52d9b` (rounds 1 to 3
   merged there, 388 tests); it merges into main only after the build 6 triage.
 
-## Parity branch status (2026-10-22, branch `claude/blissful-neumann-c52d9b`, not on main)
-- Ledger rows for all six picks (28 rows); three builder rounds merged on this branch, each spec
-  audited by Gemini first (D057; every finding checked): round 1 economy (upgrade ladders, tiered
-  rewards, rolled stores, sell-back; D081), round 2 doors and purging in the sim (D080), round 3
-  manned stations with a station skill. `check: ok` (387 tests).
-- Coverage (`python tools/ledger.py`, `docs/research/parity_report.md`): stores 5/5, manning 3/3,
-  rewards 4/5, upgrades 3/4, doors 2/3, environments 0/2.
-- Rounds 4 (bots, balance measures) and 5 (environments) building; then 6a (views). Was waiting for M1d's split: bot updates (reward values, stock clamps, ladder sums), the balance
-  measures (L-UPG-03, L-RWD-05), environments (they act through the drill and run code), door and
-  purge clicks, the crew card's station skill, a look at the power panel at the higher bar counts.
-  Main (with M1d's split) merged into this branch 2026-10-22: `check: ok` (397 tests), determinism ok,
-  hash 84b72d0b949b6d7b at tick 1200 (main alone: e30883214e637d19). No export.
+## Parity branch status (2026-10-23, branch `claude/blissful-neumann-c52d9b`, not on main)
+- **All six picks built (D056):** 28 ledger rows, every number, shape and rule row passing with its
+  wrong value failing (`python tools/ledger.py`, `docs/research/parity_report.md`): upgrade ladders
+  4/4, tiered rewards 5/5, manned stations 3/3, doors and purging 3/3, rolled stores 5/5, node
+  environments 2/2. Open: the feel row L-DOR-F1 (critic rubric and Stewart's A/B).
+- **Rounds:** 1 economy (D081), 2 doors and purge (D080), 3 manned stations, 4 bots and the spend and
+  income measures, 5 environments, 6a views (door, hatch and vent clicks, crew click and box select,
+  station skill on the cards, environment marker, blind scanner, hidden rival); plus pressure doors.
+  Gemini audited the specs of rounds 1 to 3 (every finding checked); rounds 4 and 5 were checked by
+  hand while its credits were out.
+- **Checks:** main's build 6 triage merged in; `check: ok` (432 tests); determinism ok, hash
+  d0016abef9fd11fe at tick 1200.
+- **Balance (900 runs, `docs/research/m1-evidence/balance_parity_final.md`):** wins cautious 48%,
+  greedy 19%, balanced 58% (38% before parity; band 10 to 30%). Easier, mostly from fight rewards and
+  manning; left for Stewart's playtest to judge (D082). Spend share 64%, income share 22% (in band).
+- **Playtest build:** `m2p-parity-1`, exported into this worktree's own `builds\` (main's
+  `builds\InnerSun.exe` untouched). Merge into main waits for M1d to close (D058).
 
 ## Side track (2026-10-22): FTL parity planned, nothing built
 - FTL (1.6.14, owned on Steam) is now a reference behind a firewall (D052 to D055): community survey

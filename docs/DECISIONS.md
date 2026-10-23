@@ -642,3 +642,13 @@ offers by rarity that rises with depth, supplies always on sale but in limited s
 3 and 4 ore a point by depth band, gear and weapons sell back at half. Bots adapt after M1d's split
 (reward values, stock clamps, ladder sums). Revert: the store, systems, gear, weapon, event and
 tuning data of round 1.
+
+## D082 (AI): The parity build ships easier than the band; Stewart's playtest decides the tuning
+After all six parity systems and main's build 6 changes, the balanced bot wins 58% (38% before;
+the band is 10 to 30%), the greedy bot 19%, the cautious 48%. Most of the rise came with round 4
+(fight rewards that grow with depth, bots that value them) and manning bonuses; environments and
+D060's richer ore added a little. Tuning it down now would be guessing at what a human finds easy,
+and D039 and D044 already kept the bots above the band until Stewart had played. Levers, all data:
+`economy.reward_*` (L-RWD-05 has room down to 15%), the gate fight, `combat.loot_boss_scale`,
+`systems.station_skill_gain`, environment chance. Revert: lower the reward bases first.
+
