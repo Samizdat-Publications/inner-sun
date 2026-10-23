@@ -10,7 +10,7 @@
     {"item": "hull", "amount": 1, "price": 2, "currency": "ore", "text": "Hull plate, welded on while you wait."},
     {"item": "weapon", "weapon": "thermal_lance", "price": 70, "limit": 1, "text": "A thermal lance off a rig that did not need it any more."},
     {"item": "crew", "pool": "survivors", "price": 45, "limit": 1, "text": "Passage for a survivor who wants to go deeper."},
-    {"item": "upgrade", "system": "helm", "price": 120, "currency": "ore", "limit": 1, "max_bars": 3, "text": "Scanner coils for the helm."},
+    {"item": "upgrade", "system": "helm", "price": 120, "currency": "ore", "limit": 1, "max_bars": 3, "text": "Scanner coils for the helm: a longer scanner and hold depth."},
     {"item": "upgrade", "system": "bracing", "price": 140, "currency": "ore", "limit": 2, "max_bars": 4, "text": "Bracing struts. Two make another layer."},
     {"item": "upgrade", "system": "reactor", "price": 200, "currency": "ore", "limit": 1, "max_bars": 12, "text": "A reactor bar, hot from the bench."},
     {"item": "upgrade", "system": "weapons", "price": 160, "currency": "ore", "limit": 1, "max_bars": 4, "text": "Heavier weapon mounts."},

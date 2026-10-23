@@ -25,7 +25,7 @@ const CONTROLS: Array[String] = [
 	"EVENTS   click an option or press its number. Greyed options say what they need. H or Esc closes this page.",
 ]
 const SYSTEMS: Array[String] = [
-	"HELM   needs crew on the bridge. Drilling: more bars turn the drill faster and let it cut sideways faster. Fights: dodges shots, 6% a bar.",
+	"HELM   needs crew on the bridge. More bars turn the drill and cut sideways faster; in fights, dodges 6% a bar. The scanner sees about 10 m; the helm upgrade (scanner coils) extends it to 16 m and unlocks hold depth (90 degrees).",
 	"BRACING   every 2 bars hold a layer that soaks one hit, back after 6 s. It soaks rockfalls in fault rock (pale brown hatching on the scanner) and hits in fights.",
 	"WEAPONS   guns in fights. The charge launcher also blasts rock for a charge: a vein or pocket out of reach. A blast pays half the ore.",
 	"COOLANT AND PUMPS   spends coolant (top bar) to chill every room and runs the pumps. Needs a bar powered to DOUSE a fire.",

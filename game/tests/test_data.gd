@@ -28,6 +28,7 @@ func test_every_tuning_number_is_used() -> void:
 	used.append_array(HazardSim.TUNING_KEYS)
 	used.append_array(CrewAI.TUNING_KEYS)
 	used.append_array(DrillSim.TUNING_KEYS)
+	used.append_array(DrillSim.helm_table_keys())
 	used.append_array(DrillMiner.TUNING_KEYS)
 	used.append_array(Systems.TUNING_KEYS)
 	used.append_array(RunState.TUNING_KEYS)

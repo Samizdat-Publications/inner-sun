@@ -104,6 +104,9 @@ func test_scanner_level_click_holds_depth_and_fault_rock_is_hatched() -> void:
 	var low: float = sc.angle_toward(Vector2(cx + 100.0, ScannerPanel.SCREEN.position.y + 100.0))
 	check(low > 30.0 and low < 80.0, "a click below the crown steers part way (%f)" % low)
 	sc.queue_steer(90.0)
+	check_eq(sc.target_heading(), 45.0, "D060: 45 until the helm upgrade")
+	s.ship.rooms[s.ship.room_with_system("helm")].sys_max = 3  # D060: hold depth needs the helm upgrade.
+	sc.queue_steer(90.0)
 	check_eq(sc.target_heading(), 90.0, "the course can be 90 now")
 	check_eq(s.drill.target_heading_deg, 0.0, "the sim has not stepped yet")
 	s.step()
