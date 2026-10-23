@@ -41,3 +41,4 @@ A visual record of Inner Sun, oldest first.
 | 035 | 2026-10-17 13:16 | [035_m1d-world-depth-craters.jpg](035_m1d-world-depth-craters.jpg) | Build 5c: blast craters open onto a far wall that scrolls slower than the rock; shale and iron beds in the rock | 78ad7d9 |
 | 036 | 2026-10-17 19:25 | [036_showcase-build6-frames.jpg](036_showcase-build6-frames.jpg) | showcase capture, build 6; review frames, build 20261017-191130-b6d5318, seed 41 | b6d5318 |
 | 037 | 2026-10-22 20:40 | [037_m1d-miner-1061-frames.jpg](037_m1d-miner-1061-frames.jpg) | M1d interim: Gemini audit fixes, amber PARKED notice, multiply scorch; the miner goes out around 85 s; review frames, build 20261022-202935-298989b, seed 1061 | a2ba7b6 |
+| 038 | 2026-10-22 21:17 | [038_crown-repair-a.jpg](038_crown-repair-a.jpg) | Drill crown Repair A (Stewart's pick): the original art with an even cutter row, the two stray cones gone | 8647331 |
