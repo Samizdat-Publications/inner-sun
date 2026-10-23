@@ -3,6 +3,41 @@
 His words outrank everything except CLAUDE.md's hard rules. Newest first. Playtest notes go at the
 top under a dated heading.
 
+## 2026-10-22 evening: playtest build 6 (one run, seed 721713)
+Verbatim:
+- "Note that pausing does not stop the animations of everything on ship etc, I did not realize it was
+  paused at first."
+- "I think what would make this better is slightly higher ore density but the scanner shows much less
+  (it can be upgraded later). That way I don't spend the whole time mining the whole thing left to
+  right horizontally. In fact I don't know that the horizontal maintain depth should even be possible
+  until an upgrade is unlocked. It's too powerfull from the start."
+- "The first contact had the big press T to power coolant but pressing T does nothing. I don't know if
+  that's because I lack something or not but the prompt makes me think I should be pressing that
+  button. If it's the case that I lack somemthing needed to use as coolant, it should have some sort
+  of animated or seasily identifiable visual action when the user tries to deploys it and it fails due
+  to something like lacking coolant or whatever."
+- "It also took me way too long to realize I could direct individuals to different rooms like it is in
+  FTL. So I lost the first battle hard but it would have probably went different had I managed that
+  better so that's my bad."
+- "And instead of selecting from the name for the crew member on board, I should also be able to drag
+  click to select them. I kind of almmost think the entire ship design needs to be re-thought out into
+  a more FTL style situation the more I think about it. The way they have the ships, small with the
+  doors and airlock etc controls, all that. The general style of the ship should maybe even be changed
+  to something less a giant rectangle I can't put my finger on it."
+- Screenshot: the death report, KIA at row 2 of 13, 120 m, T+08:11, 3 of 3 crew lost, 0 fights won.
+
+What the run record shows (`python tools/run_report.py --since 2026-10-22`; replays exactly from the
+`m1d-playtest-6` tag, hash 5c652da0c6d64318): dead to the first rival rig (rival_light) at row 2 after
+8:11; ore +192, gems +9. Commands: 179 steer, 121 power, 11 assign (first at 6:52, as the fight
+began), 7 send_miner, 5 target, 2 douse, 1 bit change; never blast or recall. The input diary shows
+douse reaching the game (one F press, one click on a DOUSE button): the build 5c douse mystery is
+settled.
+The T presses: the rival's hits wrecked the reactor (8 bars, then 5, 3, 0). The reactor fire's DOUSE
+button read "POWER COOLANT (T)" because coolant had no power, and he pressed T eleven times; each
+press asked for a bar the damaged reactor did not have, so the sim gave nothing and nothing on screen
+said why. A real feedback bug, not his mistake. Crew were sent to rooms only from the fight onward
+(the "hint_crew" line fires only when damage goes unattended).
+
 ## 2026-10-22: the drill crown art (during the M1d interim round)
 Verbatim, with a screenshot of the crown under the tower (two cone-shaped pieces circled among the
 cutter teeth): "the drill portion at the bottom of the vehicle looks really cool, but it has some
