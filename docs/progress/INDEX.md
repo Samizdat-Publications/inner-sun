@@ -42,3 +42,6 @@ A visual record of Inner Sun, oldest first.
 | 036 | 2026-10-17 19:25 | [036_showcase-build6-frames.jpg](036_showcase-build6-frames.jpg) | showcase capture, build 6; review frames, build 20261017-191130-b6d5318, seed 41 | b6d5318 |
 | 037 | 2026-10-22 20:40 | [037_m1d-miner-1061-frames.jpg](037_m1d-miner-1061-frames.jpg) | M1d interim: Gemini audit fixes, amber PARKED notice, multiply scorch; the miner goes out around 85 s; review frames, build 20261022-202935-298989b, seed 1061 | a2ba7b6 |
 | 038 | 2026-10-22 21:17 | [038_crown-repair-a.jpg](038_crown-repair-a.jpg) | Drill crown Repair A (Stewart's pick): the original art with an even cutter row, the two stray cones gone | 8647331 |
+| 039 | 2026-10-23 00:11 | [039_m1d-playtest-7-frames.jpg](039_m1d-playtest-7-frames.jpg) | Build 7: short scanner, helm-capped steering, power refusal feedback, visible pause, repaired crown; review frames, build 20261022-235445-c1a127e, seed 721713 | c1a127e |
+| 040 | 2026-10-23 00:28 | [040_scanner-range.jpg](040_scanner-range.jpg) | Build 7 (D060): the scanner sees about 10 m round the drill head; static beyond the ring | c1a127e |
+| 041 | 2026-10-23 00:28 | [041_pause-visible.jpg](041_pause-visible.jpg) | Build 7: pausing freezes and dims the world under PAUSED: SPACE TO RESUME | c1a127e |

@@ -47,10 +47,11 @@ static func options_of(survey: Dictionary) -> Dictionary:
 
 ## start: the ship's footprint at the start (meters, cell aligned). target_cx_m: the corridor's end
 ## (centre x at the target depth). run_depth_m: the run's depth at the start (strata and feature
-## windows). opts: options_of(survey).
+## windows). opts: options_of(survey). ore_mult: the layer's ore_richness_mult, a further scale on the
+## ore and gem feature counts (water, gas, faults and plain features are unchanged).
 static func generate(table: Dictionary, rng: RandomNumberGenerator, cols: int, rows: int, cell_m: float,
 		start: Rect2, target_cx_m: float, depth_m: float, run_depth_m: float, shaft_margin_m: float,
-		top_air_m: float, opts: Dictionary = {}) -> PackedByteArray:
+		top_air_m: float, opts: Dictionary = {}, ore_mult: float = 1.0) -> PackedByteArray:
 	var o: Dictionary = opts if not opts.is_empty() else options_of({})
 	var codes: Dictionary = codes_of(table)
 	var grid := PackedByteArray()
@@ -65,7 +66,7 @@ static func generate(table: Dictionary, rng: RandomNumberGenerator, cols: int, r
 		if (group == "gems" and not bool(o["gems"])) or (group == "gas" and not bool(o["gas"])) \
 				or (group == "water" and not bool(o["water"])) or (group == "faults" and not bool(o.get("faults", false))):
 			continue
-		var k: float = float(o["richness"]) if group == "ore" or group == "gems" else 1.0
+		var k: float = float(o["richness"]) * ore_mult if group == "ore" or group == "gems" else 1.0
 		_feature(fd, codes, rng, grid, cols, rows, cell_m, sx, target_cx_m, y0, depth_m, run_depth_m, k, band)
 	_carve(grid, cols, rows, cell_m, start, shaft_margin_m, top_air_m)
 	return grid

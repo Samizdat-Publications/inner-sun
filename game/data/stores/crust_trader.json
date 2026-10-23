@@ -12,7 +12,7 @@
   "sections_shown": [2, 3],
   "sections": [
     {"id": "systems", "weight": 3, "offers": [3, 3], "pool": [
-      {"item": "upgrade", "system": "helm", "rarity": 1, "text": "Scanner coils for the helm."},
+      {"item": "upgrade", "system": "helm", "rarity": 1, "text": "Scanner coils for the helm: a longer scanner and hold depth."},
       {"item": "upgrade", "system": "bracing", "rarity": 1, "text": "Bracing struts. Two make another layer."},
       {"item": "upgrade", "system": "reactor", "rarity": 1, "text": "A reactor bar, hot from the bench."},
       {"item": "upgrade", "system": "weapons", "rarity": 1, "text": "Heavier weapon mounts."},

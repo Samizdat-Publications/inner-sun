@@ -48,6 +48,8 @@ var _hold: int = 0
 var _hold_age: int = 0
 var _hold_shots: Array[String] = []  # captures taken HOLD_SHOT_AT frames into the current hold
 var _moment_stills: Dictionary = {}  # moment -> extra stills taken
+var _paused_frames: int = 0  # --pause-at: frames the world has stood paused
+const PAUSE_SETTLE_FRAMES: int = 90  ## --pause-at: frames before the fixed-time shots are taken (veil faded in).
 
 
 func setup(p_main: Node, args: Args) -> void:
@@ -84,8 +86,15 @@ func _physics_process(_delta: float) -> void:
 	var sim: Sim = run.sim
 	_watch_events(sim)
 	var t: int = sim.tick
+	var due_t: int = t
+	if bool(main.get("pause_demo")) and bool(main.get("paused")):
+		# --pause-at: the sim stands still, so the fixed-time shots are taken once the pause has settled.
+		_paused_frames += 1
+		if _paused_frames >= PAUSE_SETTLE_FRAMES:
+			due_t = 1 << 30
+			_all_queued = true
 	for shot_name: String in _due.keys():
-		if not _taken.has(shot_name) and t >= int(_due[shot_name]):
+		if not _taken.has(shot_name) and due_t >= int(_due[shot_name]):
 			_taken[shot_name] = true
 			if shot_name.begins_with("h") and shot_name.length() > 1 and shot_name.substr(1).is_valid_int():
 				var scr: RunScreen = main.get("screen")

@@ -18,10 +18,17 @@ Written by the lead at extra effort so the M1d session (effort high, Stewart's w
    --exe -- --mode=run`, `request_access` for `InnerSun.exe`. G, F2, F and the miner card have never
    been pressed by a person.
 
-## Triage table (fill in)
+## Triage table (build 6, filled 2026-10-22 evening; his notes in `docs/STEWART_FEEDBACK.md`)
 | His note | Cause | Change | Size | Who |
 |---|---|---|---|---|
-| | | | | |
+| Pausing does not stop the ship's animations; he did not see it was paused | View: crew, flames, smoke, sparks and lamp flicker run on frame time | While paused, freeze every ship and world animation (particles, crew frames, flicker, camera ease) and dim the world under a clear PAUSED banner; unpausing resumes where it stopped | M | builder |
+| Pressing T (the DOUSE button's "POWER COOLANT (T)") did nothing | Code: a power key with no free reactor bar is clamped silently; the reactor was damaged to 0 to 5 bars | The sim reports a refused power change (`bad_command` power, why "no free bars" or "damaged"); the view flashes the reactor row and the pressed system's row and shows a short notice ("NO FREE REACTOR BARS: Shift plus a key frees one; the reactor is damaged 3/8"); the DOUSE button names the real blocker ("NO FREE POWER" when the reactor is full or wrecked) | S | lead |
+| Took too long to find that crew can be sent to rooms | Onboarding: the crew hint fires only on unattended damage | A one-time hint and glow when the first fight starts (the game is paused then): "1 to 3 or click a crew member, then click a room"; the same on the first hazard | S | lead plus writer line |
+| Wants to click or drag-select crew on the ship itself | View: selection is by the crew cards and 1 to 3 only | Click a crew figure to select it; drag a box to select several; a click on a room sends every selected one (the sim's assign per crew member, so replays stay commands) | M | builder |
+| Slightly more ore, but a scanner that shows much less (upgradeable) | Data and design: the scanner shows the whole segment, so he plans a full sweep | Ore richness up about 20%; the scanner shows only a short range around the drill head at start (D060), longer with helm upgrades or a scanner part in stores | M | lead (data) plus builder-opus (sim range) |
+| Holding depth (heading 90) is too strong from the start | Design: D035 gave heading to +-90 with no unlock | Start capped at +-45; holding depth (+-90) unlocks with a store part or helm upgrade (D060) | M | builder-opus |
+| Rethink the ship in FTL style: smaller, doors, airlock controls, not a giant rectangle | Design (product-defining, his call) | Not in M1d. Parity round 6a already adds door and purge clicks. A ship redesign proposal (layout, silhouette, door and airlock controls) goes to him as its own design step before M2 | L | lead, then his pick |
+| Died at row 2 to the first rival (the bots win 47%) | Onboarding first (crew, power), then balance | Fix the first-fight onboarding above, then re-judge difficulty on his next run before tuning | - | - |
 
 ## The questions build 5b asks (sent to him with the build), and the levers behind each answer
 1. **Did you find G, and was the miner worth parking for?** Levers: `game/data/tuning/miner.json`

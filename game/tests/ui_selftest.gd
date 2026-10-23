@@ -254,9 +254,10 @@ func _scenario_dig_verbs() -> void:
 	_key(KEY_A)
 	check_eq(sc.target_heading(), 15.0, "A steps back")
 	_key(KEY_D, true)
-	check_eq(sc.target_heading(), 90.0, "Shift plus D holds depth")
+	var cap: float = s.drill.max_heading_deg(s)  # D060: 45 until the helm upgrade, then 90 (hold depth).
+	check_eq(sc.target_heading(), cap, "Shift plus D turns to the helm's cap")
 	_key(KEY_A, true)
-	check_eq(sc.target_heading(), -90.0, "Shift plus A holds depth the other way")
+	check_eq(sc.target_heading(), -cap, "Shift plus A turns to the cap the other way")
 	_key(KEY_S)
 	check_eq(sc.target_heading(), 0.0, "S points straight down")
 	await _frames(2)

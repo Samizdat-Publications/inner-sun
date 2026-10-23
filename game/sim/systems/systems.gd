@@ -115,7 +115,14 @@ func apply(sim: Sim, cmd: Dictionary) -> void:
 	if ri < 0:
 		sim.emit("bad_command", {"type": "power", "why": "no such room"})
 		return
-	set_power(sim, sim.player, ri, int(cmd.get("bars", 0)))
+	var asked: int = mini(int(cmd.get("bars", 0)), sim.ship.rooms[ri].sys_max)
+	var got: int = set_power(sim, sim.player, ri, int(cmd.get("bars", 0)))
+	var sd: SystemsSide = side(sim.player)
+	if got < asked and sd.has_sys[ri] == 1 and ri != sd.reactor:
+		# Say why a power key did nothing (build 6: eleven silent T presses on a wrecked reactor).
+		var r: Room = sim.ship.rooms[ri]
+		var why: String = "damaged" if r.intact_bars() < asked else "no free bars"
+		sim.emit("bad_command", {"type": "power", "room": r.id, "why": why, "asked": asked, "got": got})
 
 
 func step(sim: Sim) -> void:

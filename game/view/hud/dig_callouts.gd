@@ -4,13 +4,15 @@ extends Control
 ##  - a "ROCKFALL IN 1.2 S" chip from the warning ("rockfall_warn") until the impact;
 ##  - on the impact ("rockfall"): "BRACING HELD" (green) or "ROCKFALL: HULL -1, <ROOM> DAMAGED" (red);
 ##  - "BLAST: 14 CELLS, +6 ORE" after a blast, "DOUSED: <ROOM>" and "FIRE OUT" after a douse;
-##  - the sim's reason when an order was refused ("bad_command" for a blast or a douse).
+##  - the sim's reason when an order was refused ("bad_command" for a blast, a douse or a power key; the
+##    power lines also show in fights).
 ## Follows `sim.events` by index (read only) and ages the messages by real seconds, like DigLog.
 ##
 ## Mount (RunScreen, on the HUD layer, above the dig tally):  DigCallouts.build(layer, sim)
 
 const POS_Y: float = 142.0
 const ENV_CHIP_Y: float = 186.0
+const POS_Y_IDLE: float = 236.0  ## Outside the dig (fights, idle) the lines sit below the enemy panel.
 const LIFE_S: float = 3.0
 const MAX_LINES: int = 3
 const FONT: int = 22
@@ -82,10 +84,28 @@ static func message_for(s: Sim, e: Dictionary) -> Dictionary:
 			var why: String = str(e.get("why", ""))
 			if t == "blast":
 				return {"text": "BLAST REFUSED: " + (BlastCard.reason_text(s, why) if why != "out of range" else "OUT OF RANGE"), "kind": "bad"}
+			if t == "power" and e.has("room"):
+				return {"text": power_refusal_text(s, str(e["room"]), why), "kind": "bad"}
 			if t == "douse":
 				var rt: String = DouseLayer.reason_text(s, why)
 				return {"text": "DOUSE REFUSED: " + (rt if not rt.is_empty() else why.to_upper()), "kind": "bad"}
 	return {}
+
+
+## Why a power key did nothing, in words: the system's own bars are broken, or the reactor has no
+## free bar (and whether that is because it is damaged).
+static func power_refusal_text(s: Sim, room_id: String, why: String) -> String:
+	var ri: int = s.ship.room_index(room_id)
+	if ri < 0:
+		return "NO POWER"
+	var r: Room = s.ship.rooms[ri]
+	if why == "damaged":
+		return "%s DAMAGED: %d OF %d BARS WORK. SEND CREW TO REPAIR IT" % [r.name.to_upper(), r.intact_bars(), r.sys_max]
+	var rr: int = s.ship.room_with_system("reactor")
+	if rr >= 0 and s.ship.rooms[rr].intact_bars() < s.ship.rooms[rr].sys_max:
+		var re: Room = s.ship.rooms[rr]
+		return "NO FREE POWER: REACTOR DAMAGED %d/%d. REPAIR IT, OR SHIFT + A KEY FREES A BAR" % [re.intact_bars(), re.sys_max]
+	return "NO FREE POWER: SHIFT + ANOTHER SYSTEM'S KEY FREES A BAR"
 
 
 static func _room_name(s: Sim, id: String) -> String:
@@ -138,7 +158,7 @@ func _draw() -> void:
 		return
 	_draw_env_chip()
 	var cx: float = RunScreen.WORLD_RECT.get_center().x
-	var y: float = POS_Y
+	var y: float = POS_Y if sim.drill.active else POS_Y_IDLE  # In a fight the enemy panel sits at the top.
 	var warn: String = warn_text(sim)
 	if not warn.is_empty():
 		var p: float = UiTheme.pulse(_t, 3.0)

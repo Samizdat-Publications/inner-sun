@@ -89,6 +89,7 @@ func _crown(s: Sim) -> Vector2:
 
 func test_heading_90_holds_depth_and_cuts_sideways() -> void:
 	var s: Sim = _sim(2, 2)
+	s.ship.rooms[s.ship.room_with_system("helm")].sys_max = 3  # D060: hold depth needs the helm upgrade.
 	_begin(s)
 	_fill_all(s, _code(s, "rock"))
 	s.push({"type": "steer", "angle": 120.0})

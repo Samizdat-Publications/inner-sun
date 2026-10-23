@@ -4,7 +4,9 @@ extends RefCounted
 ## ids, code 0 is air, numeric hardness, yields naming real run resources, strata and features
 ## naming real materials, feature groups and depth windows, a yield and a hazard flag (water, gas)
 ## never on one material, flags (water, gas, unstable, loot, interior) are booleans, every tuning key
-## present (the drill's and the away miner's). The buried structures and the tables' structure lists: StructureLint.
+## present (the drill's and the away miner's), the by-helm tables (heading cap above 0 and at most 90
+## degrees, scanner range above 0; bars 0 required, non-numbers are caught by the loader), and a
+## layer's optional ore_richness_mult (a number above 0). The buried structures and the tables' structure lists: StructureLint.
 
 const FEATURE_KINDS: Array[String] = ["vein", "lens", "pocket", "blob"]
 
@@ -15,6 +17,8 @@ static func lint(db: DataDB, errs: PackedStringArray) -> void:
 	for key: String in keys:
 		if not db.tuning.has(key):
 			errs.append("%s/tuning: missing number \"%s\"" % [db.root, key])
+	_lint_helm_tables(db, errs)
+	_lint_layers(db, errs)
 	var rock: Dictionary = db.table("rock")
 	if not rock.has(DrillSim.DEFAULT_ROCK) and not db.ships.is_empty() and db.tables.has("rock"):
 		errs.append("%s/rock: the default rock table \"%s\" is missing" % [db.root, DrillSim.DEFAULT_ROCK])
@@ -116,3 +120,28 @@ static func _lint_table(table: Dictionary, file: String, errs: PackedStringArray
 				var v: Variant = fd[key]
 				if not ((v is Array and (v as Array).size() == 2) or v is float or v is int):
 					errs.append("%s: \"%s\" must be a number or [min, max]" % [where, key])
+
+
+static func _lint_helm_tables(db: DataDB, errs: PackedStringArray) -> void:
+	var known: Array[String] = DrillSim.helm_table_keys()
+	for key: String in known:
+		if not db.tuning.has(key):
+			continue
+		var v: float = float(db.tuning[key])
+		if key.begins_with(DrillSim.HEADING_TABLE) and (v <= 0.0 or v > 90.0):
+			errs.append("%s/tuning: \"%s\" must be above 0 and at most 90 degrees" % [db.root, key])
+		elif key.begins_with(DrillSim.RANGE_TABLE) and v <= 0.0:
+			errs.append("%s/tuning: \"%s\" must be above 0 m" % [db.root, key])
+	for key2: String in db.tuning.keys():
+		if (key2.begins_with(DrillSim.HEADING_TABLE) or key2.begins_with(DrillSim.RANGE_TABLE)) and not known.has(key2):
+			errs.append("%s/tuning: \"%s\" names no helm bar count from 0 to %d" % [db.root, key2, DrillSim.HELM_TABLE_MAX])
+
+
+static func _lint_layers(db: DataDB, errs: PackedStringArray) -> void:
+	var layers: Dictionary = db.table("layers")
+	for id: String in layers.keys():
+		var ld: Dictionary = layers[id]
+		if ld.has("ore_richness_mult"):
+			var m: Variant = ld["ore_richness_mult"]
+			if not (m is float or m is int) or float(m) <= 0.0:
+				errs.append("%s: ore_richness_mult must be a number above 0" % db.source_of("layers", id))

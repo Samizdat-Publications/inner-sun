@@ -78,7 +78,7 @@ func test_every_hint_has_lines_and_a_lint_trigger() -> void:
 			check(not line.is_empty(), "%s has a line (run %d)" % [n, runs])
 			check(not line.contains(dash), "%s has no em dash" % n)
 			check(line.length() <= 170, "%s is short enough for the strip (%d)" % [n, line.length()])
-	check_eq(HintDirector.NAMES.size(), 14, "fourteen hints in all")
+	check_eq(HintDirector.NAMES.size(), 15, "fifteen hints in all (crew_fight since build 6)")
 	check_eq(HintDirector.line_for(s, "no_such_hint", 0), "", "an unknown hint has no line")
 	check_eq(HintDirector.line_for(s, "miner", 3), HintDirector.line_for(s, "miner", 3), "the pick is a pure hash of the run count")
 	check(HintDirector.line_for(s, "miner", 0).contains("parks itself") or HintDirector.line_for(s, "miner", 0).contains("stops on its own"), "the miner hint says the drill parks")

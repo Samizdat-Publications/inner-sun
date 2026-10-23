@@ -8,7 +8,12 @@ extends SimModule
 ## resources (one "mined" event per material per footprint step), water pockets pour into the drill
 ## room, gas pockets set it on fire, cutting heats the drill room, wears the bit and makes noise.
 ## Arrival is depth only: the ship's bottom edge reaching target_y. Steering is for detours: the
-## heading goes to +-max_heading_deg (90 = "hold depth", cutting straight sideways). The turn rate is
+## heading goes to +-max_heading_deg(sim) (90 = "hold depth", cutting straight sideways). That cap and
+## the scanner's range grow with the helm's installed bars (Room.sys_max, D060): the tuning tables
+## drill.max_heading_deg_by_helm_<bars> and drill.scanner_range_m_by_helm_<bars>, where the highest
+## key at or below the installed bars wins (bars 0 must be present; the single max_heading_deg is the
+## fallback when the heading table is absent). The steer command is clamped to the cap when it
+## applies. The view draws rock only within scanner_range_m(sim) of the drill head. The turn rate is
 ## turn_deg_s * Systems.steer_rate_scale and the sideways part of the motion is multiplied by
 ## Systems.side_cut_scale (both helm bars, when manned): per second (v sin h * side, v cos h), with v
 ## from power, gear, the bit and the leading band (side cells weighted |sin h| * side, bottom cells
@@ -39,6 +44,10 @@ const MAX_CODES: int = 256
 const MAX_POWER_BAR: int = 4  ## Highest bar with its own power factor; more bars use this one.
 const EPS: float = 0.000001
 const STEEP_DEG: float = 60.0  ## steep_ticks counts drilling ticks at headings past this (balance stats).
+const HELM_TABLE_MAX: int = 8  ## Highest helm bar count a by-helm tuning key may name.
+const HEADING_TABLE: String = "drill.max_heading_deg_by_helm_"
+const RANGE_TABLE: String = "drill.scanner_range_m_by_helm_"
+const NO_RANGE_M: float = 1000.0  ## Scanner range when its table is absent: everything shows.
 const TUNING_KEYS: Array[String] = [
 	"drill.cell_m", "drill.width_m", "drill.top_air_m", "drill.shaft_margin_m", "drill.bottom_margin_m",
 	"drill.max_lateral_m", "drill.band_cells", "drill.base_speed_m_s", "drill.max_speed_m_s",
@@ -52,7 +61,7 @@ const TUNING_KEYS: Array[String] = [
 	"drill.rockfall_warn_s", "drill.rockfall_hull_pts", "drill.rockfall_sys_bars", "drill.blast_cooldown_s",
 	"drill.blast_range_m", "drill.blast_fuse_s", "drill.blast_radius_m", "drill.blast_fire_m", "drill.blast_noise",
 	"drill.blast_yield_pct", "drill.structure_at_min_frac", "drill.structure_at_max_frac", "drill.structure_offset_min_m",
-	"drill.structure_offset_max_m",
+	"drill.structure_offset_max_m", HEADING_TABLE + "0", RANGE_TABLE + "0",
 ]
 
 # Read by the view (never written outside this class and DrillMaterials).
@@ -147,7 +156,9 @@ var _base_speed: float = 1.0
 var _max_speed: float = 3.0
 var _air_floor: float = 0.3
 var _turn_per_tick: float = 0.0
-var _max_heading: float = 90.0
+var _max_heading: float = 90.0  ## The fallback cap when the by-helm table is absent.
+var _heading_by_helm: PackedFloat64Array = PackedFloat64Array()  ## Cap by installed helm bars (0..HELM_TABLE_MAX).
+var _range_by_helm: PackedFloat64Array = PackedFloat64Array()  ## Scanner range by installed helm bars.
 var _wall_deg: float = 80.0
 var _band: int = 2
 var _heat_kw_per_bar: float = 0.0
@@ -171,6 +182,8 @@ func _init(db: DataDB) -> void:
 	_air_floor = maxf(0.01, db.tune("drill.air_hardness_floor"))
 	_turn_per_tick = db.tune("drill.turn_deg_s") * Sim.DT
 	_max_heading = db.tune("drill.max_heading_deg")
+	_heading_by_helm = helm_table(db, HEADING_TABLE, _max_heading)
+	_range_by_helm = helm_table(db, RANGE_TABLE, NO_RANGE_M)
 	_wall_deg = db.tune("drill.at_wall_heading_deg")
 	_band = maxi(1, roundi(db.tune("drill.band_cells")))
 	_heat_kw_per_bar = db.tune("drill.heat_kw_per_bar")
@@ -203,7 +216,8 @@ func commands() -> PackedStringArray:
 func apply(sim: Sim, cmd: Dictionary) -> void:
 	match str(cmd.get("type", "")):
 		"steer":
-			target_heading_deg = clampf(float(cmd.get("angle", 0.0)), -_max_heading, _max_heading)
+			var cap: float = max_heading_deg(sim)
+			target_heading_deg = clampf(float(cmd.get("angle", 0.0)), -cap, cap)
 		"change_bit":
 			change_bit(sim)
 		"blast":
@@ -248,6 +262,44 @@ func progress() -> float:
 
 func power_factor(bars: int) -> float:
 	return _power[clampi(bars, 0, MAX_POWER_BAR)]
+
+
+## The steepest heading the player's ship may steer to now (degrees), by the helm's installed bars.
+func max_heading_deg(sim: Sim) -> float:
+	return _heading_by_helm[helm_bars(sim)]
+
+
+## How far from the drill head the scanner shows rock now (meters), by the helm's installed bars.
+func scanner_range_m(sim: Sim) -> float:
+	return _range_by_helm[helm_bars(sim)]
+
+
+## The player's helm installed bars (Room.sys_max), clamped to the tables' range; 0 without a helm.
+static func helm_bars(sim: Sim) -> int:
+	var ri: int = sim.ship.room_with_system("helm")
+	return clampi(sim.ship.rooms[ri].sys_max, 0, HELM_TABLE_MAX) if ri >= 0 else 0
+
+
+## A by-helm tuning table as one value per bar count 0..HELM_TABLE_MAX: the value of the highest key
+## at or below each count, `fallback` below the first key present.
+static func helm_table(db: DataDB, prefix: String, fallback: float) -> PackedFloat64Array:
+	var out := PackedFloat64Array()
+	var cur: float = fallback
+	for i: int in range(HELM_TABLE_MAX + 1):
+		var key: String = prefix + str(i)
+		if db.tuning.has(key):
+			cur = float(db.tuning[key])
+		out.append(cur)
+	return out
+
+
+## Every key the by-helm tables may use (the tuning-keys check reads these).
+static func helm_table_keys() -> Array[String]:
+	var out: Array[String] = []
+	for prefix: String in [HEADING_TABLE, RANGE_TABLE]:
+		for i: int in range(HELM_TABLE_MAX + 1):
+			out.append(prefix + str(i))
+	return out
 
 
 ## "" when a blast may be fired now, else why not (DrillVerbs.blast_ready).

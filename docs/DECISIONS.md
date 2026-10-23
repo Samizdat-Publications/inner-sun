@@ -591,6 +591,28 @@ run's final hash, and `tools/balance_compare.py` compares two runs seed by seed 
 file split). Build 6 is untouched: nothing here is exported before Stewart plays it (D058). Revert:
 `git revert` the commit; the bot fixes are independent of each other.
 
+## D060 (S asked, AI details): a short scanner and capped steering until the helm is upgraded
+Stewart (build 6, 2026-10-22): "slightly higher ore density but the scanner shows much less (it can be
+upgraded later)... I don't know that the horizontal maintain depth should even be possible until an
+upgrade is unlocked. It's too powerfull from the start." He swept whole segments sideways at hold
+depth because the scanner showed all 30 m ahead and the full 32 m width. Now: the seismic scanner
+shows rock only within a range of the drill head that grows with the helm's installed bars
+(`drill.scanner_range_m_by_helm`, start about 10 m, 16 m at 3 bars); beyond it the screen is static.
+The heading is capped at 45 degrees until the helm has 3 installed bars (the existing helm upgrade,
+120 ore), then reaches 90 (hold depth) as before (`drill.max_heading_deg_by_helm`). Ore richness rises
+about 20% so a shorter, choosier dig still pays. Bots keep reading the whole grid (they are not
+judged on what they can see) but obey the heading cap; balance is re-run. Revert: set both tables to
+their old single values (30 m and 90 degrees) and the richness factor to 1.
+
+## D061 (S): the light drill becomes a spine tower in M2
+Stewart (2026-10-22, after build 6, verbatim): "Go with A, the spine tower, for the M2 ship redesign. Log
+it as a decision and plan it; don't build it yet." Option A of `docs/plans/ship_redesign/README.md`: a
+ladder spine down the middle with small pods off both sides in a tapered hull (narrow bridge, widest at
+the reactor, narrowing to the drill); a door on every pod, two airlocks that vent a room to the rock, a
+medbay and a dive lock (the miner's exit); the same six systems and controls. Planned as M2 workstream
+S (`PLAN.md` section 11, `docs/plans/M2_ship.md`), after the parity merge (doors, purge) and a Gemini
+credit top-up (art). Revert: keep today's 2 x 3 layout; the schematics stay as notes.
+
 ## Parity branch numbering
 The FTL parity branch (`claude/blissful-neumann-c52d9b`) numbers its decisions from D080, so they
 never collide with the decisions M1d adds on main at the same time (D059 onward).

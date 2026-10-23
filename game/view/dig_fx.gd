@@ -171,7 +171,23 @@ static func _puff(ramp: Gradient, amount: int, life: float, vel: float, scale_mi
 	return p
 
 
+var frozen: bool = false: set = set_frozen  ## The visible pause: no time passes in this node's animations.
+
+
+func set_frozen(on: bool) -> void:
+	if frozen == on:
+		return
+	frozen = on
+	WorldFreeze.apply(self, on)
+
+
 func _process(delta: float) -> void:
+	_update(WorldFreeze.dt(frozen, delta))
+	if frozen:
+		WorldFreeze.apply(self, true)
+
+
+func _update(delta: float) -> void:
 	_t += delta
 	kick = move_toward(kick, 0.0, KICK_DECAY * delta)
 	if sim == null:

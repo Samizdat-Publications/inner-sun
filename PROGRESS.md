@@ -1,6 +1,31 @@
 # Progress
 
-Updated: 2026-10-22 evening, M1d interim round done; waiting for Stewart's build 6 notes.
+Updated: 2026-10-22 night, playtest build 7 (`m1d-playtest-7`) from Stewart's build 6 notes.
+
+## Build 7 (2026-10-22 night): Stewart's build 6 notes
+- **His run** (seed 721713, 8:11, dead at row 2 to the first rival) replays exactly from the
+  `m1d-playtest-6` tag; notes and triage: top of `docs/STEWART_FEEDBACK.md`, `docs/plans/M1d.md`.
+- **Refused power says why:** his eleven T presses asked a wrecked reactor for bars it did not have.
+  Now a refused power change is a `bad_command` with a reason, the power board flashes the reactor and
+  the row, a callout says what fixes it, and the DOUSE button says "NO FREE POWER" when T cannot help.
+- **In-fight crew hint:** the crew hint could never fire in a fight; `crew_fight` does, 8 s in.
+- **A pause you can see:** the world freezes (crew, flames, particles) and dims under "PAUSED: SPACE
+  TO RESUME" (seen in a still, `docs/progress/041`).
+- **D060:** the scanner sees about 10 m around the drill head (16 m after the helm upgrade); steering
+  is capped at 45 degrees until the helm upgrade unlocks hold depth; Crust ore about 19% richer
+  (`ore_richness_mult` 1.3). Scanner seen in a still, `docs/progress/040`.
+- **Also in build 7 from today:** the repaired drill crown (lower, under the hull), the dead DOUSE
+  button fix, the amber PARKED notice, the multiply scorch, the Gemini audit fixes.
+- **Balance (100 per bot, `docs/research/m1-evidence/balance_m1d_d060.md`):** balanced 50%, cautious
+  29%, greedy 26% wins. The bots find it easy; Stewart died at row 2 of his only run. Tuning stays on
+  hold until his build 7 run (D039, D044).
+- **Checks:** `check: ok` (396 tests); determinism `e30883214e637d19` at tick 1200 (the D060 builder's run and the exported build's own check); the exported
+  build plays a whole bot run to its end (FINAL tick 36000, hash ebb9e7283ae600d2).
+- **Critics:** Gemini 011 on build 7 (seed 721713): 6.5 (keep playing 8, UI 4); top items: the HUD
+  border crowds the ship, the font, faint fires, square rock chunks, weak hits (`review/LEDGER.md`
+  46 to 50). Claude 010 on the interim build: 5.8; the flat miner sprite (39), vague HAZARD AHEAD (41).
+- **Not in build 7:** crew click and drag-select (the parity session's round 6a), the spine tower ship
+  (D061, M2 workstream S).
 
 ## M1d interim round (2026-10-22), before build 6 is played
 - **Build 6 untouched:** `builds/InnerSun.exe` is still `m1d-playtest-6`; nothing exported (D058).

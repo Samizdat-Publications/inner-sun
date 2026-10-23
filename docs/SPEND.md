@@ -123,6 +123,7 @@ Session total (2026-10-15 to 16, M1a): about 15 USD (logged 11.96 plus the 3.00 
 | 2026-10-22 | Gemini gemini-3-pro-image | crown regen round2 track A #08 | 0.14 |
 | 2026-10-22 | Gemini gemini-3-pro-image | crown regen round2 track A #09 | 0.14 |
 | 2026-10-22 | Gemini gemini-3-pro-image | crown regen round2 track A #10 | 0.14 |
+| 2026-10-23 | Gemini (gemini-3.1-pro-preview) | video critic -> 011_gemini.md | 0.13 (est, 43226 in / 3819 out tokens) |
 | 2026-10-22 | Gemini (gemini-4-argon) | audit -> 20261022-172426 | 0.81 (est at Pro rates, 299297 in / 17707 out tokens) |
 | 2026-10-22 | Gemini (gemini-4-argon) | audit -> 20261022-173543 | 0.71 (est at Pro rates, 299167 in / 9529 out tokens) |
 | 2026-10-22 | Gemini (gemini-4-argon) | audit -> 20261022-174313 | 0.76 (est at Pro rates, 299176 in / 13108 out tokens) |

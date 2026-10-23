@@ -8,7 +8,7 @@ extends Node
 ##    every window unfocusable (display/window/size/no_focus=true).
 ## Normal play gets focus back here, before the first frame.
 
-const BOT_FLAGS: Array[String] = ["--shots", "--capture", "--perf", "--run-ticks", "--bakeoff", "--gallery"]
+const BOT_FLAGS: Array[String] = ["--shots", "--capture", "--perf", "--pause-at", "--run-ticks", "--bakeoff", "--gallery"]
 const PARK: Vector2i = Vector2i(-32000, -32000)
 const PARK_FRAMES: int = 30
 

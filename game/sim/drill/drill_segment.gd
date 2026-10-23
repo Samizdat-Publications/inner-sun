@@ -41,8 +41,11 @@ static func begin(sim: Sim, d: DrillSim, p_segment_id: String, p_depth_m: float,
 	d.target_x = clampf(d.start_center_x + lat, ship_size.x * 0.5, width - ship_size.x * 0.5)
 	d.rows = ceili((d.target_y + db.tune("drill.bottom_margin_m")) / cell_m)
 	var rng: RandomNumberGenerator = sim.rng.get_stream("drill/" + p_segment_id)
+	# The layer's ore richness (D060) scales the ore and gem feature counts on top of the survey's;
+	# scenarios (no layer) use 1.
+	var ore_mult: float = float(sim.run.layer.get("ore_richness_mult", 1.0)) if not sim.run.layer.is_empty() else 1.0
 	d.grid = RockGen.generate(table, rng, d.cols, d.rows, cell_m, Rect2(x0, y0, ship_size.x, ship_size.y), d.target_x,
-			d.depth_m, sim.run.depth_m, db.tune("drill.shaft_margin_m"), db.tune("drill.top_air_m"), d.survey)
+			d.depth_m, sim.run.depth_m, db.tune("drill.shaft_margin_m"), db.tune("drill.top_air_m"), d.survey, ore_mult)
 	d.structure_marks = PackedByteArray()
 	d.structure_marks.resize(d.grid.size())
 	d.structures.begin_segment(sim, d, db.table("structures").get(str(d.survey.get("structure", "")), {}),

@@ -50,3 +50,8 @@ A rejected issue that returns in 2 later critiques becomes FIX or goes to docs/N
 | 43 | 20261022-202935-298989b | claude 010 | Outside the hull: black halo, hard-edged light patches, a blurry red shape, stacks of glowing red squares at 6 m, blocky orange mine-works tiles | DEFER | Look at frames 01, 16, 17 first: the red squares may be ore cells or gas pockets drawn as debug-looking fills; then a world pass |
 | 44 | 20261022-202935-298989b | claude 010 | When the ship heats up every room turns red-brown and loses its identity | DEFER | M2 art pass: heat as a glow or shimmer over each room's own colours |
 | 45 | 20261022-202935-298989b | claude 010 | Overlay text dim and long; greyed buy buttons hard to read | DEFER | M2 UI pass with 38 |
+| 46 | m1d-playtest-7 (c1a127e) | gemini 011 | HUD panels form a massive border round the ship (also 42) | DEFER | M2 UI pass: smaller or retractable side panels; the spine tower (D061) is the moment to re-frame the screen |
+| 47 | m1d-playtest-7 (c1a127e) | gemini 011 | Narrow all-caps font is a chore in larger blocks (also 38) | DEFER | M2 UI pass: a cleaner secondary font (SIL OFL) |
+| 48 | m1d-playtest-7 (c1a127e) | gemini 011 | A bridge fire is tiny and blends into the warm room (also 40) | DEFER | Next visual pass: higher-contrast flames at the drilling zoom; third review to say it |
+| 49 | m1d-playtest-7 (c1a127e) | gemini 011 | Rock vanishes in perfect squares when breaking into a cavern | DEFER | M2 world pass: crumble edges and debris on cut cells |
+| 50 | m1d-playtest-7 (c1a127e) | gemini 011 | Hits on the rival are a tiny spark | DEFER | M2: screen shake and chunkier debris on hits |

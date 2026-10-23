@@ -341,15 +341,28 @@ func _update_slosh(delta: float) -> void:
 	_agit = move_toward(_agit, clampf(shake + absf(_slosh_v) * 0.3, 0.0, 1.0), d * 2.5)
 
 
+var frozen: bool = false: set = set_frozen  ## The visible pause: no time passes in this node's animations.
+
+
+func set_frozen(on: bool) -> void:
+	if frozen == on:
+		return
+	frozen = on
+	WorldFreeze.apply(self, on)
+
+
 func _process(delta: float) -> void:
 	var t0: int = Time.get_ticks_usec()
-	_update(delta)
+	_update(WorldFreeze.dt(frozen, delta))
+	if frozen:
+		WorldFreeze.apply(self, true)
 	PerfRecorder.span(PerfRecorder.SPAN_SHIP, Time.get_ticks_usec() - t0)
 
 
 func _update(delta: float) -> void:
 	_time += delta
-	_update_slosh(delta)
+	if delta > 0.0:
+		_update_slosh(delta)
 	var ship: Ship = world.ship
 	if ship.crew.size() < _crew.size():
 		_rebuild_crew()

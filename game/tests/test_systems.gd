@@ -55,7 +55,12 @@ func test_power_is_clamped_to_the_reactor() -> void:
 	s.push({"type": "power", "room": "reactor", "bars": 2})
 	s.push({"type": "power", "room": "nowhere", "bars": 2})
 	s.step()
-	check_eq(_kinds(s, "bad_command").size(), 2, "power to the reactor or a missing room is a bad command")
+	var refused: int = 0  # Since build 6 a shortfall is refused out loud too ("no free bars").
+	for e: Dictionary in s.events:
+		if str(e["kind"]) == "bad_command" and str(e.get("why", "")) == "no free bars":
+			refused += 1
+	check_eq(refused, 2, "the drill's and the weapons' shortfalls are refused with a reason")
+	check_eq(_kinds(s, "bad_command").size() - refused, 2, "power to the reactor or a missing room is a bad command")
 	s.push({"type": "power", "room": "drill", "bars": 0})
 	s.push({"type": "power", "room": "weapons", "bars": 3})
 	s.step()
