@@ -2,6 +2,20 @@
 
 From the M1c session (2026-10-16) to the next round, which starts after Stewart plays build 5.
 
+## Next: Stewart plays build 7 (2026-10-22 night)
+`builds/InnerSun.exe` is `m1d-playtest-7` (tag, milestone zip in `builds/milestones/m1d-playtest-7/`).
+What changed and why: `PROGRESS.md` (top). M1d stays open until his build 7 run: read it with `python
+tools/run_report.py --since 2026-10-23`, replay from the `m1d-playtest-7` tag, re-judge difficulty
+(the bots win 26 to 50%; he died at row 2 of his only build 6 run), then close M1d and tell the parity
+session (`claude/blissful-neumann-c52d9b`) it may merge into main, and review that merge. After the
+parity merge: M2 workstream S, the spine tower ship (D061, `PLAN.md` section 11). Gemini has credit
+again (about 17 USD on 2026-10-22).
+Paste this into a new session (folder `C:\Users\stewa\Documents\Claude\Inner Sun`, Opus 5.5, effort
+high, Auto):
+```
+Continue Inner Sun: M1d, my build 7 notes. Read CLAUDE.md, PROGRESS.md, HANDOFF.md (the newest section) and docs/plans/M1d.md, then my notes at the top of docs/STEWART_FEEDBACK.md. Run python tools/run_report.py --since 2026-10-23 first, replay my runs from the m1d-playtest-7 tag, triage, fix, and decide on difficulty. When M1d closes, tell the FTL parity session it may merge into main and review its merge, then plan M2 workstream S (the spine tower ship, D061). Work autonomously per CLAUDE.md; stop for "checkpoint", a usage limit, or a decision that is genuinely mine.
+```
+
 ## Where the interim round stands (2026-10-22 evening)
 Done on main and pushed: the Gemini audit fixes, the amber PARKED notice, the multiply scorch, the
 dead DOUSE button fix, and the zero-change file split (D059; `PROGRESS.md` has the details and
