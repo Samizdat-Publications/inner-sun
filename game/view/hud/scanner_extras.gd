@@ -3,6 +3,7 @@ extends RefCounted
 ## The seismic scanner's M1c additions, kept out of ScannerPanel: the heading line over the full range
 ## (up to hold depth, 90 degrees), fault rock's hatching, the blast range ring and target circle, the
 ## screen-to-segment-meters mapping a blast click needs, and the HOLD DEPTH and AT THE WALL readouts.
+## D060: the scanner's range (static beyond it, the range ring and its label, the range geometry).
 ## Pure geometry (static, tested) plus a few draw helpers that take the panel as the canvas item.
 
 const FAULT_HATCH: Color = Color(0.86, 0.72, 0.46)
@@ -49,6 +50,23 @@ static func screen_to_m(p: Vector2, screen: Rect2, width_m: float, crown_y_m: fl
 static func m_to_screen(m: Vector2, screen: Rect2, width_m: float, crown_y_m: float, look_m: float) -> Vector2:
 	return Vector2(screen.position.x + m.x / width_m * screen.size.x,
 			screen.position.y + (m.y - crown_y_m) / look_m * screen.size.y)
+
+
+## The columns [x, y) of grid row r whose cell centres lie within range_m of head (empty: y <= x).
+## Pure geometry; agrees with cell_in_range (ScannerPanel masks its image with it).
+static func row_span(r: int, cell_m: float, cols: int, head: Vector2, range_m: float) -> Vector2i:
+	var dy: float = (float(r) + 0.5) * cell_m - head.y
+	if absf(dy) > range_m:
+		return Vector2i(0, 0)
+	var half: float = sqrt(range_m * range_m - dy * dy)
+	var lo: int = clampi(ceili((head.x - half) / cell_m - 0.5), 0, cols)
+	var hi: int = clampi(floori((head.x + half) / cell_m - 0.5) + 1, 0, cols)
+	return Vector2i(lo, hi)
+
+
+## True when the centre of cell (c, r) is within range_m of head (segment meters).
+static func cell_in_range(c: int, r: int, cell_m: float, head: Vector2, range_m: float) -> bool:
+	return Vector2((float(c) + 0.5) * cell_m, (float(r) + 0.5) * cell_m).distance_to(head) <= range_m
 
 
 ## An ellipse as runs of consecutive points that lie inside `rect` (a ring that leaves the screen is
@@ -109,7 +127,7 @@ static func draw_blast(ci: CanvasItem, s: Sim, screen: Rect2, look_m: float, hov
 	if not screen.has_point(hover):
 		return
 	var m: Vector2 = screen_to_m(hover, screen, width_m, crown, look_m)
-	var ok: bool = d.verbs.aim_ok(d, m).is_empty()
+	var ok: bool = d.verbs.aim_ok(d, m).is_empty() and DrillMiner.head(d).distance_to(m) <= d.scanner_range_m(s)
 	var col: Color = UiTheme.CRT if ok else UiTheme.ALARM
 	var rad: float = s.db.tune("drill.blast_radius_m")
 	for run2: PackedVector2Array in ellipse_runs(hover, rad * px.x, rad * px.y, screen, 40):
@@ -120,7 +138,8 @@ static func draw_blast(ci: CanvasItem, s: Sim, screen: Rect2, look_m: float, hov
 
 
 ## The buried structure's box on the glass, clipped to the screen: an empty Rect2 when the segment has
-## none or it is not in range yet (nothing of it within the `look_m` the screen shows below the crown).
+## none or it is not in range yet (nothing of it within the `look_m` the screen shows below the crown,
+## or within the scanner's range of the drill head).
 static func structure_box(s: Sim, screen: Rect2, look_m: float) -> Rect2:
 	var d: DrillSim = s.drill
 	var st: DrillStructures = d.structures
@@ -131,7 +150,7 @@ static func structure_box(s: Sim, screen: Rect2, look_m: float) -> Rect2:
 	var a: Vector2 = m_to_screen(st.rect.position, screen, width_m, crown, look_m)
 	var b: Vector2 = m_to_screen(st.rect.end, screen, width_m, crown, look_m)
 	var box := Rect2(a, b - a)
-	if not box.intersects(screen):
+	if not box.intersects(screen) or not rect_in_range(st.rect, DrillMiner.head(d), d.scanner_range_m(s)):
 		return Rect2()
 	return box.intersection(screen)
 
@@ -210,7 +229,7 @@ static func draw_miner(ci: CanvasItem, s: Sim, screen: Rect2, look_m: float, hov
 				ci.draw_polyline(run, Color(UiTheme.CRT, pulse), 2.0)
 		if screen.has_point(hover):
 			var m: Vector2 = screen_to_m(hover, screen, width_m, crown, look_m)
-			var ok: bool = DrillMiner.target_ok(d, s, crew_id, m).is_empty()
+			var ok: bool = DrillMiner.target_ok(d, s, crew_id, m).is_empty() and head_m.distance_to(m) <= d.scanner_range_m(s)
 			var col: Color = UiTheme.CRT if ok else UiTheme.ALARM
 			for run2: PackedVector2Array in ellipse_runs(hover, d.cell_m * 2.0 * px.x, d.cell_m * 2.0 * px.y, screen, 24):
 				if run2.size() >= 2:
@@ -230,3 +249,43 @@ static func draw_miner(ci: CanvasItem, s: Sim, screen: Rect2, look_m: float, hov
 		ci.draw_circle(feet, 9.0, Color(1.0, 1.0, 0.8, 0.25 * blink))
 		ci.draw_circle(feet, 5.0, Color(1.0, 1.0, 0.85, blink))
 
+
+
+## True when any of `rect` (segment meters) lies within range_m of head.
+static func rect_in_range(rect: Rect2, head: Vector2, range_m: float) -> bool:
+	var near := Vector2(clampf(head.x, rect.position.x, rect.end.x), clampf(head.y, rect.position.y, rect.end.y))
+	return near.distance_to(head) <= range_m
+
+
+## Beyond the scanner's range: dim static, then the range ring around the drill head and its label
+## ("RANGE 10 M") just inside the ring's foot.
+static func draw_range(ci: CanvasItem, s: Sim, screen: Rect2, look_m: float, t: float) -> void:
+	var d: DrillSim = s.drill
+	var range_m: float = d.scanner_range_m(s)
+	var width_m: float = float(d.cols) * d.cell_m
+	var crown: float = d.ship_pos.y + d.ship_size.y
+	var c: Vector2 = m_to_screen(DrillMiner.head(d), screen, width_m, crown, look_m)
+	var rx: float = range_m * screen.size.x / width_m
+	var ry: float = range_m * screen.size.y / look_m
+	var step: int = int(t * 12.0)
+	for i: int in range(90):
+		var h: int = ((step * 2654435761 + i * 40503) & 0xffff)
+		var y: float = screen.position.y + float(h % int(screen.size.y))
+		var x: float = screen.position.x + float((h >> 2) % int(screen.size.x))
+		var w: float = 4.0 + float((h >> 5) % 22)
+		var x1: float = minf(x + w, screen.end.x - 1.0)
+		if _inside(Vector2(x, y), c, rx, ry) or _inside(Vector2(x1, y), c, rx, ry):
+			continue
+		ci.draw_line(Vector2(x, y), Vector2(x1, y), Color(UiTheme.CRT, 0.05 + 0.05 * float(h % 3)), 1.0)
+	for run: PackedVector2Array in ellipse_runs(c, rx, ry, screen):
+		if run.size() >= 2:
+			ci.draw_polyline(run, Color(UiTheme.CRT, 0.55), 1.5)
+	var label: String = "RANGE %d M" % roundi(range_m)
+	var ly: float = minf(c.y + ry - 6.0, screen.end.y - 22.0)
+	UiTheme.text(ci, Vector2(c.x - 60.0, ly), label, 12, Color(UiTheme.CRT, 0.85), null, HORIZONTAL_ALIGNMENT_CENTER, 120.0)
+
+
+static func _inside(p: Vector2, c: Vector2, rx: float, ry: float) -> bool:
+	var u: float = (p.x - c.x) / maxf(rx, 0.001)
+	var v: float = (p.y - c.y) / maxf(ry, 0.001)
+	return u * u + v * v <= 1.0

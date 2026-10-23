@@ -5,11 +5,16 @@ extends Control
 ## hatching, ore and gems as twinkling glints, water pockets dark blue, voids black. The ship's
 ## heading is a line from the crown, the steered target heading dashed; the next node's depth is a
 ## line across the screen. A sweep scans down the screen. Outside the drill phase it reads NO SIGNAL.
-## Click or drag on the screen to steer toward that point (pushes {"type": "steer", "angle": deg}, over
-## the full range up to hold depth at 90 degrees); set `steer_by_mouse = false` if main.gd steers with the
+## Click or drag on the screen to steer toward that point (pushes {"type": "steer", "angle": deg}, up
+## to the helm's cap: 45 degrees, hold depth at 90 after the helm upgrade); set `steer_by_mouse = false` if main.gd steers with the
 ## keys only. With the blast armed (`blast` is the BlastCard) a click fires at that point instead.
 ## Fault rock is pale brown hatching; the extras (heading ray, HOLD DEPTH, AT THE WALL, the blast ring)
 ## live in ScannerExtras.
+## Range (D060): rock, ore glints, water, gas, faults and structures show only within
+## DrillSim.scanner_range_m (about 10 m of the drill head, 16 m once the helm is upgraded); outside
+## it the glass is dim static behind a range ring with a small "RANGE 10 M" label. A click outside
+## the range still steers (only the direction counts); a blast or miner click there is refused on
+## its card with the usual out-of-range words. Steering is capped at DrillSim.max_heading_deg.
 ##
 ## Mount (main.gd, on the HUD CanvasLayer, 1920x1080 design space):
 ##   var scanner: ScannerPanel = ScannerPanel.build(layer, sim)
@@ -24,6 +29,7 @@ const SWEEP_HZ: float = 0.45
 const STEER_STEP_DEG: float = 1.0
 const BIT_WEAR_OFFER: float = 0.5  ## The new-bit button shows once the bit is worn past this.
 const BIT_BUTTON: Rect2 = Rect2(184, 386, 196, 28)
+const OUT_OF_RANGE: Color = Color(0.0, 0.026, 0.018)  ## The glass beyond the scanner's range.
 
 var sim: Sim = null
 var steer_by_mouse: bool = true
@@ -55,6 +61,7 @@ var _pend_angle: float = 0.0  ## A steer order waiting for the next sim step, sh
 var _pend_tick: int = -1  ## The sim tick it was queued on; -1 for none.
 var _dragging: bool = false
 var _hover: Vector2 = Vector2(-1000.0, -1000.0)
+var _range_m: float = 10.0  ## The scanner's range at the last refresh (meters from the drill head).
 
 # Cell kinds.
 const K_VOID: int = 0
@@ -167,16 +174,37 @@ func _refresh_image() -> void:
 		_img.fill(Color(0.0, 0.03, 0.02))
 	if r1 > r0:
 		_img.blit_rect(_full, Rect2i(0, r0, d.cols, r1 - r0), Vector2i(0, r0 - top))
+	_range_m = d.scanner_range_m(sim)
+	var head: Vector2 = DrillMiner.head(d)
+	_mask_range(d, top, head)
 	_glints.clear()
 	_glint_cols.clear()
 	for ar: int in range(r0, r1):
 		for c: int in _row_glints[ar]:
 			var code: int = d.grid[ar * d.cols + c]
 			var k: int = _kind[code]
-			if (k == K_ORE or k == K_GEM) and _glints.size() < MAX_GLINTS:
+			if (k == K_ORE or k == K_GEM) and _glints.size() < MAX_GLINTS and ScannerExtras.cell_in_range(c, ar, d.cell_m, head, _range_m):
 				_glints.append(Vector3(float(c), float(ar - top), float((c * 7 + ar * 13) % 17) / 17.0 * TAU))
 				_glint_cols.append(_tints[code].lerp(Color(1, 1, 1), 0.55))
 	_tex.update(_img)
+
+
+## Blank every image cell beyond the scanner's range (two fills per row: left and right of the circle).
+func _mask_range(d: DrillSim, top: int, head: Vector2) -> void:
+	for j: int in range(_rows_shown + 1):
+		var span: Vector2i = ScannerExtras.row_span(top + j, d.cell_m, d.cols, head, _range_m)
+		if span.y <= span.x:
+			_img.fill_rect(Rect2i(0, j, d.cols, 1), OUT_OF_RANGE)
+			continue
+		if span.x > 0:
+			_img.fill_rect(Rect2i(0, j, span.x, 1), OUT_OF_RANGE)
+		if span.y < d.cols:
+			_img.fill_rect(Rect2i(span.y, j, d.cols - span.y, 1), OUT_OF_RANGE)
+
+
+## True when a segment point (meters) is within the scanner's range of the drill head.
+func in_range(p_m: Vector2) -> bool:
+	return sim != null and DrillMiner.head(sim.drill).distance_to(p_m) <= sim.drill.scanner_range_m(sim)
 
 
 ## Paint one grid row's colors into _full and note its ore and gem columns.
@@ -296,11 +324,17 @@ func _gui_input(event: InputEvent) -> void:
 	if mm0 != null:
 		_hover = mm0.position
 	if mb != null and mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT and blast != null and blast.armed and SCREEN.has_point(mb.position):
-		blast.aim(point_m(mb.position))
+		if not in_range(point_m(mb.position)):
+			blast.say("OUT OF RANGE (%d M)" % roundi(sim.drill.scanner_range_m(sim)))  # Beyond the scanner: it cannot aim there.
+		else:
+			blast.aim(point_m(mb.position))
 		accept_event()
 		return
 	if mb != null and mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT and miner != null and miner.armed and SCREEN.has_point(mb.position):
-		miner.aim(point_m(mb.position))
+		if not in_range(point_m(mb.position)):
+			miner.say(MinerCard.reason_text("range", sim.drill.scanner_range_m(sim)))
+		else:
+			miner.aim(point_m(mb.position))
 		accept_event()
 		return
 	if not steer_by_mouse:
@@ -342,7 +376,7 @@ func look_m() -> float:
 ## Queue a steer order (the click and main's A and D keys use this) and remember it, so TGT and the
 ## dashed line show the new course even while the world is paused and the sim has not stepped.
 func queue_steer(angle: float) -> void:
-	var limit: float = sim.db.tune("drill.max_heading_deg")
+	var limit: float = sim.drill.max_heading_deg(sim)
 	_pend_angle = clampf(angle, -limit, limit)
 	_pend_tick = sim.tick
 	sim.push({"type": "steer", "angle": angle})

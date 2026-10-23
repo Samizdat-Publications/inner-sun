@@ -19,6 +19,7 @@ static func draw_no_signal(p: ScannerPanel) -> void:
 static func draw_rock(p: ScannerPanel) -> void:
 	var d: DrillSim = p.sim.drill
 	p.draw_texture_rect_region(p._tex, ScannerPanel.SCREEN, Rect2(0.0, p._frac, float(d.cols), float(p._rows_shown)), Color(1, 1, 1, 1))
+	ScannerExtras.draw_range(p, p.sim, ScannerPanel.SCREEN, p.look_m(), p._t)
 	var px_x: float = ScannerPanel.SCREEN.size.x / (float(d.cols))
 	var px_y: float = ScannerPanel.SCREEN.size.y / float(p._rows_shown)
 	# Glints.
@@ -135,7 +136,7 @@ static func draw_readout(p: ScannerPanel) -> void:
 		return
 	var crown: float = d.ship_pos.y + d.ship_size.y
 	var remain: float = maxf(0.0, d.target_y - crown)
-	UiTheme.bold_text(p, Vector2(22, y), "HDG %+d  TGT %+d" % [roundi(d.heading_deg), roundi(p.target_heading())], 20, UiTheme.CRT)
+	UiTheme.bold_text(p, Vector2(22, y), heading_text(d.heading_deg, p.target_heading(), d.max_heading_deg(p.sim)), 20, UiTheme.CRT)
 	UiTheme.bold_text(p, Vector2(p.size.x - 22.0 - 190.0, y), "NODE IN %d M" % roundi(remain), 20, UiTheme.AMBER, null, HORIZONTAL_ALIGNMENT_RIGHT, 190.0)
 	var wear: int = roundi(d.bit_wear * 100.0)
 	var bit_col: Color = UiTheme.ALARM if d.bit_broken else (UiTheme.AMBER if wear >= 70 else UiTheme.CRT)
@@ -158,3 +159,10 @@ static func draw_bit_button(p: ScannerPanel, bits: int) -> void:
 	p.draw_rect(r, UiTheme.AMBER if can else UiTheme.ALARM, false, 2.0)
 	var label: String = "[B] NEW BIT (%d left)" % bits if can else "NO BITS LEFT"
 	UiTheme.bold_text(p, Vector2(r.position.x, r.position.y + 21.0), label, 17, UiTheme.BRASS_LIGHT if can else UiTheme.ALARM, null, HORIZONTAL_ALIGNMENT_CENTER, r.size.x)
+
+
+## The heading readout: "HDG +45 MAX" while the drill sits at the helm's cap, else "HDG +12  TGT +30".
+static func heading_text(heading_deg: float, target_deg: float, cap_deg: float) -> String:
+	if absf(heading_deg) >= cap_deg - 0.5:
+		return "HDG %+d MAX" % roundi(heading_deg)
+	return "HDG %+d  TGT %+d" % [roundi(heading_deg), roundi(target_deg)]

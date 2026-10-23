@@ -10,7 +10,8 @@ extends Bot
 ## The best lane wins; with nothing better, it steers for the target. With level_steer on, the
 ## heading toward a lane uses how far below the crown its value lies (a vein level with the crown
 ## means cutting sideways, up to max_steer_deg); off (the plain bot) it aims at the lane half the
-## look-ahead down. It never sits at the segment wall: within wall_margin_m of it, it steers for the
+## look-ahead down. No order goes past the sim's heading cap for the helm's installed bars
+## (DrillSim.max_heading_deg, D060: 45 degrees until the helm upgrade). It never sits at the segment wall: within wall_margin_m of it, it steers for the
 ## target. Deterministic, no randomness. It leaves power and the crew alone (crew keep their own
 ## judgement); fault_ahead() tells a policy bot when to brace.
 
@@ -55,7 +56,7 @@ func act(sim: Sim) -> void:
 		_last_sent = 1000.0
 	if d.bit_wear > change_bit_at and d.bit_change_left_s <= 0.0 and sim.run.get_res("bits") > 0:
 		sim.push({"type": "change_bit"})
-	var want: float = snappedf(_choose_heading(d), 1.0)
+	var want: float = snappedf(_choose_heading(d, d.max_heading_deg(sim)), 1.0)
 	if absf(want - _last_sent) >= 1.0:
 		_last_sent = want
 		sim.push({"type": "steer", "angle": want})
@@ -84,7 +85,8 @@ func fault_ahead(d: DrillSim, ahead_m: float) -> bool:
 	return false
 
 
-func _choose_heading(d: DrillSim) -> float:
+## cap: the sim's heading cap for the helm's installed bars (DrillSim.max_heading_deg); no order goes past it.
+func _choose_heading(d: DrillSim, cap: float) -> float:
 	var cell: float = d.cell_m
 	var cx: float = d.ship_pos.x + d.ship_size.x * 0.5
 	var bottom: float = d.ship_pos.y + d.ship_size.y
@@ -155,12 +157,13 @@ func _choose_heading(d: DrillSim) -> float:
 	var heading: float = to_target
 	if best_off != 0 and best_score > zero_score + 0.5:
 		var dy: float = maxf(best_dy, cell) if level_steer else lookahead_m * 0.5
-		heading = clampf(rad_to_deg(atan2(float(best_off) * cell, dy)), -max_steer_deg, max_steer_deg)
+		var steer_max: float = minf(max_steer_deg, cap)
+		heading = clampf(rad_to_deg(atan2(float(best_off) * cell, dy)), -steer_max, steer_max)
 	var width: float = float(d.cols) * cell
 	if (heading > 0.0 and d.ship_pos.x + d.ship_size.x >= width - wall_margin_m) \
 			or (heading < 0.0 and d.ship_pos.x <= wall_margin_m) or d.at_wall:
 		heading = to_target
-	return heading
+	return clampf(heading, -cap, cap)
 
 
 ## Score per material code: value for ore and gems (only while greedy), cost for hazards. Hardness
