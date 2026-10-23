@@ -70,6 +70,8 @@ static func reason_text(s: Sim, why: String) -> String:
 	if why.is_empty():
 		return ""
 	if why == "power coolant":
+		if s.systems.free_bars(s.player) <= 0:
+			return "NO FREE POWER"  # T alone cannot help: the reactor is full or wrecked (build 6).
 		var key: String = AlertsStrip.power_key(s.ship, s.ship.room_with_system("coolant"))
 		return "POWER COOLANT (%s)" % key if not key.is_empty() else "POWER COOLANT"
 	if why == "not now":

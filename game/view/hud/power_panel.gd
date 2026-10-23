@@ -17,6 +17,7 @@ extends Control
 const WIDTH: float = 340.0
 const ROW_H: float = 92.0
 const ROW_TOP: float = 160.0
+const FLASH_S: float = 1.4  ## How long a refused power change flashes the board.
 const KEYS: Array[Key] = [KEY_Q, KEY_W, KEY_E, KEY_R, KEY_T, KEY_Y]
 const KEY_NAMES: Array[String] = ["Q", "W", "E", "R", "T", "Y"]
 ## What each system does now, in a few words under its bars (UI text, by system id).
@@ -38,6 +39,10 @@ var _used_shown: float = 0.0
 var _hover_room: int = -1
 var _hover_bar: int = -1
 var _pend: Dictionary = {}  ## room index -> {"bars": wanted bars, "tick": sim tick of the push}.
+var _seen: int = 0  ## Events read so far (refused power changes flash the board).
+var _flash_s: float = 0.0  ## Seconds left of the refusal flash.
+var _flash_room: int = -1  ## The system whose power change was refused.
+var _flash_reactor: bool = false  ## The refusal was the reactor having no free bar.
 
 
 static func build(parent: Control, p_sim: Sim) -> PowerPanel:
@@ -50,6 +55,8 @@ static func build(parent: Control, p_sim: Sim) -> PowerPanel:
 
 func bind(p_sim: Sim) -> void:
 	sim = p_sim
+	_seen = sim.events.size() if sim != null else 0
+	_flash_s = 0.0
 	_shown.clear()
 	_pend.clear()
 	_rows = powered_rooms(sim.ship) if sim != null else ([] as Array[int])
@@ -188,9 +195,32 @@ func _notification(what: int) -> void:
 		_hover_bar = -1
 
 
+## A refused power change as a flash: {"room": index, "reactor": true when the reactor had no free
+## bar}, or {} for any other event (build 6: T did nothing on a wrecked reactor and nothing said why).
+static func flash_for(s: Sim, e: Dictionary) -> Dictionary:
+	if str(e.get("kind", "")) != "bad_command" or str(e.get("type", "")) != "power" or not e.has("room"):
+		return {}
+	var ri: int = s.ship.room_index(str(e["room"]))
+	if ri < 0:
+		return {}
+	return {"room": ri, "reactor": str(e.get("why", "")) == "no free bars"}
+
+
 func _process(delta: float) -> void:
 	_t += delta
+	_flash_s = maxf(0.0, _flash_s - delta)
 	if sim != null:
+		var n: int = sim.events.size()
+		if n < _seen:
+			_seen = 0
+		for i: int in range(_seen, n):
+			var f: Dictionary = flash_for(sim, sim.events[i])
+			if not f.is_empty():
+				_flash_s = FLASH_S
+				_flash_room = int(f["room"])
+				_flash_reactor = bool(f["reactor"])
+				queue_redraw()
+		_seen = n
 		for ri: int in _rows:
 			_shown[ri] = move_toward(float(_shown.get(ri, 0.0)), float(sim.ship.rooms[ri].sys_power), 9.0 * delta)
 		_used_shown = move_toward(_used_shown, float(sim.systems.allocated(sim.player)), 9.0 * delta)
@@ -208,6 +238,24 @@ func _draw() -> void:
 		_draw_row(row, sys_defs)
 	_draw_bracing()
 	_draw_legend()
+	_draw_flash()
+
+
+## The refusal flash: a pulsing red frame round the reactor (no free bar) and round the system's row.
+func _draw_flash() -> void:
+	if _flash_s <= 0.0:
+		return
+	var a: float = clampf(_flash_s / 0.4, 0.0, 1.0) * (0.55 + 0.45 * UiTheme.pulse(_t, 6.0))
+	var col := Color(UiTheme.ALARM, a)
+	if _flash_reactor:
+		draw_rect(Rect2(8.0, 44.0, WIDTH - 16.0, 100.0), col, false, 4.0)
+	var row: int = _rows.find(_flash_room)
+	if row >= 0:
+		draw_rect(Rect2(8.0, ROW_TOP + float(row) * ROW_H - 4.0, WIDTH - 16.0, ROW_H - 4.0), col, false, 4.0)
+
+
+func flashing() -> bool:
+	return _flash_s > 0.0
 
 
 func _draw_reactor() -> void:

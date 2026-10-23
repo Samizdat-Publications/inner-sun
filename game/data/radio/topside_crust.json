@@ -47,6 +47,8 @@
     {"trigger": "hint_bit", "text": "Bit failure. B fits a spare from stores. We did warn them about the supplier."},
     {"trigger": "hint_crew", "text": "Nobody is heading for that trouble. Press 1, 2 or 3 to pick a crew member, then click the room to send them."},
     {"trigger": "hint_crew", "text": "Unattended damage aboard. Pick a crew member with 1 to 3 and click the room. They go where they are told."},
+    {"trigger": "hint_crew_fight", "text": "Your crew go where you send them. Press 1, 2 or 3, then click a room: someone on the weapons, someone ready for the reactor."},
+    {"trigger": "hint_crew_fight", "text": "Move your people, Auger. 1 to 3 picks a crew member, a click on a room sends them. A damaged room only mends with hands on it."},
     {"trigger": "hint_weapons", "text": "Hostile contact. F1 and F2 arm a weapon. Click an enemy room to fire."},
     {"trigger": "hint_weapons", "text": "Arm a weapon with F1 or F2, then pick a room on their rig. Power the guns first."},
     {"trigger": "hint_requisitions", "text": "You have research banked. Press R for requisitions: research buys starting gear for the next descent. It does not keep."},

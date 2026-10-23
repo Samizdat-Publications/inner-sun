@@ -21,6 +21,7 @@ const CHECK_S: float = 0.5  ## Conditions are looked at twice a second.
 const POWER_HOLD_S: float = 3.0  ## The drill must sit at 0 bars this long while drilling.
 const STEER_AFTER_S: float = 20.0  ## Drilling time before the steering hint, if no steer order was given.
 const CREW_HOLD_S: float = 3.0  ## A hazard nobody is heading to must last this long.
+const CREW_FIGHT_S: float = 8.0  ## Fight seconds before the in-fight crew hint (after the weapons hint).
 const FORCE_AFTER_S: float = 2.0
 const MINER_NEAR_M: float = 12.0
 const MINER_FRONT_ROWS: float = 2.0  ## The pursuer's front must be at least this many map rows behind.
@@ -40,11 +41,11 @@ const STRIP_BOTTOM: float = 880.0
 
 ## Every hint, in the order they are offered when several are due at once.
 const NAMES: Array[String] = [
-	"bit", "douse", "crew", "power", "weapons", "requisitions", "map", "structure", "miner", "blast",
+	"bit", "douse", "crew", "power", "weapons", "crew_fight", "requisitions", "map", "structure", "miner", "blast",
 	"bracing", "hold_depth", "steer", "pause",
 ]
 ## Hints that may fire in a fight.
-const FIGHT_NAMES: Array[String] = ["weapons", "pause"]
+const FIGHT_NAMES: Array[String] = ["weapons", "crew_fight", "pause"]
 ## Hints that belong to an overlay (the node map, the death screen) and fire while it is open.
 const OVERLAY_NAMES: Array[String] = ["map", "requisitions"]
 const TRIGGER_PREFIX: String = "hint_"
@@ -69,6 +70,7 @@ var _elapsed: float = 0.0
 var _drill_s: float = 0.0  ## Drilling seconds this run (for the steering hint).
 var _power_s: float = 0.0
 var _crew_s: float = 0.0
+var _fight_s: float = 0.0  ## Seconds into the current fight (the in-fight crew hint).
 var _forced: bool = false
 var _t: float = 0.0
 
@@ -100,6 +102,7 @@ func bind(p_sim: Sim, p_profile: Profile) -> void:
 	_drill_s = 0.0
 	_power_s = 0.0
 	_crew_s = 0.0
+	_fight_s = 0.0
 	_forced = false
 	if _strip != null:
 		_strip.visible = false
@@ -384,6 +387,8 @@ func is_due(hint: String) -> bool:
 			return bit_broken(sim)
 		"crew":
 			return _crew_s >= CREW_HOLD_S
+		"crew_fight":
+			return fight_on(sim) and _fight_s >= CREW_FIGHT_S
 		"weapons":
 			return fight_on(sim)
 		"requisitions":
@@ -460,7 +465,7 @@ func target_rect(hint: String) -> Rect2:
 			return Rect2() if not douse_rect.is_valid() else (douse_rect.call() as Rect2)
 		"bit":
 			return screen.alerts.get_global_rect()
-		"crew":
+		"crew", "crew_fight":
 			return screen.cards.get_global_rect()
 		"weapons":
 			return screen.weapons.get_global_rect()
@@ -509,6 +514,7 @@ func _process(delta: float) -> void:
 	# Timers that need a steady count run every frame; the rest of the conditions twice a second.
 	_power_s = _power_s + delta if drill_unpowered(sim) else 0.0
 	_crew_s = _crew_s + delta if hazard_unattended(sim) else 0.0
+	_fight_s = _fight_s + delta if fight_on(sim) else 0.0
 	_check -= delta
 	if _check > 0.0:
 		return
