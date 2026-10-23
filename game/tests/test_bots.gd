@@ -98,3 +98,84 @@ func test_greedy_buys_no_weapon_it_cannot_power() -> void:
 	s.ship.rooms[s.ship.room_with_system("weapons")].sys_max = 4
 	s.run.add(s, "ore", -160)
 	check(PolicyChoices._can_power_weapon(s, line), "four bars already feed all three guns")
+
+
+## Parity round 4: a tiered reward effect is worth its expected amount at the ship's row (the row's
+## base times the tier's mean multiplier), through the same resource value a plain "res" effect uses.
+func test_bots_value_rewards() -> void:
+	var bot: PolicyBot = PolicyBot.make_policy("balanced")
+	var s := Sim.new(db(), 7, "light_drill", {"mode": "run"})
+	var row: int = s.run.current_row()
+	for tier: String in Rewards.TIERS:
+		var sp: Vector2 = Rewards.spread(s.db, tier)
+		var want: float = Rewards.base(s.db, "ore", row) * 0.5 * (sp.x + sp.y)
+		var got: float = PolicyChoices.effect_value(s, bot, {"type": "reward", "res": "ore", "tier": tier})
+		var as_res: float = PolicyChoices.effect_value(s, bot, {"type": "res", "res": "ore", "amount": want})
+		check(is_equal_approx(got, as_res), "a %s ore reward is valued like %.1f ore (got %.3f, want %.3f)" % [tier, want, got, as_res])
+	var low: float = PolicyChoices.effect_value(s, bot, {"type": "reward", "res": "gems", "tier": "low"})
+	var high: float = PolicyChoices.effect_value(s, bot, {"type": "reward", "res": "gems", "tier": "high"})
+	check_gt(high, low, "a high gem reward is worth more than a low one")
+	check_gt(low, 0.0, "and a reward is worth something")
+	check_eq(PolicyChoices.effect_value(s, bot, {"type": "reward", "res": "gems", "tier": "huge"}), 0.0, "an unknown tier is worth nothing")
+
+
+## A bot that only wants bracing, with every supply already stocked (it buys no supplies here).
+func _bracing_only(s: Sim) -> PolicyBot:
+	var bot: PolicyBot = PolicyBot.make_policy("balanced")
+	bot.upgrades = ["system:bracing"]
+	bot.keep = {}
+	s.run.add(s, "cells", 50)
+	return bot
+
+
+## Parity round 4: an upgrade of n bars is priced at the sum of the next n ladder entries, reserve
+## check included (bracing buys a whole layer of 2 bars: two ladder entries, not twice the shown price).
+func test_bots_price_upgrades_on_the_ladder() -> void:
+	var s := Sim.new(full_store(db()), 7, "light_drill", {"mode": "run"})
+	var bot: PolicyBot = _bracing_only(s)
+	s.encounter.open_store(s, "crust_trader")
+	var li: int = store_line(s, "system", "bracing")
+	check(li >= 0, "the full store sells bracing")
+	var line: Dictionary = (s.encounter.current_store()["stock"] as Array)[li]
+	var cost2: int = EncounterStore.cost_of(s, line, 2)
+	var lad: Array = StoreRoll.ladder(s.db, "bracing")
+	var bars: int = s.ship.rooms[s.ship.room_with_system("bracing")].sys_max
+	check_eq(cost2, int(lad[bars]) + int(lad[bars + 1]), "two bars cost the next two ladder entries")
+	check(cost2 != int(line["price"]) * 2, "which is not twice the shown price (the test means something)")
+	s.run.add(s, "ore", cost2 + bot.ore_reserve - s.run.get_res("ore"))
+	check_eq(PolicyChoices.next_purchase(s, bot), [li, 2], "exactly the ladder sum above the reserve buys the whole layer")
+	s.run.add(s, "ore", -1)
+	check_eq(PolicyChoices.next_purchase(s, bot), [], "one ore short of the reserve: nothing")
+	# Near the top of the ladder: never past it.
+	s.run.add(s, "ore", 5000)
+	s.ship.rooms[s.ship.room_with_system("bracing")].sys_max = lad.size() - 1
+	check_eq(PolicyChoices.next_purchase(s, bot), [li, 1], "one bar from the top: buys the last bar only")
+	s.ship.rooms[s.ship.room_with_system("bracing")].sys_max = lad.size()
+	check_eq(PolicyChoices.next_purchase(s, bot), [], "at the top: nothing")
+
+
+## Parity round 4: quantities never exceed what a line has left, and a sold-out line is skipped.
+func test_bots_buy_what_is_on_the_shelf() -> void:
+	var s := Sim.new(full_store(db()), 7, "light_drill", {"mode": "run"})
+	var bot: PolicyBot = PolicyBot.make_policy("balanced")
+	bot.upgrades = []
+	bot.keep = {"coolant": 200}
+	s.run.add(s, "gems", 5000)
+	s.run.add(s, "cells", 50)
+	s.encounter.open_store(s, "crust_trader")
+	var li: int = store_line(s, "res", "coolant")
+	check(li >= 0, "the store sells coolant")
+	var line: Dictionary = (s.encounter.current_store()["stock"] as Array)[li]
+	line["stock"] = 2
+	check_eq(PolicyChoices.next_purchase(s, bot), [li, 2], "wants far more coolant, takes the 2 left")
+	s.push({"type": "buy", "item": li, "qty": 2})
+	s.step()
+	check_eq(int(line["stock"]), 0, "the line is sold out")
+	var after: Array = PolicyChoices.next_purchase(s, bot)
+	check(after.is_empty() or int(after[0]) != li, "a sold-out line is skipped")
+	# Bracing with one unit left buys one, not the whole layer.
+	var b: PolicyBot = _bracing_only(s)
+	s.run.add(s, "ore", 5000)
+	var bi: int = store_line(s, "system", "bracing")
+	((s.encounter.current_store()["stock"] as Array)[bi] as Dictionary)["stock"] = 1
+	check_eq(PolicyChoices.next_purchase(s, b), [bi, 1], "bracing with one unit on the shelf: one")

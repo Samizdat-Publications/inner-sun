@@ -8,6 +8,20 @@ extends RefCounted
 ##   (or ">end"); fights: [enemy, boss, result, seconds]; strikes_overtaken, strikes_caught, catches;
 ##   bit_breaks, coolant_outs, fires, shots_fired (player volleys), bought: "store item line" keys,
 ##   crew_deaths: "cause@phase" (phase "gate" for the boss fight); killer (see _killer).
+## Economy (parity round 4, L-UPG-03 and L-RWD-05):
+##   ore_spent_by, gems_spent_by: {kind: amount} for kind in SPEND_KINDS, the cost of every "bought"
+##   event paid in that currency, by the line's kind; bars_bought: upgrade units bought.
+##   gained_by: {source: {"ore": n, "gems": n}} for source in GAIN_SOURCES. The rule, so nothing is
+##   counted twice: "fight" = the ore and gems in each fight_won's loot (what run.add paid);
+##   "event" = positive ore and gems "resource" changes applied by a dossier choice (between an
+##   "event_choice" and the "event_page" or "event_ended" that follows it, which is exactly when the
+##   outcome's effects run); "sale" = the ore and gems paid by "sold" events; "dig" = every other
+##   positive ore and gems change (drilling, crates, the miner, blasts): all positive changes minus
+##   the other three. The four sources add up to RunSummary's "gained" for ore and gems exactly.
+
+const SPEND_KINDS: Array[String] = ["upgrade", "gear", "res", "hull", "weapon", "crew"]
+const GAIN_SOURCES: Array[String] = ["fight", "event", "sale", "dig"]
+const GAIN_RES: Array[String] = ["ore", "gems"]
 
 
 static func add_to(sim: Sim, sum: Dictionary) -> void:
@@ -31,6 +45,17 @@ static func add_to(sim: Sim, sum: Dictionary) -> void:
 	var fight_t: int = 0
 	var fight_enemy: String = ""
 	var fight_boss: bool = false
+	var ore_by := {}
+	var gems_by := {}
+	for k: String in SPEND_KINDS:
+		ore_by[k] = 0
+		gems_by[k] = 0
+	var bars: int = 0
+	var gained_by := {}
+	for src: String in GAIN_SOURCES:
+		gained_by[src] = {"ore": 0, "gems": 0}
+	var all_pos := {"ore": 0, "gems": 0}
+	var in_choice: bool = false  # Between an event_choice and its page or end: the effects run here.
 	var counts := {"strikes_overtaken": 0, "strikes_caught": 0, "catches": 0, "bit_breaks": 0,
 		"coolant_outs": 0, "fires": 0, "shots_fired": 0}
 	for e: Dictionary in sim.events:
@@ -41,7 +66,13 @@ static func add_to(sim: Sim, sum: Dictionary) -> void:
 				if where == "combat" and fight_boss:
 					where = "gate"
 			"resource":
-				res[str(e["res"])] = int(e["now"])
+				var rn: String = str(e["res"])
+				res[rn] = int(e["now"])
+				var amt: int = int(e["amount"])
+				if amt > 0 and GAIN_RES.has(rn):
+					all_pos[rn] = int(all_pos[rn]) + amt
+					if in_choice:
+						_add_gain(gained_by, "event", rn, amt)
 			"arrived":
 				rows.append(_snap(int(e["row"]), float(int(e["t"])) / Sim.TICK_HZ, res))
 				types.append(str(e["type"]))
@@ -52,11 +83,14 @@ static func add_to(sim: Sim, sum: Dictionary) -> void:
 			"event_choice":
 				pending = "%s/%s/%d" % [str(e["event"]), str(e["page"]), int(e["option"])]
 				choices.append(pending)
+				in_choice = true
 			"event_page":
+				in_choice = false
 				if not pending.is_empty():
 					outcomes.append(pending + ">" + str(e["page"]))
 					pending = ""
 			"event_ended":
+				in_choice = false
 				if not pending.is_empty():
 					outcomes.append(pending + ">end")
 					pending = ""
@@ -67,6 +101,14 @@ static func add_to(sim: Sim, sum: Dictionary) -> void:
 				fight_boss = bool(e.get("boss", false))
 				if fight_boss:
 					where = "gate"
+			"fight_won":
+				var loot: Dictionary = e.get("loot", {})
+				for rn: String in GAIN_RES:
+					_add_gain(gained_by, "fight", rn, maxi(0, int(loot.get(rn, 0))))
+			"sold":
+				var cur: String = str(e.get("currency", ""))
+				if GAIN_RES.has(cur):
+					_add_gain(gained_by, "sale", cur, maxi(0, int(e.get("paid", 0))))
 			"fight_over":
 				fights.append([fight_enemy, fight_boss, str(e["result"]), snappedf(float(int(e["t"]) - fight_t) / Sim.TICK_HZ, 0.1)])
 			"pursuer_strike":
@@ -89,6 +131,16 @@ static func add_to(sim: Sim, sum: Dictionary) -> void:
 					counts["shots_fired"] += 1
 			"bought":
 				bought.append("%s %d" % [str(e["store"]), int(e["item"])])
+				var bk: String = str(e.get("line_kind", ""))
+				var bc: int = int(e.get("cost", 0))
+				if ore_by.has(bk):
+					match str(e.get("currency", "")):
+						"ore":
+							ore_by[bk] = int(ore_by[bk]) + bc
+						"gems":
+							gems_by[bk] = int(gems_by[bk]) + bc
+				if bk == "upgrade":
+					bars += int(e.get("qty", 0))
 			"crew_died":
 				if not e.has("side"):
 					deaths.append("%s@%s" % [str(e.get("cause", "")), where])
@@ -105,8 +157,22 @@ static func add_to(sim: Sim, sum: Dictionary) -> void:
 	sum["fights"] = fights
 	sum["bought"] = bought
 	sum["crew_deaths"] = deaths
+	for rn: String in GAIN_RES:
+		var other: int = 0
+		for src: String in ["fight", "event", "sale"]:
+			other += int((gained_by[src] as Dictionary)[rn])
+		(gained_by["dig"] as Dictionary)[rn] = int(all_pos[rn]) - other
+	sum["ore_spent_by"] = ore_by
+	sum["gems_spent_by"] = gems_by
+	sum["bars_bought"] = bars
+	sum["gained_by"] = gained_by
 	for k: String in ["strikes_overtaken", "strikes_caught", "catches", "bit_breaks", "coolant_outs", "fires", "shots_fired"]:
 		sum[k] = int(counts.get(k, 0))
+
+
+static func _add_gain(gained_by: Dictionary, src: String, res_name: String, amt: int) -> void:
+	var d: Dictionary = gained_by[src]
+	d[res_name] = int(d[res_name]) + amt
 
 
 ## What ended a lost run, finer than the run's end cause: "gate" or "rival" (died in that fight;

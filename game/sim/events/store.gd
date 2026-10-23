@@ -15,6 +15,8 @@ extends RefCounted
 ## Currency by line (M1b, D025): ore buys system upgrades, gear and hull repairs; gems buy supplies
 ## (coolant, cells, bits, charges), crew and weapons.
 ## Selling (L-STO-05) pays floor(list price x economy.sell_back_frac) in the item's own currency.
+## Events: "bought" {store, item (line), qty, cost, currency, line_kind (the line's item: "kind" is
+## the event's own key), system ("" if not an upgrade)}; "sold" {store, what, id, paid, currency}.
 
 const ITEMS: Array[String] = ["res", "hull", "weapon", "crew", "upgrade", "gear"]
 const SELL_WHAT: Array[String] = ["weapon", "gear"]
@@ -51,7 +53,8 @@ static func buy(sim: Sim, enc: Encounter, line: int, qty: int) -> void:
 			d["price"] = StoreRoll.next_bar_price(sim, str(d.get("system", "")))
 		"gear":
 			Gear.fit(sim, str(d.get("gear", "")))
-	sim.emit("bought", {"store": enc.store_id, "item": line, "qty": qty, "cost": cost, "currency": currency})
+	sim.emit("bought", {"store": enc.store_id, "item": line, "qty": qty, "cost": cost, "currency": currency,
+		"line_kind": str(d.get("item", "")), "system": str(d.get("system", ""))})
 
 
 static func stock_line(enc: Encounter, line: int) -> Dictionary:

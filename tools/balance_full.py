@@ -135,6 +135,61 @@ def _bot_section(b, rs):
     return out
 
 
+# Bands from docs/research/behavior-ledger.md (L-UPG-03, L-RWD-05); the measures are for the balanced bot.
+SPEND_BAND = (40.0, 65.0)
+BARS_BAND = (5, 10)
+INCOME_BAND = (15.0, 35.0)
+SPEND_KINDS = ["upgrade", "gear", "res", "hull", "weapon", "crew"]
+GAIN_SOURCES = ["fight", "event", "sale", "dig"]
+
+
+def _gem_value():
+    with open(os.path.join(paths.GAME, "data", "tuning", "economy.json"), encoding="utf-8") as f:
+        return float(json.load(f)["economy"]["gem_ore_value"])
+
+
+def economy_measures(rs, gem_value):
+    """The two balance measures over a bot's runs (summed over the runs, not averaged per run):
+    spend_share = upgrade ore over all store ore spent, income_share = (fight + event) value over all
+    ore-plus-gems value gained, value = ore + gem_value x gems. Also the median bars bought, the ore
+    spent by kind and the value gained by source (totals over the runs)."""
+    ore_by = {k: sum(r.get("ore_spent_by", {}).get(k, 0) for r in rs) for k in SPEND_KINDS}
+    val_by = {s: sum(r.get("gained_by", {}).get(s, {}).get("ore", 0)
+                     + gem_value * r.get("gained_by", {}).get(s, {}).get("gems", 0) for r in rs) for s in GAIN_SOURCES}
+    ore_all = sum(ore_by.values())
+    val_all = sum(val_by.values())
+    return {"spend_share": _pct(ore_by["upgrade"], ore_all), "bars_median": _med([r.get("bars_bought", 0) for r in rs]),
+            "income_share": _pct(val_by["fight"] + val_by["event"], val_all), "ore_by": ore_by, "val_by": val_by,
+            "runs": len(rs)}
+
+
+def _band(x, band):
+    return "in" if band[0] <= x <= band[1] else "OUT"
+
+
+def _economy_section(bots, rows):
+    gv = _gem_value()
+    out = ["Economy measures (L-UPG-03 spend_share: upgrade ore over all ore spent in stores, band "
+           f"{SPEND_BAND[0]:.0f} to {SPEND_BAND[1]:.0f}%, median bars {BARS_BAND[0]} to {BARS_BAND[1]}; L-RWD-05 "
+           f"income_share: fight plus event value over all value gained, value = ore + {gv:g} x gems, band "
+           f"{INCOME_BAND[0]:.0f} to {INCOME_BAND[1]:.0f}%; the bands apply to the balanced bot):", "",
+           "| bot | spend_share % | band | median bars | band | income_share % | band | ore spent by kind (per run) | value gained by source (per run) |",
+           "|---|---|---|---|---|---|---|---|---|"]
+    for b in bots:
+        rs = rows[b]
+        if not rs:
+            continue
+        m = economy_measures(rs, gv)
+        n = len(rs)
+        kinds = ", ".join(f"{k} {m['ore_by'][k] / n:.0f}" for k in SPEND_KINDS)
+        srcs = ", ".join(f"{s} {m['val_by'][s] / n:.0f}" for s in GAIN_SOURCES)
+        out.append(f"| {b} | {m['spend_share']:.1f} | {_band(m['spend_share'], SPEND_BAND)} | {m['bars_median']:.0f} | "
+                   f"{_band(m['bars_median'], BARS_BAND)} | {m['income_share']:.1f} | {_band(m['income_share'], INCOME_BAND)} | "
+                   f"{kinds} | {srcs} |")
+    out.append("")
+    return out
+
+
 def _cause(r):
     c = r.get("killer") or r.get("cause") or "unknown"
     if r["result"] == "stuck":
@@ -239,7 +294,10 @@ def run_full(a, game_target, make_pack):
         out.append(f"| {b} | {n} | {_pct(won, n):.1f} | {stuck} | {_med([r['rows_reached'] for r in rs]):.0f} | "
                    f"{_med([r['time_s'] for r in rs]):.0f} | {statistics.fmean([len(r.get('fights', [])) for r in rs]):.2f} | "
                    f"{_pct(gw, len(gate)):.0f} | {top[0][0] + ' ' + format(_pct(top[0][1], n), '.0f') + '%' if top else '-'} |")
-    out += ["", "Dig verbs, means per run:", "",
+    out.append("")
+    econ = _economy_section(bots, rows)
+    out += econ
+    out += ["Dig verbs, means per run:", "",
             "| bot | rockfalls hit | absorbed | hull lost to them | blasts | blast ore | blast gems | douses | s past 60 deg |",
             "|---|---|---|---|---|---|---|---|---|"]
     for b in bots:
@@ -282,7 +340,8 @@ def run_full(a, game_target, make_pack):
         f.write("\n".join(out) + "\n")
     shutil.copyfile(report, os.path.join(paths.OUT, "balance", "full_report.md"))
     failed = [r for r in results if r["exit"] != 0 or r["timed_out"] or r["lines"] < r["count"] or not r["done"]]
-    print("\n".join(out[:4 + 4 + len(bots) + 4 + len(bots)]))
+    print("\n".join(out[:4 + 4 + len(bots)]))
+    print("\n".join(econ))
     print("report:", report)
     for r in failed:
         print(f"balance --full: part {os.path.basename(r['path'])} FAILED (exit {r['exit']}, timeout={r['timed_out']}, "
