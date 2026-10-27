@@ -192,10 +192,17 @@ func _build_links(ship: Ship) -> void:
 				s.set_meta("link", l.index)
 				add_child(s)
 				_door_nodes.append(s)
+				var lamp := DoorLamp.new()
+				lamp.width = maxf(10.0, s.texture.get_size().x * s.scale.x * 0.7)
+				lamp.position = Vector2(x, s.position.y - 6.0)
+				lamp.link_index = l.index
+				add_child(lamp)
+				_lamps.append(lamp)
 
 
 var _door_nodes: Array[Sprite2D] = []
 var _lids: Array[HatchLid] = []
+var _lamps: Array[DoorLamp] = []
 var _vent: RoomVent
 
 
@@ -233,6 +240,32 @@ class HatchLid extends Node2D:
 			draw_circle(p, 1.8, Color(0.85, 0.8, 0.65))
 
 
+## A lamp over each door: an amber bar while the door is shut (L-DOR-F1: shut and open doors must
+## differ at normal zoom), a small green dot while it is open.
+class DoorLamp extends Node2D:
+	var width: float = 20.0
+	var link_index: int = 0
+	var _closed: bool = false
+
+	func _init() -> void:
+		z_index = 4
+		material = ArtLib.unshaded()
+
+	func set_closed(on: bool) -> void:
+		if on != _closed:
+			_closed = on
+			queue_redraw()
+
+	func _draw() -> void:
+		if _closed:
+			draw_circle(Vector2.ZERO, width * 0.55, Color(1.0, 0.55, 0.1, 0.18))
+			var r := Rect2(-width * 0.5, -3.0, width, 6.0)
+			draw_rect(r, Color(1.0, 0.64, 0.16), true)
+			draw_rect(r, Color(0.28, 0.13, 0.02), false, 1.0)
+		else:
+			draw_circle(Vector2.ZERO, 2.5, Color(0.35, 0.85, 0.4, 0.85))
+
+
 ## Add the purge vent button and its draught (the player's tower only).
 func set_vents(world: ShipWorld) -> void:
 	_vent = RoomVent.new()
@@ -250,6 +283,8 @@ func update(ship: Ship, r: Room, t: float, lamp_k: float, hz: HazardSim = null) 
 			s.texture = tex
 	for lid: HatchLid in _lids:
 		lid.set_closed(not ship.links[lid.link.index].open)
+	for lamp: DoorLamp in _lamps:
+		lamp.set_closed(not ship.links[lamp.link_index].open)
 	if _vent != null:
 		_vent.update(t, hz)
 	var power: float = 1.0

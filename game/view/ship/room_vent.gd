@@ -50,7 +50,7 @@ func _draw() -> void:
 		_draw_draught(b, size)
 	_draw_button(b, _purged)
 	if _purged:
-		_draw_tag(size)
+		_draw_tag(size, b)
 
 
 static func _draw_button_on(n: Node2D, b: Rect2, on: bool) -> void:
@@ -93,13 +93,14 @@ func _draw_draught(b: Rect2, size: Vector2) -> void:
 		draw_circle(at, 2.2, Color(0.85, 0.95, 1.0, a))
 
 
-## "PURGING" in small caps on the label's side, under the room name chip.
-func _draw_tag(size: Vector2) -> void:
+## "PURGING" in small caps beside the vent button, toward the room's middle: high on the wall, clear of
+## the crew's nameplates and of the room name chip on the other side.
+func _draw_tag(size: Vector2, b: Rect2) -> void:
 	var text: String = "PURGING"
 	var w: float = _font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x + 14.0
-	var right: bool = not ShipHits.vent_on_right(_ship, _room, _ppm)
-	var x: float = size.x - w - 8.0 if right else 8.0
-	var y: float = 8.0 + 38.0 + 3.0
+	var vent_right: bool = b.get_center().x > size.x * 0.5
+	var x: float = b.position.x - w - 6.0 if vent_right else b.end.x + 6.0
+	var y: float = b.position.y + (b.size.y - 18.0) * 0.5
 	draw_rect(Rect2(x, y, w, 18.0), Color(0.02, 0.03, 0.04, 0.78), true)
 	draw_rect(Rect2(x, y, 3.0, 18.0), COLD, true)
 	draw_string(_font, Vector2(x + 8.0, y + 13.5), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(0.8, 0.93, 1.0))
