@@ -194,6 +194,7 @@ func _build_links(ship: Ship) -> void:
 				_door_nodes.append(s)
 				var lamp := DoorLamp.new()
 				lamp.width = maxf(10.0, s.texture.get_size().x * s.scale.x * 0.7)
+				lamp.door_size = Vector2(s.texture.get_size().x * s.scale.x, want_h)
 				lamp.position = Vector2(x, s.position.y - 6.0)
 				lamp.link_index = l.index
 				add_child(lamp)
@@ -240,10 +241,12 @@ class HatchLid extends Node2D:
 			draw_circle(p, 1.8, Color(0.85, 0.8, 0.65))
 
 
-## A lamp over each door: an amber bar while the door is shut (L-DOR-F1: shut and open doors must
-## differ at normal zoom), a small green dot while it is open.
+## A lamp over each door: while the door is shut an amber bar and a bold amber frame round the slab;
+## while it is open no slab (the door sprite is hidden) but a soft lit gap and a small green dot
+## (L-DOR-F1: a blind viewer read the painted open door as a wall).
 class DoorLamp extends Node2D:
 	var width: float = 20.0
+	var door_size: Vector2 = Vector2(20.0, 160.0)
 	var link_index: int = 0
 	var _closed: bool = false
 
@@ -257,12 +260,15 @@ class DoorLamp extends Node2D:
 			queue_redraw()
 
 	func _draw() -> void:
+		var slab := Rect2(-door_size.x * 0.5, 6.0, door_size.x, door_size.y)
 		if _closed:
 			draw_circle(Vector2.ZERO, width * 0.55, Color(1.0, 0.55, 0.1, 0.18))
 			var r := Rect2(-width * 0.5, -3.0, width, 6.0)
 			draw_rect(r, Color(1.0, 0.64, 0.16), true)
 			draw_rect(r, Color(0.28, 0.13, 0.02), false, 1.0)
+			draw_rect(slab, Color(1.0, 0.62, 0.16, 0.95), false, 3.0)
 		else:
+			draw_rect(slab.grow_individual(-2.0, 0.0, -2.0, 0.0), Color(1.0, 0.86, 0.6, 0.16), true)
 			draw_circle(Vector2.ZERO, 2.5, Color(0.35, 0.85, 0.4, 0.85))
 
 
@@ -273,18 +279,34 @@ func set_vents(world: ShipWorld) -> void:
 	add_child(_vent)
 
 
-## Per frame: door art follows Link.open, glows breathe with the system's power.
+## True while a crew member is passing through this shut link: the door and its lamp show open for
+## them, as doors do for crew (the sim still treats the link as shut for fire, heat and water).
+static func crew_passing(ship: Ship, l: Link) -> bool:
+	for c: CrewMember in ship.crew:
+		if not c.alive or c.away or (c.room != l.a and c.room != l.b):
+			continue
+		if l.kind == Link.Kind.DOOR:
+			if absf(c.pos.x - l.x) < 0.55:
+				return true
+		elif c.climbing and absf(c.pos.x - l.x) < 0.6:
+			return true
+	return false
+
+
+## Per frame: door art follows Link.open (and swings open for passing crew), glows breathe with power.
 func update(ship: Ship, r: Room, t: float, lamp_k: float, hz: HazardSim = null) -> void:
 	for s: Sprite2D in _door_nodes:
 		var l: Link = ship.links[int(s.get_meta("link"))]
-		var name_key: String = "door_open" if l.open else "door_closed"
+		var shown_open: bool = l.open or crew_passing(ship, l)
+		s.visible = not shown_open  # Open: no slab, the lamp draws a lit gap instead (DoorLamp).
+		var name_key: String = "door_open" if shown_open else "door_closed"
 		var tex: Texture2D = ArtLib.lit("ship", name_key)
 		if tex != null and s.texture != tex:
 			s.texture = tex
 	for lid: HatchLid in _lids:
-		lid.set_closed(not ship.links[lid.link.index].open)
+		lid.set_closed(not lid.link.open and not crew_passing(ship, lid.link))
 	for lamp: DoorLamp in _lamps:
-		lamp.set_closed(not ship.links[lamp.link_index].open)
+		lamp.set_closed(not ship.links[lamp.link_index].open and not crew_passing(ship, ship.links[lamp.link_index]))
 	if _vent != null:
 		_vent.update(t, hz)
 	var power: float = 1.0

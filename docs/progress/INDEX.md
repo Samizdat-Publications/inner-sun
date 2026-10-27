@@ -46,3 +46,4 @@ A visual record of Inner Sun, oldest first.
 | 040 | 2026-10-23 00:28 | [040_scanner-range.jpg](040_scanner-range.jpg) | Build 7 (D060): the scanner sees about 10 m round the drill head; static beyond the ring | c1a127e |
 | 041 | 2026-10-23 00:28 | [041_pause-visible.jpg](041_pause-visible.jpg) | Build 7: pausing freezes and dims the world under PAUSED: SPACE TO RESUME | c1a127e |
 | 042 | 2026-10-27 11:38 | [042_parity-doors-purge-magnetite.jpg](042_parity-doors-purge-magnetite.jpg) | Parity branch: shut doors carry an amber lamp, a purging room with its draught and tag, magnetite in force (blind scanner) | d8957ef |
+| 043 | 2026-10-27 11:51 | [043_parity-doors-framed.jpg](043_parity-doors-framed.jpg) | Parity: shut doors framed in amber with a lamp, an open doorway shows a lit gap, purge and fire | 13ec842 |

@@ -292,7 +292,7 @@ Current Inner Sun values are quoted where they exist, so the gap is visible.
 - Test: critic still with the rubric; Stewart's A/B.
 - Wrong value: doors drawn the same open and closed must score under 3.
 - Core: no
-- Status: open
+- Status: open (blind stills checks, `tools/critic_stills.py`, `review/critiques/stills_dor_f1_1` to `_3`: after the amber frame and lamp on shut doors, the third check rates shut versus open doors 4, the purge 4, the fire 5, and reads fire, purge and shut doors right, but still takes an open doorway for a wall, because the room art runs to the wall; left for the spine-tower ship art (D061) and Stewart's A/B)
 
 ### L-FIRE-01: One pair of hands barely keeps up with a spreading fire
 - Kind: shape
