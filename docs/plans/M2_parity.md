@@ -41,9 +41,9 @@ Plan: `PLAN.md` section 10. Decisions: D052 to D055. Research: `docs/research/ft
       with the new measures.
 
 ## P4: differential checks
-- [ ] `tools/parity.py` (local only) compares the picked rows against the private reference.
+- [x] `tools/parity.py` (local only) compares the picked rows against the private reference: 12 of 12 in band (D083).
 - [x] Balance report measures in band (`ftl-difftest-plan.md`, layer 4).
-- [ ] Critic rubric run on the feel rows; Stewart's A/B per system (three questions, 1 to 5).
+- [~] Critic rubric run on the feel rows (three blind stills checks of L-DOR-F1, `tools/critic_stills.py`: fire and purge read, open doors still read as walls); Stewart's A/B per system (three questions, 1 to 5).
 - [x] `docs/research/parity_report.md` committed with the coverage per system.
 
 Status 2026-10-23: P3 done on the branch (rounds 1 to 6a, playtest build `m2p-parity-1`); P4 left:

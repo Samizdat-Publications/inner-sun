@@ -652,3 +652,14 @@ and D039 and D044 already kept the bots above the band until Stewart had played.
 `economy.reward_*` (L-RWD-05 has room down to 15%), the gate fight, `combat.loot_boss_scale`,
 `systems.station_skill_gain`, environment chance. Revert: lower the reward bases first.
 
+## D083 (AI): Some parity ratios match the reference on purpose
+`python tools/parity.py` (local only; it compares Inner Sun's measures with the private reference and
+writes the side-by-side to `research_private/`) finds all 12 measures in their ledger bands, and eight
+bands that also contain the reference's own ratio: the reward growth over the layer, the three tier
+means, the hull repair rise with depth, the sell-back fraction, the reactor price step and the top
+skill's manning gain. D052 allows matching shapes and ratios (never exact values, names or text), and
+each of these rows is anchored on Inner Sun's own numbers (today's fight haul, D025's depth
+richness, Inner Sun's skill spread), so the values stay. The ones that differ on purpose: upgrade
+ladders climb much more gently, reactor bars cost a larger share of a system bar, closed doors hold
+fire back harder, shelf stocks are smaller. Revert: move a band off the reference ratio and retune.
+
