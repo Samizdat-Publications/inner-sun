@@ -80,7 +80,7 @@ Current Inner Sun values are quoted where they exist, so the gap is visible.
 - Target: balanced bot, 300 runs: system and reactor bars take 40 to 65% of all ore spent; median 5 to 10 bars bought per run.
 - Evidence: E-UPG-03 (assumed), to observe in O-10 (what Stewart buys in his recorded FTL runs)
 - Test: balance measure `spend_share` in `python tools/balance.py` (needs the balance tooling, after M1d's split lands).
-- Wrong value: every ladder price x3 must push the measure out of band (share or bars; it drops the median to about 3 bars).
+- Wrong value: every ladder price x0.25 must push the share out of band (measured 32.8%, median 14 bars, 300 balanced runs); x3 also fails, on the bars (median 3).
 - Core: no
 - Status: passing (round 4, ladders retuned x0.8: balanced bot 300 runs, spend share 63.7%, median 8 bars; ladders x3 give median 3 bars, out of band; report `docs/research/m1-evidence/balance_parity_r4.md`)
 
