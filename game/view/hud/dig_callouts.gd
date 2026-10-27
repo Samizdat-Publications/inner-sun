@@ -192,5 +192,5 @@ func _draw_env_chip() -> void:
 	var r := Rect2(RunScreen.WORLD_RECT.position.x + 12.0, ENV_CHIP_Y, w, 32.0)
 	draw_rect(r, Color(0.03, 0.04, 0.05, 0.88), true)
 	draw_rect(r, Color(UiTheme.AMBER, 0.85), false, 1.5)
-	SurveyMarks.draw_env(self, r.position + Vector2(19.0, 16.0), run.env_id)
+	SurveyMarks.draw_env(self, r.position + Vector2(19.0, 16.0), run.env_id, 1.0, 1.0)
 	UiTheme.bold_text(self, Vector2(r.position.x + 38.0, r.position.y + 23.0), text, 17, UiTheme.AMBER)

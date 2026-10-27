@@ -157,6 +157,7 @@ static func draw_last_dig(ci: CanvasItem, x: float, y: float, s: Dictionary) -> 
 # Environments (a node's "env", data/environments): one small icon per kind, and the words for the tooltip.
 
 const ENV_R: float = 11.0
+const ENV_SCALE: float = 1.5  ## The icon is drawn at this scale (it read too small on the map).
 const ENV_COLORS: Dictionary = {
 	"rockfall_seam": Color(0.88, 0.74, 0.5), "magma_heat": Color(1.0, 0.5, 0.18),
 	"magnetite": Color(0.62, 0.8, 1.0), "gas_seam": Color(0.82, 0.9, 0.25),
@@ -165,9 +166,11 @@ const ENV_COLORS: Dictionary = {
 
 ## The environment's icon centred on c: a dark disc with a symbol, falling slabs (rockfall), a heat
 ## shimmer (magma), a compass needle (magnetite), a gas cloud (gas), a diamond for anything new.
-static func draw_env(ci: CanvasItem, c: Vector2, env_id: String, dim: float = 1.0) -> void:
+static func draw_env(ci: CanvasItem, c: Vector2, env_id: String, dim: float = 1.0, scale: float = ENV_SCALE) -> void:
 	var col: Color = ENV_COLORS.get(env_id, Color(0.95, 0.8, 0.4)) as Color
 	col = Color(col, dim)
+	ci.draw_set_transform(c, 0.0, Vector2(scale, scale))
+	c = Vector2.ZERO
 	ci.draw_circle(c, ENV_R, Color(0.02, 0.03, 0.035, 0.92 * dim))
 	ci.draw_arc(c, ENV_R, 0.0, TAU, 20, col, 1.6, true)
 	match env_id:
@@ -190,6 +193,7 @@ static func draw_env(ci: CanvasItem, c: Vector2, env_id: String, dim: float = 1.
 			ci.draw_circle(c + Vector2(4.2, 2.0), 3.4, col)
 		_:
 			ci.draw_colored_polygon(PackedVector2Array([c + Vector2(0, -6), c + Vector2(6, 0), c + Vector2(0, 6), c + Vector2(-6, 0)]), col)
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
 ## The environment in words for the tooltip: its name, then its blurb broken into short lines.

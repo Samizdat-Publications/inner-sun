@@ -456,7 +456,7 @@ func _draw_node(n: Dictionary) -> void:
 	if st == "overtaken":
 		_crack(c, str(n["id"]))
 	if st != "unknown" and not str(n.get("env", "")).is_empty():
-		SurveyMarks.draw_env(self, c + Vector2(-NODE_R - 10.0, -NODE_R + 2.0), str(n["env"]), 0.6 if st in ["visited", "overtaken"] else 1.0)
+		SurveyMarks.draw_env(self, c + Vector2(-NODE_R - 14.0, -NODE_R + 4.0), str(n["env"]), 0.6 if st in ["visited", "overtaken"] else 1.0)
 	if (st == "open" or st == "seen") and SurveyMarks.has_reading(n):
 		SurveyMarks.draw(self, c + Vector2(NODE_R + 8.0, -12.0), n["survey"], _tier_count(), _materials(), 1.0 if st == "open" else 0.75)
 
