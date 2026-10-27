@@ -38,9 +38,14 @@ views, the bots and balance measures, main merged in through M1d's build 6 triag
 2. When the M1d session says M1d is closed: merge main into the branch once more, full check, then
    merge the branch into main (`git merge --no-ff`), re-record determinism, and only then export over
    `builds\InnerSun.exe`. D061 (the spine tower ship) is planned to start after that merge.
-3. Open on the ledger: the feel row L-DOR-F1 (a critic still with the rubric, and Stewart's A/B).
-   Known gaps: the shut-door close-up and the drilling-phase scanner snow were never seen in a still;
-   the map's environment icons are small; crew stay selected after an order.
+3. Open on the ledger: the feel row L-DOR-F1. Three blind stills checks (`tools/critic_stills.py`,
+   `review/critiques/stills_dor_f1_*`): fire and purge read right; shut doors now read (amber frame and
+   lamp) but an open doorway still reads as a wall, because each room's art runs to the wall. Left for
+   the spine-tower ship art (D061) and Stewart's A/B.
+   Known gaps: a rival keeps its ship file's rock heat in a fight (42 C) instead of the layer's, so
+   deep fights are cooler for it than for the player (older than parity; magma adds the same +25 C to
+   both); the DOUSE button covers the doorway of the room it sits on; crew stay selected after an order
+   (as in FTL).
 
 ## Next session (start now, 2026-10-22): M1d interim round, then build 6 notes tonight
 Stewart cannot play build 6 until the evening and wants the most done meanwhile (D058). This session:
