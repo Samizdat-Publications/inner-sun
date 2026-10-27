@@ -95,6 +95,13 @@ func test_greedy_buys_no_weapon_it_cannot_power() -> void:
 	check(buy.is_empty() or int(buy[0]) != lance, "greedy does not buy the lance with no ore")
 	s.run.add(s, "ore", 160)
 	check(PolicyChoices._can_power_weapon(s, line), "160 ore pays the fourth weapons bar (110 on the ladder): the lance counts")
+	# The bot's ore reserve counts too: it would refuse the bar below it, so the lance would sit unpowered.
+	var wl: int = store_line(s, "system", "weapons")
+	var bar: int = EncounterStore.cost_of(s, (s.encounter.current_store()["stock"] as Array)[wl], 1)
+	s.run.add(s, "ore", bar + 15 - 1 - s.run.get_res("ore"))
+	check(PolicyChoices._can_power_weapon(s, line), "without a reserve the bar is affordable")
+	check(not PolicyChoices._can_power_weapon(s, line, 15), "a 15 ore reserve leaves the bar unaffordable: no lance")
+	s.run.add(s, "ore", 160 - s.run.get_res("ore"))
 	s.ship.rooms[s.ship.room_with_system("weapons")].sys_max = 4
 	s.run.add(s, "ore", -160)
 	check(PolicyChoices._can_power_weapon(s, line), "four bars already feed all three guns")

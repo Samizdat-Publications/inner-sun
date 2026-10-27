@@ -237,7 +237,7 @@ static func next_purchase(sim: Sim, bot: PolicyBot) -> Array:
 			var cur: String = str(d.get("currency", "gems"))
 			if run.get_res(cur) - cost < (bot.gem_reserve if cur == "gems" else bot.ore_reserve if cur == "ore" else 0):
 				continue
-			if want == "weapon" and not _can_power_weapon(sim, d):
+			if want == "weapon" and not _can_power_weapon(sim, d, bot.ore_reserve):
 				continue
 			if _ok(sim, enc, i, units):
 				return [i, units]
@@ -282,7 +282,7 @@ static func _matches(d: Dictionary, want: String) -> bool:
 ## A bought weapon is only worth it if the weapons system can feed it beside the guns already
 ## mounted, counting one weapons upgrade only if it is on sale this visit, the store would sell it,
 ## and the currency left after the weapon still pays for it (Gemini audit, 2026-10-22).
-static func _can_power_weapon(sim: Sim, d: Dictionary) -> bool:
+static func _can_power_weapon(sim: Sim, d: Dictionary, ore_reserve: int = 0) -> bool:
 	var wd: Dictionary = sim.db.table("weapons").get(str(d.get("weapon", "")), {})
 	var need: int = int(wd.get("power", 1))
 	for wid: String in sim.ship.weapons:
@@ -293,11 +293,12 @@ static func _can_power_weapon(sim: Sim, d: Dictionary) -> bool:
 	var bars: int = sim.ship.rooms[wr].sys_max
 	if bars >= need:
 		return true
-	return bars + 1 >= need and _weapons_upgrade_affordable(sim, d)
+	return bars + 1 >= need and _weapons_upgrade_affordable(sim, d, ore_reserve)
 
 
-## A weapons upgrade line the store would sell now, still affordable after paying for weapon line d.
-static func _weapons_upgrade_affordable(sim: Sim, d: Dictionary) -> bool:
+## A weapons upgrade line the store would sell now, still affordable after paying for weapon line d
+## and keeping the bot's ore reserve (next_purchase would refuse the upgrade below it).
+static func _weapons_upgrade_affordable(sim: Sim, d: Dictionary, ore_reserve: int = 0) -> bool:
 	var enc: Encounter = sim.encounter
 	var stock: Array = enc.current_store().get("stock", [])
 	var w_cur: String = str(d.get("currency", "gems"))
@@ -307,6 +308,8 @@ static func _weapons_upgrade_affordable(sim: Sim, d: Dictionary) -> bool:
 			continue
 		var cur: String = str(u.get("currency", "gems"))
 		var left: int = sim.run.get_res(cur) - (int(d.get("price", 0)) if cur == w_cur else 0)
-		if left >= int(u.get("price", 0)):
+		if cur == "ore":
+			left -= ore_reserve
+		if left >= EncounterStore.cost_of(sim, u, 1):
 			return true
 	return false

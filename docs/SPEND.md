@@ -130,3 +130,4 @@ Session total (2026-10-15 to 16, M1a): about 15 USD (logged 11.96 plus the 3.00 
 | 2026-10-27 | Gemini (gemini-3.1-pro-preview) | video critic -> stills_dor_f1_1.md | 0.01 (est, 2477 in / 272 out tokens) |
 | 2026-10-27 | Gemini (gemini-3.1-pro-preview) | video critic -> stills_dor_f1_2.md | 0.01 (est, 2477 in / 192 out tokens) |
 | 2026-10-27 | Gemini (gemini-3.1-pro-preview) | video critic -> stills_dor_f1_3.md | 0.01 (est, 2477 in / 257 out tokens) |
+| 2026-10-27 | Gemini (gemini-4-argon) | audit -> 20261027-115503 | 0.70 (est at Pro rates, 319331 in / 5341 out tokens) |
