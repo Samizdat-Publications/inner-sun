@@ -30,7 +30,7 @@ re-imports) before any balance run, or `balance.py` hangs to its timeout on a st
 Branch `claude/blissful-neumann-c52d9b` (worktree `C:\Users\stewa\Documents\Claude\Inner Sun\.claude\worktrees\blissful-neumann-c52d9b`) holds the
 FTL parity work: ledger rows for all six picks, every sim row passing (`python tools/ledger.py`), the
 views, the bots and balance measures, main merged in through M1d's build 6 triage. Playtest build
-`m2p-parity-1` sits in that worktree's `builds\`, apart from main's build. Next:
+`m2p-parity-2` sits in that worktree's `builds\`, apart from main's build. Next:
 1. Stewart plays it and answers, per system (upgrades, rewards, manning, doors and purging, stores,
    environments), the three A/B questions from `docs/research/ftl-difftest-plan.md` layer 5 (as
    tense? as readable? as many real choices? 1 to 5), at the top of `docs/STEWART_FEEDBACK.md`.

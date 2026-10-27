@@ -69,7 +69,7 @@ Updated: 2026-10-22 night, playtest build 7 (`m1d-playtest-7`) from Stewart's bu
 - **Balance (900 runs, `docs/research/m1-evidence/balance_parity_final.md`):** wins cautious 48%,
   greedy 19%, balanced 58% (38% before parity; band 10 to 30%). Easier, mostly from fight rewards and
   manning; left for Stewart's playtest to judge (D082). Spend share 64%, income share 22% (in band).
-- **Playtest build:** `m2p-parity-1`, exported into this worktree's own `builds\` (main's
+- **Playtest build:** `m2p-parity-2` (2026-10-27: framed shut doors, bigger map icons, the bot reserve fix; `m2p-parity-1` kept as a milestone zip), exported into this worktree's own `builds\` (main's
   `builds\InnerSun.exe` untouched). Merge into main waits for M1d to close (D058).
 
 ## Side track (2026-10-22): FTL parity planned, nothing built
