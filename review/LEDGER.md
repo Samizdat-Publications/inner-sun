@@ -55,3 +55,7 @@ A rejected issue that returns in 2 later critiques becomes FIX or goes to docs/N
 | 48 | m1d-playtest-7 (c1a127e) | gemini 011 | A bridge fire is tiny and blends into the warm room (also 40) | DEFER | Next visual pass: higher-contrast flames at the drilling zoom; third review to say it |
 | 49 | m1d-playtest-7 (c1a127e) | gemini 011 | Rock vanishes in perfect squares when breaking into a cavern | DEFER | M2 world pass: crumble edges and debris on cut cells |
 | 50 | m1d-playtest-7 (c1a127e) | gemini 011 | Hits on the rival are a tiny spark | DEFER | M2: screen shake and chunkier debris on hits |
+| 51 | m2p-parity-2 (4dafe70) | gemini 012 | Crew stand idle at their stations; wants work motions and bracing on impacts (also 26) | DEFER | M2 art pass: crew work poses; the station skill (parity) gives a reason to show who mans what |
+| 52 | m2p-parity-2 (4dafe70) | gemini 012 | Drilling lacks weight: rock chunks look weightless and vanish cleanly (also 49, 50) | DEFER | M2 world pass: persistent dust, chunkier debris, a little screen shake on dense rock |
+| 53 | m2p-parity-2 (4dafe70) | gemini 012 | A gas pocket hit spawns a flat green blob | DEFER | Next hazard visual pass with 48 (gas seams make gas more common deep down) |
+| 54 | m2p-parity-2 (4dafe70) | gemini 012 | The left power panel is text-heavy; wants icons for speed, heat, noise (also 38, 47) | DEFER | M2 UI pass |

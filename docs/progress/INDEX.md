@@ -47,3 +47,4 @@ A visual record of Inner Sun, oldest first.
 | 041 | 2026-10-23 00:28 | [041_pause-visible.jpg](041_pause-visible.jpg) | Build 7: pausing freezes and dims the world under PAUSED: SPACE TO RESUME | c1a127e |
 | 042 | 2026-10-27 11:38 | [042_parity-doors-purge-magnetite.jpg](042_parity-doors-purge-magnetite.jpg) | Parity branch: shut doors carry an amber lamp, a purging room with its draught and tag, magnetite in force (blind scanner) | d8957ef |
 | 043 | 2026-10-27 11:51 | [043_parity-doors-framed.jpg](043_parity-doors-framed.jpg) | Parity: shut doors framed in amber with a lamp, an open doorway shows a lit gap, purge and fire | 13ec842 |
+| 044 | 2026-10-27 22:17 | [044_m2p-parity-2-frames.jpg](044_m2p-parity-2-frames.jpg) | parity branch: ladders, tiers, manning, doors and purge, rolled stores, environments; review frames, build 20261027-220144-4dafe70, seed 41 | 4dafe70 |
