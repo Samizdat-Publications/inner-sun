@@ -46,9 +46,9 @@ Plan: `PLAN.md` section 10. Decisions: D052 to D055. Research: `docs/research/ft
 - [~] Critic rubric run on the feel rows (three blind stills checks of L-DOR-F1, `tools/critic_stills.py`: fire and purge read, open doors still read as walls); Stewart's A/B per system (three questions, 1 to 5).
 - [x] `docs/research/parity_report.md` committed with the coverage per system.
 
-Status 2026-10-23: P3 done on the branch (rounds 1 to 6a, playtest build `m2p-parity-1`); P4 left:
-`tools/parity.py`, the critic rubric on the feel row and Stewart's A/B. Rounds 4 and 5 were checked by
-hand while the Gemini audit was out of credits.
+Status 2026-10-27: P3 done on the branch (rounds 1 to 6a, playtest build `m2p-parity-2`). P4: `tools/parity.py`
+done (D083), three blind stills checks of the feel row done (open doors still read as walls); left:
+Stewart's A/B. Rounds 4 and 5 were checked by hand before dispatch and audited by Gemini on 2026-10-27.
 
 ## P5: make it ours
 - [ ] Deliberate divergences logged as "waived by design" rows with D-numbers.

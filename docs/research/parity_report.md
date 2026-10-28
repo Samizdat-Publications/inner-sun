@@ -39,6 +39,6 @@ Feel rows (judged by critics and Stewart, not counted in coverage):
 | L-DOR-01 | rule | yes | passing | Closed doors hold hazards back, and the player works them |
 | L-DOR-02 | rule | no | passing | Purging a room kills its fire, at a price |
 | L-DOR-03 | rule | no | passing | Pressure doors hold fire like a wall |
-| L-DOR-F1 | feel | no | open | Doors and purges read and work at a glance |
+| L-DOR-F1 | feel | no | open (blind stills checks, `tools/critic_stills.py`, `review/critiques/stills_dor_f1_1` to `_3`: after the amber frame and lamp on shut doors, the third check rates shut versus open doors 4, the purge 4, the fire 5, and reads fire, purge and shut doors right, but still takes an open doorway for a wall, because the room art runs to the wall; left for the spine-tower ship art (D061) and Stewart's A/B) | Doors and purges read and work at a glance |
 | L-ENV-01 | rule | yes | passing | Some nodes sit in an environment that changes everything there |
 | L-ENV-02 | rule | no | passing | Each environment has one clear effect |

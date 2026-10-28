@@ -26,11 +26,12 @@ merges into main only when the M1d session says the build 6 triage is done. Gotc
 after merging a branch that adds `class_name` scripts, run a full `python tools/check.py` (it
 re-imports) before any balance run, or `balance.py` hangs to its timeout on a stale class cache.
 
-## Parity branch (2026-10-23): all six picks built, waiting to merge
+## Parity branch (2026-10-27): all six picks built, waiting to merge
 Branch `claude/blissful-neumann-c52d9b` (worktree `C:\Users\stewa\Documents\Claude\Inner Sun\.claude\worktrees\blissful-neumann-c52d9b`) holds the
 FTL parity work: ledger rows for all six picks, every sim row passing (`python tools/ledger.py`), the
-views, the bots and balance measures, main merged in through M1d's build 6 triage. Playtest build
-`m2p-parity-2` sits in that worktree's `builds\`, apart from main's build. Next:
+views, the bots and balance measures, main merged in up to build 7 and D060 (`5b98b6f`). Playtest build
+`m2p-parity-2` sits in that worktree's `builds\` (its `builds\PLAYTEST` names it), apart from main's
+`builds\InnerSun.exe` (`m1d-playtest-7`, the build the sections below describe). Next:
 1. Stewart plays it and answers, per system (upgrades, rewards, manning, doors and purging, stores,
    environments), the three A/B questions from `docs/research/ftl-difftest-plan.md` layer 5 (as
    tense? as readable? as many real choices? 1 to 5), at the top of `docs/STEWART_FEEDBACK.md`.
@@ -47,7 +48,7 @@ views, the bots and balance measures, main merged in through M1d's build 6 triag
    both); the DOUSE button covers the doorway of the room it sits on; crew stay selected after an order
    (as in FTL).
 
-## Next session (start now, 2026-10-22): M1d interim round, then build 6 notes tonight
+## Next session (2026-10-22, history: done; build 7 came from it): M1d interim round, then build 6 notes
 Stewart cannot play build 6 until the evening and wants the most done meanwhile (D058). This session:
 starts the FTL parity workstream at once as a separate session in its own worktree (the side-track
 prompt below), does the M1d work that needs no notes plus the verified Gemini audit bugs
@@ -78,7 +79,7 @@ high, Auto):
 Continue Inner Sun: M1d. Read CLAUDE.md, PROGRESS.md, HANDOFF.md (the "Next session" section) and docs/plans/M1d.md, then my notes at the top of docs/STEWART_FEEDBACK.md. Run python tools/run_report.py --since 2026-10-17, fill the triage table in M1d.md, then work autonomously per CLAUDE.md: specs to builders, verify every still yourself, keep what is fun. I will approve computer use if I am here, so play it by hand. Republish the making-of page (https://claude.ai/artifact/UJjDA4PJkSXMKjpg2zxQpc) when something visible lands. Stop with a new playtest build when my weekly usage reaches about 90%, or earlier for "checkpoint" or a decision that is genuinely mine.
 ```
 
-## Side track: FTL parity (planned 2026-10-22, not started; does not replace M1d)
+## Side track: FTL parity (history: planned 2026-10-22; now built, see "Parity branch" above)
 A planning session (D052 to D055) turned FTL into a reference behind a firewall: the community
 survey and scored inventory (`docs/research/ftl-reference.md`), the ledger format with example rows
 (`behavior-ledger.md`), the observation and differential-test plans, `PLAN.md` section 10 and the
