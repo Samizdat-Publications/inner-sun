@@ -1,6 +1,6 @@
 # Full-run balance report 20261023-004510
 
-Parity branch after rounds 1 to 6a and main's build 6 triage (commit bc43e48), 2026-10-23. Before parity (balance_m1c_miner.md) the balanced bot won 38%; after round 4 alone 52%; with environments and main's richer ore (D060) 58%.
+Parity branch after rounds 1 to 6a and main's build 6 triage (commit bc43e48), 2026-10-23. Before parity (balance_m1c_miner.md) the balanced bot won 38%; after round 4 alone 52%; with environments and main's richer ore (D060) 58%. Re-run 2026-10-27 on the shipped build m2p-parity-2 (pack 2078fa3, after the bot reserve fix): every number identical.
 
 900 runs (300 per bot, seeds 1000..1299), 6 processes, wall 1333 s (22.2 min, 24.7 min per 1000 runs). Pack: 20261023-004504-bc43e48.pck
 
