@@ -73,6 +73,8 @@ playtest build 7 (`m1d-playtest-7`) from Stewart's build 6 notes.
   greedy 19%, balanced 58% (38% before parity; band 10 to 30%). Easier, mostly from fight rewards and
   manning; left for Stewart's playtest to judge (D082). Spend share 64%, income share 22% (the balanced bot, in band; the greedy bot's income share is 14%).
   Re-run on the shipped build m2p-parity-2 (2026-10-27): identical.
+- **Perf (UNTRUSTED, contended):** whole run on the NVIDIA GPU, average 126.8 fps, 1% low 56.3, p95 12.2 ms,
+  GPU 1.2 ms (build 6 measured 144 and 56 the same way); re-measure on an idle PC before the merge.
 - **Playtest build:** `m2p-parity-2` (2026-10-27: framed shut doors, bigger map icons, the bot reserve fix; `m2p-parity-1` kept as a milestone zip), exported into this worktree's own `builds\` (main's
   `builds\InnerSun.exe` untouched). Merge into main waits for M1d to close (D058).
 
